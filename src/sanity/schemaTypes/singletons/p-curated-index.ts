@@ -1,7 +1,7 @@
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { StarIcon } from '@sanity/icons';
-import { defineField, defineType } from 'sanity';
+import { defineArrayMember, defineField, defineType } from 'sanity';
 
 export const pCuratedIndex = defineType({
 	title: 'Curated',
@@ -27,14 +27,20 @@ export const pCuratedIndex = defineType({
 			name: 'description',
 			type: 'text',
 			rows: 3,
-			description: 'Brief intro copy for the page',
+			description: 'Hero banner tagline on dark background',
 		}),
 		defineField({
-			name: 'featuredProduct',
-			title: 'Featured Product',
-			type: 'reference',
-			to: [{ type: 'pCurated' }],
-			description: 'Optional hero pick shown at the top of the page',
+			name: 'collections',
+			title: 'Collections',
+			type: 'array',
+			description: 'Collections displayed on the index page, in order',
+			of: [
+				defineArrayMember({
+					type: 'reference',
+					to: [{ type: 'pCuratedCollection' }],
+				}),
+			],
+			validation: (Rule) => Rule.unique(),
 		}),
 		sharing(),
 	],
