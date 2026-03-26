@@ -92,18 +92,18 @@ export const pCurated = defineType({
 		select: {
 			title: 'title',
 			slug: 'slug',
-			category: 'category.title',
+			categoryTitle: 'categories.0.title',
 			mainImage: 'mainImage',
 		},
 		prepare({
 			title = 'Untitled',
 			slug = {},
-			category,
+			categoryTitle,
 			mainImage,
 		}: Record<string, any>) {
 			return {
 				title,
-				subtitle: `[${category ?? '(no category)'}] — /curated/${slug?.current ?? '(no slug)'}`,
+				subtitle: `[${categoryTitle ?? '(no category)'}] — /curated/${slug?.current ?? '(no slug)'}`,
 				media: mainImage?.image.asset || ImageIcon,
 			};
 		},

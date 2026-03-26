@@ -221,10 +221,12 @@ export function PageEvents({ data }: PageEventsProps) {
 						return (
 							<motion.div
 								key={_id}
-								data-key={_id}
 								className={cn(
-									't-b-1 transition-colors hover:bg-foreground/90 grid items-center border-b group py-4 border-white/80 lg:py-2 lg:min-h-15',
-									colStyle
+									't-b-1 transition-colors hover:bg-foreground/85 grid items-center border-b group py-4 border-white/80 lg:py-2 lg:min-h-15 group/row',
+									colStyle,
+									{
+										'pointer-events-none': eventHasEnded,
+									}
 								)}
 								initial="hide"
 								animate="show"
@@ -237,22 +239,37 @@ export function PageEvents({ data }: PageEventsProps) {
 							>
 								<Td
 									className={cn(
-										'font-bold uppercase lg:pl-0 t-h-6 lg:flex flex-wrap items-center gap-2.5 text-balance'
+										'font-bold uppercase lg:pl-0 t-h-6 lg:flex flex-wrap items-center gap-2.5 text-balance group-hover/row:translate-x-1 transition-transform',
+										{
+											'opacity-30': eventHasEnded,
+										}
 									)}
 								>
 									<p className="text-balance mb-4 lg:mb-0">{title}</p>
 									{subtitle && (
-										<p className="text-muted text-balance">{subtitle}</p>
+										<p className="text-muted-foreground text-balance group-hover/row:text-muted">
+											{subtitle}
+										</p>
 									)}
 								</Td>
-								<Td className="t-b-1 uppercase mb-auto text-right lg:text-left lg:mb-0">
+								<Td
+									className={cn(
+										't-b-1 uppercase mb-auto text-right lg:text-left lg:mb-0',
+										{
+											'opacity-30': eventHasEnded,
+										}
+									)}
+								>
 									{(!dateStatus || dateStatus === 'confirmed') && eventDatetime
 										? format(new Date(eventDatetime), 'iii, MM.dd.yy, h:mm aaa')
 										: dateStatus || 'TBA'}
 								</Td>
 								<Td
 									className={cn(
-										't-h-6 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line group/location'
+										't-h-6 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line group/location',
+										{
+											'opacity-30': eventHasEnded,
+										}
 									)}
 								>
 									{location}
@@ -271,7 +288,11 @@ export function PageEvents({ data }: PageEventsProps) {
 										/>
 									)}
 								</Td>
-								<Td className="lg:justify-end gap-1 flex col-start-1 lg:col-start-[unset] mt-6 lg:mt-0">
+								<Td
+									className={
+										'lg:justify-end gap-1 flex col-start-1 lg:col-start-[unset] mt-6 lg:mt-0'
+									}
+								>
 									{eventHasEnded && (
 										<StatusItem
 											key="ended"
@@ -362,7 +383,7 @@ function Td({ className, ...props }: React.ComponentProps<'div'>) {
 	return (
 		<div
 			className={cn(
-				'lg:px-2 whitespace-nowrap group-hover:text-background transition-colors empty:hidden relative',
+				'lg:px-2 whitespace-nowrap text-foreground group-hover:text-background transition-colors empty:hidden relative',
 				className
 			)}
 			{...props}
