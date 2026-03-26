@@ -50,6 +50,19 @@ export const pCurated = defineType({
 			type: 'url',
 		}),
 		defineField({
+			name: 'badge',
+			title: 'Badge',
+			type: 'string',
+			options: {
+				list: [
+					{ title: "Founder's Pick", value: "Founder's Pick" },
+					{ title: 'Most Popular', value: 'Most Popular' },
+					{ title: 'New', value: 'New' },
+					{ title: "Editor's Choice", value: "Editor's Choice" },
+				],
+			},
+		}),
+		defineField({
 			name: 'excerpt',
 			type: 'text',
 			rows: 3,
@@ -79,18 +92,18 @@ export const pCurated = defineType({
 		select: {
 			title: 'title',
 			slug: 'slug',
-			category: 'category.title',
+			categoryTitle: 'categories.0.title',
 			mainImage: 'mainImage',
 		},
 		prepare({
 			title = 'Untitled',
 			slug = {},
-			category,
+			categoryTitle,
 			mainImage,
 		}: Record<string, any>) {
 			return {
 				title,
-				subtitle: `[${category ?? '(no category)'}] — /curated/${slug?.current ?? '(no slug)'}`,
+				subtitle: `[${categoryTitle ?? '(no category)'}] — /curated/${slug?.current ?? '(no slug)'}`,
 				media: mainImage?.image.asset || ImageIcon,
 			};
 		},

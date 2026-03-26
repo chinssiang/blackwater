@@ -17,8 +17,14 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function Page() {
 	const { data } = await sanityFetch({
 		query: pageCuratedIndexQuery,
-		tags: ['pCuratedIndex', 'pCurated', 'pCuratedCategory'],
+		tags: [
+			'pCuratedIndex',
+			'pCurated',
+			'pCuratedCategory',
+			'pCuratedCollection',
+		],
 	});
+	console.log('🚀 ~ :22 ~ Page ~ data:', data);
 
 	if (!data) return notFound();
 

@@ -3,6 +3,7 @@ import { type SchemaTypeDefinition } from 'sanity';
 import { pBlog } from './documents/p-blog';
 import { pCurated } from './documents/p-curated';
 import { pCuratedCategory } from './documents/p-curated-category';
+import { pCuratedCollection } from './documents/p-curated-collection';
 import { pBlogCategory } from './documents/p-blog-category';
 import { pBlogIndex } from './documents/p-blog-index';
 import { pEvent } from './documents/p-event';
@@ -62,6 +63,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	pCuratedIndex,
 	pCurated,
 	pCuratedCategory,
+	pCuratedCollection,
 	pBrand,
 	freeform,
 	formField,

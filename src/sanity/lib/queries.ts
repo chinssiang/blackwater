@@ -342,18 +342,35 @@ export const pageBlogSingleQuery = defineQuery(`
 	}
 `);
 
-const curatedProductBaseFields = `
+const curatedProductCardFields = `
 	${baseFields},
 	excerpt,
+	badge,
 	price,
 	purchaseLink,
 	categories[]->{ _id, title, "slug": slug.current },
 	brands[]->{ _id, title, "slug": slug.current },
 	mainImage {
 		${imageBlockMetaFields}
-	},
+	}
+`;
+
+const curatedProductBaseFields = `
+	${curatedProductCardFields},
 	content[]{
 		${portableTextContentFields}
+	}
+`;
+
+const curatedCategoriesFields = `
+	"categories": *[_type == "pCuratedCategory"] | order(title asc) {
+		_id,
+		title,
+		"slug": slug.current,
+		coverImage {
+			${imageBlockMetaFields}
+		},
+		"count": count(*[_type == "pCurated" && references(^._id)])
 	}
 `;
 
@@ -363,17 +380,16 @@ export const pageCuratedIndexQuery = defineQuery(`
 		"slug": "curated",
 		subtitle,
 		description,
-		"featuredProduct": featuredProduct->{
-			${curatedProductBaseFields}
-		},
-		"productList": *[_type == "pCurated"] | order(_createdAt desc) {
-			${curatedProductBaseFields}
-		},
-		"categories": *[_type == "pCuratedCategory"] | order(title asc) {
+		"collections": collections[]->{
 			_id,
 			title,
-			"slug": slug.current
-		}
+			description,
+			"slug": slug.current,
+			"products": products[0...6]->{
+				${curatedProductCardFields}
+			}
+		},
+		${curatedCategoriesFields}
 	}
 `);
 
@@ -386,13 +402,30 @@ export const pageCuratedSingleQuery = defineQuery(`
 	*[_type == "pCurated" && slug.current == $slug][0]{
 		${curatedProductBaseFields},
 		"relatedProducts": relatedProducts[]->{
-			${curatedProductBaseFields}
+			${curatedProductCardFields}
 		},
 		"defaultRelatedProducts": *[_type == "pCurated"
 			&& count(categories[@._ref in ^.^.categories[]._ref]) > 0
 			&& _id != ^._id
 		] | order(_createdAt desc) [0...3] {
-			${curatedProductBaseFields}
-		}
+			${curatedProductCardFields}
+		},
+		${curatedCategoriesFields}
+	}
+`);
+
+export const pageCuratedCollectionSlugsQuery = defineQuery(`
+	*[_type == "pCuratedCollection" && defined(slug.current)]
+	{"slug": slug.current}
+`);
+
+export const pageCuratedCollectionSingleQuery = defineQuery(`
+	*[_type == "pCuratedCollection" && slug.current == $slug][0]{
+		${baseFields},
+		description,
+		"products": products[]->{
+			${curatedProductCardFields}
+		},
+		${curatedCategoriesFields}
 	}
 `);

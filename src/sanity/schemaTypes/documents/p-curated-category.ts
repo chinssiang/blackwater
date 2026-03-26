@@ -1,4 +1,5 @@
 import { slug } from '@/sanity/schemaTypes/objects/slug';
+import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { TagsIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
 
@@ -14,6 +15,12 @@ export const pCuratedCategory = defineType({
 			validation: (Rule) => [Rule.required()],
 		}),
 		slug(),
+		customImage({
+			title: 'Cover Image',
+			name: 'coverImage',
+			hasMobileOption: false,
+			hasCaptionOption: false,
+		}),
 	],
 	preview: {
 		select: { title: 'title' },
