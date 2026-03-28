@@ -1,13 +1,16 @@
+'use client';
+
 import { cn } from '@/lib/utils';
 import { hasArrayValue } from '@/lib/utils';
 import { buildRgbaCssString } from '@/lib/image-utils';
 import { Button } from '@/components/ui/Button';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { buildImageSrc } from '@/lib/image-utils';
 import type { EventCrewQueryResult } from 'sanity.types';
 import SanityImage from '@/components/SanityImage';
+import { useState, useMemo } from 'react';
 
 type EventItem = NonNullable<EventCrewQueryResult>[number];
 
@@ -71,11 +74,79 @@ interface PageEventCrewProps {
 	availableMonthKeys: string[];
 }
 
+function collectUniqueMembers(events: EventItem[]) {
+	const memberMap = new Map<
+		string,
+		{
+			_id: string;
+			name: string;
+			nickname: string | null;
+			avatar: EventItem['teamAssignments'] extends Array<infer T>
+				? T extends { members: Array<infer M> | null }
+					? M extends { avatar: infer A }
+						? A
+						: null
+					: null
+				: null;
+		}
+	>();
+
+	for (const event of events) {
+		if (!event.teamAssignments) continue;
+		for (const assignment of event.teamAssignments) {
+			if (!assignment.members) continue;
+			for (const member of assignment.members) {
+				if (!memberMap.has(member._id)) {
+					memberMap.set(member._id, {
+						_id: member._id,
+						name: member.name || 'Unknown',
+						nickname: member.nickname,
+						avatar: member.avatar,
+					});
+				}
+			}
+		}
+	}
+
+	return Array.from(memberMap.values()).sort((a, b) => {
+		const nameA = a.nickname || a.name;
+		const nameB = b.nickname || b.name;
+		return nameA.localeCompare(nameB);
+	});
+}
+
+function filterEventsByMember(
+	events: EventItem[],
+	memberId: string
+): EventItem[] {
+	return events.filter((event) =>
+		event.teamAssignments?.some((assignment) =>
+			assignment.members?.some((member) => member._id === memberId)
+		)
+	);
+}
+
 export function PageEventCrew({
 	events,
 	activeKey,
 	availableMonthKeys,
 }: PageEventCrewProps) {
+	const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+
+	const uniqueMembers = useMemo(() => collectUniqueMembers(events), [events]);
+
+	const filteredEvents = useMemo(
+		() =>
+			selectedMemberId
+				? filterEventsByMember(events, selectedMemberId)
+				: events,
+		[events, selectedMemberId]
+	);
+
+	const selectedMember = selectedMemberId
+		? uniqueMembers.find((m) => m._id === selectedMemberId)
+		: null;
+
 	const currentIndex = activeKey ? availableMonthKeys.indexOf(activeKey) : -1;
 	const hasPrevious = currentIndex > 0;
 	const hasNext = currentIndex < availableMonthKeys.length - 1;
@@ -141,18 +212,82 @@ export function PageEventCrew({
 						</nav>
 					)}
 				</div>
+
+				{/* Crew Filter */}
+				{uniqueMembers.length > 0 && (
+					<div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/4">
+						<span className="t-l-2 text-muted-foreground uppercase shrink-0">
+							Filter
+						</span>
+						<div className="flex flex-wrap items-center gap-1.5">
+							{uniqueMembers.map((member) => {
+								const displayName = member.nickname || member.name;
+								const isActive = selectedMemberId === member._id;
+								return (
+									<button
+										key={member._id}
+										type="button"
+										onClick={() =>
+											setSelectedMemberId(isActive ? null : member._id)
+										}
+										className={cn(
+											'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm transition-all cursor-pointer hover:scale-110 transition-transform',
+											isActive
+												? 'bg-white/15 text-foreground ring-1 ring-white/20'
+												: 'bg-white/4 text-muted-foreground hover:bg-white/8 hover:text-foreground'
+										)}
+									>
+										{member.avatar ? (
+											<div className="size-4 rounded-full overflow-hidden shrink-0 relative">
+												<SanityImage image={member.avatar} />
+											</div>
+										) : (
+											<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[8px] font-semibold">
+												{displayName.charAt(0)}
+											</span>
+										)}
+										<span className="t-b-2">{displayName}</span>
+									</button>
+								);
+							})}
+						</div>
+						{selectedMember && (
+							<button
+								type="button"
+								onClick={() => setSelectedMemberId(null)}
+								className="shrink-0 p-1 rounded-full hover:bg-white/8 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+							>
+								<X className="size-3.5" />
+							</button>
+						)}
+					</div>
+				)}
 			</div>
 
-			{hasArrayValue(events) ? (
+			{hasArrayValue(filteredEvents) ? (
 				<div className="mt-8 lg:mt-12 space-y-6">
-					{events.map((event, index) => (
-						<EventCard key={event._id} event={event} index={index} />
+					{selectedMember && (
+						<p className="t-b-2 text-muted-foreground">
+							{selectedMember.nickname || selectedMember.name} is assigned to{' '}
+							{filteredEvents.length} event
+							{filteredEvents.length !== 1 ? 's' : ''} this month
+						</p>
+					)}
+					{filteredEvents.map((event, index) => (
+						<EventCard
+							key={event._id}
+							event={event}
+							index={index}
+							highlightMemberId={selectedMemberId}
+						/>
 					))}
 				</div>
 			) : (
 				<div className="py-20 text-center">
 					<p className="t-b-1 text-muted-foreground">
-						No crew assignments for this month
+						{selectedMemberId
+							? `${selectedMember?.nickname || selectedMember?.name || 'This member'} has no assignments this month`
+							: 'No crew assignments for this month'}
 					</p>
 				</div>
 			)}
@@ -160,7 +295,15 @@ export function PageEventCrew({
 	);
 }
 
-function EventCard({ event, index }: { event: EventItem; index: number }) {
+function EventCard({
+	event,
+	index,
+	highlightMemberId,
+}: {
+	event: EventItem;
+	index: number;
+	highlightMemberId: string | null;
+}) {
 	const {
 		title,
 		subtitle,
@@ -255,7 +398,11 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 				<div className="p-4 lg:p-5">
 					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
 						{sortedAssignments.map((assignment) => (
-							<AssignmentCard key={assignment._key} assignment={assignment} />
+							<AssignmentCard
+								key={assignment._key}
+								assignment={assignment}
+								highlightMemberId={highlightMemberId}
+							/>
 						))}
 					</div>
 				</div>
@@ -274,7 +421,13 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 
 type Assignment = NonNullable<EventItem['teamAssignments']>[number];
 
-function AssignmentCard({ assignment }: { assignment: Assignment }) {
+function AssignmentCard({
+	assignment,
+	highlightMemberId,
+}: {
+	assignment: Assignment;
+	highlightMemberId: string | null;
+}) {
 	const { role, group, members, note } = assignment;
 
 	const roleTitle = role?.title || 'Role';
@@ -288,14 +441,35 @@ function AssignmentCard({ assignment }: { assignment: Assignment }) {
 			<div className="flex flex-wrap items-center gap-4">
 				{members?.map((member) => {
 					const name = member.nickname || member.name || 'Unknown';
+					const isHighlighted = highlightMemberId === member._id;
+					const isDimmed = highlightMemberId !== null && !isHighlighted;
 					return (
-						<div key={member._id} className="flex items-center gap-1.5">
+						<div
+							key={member._id}
+							className={cn('flex items-center gap-1.5 transition-opacity', {
+								'opacity-30': isDimmed,
+							})}
+						>
 							{member.avatar ? (
-								<div className="size-6 rounded-full overflow-hidden shrink-0 ring-1 ring-white/10 relative">
+								<div
+									className={cn(
+										'size-6 rounded-full overflow-hidden shrink-0 relative',
+										isHighlighted
+											? 'ring-2 ring-indigo-400'
+											: 'ring-1 ring-white/10'
+									)}
+								>
 									<SanityImage image={member.avatar} />
 								</div>
 							) : (
-								<span className="size-6 rounded-full bg-white/8 shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted-foreground ring-1 ring-white/10">
+								<span
+									className={cn(
+										'size-6 rounded-full bg-white/8 shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted-foreground',
+										isHighlighted
+											? 'ring-2 ring-indigo-400'
+											: 'ring-1 ring-white/10'
+									)}
+								>
 									{name.charAt(0)}
 								</span>
 							)}
