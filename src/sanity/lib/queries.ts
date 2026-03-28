@@ -19,7 +19,10 @@ const linkFields = `
 	"href": linkInput {
 		${resolvedHrefGroq}
 	}.resolvedHref,
-	isNewTab
+	"isNewTab": select(
+		linkInput.linkType == "external" => true,
+		isNewTab
+	)
 `;
 
 const menuFields = `
