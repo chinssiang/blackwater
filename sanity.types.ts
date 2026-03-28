@@ -621,6 +621,32 @@ export type PEventCategory = {
 	};
 };
 
+export type PEventRoleReference = {
+	_ref: string;
+	_type: 'reference';
+	_weak?: boolean;
+	[internalGroqTypeReferenceTo]?: 'pEventRole';
+};
+
+export type GTeamMember = {
+	_id: string;
+	_type: 'gTeamMember';
+	_createdAt: string;
+	_updatedAt: string;
+	_rev: string;
+	name?: string;
+	nickname?: string;
+	avatar?: {
+		asset?: SanityImageAssetReference;
+		media?: unknown;
+		hotspot?: SanityImageHotspot;
+		crop?: SanityImageCrop;
+		_type: 'image';
+	};
+	defaultRole?: PEventRoleReference;
+	isActive?: boolean;
+};
+
 export type PEventCategoryReference = {
 	_ref: string;
 	_type: 'reference';
@@ -633,6 +659,13 @@ export type PEventStatusReference = {
 	_type: 'reference';
 	_weak?: boolean;
 	[internalGroqTypeReferenceTo]?: 'pEventStatus';
+};
+
+export type GTeamMemberReference = {
+	_ref: string;
+	_type: 'reference';
+	_weak?: boolean;
+	[internalGroqTypeReferenceTo]?: 'gTeamMember';
 };
 
 export type PEvent = {
@@ -659,6 +692,19 @@ export type PEvent = {
 		_type: 'statusItem';
 		_key: string;
 	}>;
+	teamAssignments?: Array<{
+		role?: PEventRoleReference;
+		group?: string;
+		members?: Array<
+			{
+				_key: string;
+			} & GTeamMemberReference
+		>;
+		note?: string;
+		_type: 'assignment';
+		_key: string;
+	}>;
+	teamNotes?: string;
 	content?: PortableText;
 	sharing?: {
 		disableIndex?: boolean;
@@ -672,6 +718,16 @@ export type PEvent = {
 			_type: 'image';
 		};
 	};
+};
+
+export type PEventRole = {
+	_id: string;
+	_type: 'pEventRole';
+	_createdAt: string;
+	_updatedAt: string;
+	_rev: string;
+	title?: string;
+	order?: number;
 };
 
 export type PEventStatus = {
@@ -1163,9 +1219,13 @@ export type AllSanitySchemaTypes =
 	| PContact
 	| PEvents
 	| PEventCategory
+	| PEventRoleReference
+	| GTeamMember
 	| PEventCategoryReference
 	| PEventStatusReference
+	| GTeamMemberReference
 	| PEvent
+	| PEventRole
 	| PEventStatus
 	| PBlogCategory
 	| GAuthorReference
@@ -1949,6 +2009,51 @@ export type PEventsQueryResult = {
 		}> | null;
 	}>;
 } | null;
+
+// Source: src/sanity/lib/queries.ts
+// Variable: eventCrewQuery
+// Query: *[_type == "pEvent" && defined(teamAssignments)] | order(eventDatetime asc) {		_id,		title,		subtitle,		eventDatetime,		dateStatus,		location,		locationLink,		teamNotes,		categories[]-> {			_id,			title,			"slug": slug.current,			categoryColor->{...color}		},		teamAssignments[] {			_key,			group,			note,			role-> {				_id,				title,				order			},			members[]-> {				_id,				name,				nickname			}		}	}
+export type EventCrewQueryResult = Array<{
+	_id: string;
+	title: string | null;
+	subtitle: string | null;
+	eventDatetime: string | null;
+	dateStatus: 'confirmed' | 'postponed' | 'tba' | null;
+	location: string | null;
+	locationLink: string | null;
+	teamNotes: string | null;
+	categories: Array<{
+		_id: string;
+		title: string | null;
+		slug: string | null;
+		categoryColor:
+			| {
+					_type: 'color';
+					hex?: string;
+					alpha?: number;
+					hsl?: HslaColor;
+					hsv?: HsvaColor;
+					rgb?: RgbaColor;
+			  }
+			| {}
+			| null;
+	}> | null;
+	teamAssignments: Array<{
+		_key: string;
+		group: string | null;
+		note: string | null;
+		role: {
+			_id: string;
+			title: string | null;
+			order: number | null;
+		} | null;
+		members: Array<{
+			_id: string;
+			name: string | null;
+			nickname: string | null;
+		}> | null;
+	}>;
+}>;
 
 // Source: src/sanity/lib/queries.ts
 // Variable: pageBlogIndexQuery
@@ -2830,6 +2935,7 @@ declare module '@sanity/client' {
 		'\n  *[_type == "pGeneral" && defined(slug.current)]\n  {"slug": slug.current}\n': PageGeneralSlugsQueryResult;
 		'\n\t*[_type == "pContact"][0]{\n\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"siteTitle": *[_type == "settingsGeneral"][0].siteTitle,\n\t}\n,\n\t\tdescription,\n\t\tcontactForm {\n\t\t\tformTitle[]{\n\t\t\t\t\n\t...,\n\tmarkDefs[]{\n\t\t...,\n\t\t_type == "link" => {\n\t\t\t\n\t_type,\n\t"linkType": linkInput.linkType,\n\t"href": linkInput {\n\t\t"resolvedHref": select(\n\t\tlinkType == "external" => externalUrl,\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => "/",\n\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t_type == "pCuratedIndex" => "/curated",\n\t\t\t\t_type == "pCurated" => "/curated/" + slug.current,\n\t\t\t\t_type == "pCuratedCollection" => "/curated/collection/" + slug.current,\n\t\t\t\t_type == "pEventIndex" => "/events/",\n\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\tnull\n\t\t\t)\n\t\t}.url,\n\t\t\'\'\n\t)\n\t}.resolvedHref,\n\tisNewTab\n\n\t\t},\n\t\t_type == "callToAction" => {\n\t\t\t\n\tlabel,\n\tlink {\n\t\t\n\t_type,\n\t"linkType": linkInput.linkType,\n\t"href": linkInput {\n\t\t"resolvedHref": select(\n\t\tlinkType == "external" => externalUrl,\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => "/",\n\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t_type == "pCuratedIndex" => "/curated",\n\t\t\t\t_type == "pCurated" => "/curated/" + slug.current,\n\t\t\t\t_type == "pCuratedCollection" => "/curated/collection/" + slug.current,\n\t\t\t\t_type == "pEventIndex" => "/events/",\n\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\tnull\n\t\t\t)\n\t\t}.url,\n\t\t\'\'\n\t)\n\t}.resolvedHref,\n\tisNewTab\n\n\t},\n\t"isButton": true\n\n\t\t}\n\t},\n\t_type == "image" => {\n\t\t\n  image{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatio,\n\timageMobile{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatioMobile,\n\tcaption,\n\tlink{\n\t\t\n\t_type,\n\t"linkType": linkInput.linkType,\n\t"href": linkInput {\n\t\t"resolvedHref": select(\n\t\tlinkType == "external" => externalUrl,\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => "/",\n\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t_type == "pCuratedIndex" => "/curated",\n\t\t\t\t_type == "pCurated" => "/curated/" + slug.current,\n\t\t\t\t_type == "pCuratedCollection" => "/curated/collection/" + slug.current,\n\t\t\t\t_type == "pEventIndex" => "/events/",\n\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\tnull\n\t\t\t)\n\t\t}.url,\n\t\t\'\'\n\t)\n\t}.resolvedHref,\n\tisNewTab\n\n\t}\n,\n\t\tlink {\n\t\t\t\n\t_type,\n\t"linkType": linkInput.linkType,\n\t"href": linkInput {\n\t\t"resolvedHref": select(\n\t\tlinkType == "external" => externalUrl,\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => "/",\n\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t_type == "pCuratedIndex" => "/curated",\n\t\t\t\t_type == "pCurated" => "/curated/" + slug.current,\n\t\t\t\t_type == "pCuratedCollection" => "/curated/collection/" + slug.current,\n\t\t\t\t_type == "pEventIndex" => "/events/",\n\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\tnull\n\t\t\t)\n\t\t}.url,\n\t\t\'\'\n\t)\n\t}.resolvedHref,\n\tisNewTab\n\n\t\t}\n\t}\n\n\t\t\t},\n\t\t\tformFields[] {\n\t\t\t\t\n\tplaceholder,\n\t_key,\n\trequired,\n\tfieldLabel,\n\tfieldName,\n\tfieldWidth,\n\tinputType,\n\tselectOptions[] {\n\t\t_key,\n\t\t"title": option,\n\t\t"value": option\n\t}\n\n\t\t\t},\n\t\t\tsuccessMessage,\n\t\t\terrorMessage,\n\t\t\tsendToEmail,\n\t\t\temailSubject,\n\t\t\tformFailureNotificationEmail\n\t\t},\n\t\tlegalConsent[]{\n\t\t\t\n\t...,\n\tmarkDefs[]{\n\t\t...,\n\t\t_type == "link" => {\n\t\t\t\n\t_type,\n\t"linkType": linkInput.linkType,\n\t"href": linkInput {\n\t\t"resolvedHref": select(\n\t\tlinkType == "external" => externalUrl,\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => "/",\n\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t_type == "pCuratedIndex" => "/curated",\n\t\t\t\t_type == "pCurated" => "/curated/" + slug.current,\n\t\t\t\t_type == "pCuratedCollection" => "/curated/collection/" + slug.current,\n\t\t\t\t_type == "pEventIndex" => "/events/",\n\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\tnull\n\t\t\t)\n\t\t}.url,\n\t\t\'\'\n\t)\n\t}.resolvedHref,\n\tisNewTab\n\n\t\t},\n\t\t_type == "callToAction" => {\n\t\t\t\n\tlabel,\n\tlink {\n\t\t\n\t_type,\n\t"linkType": linkInput.linkType,\n\t"href": linkInput {\n\t\t"resolvedHref": select(\n\t\tlinkType == "external" => externalUrl,\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => "/",\n\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t_type == "pCuratedIndex" => "/curated",\n\t\t\t\t_type == "pCurated" => "/curated/" + slug.current,\n\t\t\t\t_type == "pCuratedCollection" => "/curated/collection/" + slug.current,\n\t\t\t\t_type == "pEventIndex" => "/events/",\n\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\tnull\n\t\t\t)\n\t\t}.url,\n\t\t\'\'\n\t)\n\t}.resolvedHref,\n\tisNewTab\n\n\t},\n\t"isButton": true\n\n\t\t}\n\t},\n\t_type == "image" => {\n\t\t\n  image{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatio,\n\timageMobile{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatioMobile,\n\tcaption,\n\tlink{\n\t\t\n\t_type,\n\t"linkType": linkInput.linkType,\n\t"href": linkInput {\n\t\t"resolvedHref": select(\n\t\tlinkType == "external" => externalUrl,\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => "/",\n\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t_type == "pCuratedIndex" => "/curated",\n\t\t\t\t_type == "pCurated" => "/curated/" + slug.current,\n\t\t\t\t_type == "pCuratedCollection" => "/curated/collection/" + slug.current,\n\t\t\t\t_type == "pEventIndex" => "/events/",\n\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\tnull\n\t\t\t)\n\t\t}.url,\n\t\t\'\'\n\t)\n\t}.resolvedHref,\n\tisNewTab\n\n\t}\n,\n\t\tlink {\n\t\t\t\n\t_type,\n\t"linkType": linkInput.linkType,\n\t"href": linkInput {\n\t\t"resolvedHref": select(\n\t\tlinkType == "external" => externalUrl,\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => "/",\n\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t_type == "pCuratedIndex" => "/curated",\n\t\t\t\t_type == "pCurated" => "/curated/" + slug.current,\n\t\t\t\t_type == "pCuratedCollection" => "/curated/collection/" + slug.current,\n\t\t\t\t_type == "pEventIndex" => "/events/",\n\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\tnull\n\t\t\t)\n\t\t}.url,\n\t\t\'\'\n\t)\n\t}.resolvedHref,\n\tisNewTab\n\n\t\t}\n\t}\n\n\t\t}\n\t}\n': PageContactQueryResult;
 		'\n\t*[_type == "pEvents"][0]{\n\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"siteTitle": *[_type == "settingsGeneral"][0].siteTitle,\n\t}\n,\n\t\t"eventList": *[_type == "pEvent"] | order(eventDatetime asc) {\n\t\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"siteTitle": *[_type == "settingsGeneral"][0].siteTitle,\n\t}\n,\n\t\t\tsubtitle,\n\t\t\teventDatetime,\n\t\t\tdateStatus,\n\t\t\tlocation,\n\t\t\tlocationLink,\n\t\t\tcategories[]-> {\n\t\t\t\t_id,\n\t\t\t\ttitle,\n\t\t\t\t"slug": slug.current,\n\t\t\t\tcategoryColor->{...color}\n\t\t\t},\n\t\t\tstatusList[]{\n\t\t\t\t_key,\n\t\t\t\tlink {\n\t\t\t\t\t\n\t_type,\n\t"linkType": linkInput.linkType,\n\t"href": linkInput {\n\t\t"resolvedHref": select(\n\t\tlinkType == "external" => externalUrl,\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => "/",\n\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t_type == "pCuratedIndex" => "/curated",\n\t\t\t\t_type == "pCurated" => "/curated/" + slug.current,\n\t\t\t\t_type == "pCuratedCollection" => "/curated/collection/" + slug.current,\n\t\t\t\t_type == "pEventIndex" => "/events/",\n\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\tnull\n\t\t\t)\n\t\t}.url,\n\t\t\'\'\n\t)\n\t}.resolvedHref,\n\tisNewTab\n\n\t\t\t\t},\n\t\t\t\teventStatus-> {\n\t\t\t\t\t_id,\n\t\t\t\t\ttitle,\n\t\t\t\t\t"slug": slug.current,\n\t\t\t\t\tstatusTextColor->{...color},\n\t\t\t\t\tstatusBgColor->{...color}\n\t\t\t\t}\n\t\t\t}\n\t\t},\n\t}\n': PEventsQueryResult;
+		'\n\t*[_type == "pEvent" && defined(teamAssignments)] | order(eventDatetime asc) {\n\t\t_id,\n\t\ttitle,\n\t\tsubtitle,\n\t\teventDatetime,\n\t\tdateStatus,\n\t\tlocation,\n\t\tlocationLink,\n\t\tteamNotes,\n\t\tcategories[]-> {\n\t\t\t_id,\n\t\t\ttitle,\n\t\t\t"slug": slug.current,\n\t\t\tcategoryColor->{...color}\n\t\t},\n\t\tteamAssignments[] {\n\t\t\t_key,\n\t\t\tgroup,\n\t\t\tnote,\n\t\t\trole-> {\n\t\t\t\t_id,\n\t\t\t\ttitle,\n\t\t\t\torder\n\t\t\t},\n\t\t\tmembers[]-> {\n\t\t\t\t_id,\n\t\t\t\tname,\n\t\t\t\tnickname\n\t\t\t}\n\t\t}\n\t}\n': EventCrewQueryResult;
 		'\n\t*[_type == "pBlogIndex"][0]{\n\t\t\n\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"siteTitle": *[_type == "settingsGeneral"][0].siteTitle,\n\t}\n,\n\t"slug": "blog",\n\titemsPerPage,\n\tpaginationMethod,\n\tloadMoreButtonLabel,\n\tinfiniteScrollCompleteLabel,\n\t"itemsTotalCount": count(*[_type == "pBlog"])\n\n\t}\n': PageBlogIndexQueryResult;
 		'\n\t*[_type == "pBlogIndex"][0]{\n\t\t\n\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"siteTitle": *[_type == "settingsGeneral"][0].siteTitle,\n\t}\n,\n\t"slug": "blog",\n\titemsPerPage,\n\tpaginationMethod,\n\tloadMoreButtonLabel,\n\tinfiniteScrollCompleteLabel,\n\t"itemsTotalCount": count(*[_type == "pBlog"])\n,\n\t\t\n\t"articleList": *[_type == "pBlog"] | order(_updatedAt desc) [0...12] {\n\t\t\n\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"siteTitle": *[_type == "settingsGeneral"][0].siteTitle,\n\t}\n,\n\tauthor->{name},\n\tcategories[]-> {\n\t\t_id,\n\t\ttitle,\n\t\t"slug": slug.current,\n\t\tcategoryColor->{...color}\n\t}\n, excerpt\n\t}\n\n\t}\n': PageBlogIndexWithArticleDataSSGQueryResult;
 		'\n\t{\n\t\t"articleTotalNumber": count(*[_type == "pBlog"]),\n\t\t"itemsPerPage": *[_type == "pBlogIndex"][0].itemsPerPage\n\t}': PageBlogPaginationMethodQueryResult;

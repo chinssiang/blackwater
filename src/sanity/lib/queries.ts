@@ -267,6 +267,41 @@ export const pEventsQuery = defineQuery(`
 	}
 `);
 
+export const eventCrewQuery = defineQuery(`
+	*[_type == "pEvent" && defined(teamAssignments)] | order(eventDatetime asc) {
+		_id,
+		title,
+		"sharing":{},
+		subtitle,
+		eventDatetime,
+		dateStatus,
+		location,
+		locationLink,
+		teamNotes,
+		categories[]-> {
+			_id,
+			title,
+			"slug": slug.current,
+			categoryColor->{...color}
+		},
+		teamAssignments[] {
+			_key,
+			group,
+			note,
+			role-> {
+				_id,
+				title,
+				order
+			},
+			members[]-> {
+				_id,
+				name,
+				nickname
+			}
+		}
+	}
+`);
+
 const blogPostBaseFields = `
 	${baseFields},
 	author->{name},

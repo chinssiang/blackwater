@@ -91,6 +91,91 @@ export const pEvent = defineType({
 			validation: (Rule) => Rule.unique(),
 		}),
 		defineField({
+			name: 'teamAssignments',
+			title: 'Team Assignments',
+			type: 'array',
+			of: [
+				{
+					name: 'assignment',
+					type: 'object',
+					fields: [
+						defineField({
+							name: 'role',
+							title: 'Role',
+							type: 'reference',
+							to: [{ type: 'pEventRole' }],
+							validation: (Rule) => Rule.required(),
+						}),
+						defineField({
+							name: 'group',
+							title: 'Group',
+							type: 'string',
+							description: 'Optional group letter (A, B, C, D)',
+						}),
+						defineField({
+							name: 'members',
+							title: 'Members',
+							type: 'array',
+							of: [
+								{
+									type: 'reference',
+									to: [{ type: 'gTeamMember' }],
+								},
+							],
+							validation: (Rule) => Rule.required().min(1),
+						}),
+						defineField({
+							name: 'note',
+							title: 'Note',
+							type: 'string',
+							description: 'Optional inline note, e.g. "看當天人數"',
+						}),
+					],
+					preview: {
+						select: {
+							roleTitle: 'role.title',
+							group: 'group',
+							member0: 'members.0.nickname',
+							member0Name: 'members.0.name',
+							member1: 'members.1.nickname',
+							member1Name: 'members.1.name',
+							member2: 'members.2.nickname',
+							member2Name: 'members.2.name',
+						},
+						prepare({
+							roleTitle,
+							group,
+							member0,
+							member0Name,
+							member1,
+							member1Name,
+							member2,
+							member2Name,
+						}) {
+							const title = group
+								? `${roleTitle || 'Role'} ${group} 組`
+								: roleTitle || 'Role';
+							const members = [
+								member0 || member0Name,
+								member1 || member1Name,
+								member2 || member2Name,
+							].filter(Boolean);
+							const subtitle =
+								members.length > 0 ? members.join(', ') : 'No members';
+							return { title, subtitle };
+						},
+					},
+				},
+			],
+		}),
+		defineField({
+			name: 'teamNotes',
+			title: 'Team Notes',
+			type: 'text',
+			rows: 2,
+			description: 'Event-level notes, e.g. OOO status',
+		}),
+		defineField({
 			name: 'content',
 			type: 'portableText',
 		}),

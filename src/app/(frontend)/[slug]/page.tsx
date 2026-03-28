@@ -43,7 +43,7 @@ export default async function PageSlugRoute(props: MetadataProps) {
 
 	const { data } = await getCachedPageData(params.slug);
 
-	const { sharing } = data;
+	const { sharing } = data || {};
 	if (!data || sharing.disableIndex === true) return notFound();
 
 	return <PageGeneral data={data} />;

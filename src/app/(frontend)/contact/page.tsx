@@ -18,7 +18,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Page() {
 	const { data } = await getCachedContactData();
-	const { sharing } = data;
+	const { sharing } = data || {};
 
 	if (!data || sharing.disableIndex === true) return notFound();
 

@@ -58,7 +58,7 @@ const baselTypewriter = localFont({
 
 export async function generateMetadata(): Promise<Metadata> {
 	const { data } = await getCachedSiteData();
-	const { sharing } = stegaClean(data) as typeof data;
+	const { sharing } = stegaClean(data) || ({} as typeof data);
 
 	const { siteTitle } = sharing || {};
 	const siteFavicon = sharing?.favicon || false;
