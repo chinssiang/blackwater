@@ -44,6 +44,7 @@ interface ImgProps {
 	quality?: number;
 	format?: string;
 	sizes?: string;
+	priority?: boolean;
 }
 
 function Img({
@@ -55,6 +56,7 @@ function Img({
 	quality = 80,
 	format = 'webp',
 	sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
+	priority = false,
 }: ImgProps): JSX.Element | null {
 	const [isLoaded, setIsLoaded] = useState(false);
 	const [error, setError] = useState(false);
@@ -84,7 +86,7 @@ function Img({
 	const height = width
 		? Math.round(width / (customRatio || aspectRatio || 1))
 		: undefined;
-	const imageAlt = alt || altText || 'Image';
+	const imageAlt = alt || altText || '';
 	const src =
 		buildImageSrc(image, { width, height, format: format as any, quality }) ||
 		'';
@@ -119,6 +121,7 @@ function Img({
 			fill={!width || !height ? true : undefined}
 			sizes={sizes}
 			quality={quality}
+			priority={priority}
 			alt={imageAlt}
 			blurDataURL={lqip || undefined}
 			onError={() => {

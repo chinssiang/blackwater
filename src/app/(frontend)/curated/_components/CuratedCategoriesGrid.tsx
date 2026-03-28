@@ -14,11 +14,13 @@ type Category = {
 type CuratedCategoriesGridProps = {
 	categories: Category[] | null;
 	showViewAll?: boolean;
+	priority?: boolean;
 };
 
 export default function CuratedCategoriesGrid({
 	categories,
 	showViewAll = false,
+	priority = false,
 }: CuratedCategoriesGridProps) {
 	if (!categories || categories.length === 0) return null;
 
@@ -32,7 +34,7 @@ export default function CuratedCategoriesGrid({
 			<h2 className="t-h-5 uppercase mb-6">Categories</h2>
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-				{categories.map((cat) => (
+				{categories.map((cat, index) => (
 					<div
 						key={cat._id}
 						className="relative aspect-[4/3] overflow-hidden bg-foreground/5"
@@ -42,6 +44,7 @@ export default function CuratedCategoriesGrid({
 								className="w-full h-full object-cover"
 								imageObj={cat.coverImage}
 								alt={cat.title ?? ''}
+								priority={priority && index === 0}
 							/>
 						)}
 						{/* Dark overlay */}

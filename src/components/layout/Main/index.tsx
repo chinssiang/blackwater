@@ -6,6 +6,7 @@ export function Main({ children }: { children: React.ReactNode }) {
 	const pathname = usePathname();
 	return (
 		<motion.main
+			id="main"
 			key={pathname}
 			initial="initial"
 			animate="animate"

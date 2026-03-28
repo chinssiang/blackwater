@@ -50,12 +50,12 @@ async function getPagesPaths(pageType) {
 	const getQuery = (pageType) => {
 		switch (pageType) {
 			case 'pGeneral':
-				return pageBlogSlugsQuery;
-			case 'pBlog':
 				return pageGeneralSlugsQuery;
+			case 'pBlog':
+				return pageBlogSlugsQuery;
 			default:
 				console.warn('Invalid Page Type:', pageType);
-				return pageBlogSlugsQuery;
+				return pageGeneralSlugsQuery;
 		}
 	};
 

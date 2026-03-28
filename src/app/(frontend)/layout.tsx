@@ -40,6 +40,7 @@ const fontABCDisplay = localFont({
 		},
 	],
 	variable: '--font-ABC-Display',
+	display: 'optional',
 });
 
 const baselTypewriter = localFont({
@@ -51,6 +52,7 @@ const baselTypewriter = localFont({
 		},
 	],
 	variable: '--font-basel-typewriter',
+	display: 'optional',
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -95,14 +97,16 @@ export async function generateMetadata(): Promise<Metadata> {
 						},
 					]
 				: [],
-			videos: [
-				{
-					url: shareVideoUrl,
-					width: 1200,
-					height: 630,
-					type: 'video/mp4',
-				},
-			],
+			...(shareVideoUrl && {
+				videos: [
+					{
+						url: shareVideoUrl,
+						width: 1200,
+						height: 630,
+						type: 'video/mp4',
+					},
+				],
+			}),
 			url: process.env.SITE_URL,
 			siteName: siteTitle,
 			locale: 'en_US',

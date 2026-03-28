@@ -33,10 +33,10 @@ export default function defineMetadata({ data }: Props): Metadata {
 
 	return {
 		...(isHomepage ? null : { title: metaTitle }),
-		description: metaDesc,
+		...(metaDesc && { description: metaDesc }),
 		openGraph: {
 			title: metaTitle,
-			description: metaDesc,
+			...(metaDesc && { description: metaDesc }),
 			images: shareGraphicUrl
 				? [
 						{
@@ -50,7 +50,7 @@ export default function defineMetadata({ data }: Props): Metadata {
 		twitter: {
 			card: 'summary_large_image',
 			title: metaTitle,
-			description: metaDesc,
+			...(metaDesc && { description: metaDesc }),
 			creator: siteTitle,
 			images: shareGraphicUrl ? [shareGraphicUrl] : [],
 		},

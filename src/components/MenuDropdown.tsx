@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { checkIfLinkIsActive } from '@/lib/routes';
 import { cn } from '@/lib/utils';
@@ -18,6 +18,7 @@ type MenuDropdownProps = {
 export default function MenuDropdown({ title, items }: MenuDropdownProps) {
 	const [isOpen, setIsOpen] = useState(false);
 	const pathName = usePathname();
+	const dropdownId = useId();
 
 	return (
 		<>
@@ -25,12 +26,13 @@ export default function MenuDropdown({ title, items }: MenuDropdownProps) {
 				<Button
 					className="dropdown-toggle"
 					aria-expanded={isOpen}
+					aria-controls={dropdownId}
 					onClick={() => setIsOpen(!isOpen)}
 				>
 					{title}
 				</Button>
-				<div className="dropdown-content">
-					<ul className="dropdown-nav">
+				<div id={dropdownId} className="dropdown-content">
+					<ul className="dropdown-nav" role="menu">
 						{items.map((item: MenuItem, index) => {
 							const { link, title } = item || {};
 							const isActive = checkIfLinkIsActive({
@@ -42,8 +44,9 @@ export default function MenuDropdown({ title, items }: MenuDropdownProps) {
 								<li
 									key={`li-${index}`}
 									className={cn({ 'is-active': isActive })}
+									role="none"
 								>
-									<CustomLink link={link}>{title}</CustomLink>
+									<CustomLink link={link} role="menuitem">{title}</CustomLink>
 								</li>
 							);
 						})}
@@ -55,13 +58,15 @@ export default function MenuDropdown({ title, items }: MenuDropdownProps) {
 					&.is-open {
 						.dropdown-content {
 							opacity: 1;
-							pointer-event: auto;
+							pointer-events: auto;
+							visibility: visible;
 						}
 					}
 				}
 				.dropdown-content {
 					opacity: 0;
-					pointer-event: none;
+					pointer-events: none;
+					visibility: hidden;
 				}
 				.dropdown-nav {
 					position: absolute;

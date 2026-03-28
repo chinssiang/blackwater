@@ -66,6 +66,7 @@ export default function PageCuratedSingle({ data }: Props) {
 								fill="contain"
 								imageObj={mainImage as any}
 								alt={title ?? ''}
+								priority
 							/>
 						) : (
 							<div className="w-full h-full bg-foreground" />

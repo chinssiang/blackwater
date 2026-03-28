@@ -31,7 +31,7 @@ export function PageCuratedIndex({ data }: Props) {
 			</motion.section>
 			<section className="px-contain mx-auto py-10 lg:py-17.5 bg-white text-black">
 				<div className="mb-16 lg:mb-24">
-					<CuratedCategoriesGrid categories={categories ?? null} />
+					<CuratedCategoriesGrid categories={categories ?? null} priority />
 				</div>
 				{collections &&
 					collections.map((collection, collectionIndex) => (

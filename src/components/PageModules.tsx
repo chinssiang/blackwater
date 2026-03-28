@@ -1,8 +1,6 @@
 import dynamic from 'next/dynamic';
 
-const Freeform = dynamic(() => import('./Freeform'), {
-	loading: () => <p>Loading...</p>,
-});
+const Freeform = dynamic(() => import('./Freeform'));
 
 type PageModulesProps = {
 	module: any;
