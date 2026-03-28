@@ -84,80 +84,97 @@ export function PageEventCrew({
 
 	return (
 		<div className="px-contain mx-auto min-h-[inherit] py-10 lg:py-17.5">
-			<div className="flex items-center justify-between sticky top-header bg-background/95 z-10 py-2">
-				<motion.h1
-					key={monthDisplay}
-					initial="hide"
-					animate="show"
-					variants={fadeAnim}
-					transition={{ duration: 0.6, delay: 0.3, ease: EASE_HEADER }}
-					className="t-h-5 font-bold"
-				>
-					{monthDisplay} ｜ 領跑與支援配置
-				</motion.h1>
-				{availableMonthKeys.length > 0 && (
-					<div className="flex items-center">
-						{prevHref ? (
-							<Button
-								asChild
-								variant="ghost"
-								size="sm"
-								className="uppercase t-b-2 cursor-pointer hover:opacity-60"
-							>
-								<Link href={prevHref}>
-									<ArrowLeft />
-									Previous
-								</Link>
-							</Button>
-						) : (
-							<Button
-								disabled
-								variant="ghost"
-								size="sm"
-								className="uppercase t-b-2"
-							>
-								<ArrowLeft />
-								Previous
-							</Button>
-						)}
-						/
-						{nextHref ? (
-							<Button
-								asChild
-								variant="ghost"
-								size="sm"
-								className="uppercase t-b-2 cursor-pointer hover:opacity-60"
-							>
-								<Link href={nextHref}>
+			{/* Briefing Header */}
+			<div className="sticky top-header bg-background/95 backdrop-blur-sm z-10 py-4 border-b border-white/[0.06]">
+				<div className="flex items-end justify-between gap-4">
+					<div>
+						<motion.span
+							key={`label-${monthDisplay}`}
+							initial="hide"
+							animate="show"
+							variants={fadeAnim}
+							transition={{ duration: 0.4, ease: EASE_HEADER }}
+							className="t-l-2 text-muted-foreground block mb-2"
+						>
+							CREW BRIEFING
+						</motion.span>
+						<motion.h1
+							key={monthDisplay}
+							initial="hide"
+							animate="show"
+							variants={fadeAnim}
+							transition={{ duration: 0.6, delay: 0.15, ease: EASE_HEADER }}
+							className="t-h-3 font-bold tracking-tight"
+						>
+							{monthDisplay}
+						</motion.h1>
+					</div>
+					{availableMonthKeys.length > 0 && (
+						<nav className="flex items-center gap-1 shrink-0">
+							{prevHref ? (
+								<Button
+									asChild
+									variant="ghost"
+									size="sm"
+									className="uppercase t-l-2 cursor-pointer hover:opacity-60"
+								>
+									<Link href={prevHref}>
+										<ArrowLeft className="size-3.5" />
+										Prev
+									</Link>
+								</Button>
+							) : (
+								<Button
+									disabled
+									variant="ghost"
+									size="sm"
+									className="uppercase t-l-2"
+								>
+									<ArrowLeft className="size-3.5" />
+									Prev
+								</Button>
+							)}
+							<span className="text-white/20 text-xs select-none">/</span>
+							{nextHref ? (
+								<Button
+									asChild
+									variant="ghost"
+									size="sm"
+									className="uppercase t-l-2 cursor-pointer hover:opacity-60"
+								>
+									<Link href={nextHref}>
+										Next
+										<ArrowRight className="size-3.5" />
+									</Link>
+								</Button>
+							) : (
+								<Button
+									disabled
+									variant="ghost"
+									size="sm"
+									className="uppercase t-l-2"
+								>
 									Next
 									<ArrowRight className="size-3.5" />
-								</Link>
-							</Button>
-						) : (
-							<Button
-								disabled
-								variant="ghost"
-								size="sm"
-								className="uppercase t-b-2"
-							>
-								Next
-								<ArrowRight className="size-3.5" />
-							</Button>
-						)}
-					</div>
-				)}
+								</Button>
+							)}
+						</nav>
+					)}
+				</div>
 			</div>
 
 			{hasArrayValue(events) ? (
-				<div className="mt-10 lg:mt-17.5 space-y-4">
+				<div className="mt-8 lg:mt-12 space-y-6">
 					{events.map((event, index) => (
 						<EventCard key={event._id} event={event} index={index} />
 					))}
 				</div>
 			) : (
-				<p className="py-8 text-center text-muted-foreground">
-					No crew assignments for this month
-				</p>
+				<div className="py-20 text-center">
+					<p className="t-b-1 text-muted-foreground">
+						No crew assignments for this month
+					</p>
+				</div>
 			)}
 		</div>
 	);
@@ -168,6 +185,7 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 		title,
 		eventDatetime,
 		location,
+		locationLink,
 		categories,
 		teamAssignments,
 		teamNotes,
@@ -197,59 +215,79 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 	}, [teamAssignments]);
 
 	return (
-		<motion.div
+		<motion.article
 			initial="hide"
 			animate="show"
 			variants={fadeAnim}
 			transition={{
-				duration: 1.5,
-				delay: (index + 1) * 0.1,
+				duration: 1.2,
+				delay: (index + 1) * 0.08,
 				ease: EASE_CARD,
 			}}
-			className={cn('border border-white/10 rounded-lg p-5 bg-white/[0.02]', {
-				'opacity-30': ended,
-			})}
+			className={cn(
+				'border border-white/8 rounded-lg overflow-hidden',
+				'transition-opacity duration-500',
+				{ 'opacity-25 saturate-0': ended }
+			)}
 		>
-			{/* Header */}
-			<div className="flex flex-wrap items-baseline gap-2.5 mb-4">
-				{categoryTitle && (
-					<span
-						className="text-[11px] font-bold px-2 py-0.5 rounded uppercase"
-						style={{
-							backgroundColor: categoryBg || 'var(--muted)',
-							color: categoryBg ? '#fff' : 'var(--foreground)',
-						}}
-					>
-						{categoryTitle}
-					</span>
-				)}
-				<span className="font-semibold">{title}</span>
-				{dateInfo && (
-					<span className="text-muted-foreground text-sm ml-auto">
-						{dateInfo.display}
-					</span>
-				)}
-				{location && (
-					<span className="text-muted-foreground text-sm">📍 {location}</span>
-				)}
+			<div className="px-5 py-4 lg:px-6 lg:py-5 border-b border-white/6 bg-white/2">
+				<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+					<div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+						<h2 className="t-h-5 font-bold">{title}</h2>
+						{categoryTitle && (
+							<span
+								className="t-l-2 p-2 rounded uppercase shrink-0"
+								style={{
+									backgroundColor: categoryBg || 'var(--muted)',
+									color: categoryBg ? '#fff' : 'var(--foreground)',
+								}}
+							>
+								{categoryTitle}
+							</span>
+						)}
+					</div>
+					<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 shrink-0">
+						{dateInfo && (
+							<span className="t-b-1 text-foreground tabular-nums font-medium">
+								{dateInfo.display}
+							</span>
+						)}
+						{location &&
+							(locationLink ? (
+								<a
+									href={locationLink}
+									target="_blank"
+									rel="noopener noreferrer"
+									className="t-b-2 text-muted-foreground underline underline-offset-2 decoration-white/20 hover:text-foreground hover:decoration-white/40 transition-colors"
+								>
+									{location}
+								</a>
+							) : (
+								<span className="t-b-2 text-muted-foreground">{location}</span>
+							))}
+					</div>
+				</div>
 			</div>
 
-			{/* Assignments Grid */}
+			{/* Assignments */}
 			{hasArrayValue(sortedAssignments) && (
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
-					{sortedAssignments.map((assignment) => (
-						<AssignmentCard key={assignment._key} assignment={assignment} />
-					))}
+				<div className="p-4 lg:p-5">
+					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+						{sortedAssignments.map((assignment) => (
+							<AssignmentCard key={assignment._key} assignment={assignment} />
+						))}
+					</div>
 				</div>
 			)}
 
 			{/* Team Notes */}
 			{teamNotes && (
-				<div className="mt-3 px-3 py-2 bg-white/[0.03] border border-white/10 rounded text-sm text-muted-foreground italic">
-					📝 {teamNotes}
+				<div className="mx-4 mb-4 lg:mx-5 lg:mb-5 px-4 py-3 bg-white/[0.02] border border-dashed border-white/[0.08] rounded">
+					<span className="t-l-2 text-muted-foreground block mb-1">NOTE</span>
+					<p className="t-b-1 text-muted-foreground">{teamNotes}</p>
 				</div>
 			)}
-		</motion.div>
+		</motion.article>
 	);
 }
 
@@ -262,11 +300,11 @@ function AssignmentCard({ assignment }: { assignment: Assignment }) {
 	const label = group ? `${roleTitle} ${group} 組` : roleTitle;
 
 	return (
-		<div className="bg-white/4 border border-white/10 rounded-md px-3 py-2">
-			<span className="text-[11px] font-semibold uppercase text-indigo-400 tracking-wide">
+		<div className="bg-white/3 border border-white/6 rounded-md px-3.5 py-2.5">
+			<span className="t-l-2 font-semibold uppercase text-indigo-400/90 block mb-1.5">
 				{label}
 			</span>
-			<div className="flex flex-wrap items-center gap-1.5 mt-1">
+			<div className="flex flex-wrap items-center gap-2">
 				{members?.map((member) => {
 					const name = member.nickname || member.name || 'Unknown';
 					const avatarSrc = member.avatar
@@ -278,20 +316,20 @@ function AssignmentCard({ assignment }: { assignment: Assignment }) {
 								<img
 									src={avatarSrc}
 									alt={name}
-									className="size-5 rounded-full object-cover shrink-0"
+									className="size-6 rounded-full object-cover shrink-0 ring-1 ring-white/10"
 								/>
 							) : (
-								<span className="size-5 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[9px] font-medium text-muted-foreground">
+								<span className="size-6 rounded-full bg-white/[0.08] shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted-foreground ring-1 ring-white/10">
 									{name.charAt(0)}
 								</span>
 							)}
-							<span className="text-sm">{name}</span>
+							<span className="t-b-1 font-medium">{name}</span>
 						</div>
 					);
 				})}
 			</div>
 			{note && (
-				<div className="text-xs text-muted-foreground mt-1 italic">{note}</div>
+				<p className="t-b-2 text-muted-foreground mt-1.5 italic">{note}</p>
 			)}
 		</div>
 	);
