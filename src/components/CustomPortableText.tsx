@@ -1,3 +1,4 @@
+import sanitizeHtml from 'sanitize-html';
 import { PortableText, PortableTextReactComponents } from '@portabletext/react';
 import type {
 	PortableTextBlock,
@@ -42,17 +43,30 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 			if (!embedSnippet) {
 				return null;
 			}
-			const widthMatch = embedSnippet.match(/width="\s*(\d+)"/);
-			const heightMatch = embedSnippet.match(/height="\s*(\d+)"/);
+			const sanitized = sanitizeHtml(embedSnippet, {
+				allowedTags: ['iframe'],
+				allowedAttributes: {
+					iframe: [
+						'src', 'width', 'height', 'frameborder',
+						'allow', 'allowfullscreen', 'title',
+						'loading', 'referrerpolicy',
+					],
+				},
+			});
+			if (!sanitized) {
+				return null;
+			}
+			const widthMatch = sanitized.match(/width="\s*(\d+)"/);
+			const heightMatch = sanitized.match(/height="\s*(\d+)"/);
 			const width = widthMatch?.[1];
 			const height = heightMatch?.[1];
-			const aspectRatio = width && height ? width / height : 1.77;
+			const aspectRatio = width && height ? Number(width) / Number(height) : 1.77;
 
 			return (
 				<div
 					className="relative overflow-hidden [&>iframe]:absolute [&>iframe]:inset-0 [&>iframe]:h-full [&>iframe]:w-full [&>iframe]:border-0"
-					style={{ aspectRatio: aspectRatio }}
-					dangerouslySetInnerHTML={{ __html: embedSnippet }}
+					style={{ aspectRatio }}
+					dangerouslySetInnerHTML={{ __html: sanitized }}
 				/>
 			);
 		},
