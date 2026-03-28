@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Img from '@/components/Image';
+import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { fadeAnim } from '@/lib/animate';
 
@@ -54,7 +54,7 @@ export default function CuratedProductCard({
 				{/* Image */}
 				<div className="relative aspect-square overflow-hidden bg-foreground/5 mb-0">
 					{product.mainImage ? (
-						<Img
+						<ImageBlock
 							className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
 							imageObj={product.mainImage}
 							alt={product.title ?? ''}

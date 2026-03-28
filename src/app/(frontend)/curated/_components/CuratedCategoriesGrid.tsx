@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import Img from '@/components/Image';
+import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { fadeAnim } from '@/lib/animate';
 
@@ -40,7 +40,7 @@ export default function CuratedCategoriesGrid({
 						className="relative aspect-[4/3] overflow-hidden bg-foreground/5"
 					>
 						{cat.coverImage && (
-							<Img
+							<ImageBlock
 								className="w-full h-full object-cover"
 								imageObj={cat.coverImage}
 								alt={cat.title ?? ''}

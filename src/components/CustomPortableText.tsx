@@ -7,7 +7,7 @@ import type {
 } from '@portabletext/types';
 import { cn } from '@/lib/utils';
 import CustomLink from '@/components/CustomLink';
-import Img from '@/components/Image';
+import ImageBlock from '@/components/ImageBlock';
 
 const portableTextComponents: Partial<PortableTextReactComponents> = {
 	block: {
@@ -32,11 +32,11 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 			if (link?.href) {
 				return (
 					<CustomLink link={link}>
-						<Img imageObj={value} />
+						<ImageBlock imageObj={value} />
 					</CustomLink>
 				);
 			}
-			return <Img imageObj={value} />;
+			return <ImageBlock imageObj={value} />;
 		},
 		iframe: ({ value }) => {
 			const { embedSnippet } = value;

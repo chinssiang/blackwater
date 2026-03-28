@@ -1,22 +1,15 @@
-'use client';
-
 import { cn } from '@/lib/utils';
 import { hasArrayValue } from '@/lib/utils';
 import { buildRgbaCssString } from '@/lib/image-utils';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { motion } from 'motion/react';
-import { fadeAnim } from '@/lib/animate';
-import { useMemo } from 'react';
 import { format } from 'date-fns';
 import Link from 'next/link';
 import { buildImageSrc } from '@/lib/image-utils';
 import type { EventCrewQueryResult } from 'sanity.types';
+import SanityImage from '@/components/SanityImage';
 
 type EventItem = NonNullable<EventCrewQueryResult>[number];
-
-const EASE_CARD = [0, 0.5, 0.5, 1] as const;
-const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
 
 const DAY_MAP: Record<string, string> = {
 	Sun: '日',
@@ -58,6 +51,20 @@ function keyToDisplay(key: string): string {
 	return `${year}年${Number(month) + 1}月`;
 }
 
+const DisabledPrevButton = (
+	<Button disabled variant="ghost" size="sm" className="uppercase t-l-2">
+		<ArrowLeft className="size-3.5" />
+		Prev
+	</Button>
+);
+
+const DisabledNextButton = (
+	<Button disabled variant="ghost" size="sm" className="uppercase t-l-2">
+		Next
+		<ArrowRight className="size-3.5" />
+	</Button>
+);
+
 interface PageEventCrewProps {
 	events: EventItem[];
 	activeKey: string | null;
@@ -85,29 +92,18 @@ export function PageEventCrew({
 	return (
 		<div className="px-contain mx-auto min-h-[inherit] py-10 lg:py-17.5">
 			{/* Briefing Header */}
-			<div className="sticky top-header bg-background/95 backdrop-blur-sm z-10 py-4 border-b border-white/[0.06]">
+			<div className="sticky top-header bg-background/95 backdrop-blur-sm z-10 py-4 border-b border-white/6">
 				<div className="flex items-end justify-between gap-4">
 					<div>
-						<motion.span
-							key={`label-${monthDisplay}`}
-							initial="hide"
-							animate="show"
-							variants={fadeAnim}
-							transition={{ duration: 0.4, ease: EASE_HEADER }}
-							className="t-l-2 text-muted-foreground block mb-2"
-						>
+						<span className="t-h-6 text-muted-foreground block mb-2 animate-fade-in">
 							CREW BRIEFING
-						</motion.span>
-						<motion.h1
-							key={monthDisplay}
-							initial="hide"
-							animate="show"
-							variants={fadeAnim}
-							transition={{ duration: 0.6, delay: 0.15, ease: EASE_HEADER }}
-							className="t-h-3 font-bold tracking-tight"
+						</span>
+						<h1
+							className="t-h-3 font-bold tracking-tight animate-fade-in"
+							style={{ animationDelay: '0.15s' }}
 						>
 							{monthDisplay}
-						</motion.h1>
+						</h1>
 					</div>
 					{availableMonthKeys.length > 0 && (
 						<nav className="flex items-center gap-1 shrink-0">
@@ -124,15 +120,7 @@ export function PageEventCrew({
 									</Link>
 								</Button>
 							) : (
-								<Button
-									disabled
-									variant="ghost"
-									size="sm"
-									className="uppercase t-l-2"
-								>
-									<ArrowLeft className="size-3.5" />
-									Prev
-								</Button>
+								DisabledPrevButton
 							)}
 							<span className="text-white/20 text-xs select-none">/</span>
 							{nextHref ? (
@@ -148,15 +136,7 @@ export function PageEventCrew({
 									</Link>
 								</Button>
 							) : (
-								<Button
-									disabled
-									variant="ghost"
-									size="sm"
-									className="uppercase t-l-2"
-								>
-									Next
-									<ArrowRight className="size-3.5" />
-								</Button>
+								DisabledNextButton
 							)}
 						</nav>
 					)}
@@ -183,6 +163,7 @@ export function PageEventCrew({
 function EventCard({ event, index }: { event: EventItem; index: number }) {
 	const {
 		title,
+		subtitle,
 		eventDatetime,
 		location,
 		locationLink,
@@ -202,49 +183,49 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 		? buildRgbaCssString(categoryColor)
 		: undefined;
 
-	const sortedAssignments = useMemo(() => {
-		if (!teamAssignments) return [];
-		return [...teamAssignments].sort((a, b) => {
-			const orderA = a.role?.order ?? 999;
-			const orderB = b.role?.order ?? 999;
-			if (orderA !== orderB) return orderA - orderB;
-			const groupA = a.group || '';
-			const groupB = b.group || '';
-			return groupA.localeCompare(groupB);
-		});
-	}, [teamAssignments]);
+	const sortedAssignments = teamAssignments
+		? teamAssignments.toSorted((a, b) => {
+				const orderA = a.role?.order ?? 999;
+				const orderB = b.role?.order ?? 999;
+				if (orderA !== orderB) return orderA - orderB;
+				const groupA = a.group || '';
+				const groupB = b.group || '';
+				return groupA.localeCompare(groupB);
+			})
+		: [];
 
 	return (
-		<motion.article
-			initial="hide"
-			animate="show"
-			variants={fadeAnim}
-			transition={{
-				duration: 1.2,
-				delay: (index + 1) * 0.08,
-				ease: EASE_CARD,
-			}}
+		<article
 			className={cn(
-				'border border-white/8 rounded-lg overflow-hidden',
+				'border border-white/8 rounded-lg overflow-hidden animate-fade-in',
 				'transition-opacity duration-500',
 				{ 'opacity-25 saturate-0': ended }
 			)}
+			style={{
+				animationDelay: `${(index + 1) * 0.08}s`,
+				animationDuration: '1.2s',
+				contentVisibility: 'auto',
+				containIntrinsicSize: '0 200px',
+			}}
 		>
 			<div className="px-5 py-4 lg:px-6 lg:py-5 border-b border-white/6 bg-white/2">
 				<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-					<div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
-						<h2 className="t-h-5 font-bold">{title}</h2>
-						{categoryTitle && (
-							<span
-								className="t-l-2 p-2 rounded uppercase shrink-0"
-								style={{
-									backgroundColor: categoryBg || 'var(--muted)',
-									color: categoryBg ? '#fff' : 'var(--foreground)',
-								}}
-							>
-								{categoryTitle}
-							</span>
-						)}
+					<div className="flex flex-col gap-1.5 lg:gap-2">
+						<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+							<h2 className="t-h-6 font-bold">{title}</h2>
+							{categoryTitle && (
+								<span
+									className="t-l-2 px-2 py-1 rounded uppercase shrink-0"
+									style={{
+										backgroundColor: categoryBg || 'var(--muted)',
+										color: categoryBg ? '#fff' : 'var(--foreground)',
+									}}
+								>
+									{categoryTitle}
+								</span>
+							)}
+						</div>
+						{subtitle && <p className="t-b-1">{subtitle}</p>}
 					</div>
 					<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 shrink-0">
 						{dateInfo && (
@@ -258,12 +239,12 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 									href={locationLink}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="t-b-2 text-muted-foreground underline underline-offset-2 decoration-white/20 hover:text-foreground hover:decoration-white/40 transition-colors"
+									className="t-b-1 text-muted-foreground underline underline-offset-2 decoration-white/20 hover:text-foreground hover:decoration-white/40 transition-colors"
 								>
 									{location}
 								</a>
 							) : (
-								<span className="t-b-2 text-muted-foreground">{location}</span>
+								<span className="t-b-1 text-muted-foreground">{location}</span>
 							))}
 					</div>
 				</div>
@@ -282,12 +263,12 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 
 			{/* Team Notes */}
 			{teamNotes && (
-				<div className="mx-4 mb-4 lg:mx-5 lg:mb-5 px-4 py-3 bg-white/[0.02] border border-dashed border-white/[0.08] rounded">
+				<div className="mx-4 mb-4 lg:mx-5 lg:mb-5 px-4 py-3 bg-white/2 border border-dashed border-white/8 rounded">
 					<span className="t-l-2 text-muted-foreground block mb-1">NOTE</span>
 					<p className="t-b-1 text-muted-foreground">{teamNotes}</p>
 				</div>
 			)}
-		</motion.article>
+		</article>
 	);
 }
 
@@ -301,25 +282,20 @@ function AssignmentCard({ assignment }: { assignment: Assignment }) {
 
 	return (
 		<div className="bg-white/3 border border-white/6 rounded-md px-3.5 py-2.5">
-			<span className="t-l-2 font-semibold uppercase text-indigo-400/90 block mb-1.5">
+			<span className="t-b-2 font-semibold uppercase text-indigo-400/90 block mb-2.5">
 				{label}
 			</span>
-			<div className="flex flex-wrap items-center gap-2">
+			<div className="flex flex-wrap items-center gap-4">
 				{members?.map((member) => {
 					const name = member.nickname || member.name || 'Unknown';
-					const avatarSrc = member.avatar
-						? buildImageSrc(member.avatar, { width: 48, height: 48 })
-						: '';
 					return (
 						<div key={member._id} className="flex items-center gap-1.5">
-							{avatarSrc ? (
-								<img
-									src={avatarSrc}
-									alt={name}
-									className="size-6 rounded-full object-cover shrink-0 ring-1 ring-white/10"
-								/>
+							{member.avatar ? (
+								<div className="size-6 rounded-full overflow-hidden shrink-0 ring-1 ring-white/10 relative">
+									<SanityImage image={member.avatar} />
+								</div>
 							) : (
-								<span className="size-6 rounded-full bg-white/[0.08] shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted-foreground ring-1 ring-white/10">
+								<span className="size-6 rounded-full bg-white/8 shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted-foreground ring-1 ring-white/10">
 									{name.charAt(0)}
 								</span>
 							)}
@@ -328,9 +304,7 @@ function AssignmentCard({ assignment }: { assignment: Assignment }) {
 					);
 				})}
 			</div>
-			{note && (
-				<p className="t-b-2 text-muted-foreground mt-1.5 italic">{note}</p>
-			)}
+			{note && <p className="t-b-2 text-muted-foreground mt-3">{note}</p>}
 		</div>
 	);
 }

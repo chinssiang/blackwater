@@ -8,6 +8,7 @@ export default function customImage({
 	hasCaptionOption = true,
 	hasCropOption = false,
 	hasLinkOption = false,
+	options = {},
 	...props
 } = {}) {
 	const crops = [
@@ -17,12 +18,12 @@ export default function customImage({
 		{ title: '16 : 9', value: 1.7777777778 },
 	];
 
-	return {
+	return defineField({
 		title: title || '',
 		name: name,
 		type: 'object',
 		icon: ImageIcon,
-		options: { collapsible: true, collapsed: false },
+		options: { collapsible: true, collapsed: false, ...options },
 		fields: [
 			defineField({
 				title: `Image${hasMobileOption ? ' (Desktop)' : ''}`,
@@ -104,5 +105,5 @@ export default function customImage({
 			},
 		},
 		...props,
-	};
+	});
 }

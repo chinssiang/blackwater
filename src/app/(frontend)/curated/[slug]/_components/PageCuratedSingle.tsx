@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import Img from '@/components/Image';
+import ImageBlock from '@/components/ImageBlock';
 import CustomPortableText from '@/components/CustomPortableText';
 import { fadeAnim } from '@/lib/animate';
 import { motion } from 'motion/react';
@@ -62,7 +62,7 @@ export default function PageCuratedSingle({ data }: Props) {
 						}}
 					>
 						{mainImage ? (
-							<Img
+							<ImageBlock
 								fill="contain"
 								imageObj={mainImage as any}
 								alt={title ?? ''}

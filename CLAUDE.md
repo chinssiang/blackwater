@@ -72,7 +72,8 @@ The `[slug]` catch-all route handles `pGeneral` document type pages. Events (`/e
 
 ### Key Shared Components
 
-- `<Img>` (`src/components/Image.tsx`) — Lazy-loading image with LQIP placeholder, viewport-width-aware sizing, responsive image support. Always use this instead of `next/image` directly for Sanity images.
+- `<SanityImage>` (`src/components/SanityImage.tsx`) — Renders a single Sanity image with LQIP placeholder and metadata-driven sizing. Use for individual Sanity images.
+- `<ImageBlock>` (`src/components/ImageBlock.tsx`) — Block-level image component with responsive mobile/desktop images, custom aspect ratios, and captions. Uses `<SanityImage>` internally. Use for image blocks from Sanity page modules.
 - `<CustomPortableText>` — Renders Sanity Portable Text blocks with custom components for headings, links, CTAs, images, and iframes.
 - `<CustomLink>` — Handles internal/external links from Sanity `link` objects.
 - `src/components/ui/` — shadcn/ui-style components (Button, Input, Select, etc.) built on Radix UI.
