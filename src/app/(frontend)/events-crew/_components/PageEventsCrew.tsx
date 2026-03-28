@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/Button';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { fadeAnim } from '@/lib/animate';
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { format } from 'date-fns';
-import { zhTW } from 'date-fns/locale';
+import Link from 'next/link';
+import { buildImageSrc } from '@/lib/image-utils';
 import type { EventCrewQueryResult } from 'sanity.types';
 
 type EventItem = NonNullable<EventCrewQueryResult>[number];
@@ -34,7 +35,10 @@ function formatEventDate(datetime: string) {
 	const dayOfWeek = format(date, 'EEE');
 	const zhDay = DAY_MAP[dayOfWeek] || dayOfWeek;
 	const time = format(date, 'HH:mm');
-	return { display: `${month}/${String(day).padStart(2, '0')}（${zhDay}）${time}`, date };
+	return {
+		display: `${month}/${String(day).padStart(2, '0')}（${zhDay}）${time}`,
+		date,
+	};
 }
 
 function isEventEnded(eventDatetime: string | null | undefined): boolean {
@@ -44,71 +48,39 @@ function isEventEnded(eventDatetime: string | null | undefined): boolean {
 	return eventDateEndOfDay < new Date();
 }
 
-interface PageEventCrewProps {
-	groupedEvents: Record<string, EventItem[]>;
+function keyToMonthParam(key: string): string {
+	const [year, month] = key.split('_');
+	return `${year}-${String(Number(month) + 1).padStart(2, '0')}`;
 }
 
-export function PageEventCrew({ groupedEvents }: PageEventCrewProps) {
-	const currentDate = new Date();
-	const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
-	const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
+function keyToDisplay(key: string): string {
+	const [year, month] = key.split('_');
+	return `${year}年${Number(month) + 1}月`;
+}
 
-	const availableMonths = useMemo(() => {
-		if (!groupedEvents) return [];
+interface PageEventCrewProps {
+	events: EventItem[];
+	activeKey: string | null;
+	availableMonthKeys: string[];
+}
 
-		return Object.keys(groupedEvents)
-			.map((key) => {
-				const events = groupedEvents[key];
-				const firstEvent = events?.[0];
-				if (!firstEvent?.eventDatetime) return null;
+export function PageEventCrew({
+	events,
+	activeKey,
+	availableMonthKeys,
+}: PageEventCrewProps) {
+	const currentIndex = activeKey ? availableMonthKeys.indexOf(activeKey) : -1;
+	const hasPrevious = currentIndex > 0;
+	const hasNext = currentIndex < availableMonthKeys.length - 1;
 
-				const date = new Date(firstEvent.eventDatetime);
-				return {
-					key,
-					month: date.getMonth(),
-					year: date.getFullYear(),
-					date,
-					events,
-				};
-			})
-			.filter((item): item is NonNullable<typeof item> => item !== null)
-			.sort((a, b) => a.date.getTime() - b.date.getTime());
-	}, [groupedEvents]);
+	const prevHref = hasPrevious
+		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex - 1])}`
+		: null;
+	const nextHref = hasNext
+		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex + 1])}`
+		: null;
 
-	const currentMonthIndex = useMemo(() => {
-		const index = availableMonths.findIndex(
-			(m) => m.month === currentMonth && m.year === currentYear
-		);
-		return index >= 0 ? index : 0;
-	}, [availableMonths, currentMonth, currentYear]);
-
-	const currentMonthData = availableMonths[currentMonthIndex];
-	const displayEvents = currentMonthData?.events || [];
-
-	const goToPreviousMonth = () => {
-		if (currentMonthIndex > 0) {
-			const prev = availableMonths[currentMonthIndex - 1];
-			if (!prev) return;
-			setCurrentMonth(prev.month);
-			setCurrentYear(prev.year);
-		}
-	};
-
-	const goToNextMonth = () => {
-		if (currentMonthIndex < availableMonths.length - 1) {
-			const next = availableMonths[currentMonthIndex + 1];
-			if (!next) return;
-			setCurrentMonth(next.month);
-			setCurrentYear(next.year);
-		}
-	};
-
-	const hasPrevious = currentMonthIndex > 0;
-	const hasNext = currentMonthIndex < availableMonths.length - 1;
-
-	const monthDisplay = currentMonthData
-		? `${currentMonthData.year}年${currentMonthData.month + 1}月`
-		: '';
+	const monthDisplay = activeKey ? keyToDisplay(activeKey) : '';
 
 	return (
 		<div className="px-contain mx-auto min-h-[inherit] py-10 lg:py-17.5">
@@ -123,43 +95,63 @@ export function PageEventCrew({ groupedEvents }: PageEventCrewProps) {
 				>
 					{monthDisplay} ｜ 領跑與支援配置
 				</motion.h1>
-				{availableMonths.length > 0 && (
+				{availableMonthKeys.length > 0 && (
 					<div className="flex items-center">
-						<Button
-							onClick={goToPreviousMonth}
-							disabled={!hasPrevious}
-							aria-label="Previous month"
-							variant="ghost"
-							size="sm"
-							className="uppercase t-b-2 cursor-pointer hover:opacity-60"
-						>
-							<ArrowLeft />
-							Previous
-						</Button>
+						{prevHref ? (
+							<Button
+								asChild
+								variant="ghost"
+								size="sm"
+								className="uppercase t-b-2 cursor-pointer hover:opacity-60"
+							>
+								<Link href={prevHref}>
+									<ArrowLeft />
+									Previous
+								</Link>
+							</Button>
+						) : (
+							<Button
+								disabled
+								variant="ghost"
+								size="sm"
+								className="uppercase t-b-2"
+							>
+								<ArrowLeft />
+								Previous
+							</Button>
+						)}
 						/
-						<Button
-							onClick={goToNextMonth}
-							disabled={!hasNext}
-							aria-label="Next month"
-							variant="ghost"
-							size="sm"
-							className="uppercase t-b-2 cursor-pointer hover:opacity-60"
-						>
-							Next
-							<ArrowRight className="size-3.5" />
-						</Button>
+						{nextHref ? (
+							<Button
+								asChild
+								variant="ghost"
+								size="sm"
+								className="uppercase t-b-2 cursor-pointer hover:opacity-60"
+							>
+								<Link href={nextHref}>
+									Next
+									<ArrowRight className="size-3.5" />
+								</Link>
+							</Button>
+						) : (
+							<Button
+								disabled
+								variant="ghost"
+								size="sm"
+								className="uppercase t-b-2"
+							>
+								Next
+								<ArrowRight className="size-3.5" />
+							</Button>
+						)}
 					</div>
 				)}
 			</div>
 
-			{hasArrayValue(displayEvents) ? (
+			{hasArrayValue(events) ? (
 				<div className="mt-10 lg:mt-17.5 space-y-4">
-					{displayEvents.map((event, index) => (
-						<EventCard
-							key={event._id}
-							event={event}
-							index={index}
-						/>
+					{events.map((event, index) => (
+						<EventCard key={event._id} event={event} index={index} />
 					))}
 				</div>
 			) : (
@@ -214,10 +206,9 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 				delay: (index + 1) * 0.1,
 				ease: EASE_CARD,
 			}}
-			className={cn(
-				'border border-white/10 rounded-lg p-5 bg-white/[0.02]',
-				{ 'opacity-30': ended }
-			)}
+			className={cn('border border-white/10 rounded-lg p-5 bg-white/[0.02]', {
+				'opacity-30': ended,
+			})}
 		>
 			{/* Header */}
 			<div className="flex flex-wrap items-baseline gap-2.5 mb-4">
@@ -239,9 +230,7 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 					</span>
 				)}
 				{location && (
-					<span className="text-muted-foreground text-sm">
-						📍 {location}
-					</span>
+					<span className="text-muted-foreground text-sm">📍 {location}</span>
 				)}
 			</div>
 
@@ -249,10 +238,7 @@ function EventCard({ event, index }: { event: EventItem; index: number }) {
 			{hasArrayValue(sortedAssignments) && (
 				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
 					{sortedAssignments.map((assignment) => (
-						<AssignmentCard
-							key={assignment._key}
-							assignment={assignment}
-						/>
+						<AssignmentCard key={assignment._key} assignment={assignment} />
 					))}
 				</div>
 			)}
@@ -275,22 +261,37 @@ function AssignmentCard({ assignment }: { assignment: Assignment }) {
 	const roleTitle = role?.title || 'Role';
 	const label = group ? `${roleTitle} ${group} 組` : roleTitle;
 
-	const memberNames = members
-		?.map((m) => m.nickname || m.name || 'Unknown')
-		.join(', ');
-
 	return (
-		<div className="bg-white/[0.04] border border-white/10 rounded-md px-3 py-2">
+		<div className="bg-white/4 border border-white/10 rounded-md px-3 py-2">
 			<span className="text-[11px] font-semibold uppercase text-indigo-400 tracking-wide">
 				{label}
 			</span>
-			<div className="text-sm mt-0.5">
-				{memberNames}
+			<div className="flex flex-wrap items-center gap-1.5 mt-1">
+				{members?.map((member) => {
+					const name = member.nickname || member.name || 'Unknown';
+					const avatarSrc = member.avatar
+						? buildImageSrc(member.avatar, { width: 48, height: 48 })
+						: '';
+					return (
+						<div key={member._id} className="flex items-center gap-1.5">
+							{avatarSrc ? (
+								<img
+									src={avatarSrc}
+									alt={name}
+									className="size-5 rounded-full object-cover shrink-0"
+								/>
+							) : (
+								<span className="size-5 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[9px] font-medium text-muted-foreground">
+									{name.charAt(0)}
+								</span>
+							)}
+							<span className="text-sm">{name}</span>
+						</div>
+					);
+				})}
 			</div>
 			{note && (
-				<div className="text-xs text-muted-foreground mt-1 italic">
-					{note}
-				</div>
+				<div className="text-xs text-muted-foreground mt-1 italic">{note}</div>
 			)}
 		</div>
 	);

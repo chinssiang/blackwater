@@ -296,7 +296,8 @@ export const eventCrewQuery = defineQuery(`
 			members[]-> {
 				_id,
 				name,
-				nickname
+				nickname,
+				avatar
 			}
 		}
 	}
