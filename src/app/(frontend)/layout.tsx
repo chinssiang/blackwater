@@ -14,6 +14,7 @@ import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
 import DraftModeToast from '@/components/DraftModeToast';
 import { Layout } from '@/components/layout';
 import HeadTrackingCode from '@/components/layout/HeadTrackingCode';
+import JsonLd from '@/components/JsonLd';
 import { Toaster } from 'sonner';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -40,7 +41,7 @@ const fontABCDisplay = localFont({
 		},
 	],
 	variable: '--font-ABC-Display',
-	display: 'optional',
+	display: 'swap',
 });
 
 const baselTypewriter = localFont({
@@ -52,7 +53,7 @@ const baselTypewriter = localFont({
 		},
 	],
 	variable: '--font-basel-typewriter',
-	display: 'optional',
+	display: 'swap',
 });
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -134,6 +135,8 @@ export default async function RootLayout({
 }>) {
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
 	const { data } = await getCachedSiteData();
+	const siteTitle = (data as any)?.sharing?.siteTitle;
+	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 
 	return (
 		<ReactQueryProvider>
@@ -148,7 +151,18 @@ export default async function RootLayout({
 						content="text/html;charset=utf-8"
 					/>
 					<meta httpEquiv="X-UA-Compatible" content="IE=edge" />
+					<link rel="preconnect" href="https://cdn.sanity.io" />
 					<HeadTrackingCode siteData={data} />
+					{siteTitle && (
+						<JsonLd
+							data={{
+								'@context': 'https://schema.org',
+								'@type': 'Organization',
+								name: siteTitle,
+								url: siteUrl,
+							}}
+						/>
+					)}
 				</head>
 
 				<body className="antialiased">

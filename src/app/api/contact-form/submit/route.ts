@@ -19,10 +19,15 @@ export async function POST(req: NextRequest) {
 				pass: authPassword,
 			},
 		});
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		const replyTo =
+			formData?.email && emailRegex.test(formData.email)
+				? formData.email
+				: sendToEmail;
 		const mailOptions = {
 			from: `"${emailFrom}" <${authUser}>`,
 			to: sendToEmail,
-			replyTo: formData?.email || sendToEmail,
+			replyTo,
 			subject: `${emailSubject}${formData?.name && ` [${formData.name}]`}`,
 			html: formatObjectToHtml(formData),
 		};

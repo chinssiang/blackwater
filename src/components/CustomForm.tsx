@@ -268,7 +268,7 @@ const FormItem: React.FC<FormItemProps> = ({ form, field }) => {
 			control={form.control}
 			render={({ field: controllerField, fieldState }) => {
 				const isInvalid = fieldState.invalid;
-				const id = (field.fieldName ?? '') + '-' + field._key;
+				const id = (field.fieldName ?? field._key) + '-' + field._key;
 				return (
 					<Field
 						orientation="horizontal"
@@ -390,7 +390,9 @@ export function CustomForm({
 
 			setFormState(FORM_STATES.SUCCESS);
 		} catch (error) {
-			console.error('Form submission error:', error);
+			if (process.env.NODE_ENV !== 'production') {
+				console.error('Form submission error:', error);
+			}
 			setFormState(FORM_STATES.ERROR);
 			sendErrorNotificationEmail({
 				emailTo: formFailureNotificationEmail || '',
@@ -544,7 +546,9 @@ async function sendErrorNotificationEmail({
 
 			return true;
 		} catch (error) {
-			console.error(`Email sending failed for ${apiUrl}:`, error);
+			if (process.env.NODE_ENV !== 'production') {
+				console.error(`Email sending failed for ${apiUrl}:`, error);
+			}
 			return false;
 		} finally {
 			clearTimeout(timeout);

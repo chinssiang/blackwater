@@ -54,7 +54,15 @@ export default function CustomLink({
 
 		if (event.defaultPrevented) return;
 
-		if (document.startViewTransition && !isOpenNewTab && !hasPressedKeys) {
+		const prefersReducedMotion = window.matchMedia(
+			'(prefers-reduced-motion: reduce)'
+		).matches;
+		if (
+			document.startViewTransition &&
+			!isOpenNewTab &&
+			!hasPressedKeys &&
+			!prefersReducedMotion
+		) {
 			event.preventDefault();
 			document.startViewTransition(() => {
 				router.push(href);

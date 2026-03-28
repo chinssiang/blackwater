@@ -12,7 +12,15 @@ interface PageContactData {
 			_key: string;
 			required: boolean | null;
 			fieldLabel: string | null;
-			inputType: 'checkbox' | 'email' | 'file' | 'select' | 'tel' | 'text' | 'textarea' | null;
+			inputType:
+				| 'checkbox'
+				| 'email'
+				| 'file'
+				| 'select'
+				| 'tel'
+				| 'text'
+				| 'textarea'
+				| null;
 			fieldName: string | null;
 			fieldWidth: 'full' | 'half' | null;
 			selectOptions: Array<{
@@ -43,7 +51,7 @@ export function PageContact({ data }: PageContactProps) {
 				{title && <h1 className="t-h-5 uppercase">{title}</h1>}
 				{description && <p>{description}</p>}
 			</div>
-			<div className="md:flex-1 flex flex-col lg:mt-25.5">
+			<div className="md:flex-1 flex flex-col">
 				<div className="max-w-md">
 					<CustomForm
 						id="page-contact-form"

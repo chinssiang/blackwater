@@ -87,6 +87,9 @@ function Img({
 		? Math.round(width / (customRatio || aspectRatio || 1))
 		: undefined;
 	const imageAlt = alt || altText || '';
+	if (process.env.NODE_ENV === 'development' && !imageAlt) {
+		console.warn('[Img] Missing alt text for image:', src);
+	}
 	const src =
 		buildImageSrc(image, { width, height, format: format as any, quality }) ||
 		'';
