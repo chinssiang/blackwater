@@ -1,6 +1,7 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
 import { cache } from 'react';
+import { stegaClean } from '@sanity/client/stega';
 import { VisualEditing } from 'next-sanity/visual-editing';
 import localFont from 'next/font/local';
 import { draftMode } from 'next/headers';
@@ -26,8 +27,8 @@ const SITE_DATA_TAGS = [
 	'settingsBrandColors',
 ] as const;
 
-const getCachedSiteData = cache((stega: boolean) =>
-	sanityFetch({ query: siteDataQuery, tags: [...SITE_DATA_TAGS], stega })
+const getCachedSiteData = cache(() =>
+	sanityFetch({ query: siteDataQuery, tags: [...SITE_DATA_TAGS] })
 );
 
 const fontABCDisplay = localFont({
@@ -53,9 +54,8 @@ const baselTypewriter = localFont({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-	const {
-		data: { sharing },
-	} = await getCachedSiteData(false);
+	const { data } = await getCachedSiteData();
+	const { sharing } = stegaClean(data) as typeof data;
 
 	const { siteTitle } = sharing || {};
 	const siteFavicon = sharing?.favicon || false;
@@ -129,7 +129,7 @@ export default async function RootLayout({
 	children: React.ReactNode;
 }>) {
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
-	const { data } = await getCachedSiteData(true);
+	const { data } = await getCachedSiteData();
 
 	return (
 		<ReactQueryProvider>

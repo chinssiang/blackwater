@@ -1,6 +1,39 @@
 'use client';
 import { cn } from '@/lib/utils';
 import { useState, useMemo } from 'react';
+
+const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
+const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
+
+function isEventEnded(
+	eventDatetime: string | null | undefined,
+	currentDate: Date
+): boolean {
+	if (!eventDatetime) return false;
+	const eventDateEndOfDay = new Date(eventDatetime);
+	eventDateEndOfDay.setHours(23, 59, 59, 999);
+	return eventDateEndOfDay < currentDate;
+}
+
+function getDaysUntilEvent(
+	eventDatetime: string | null | undefined,
+	currentDate: Date
+): number | null {
+	if (!eventDatetime) return null;
+	const eventDateStartOfDay = new Date(eventDatetime);
+	eventDateStartOfDay.setHours(0, 0, 0, 0);
+
+	const today = new Date(currentDate);
+	today.setHours(0, 0, 0, 0);
+
+	const diffTime = eventDateStartOfDay.getTime() - today.getTime();
+	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+	if (diffDays >= 0 && diffDays <= 3) {
+		return diffDays;
+	}
+	return null;
+}
 import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
 import { format } from 'date-fns';
@@ -26,35 +59,6 @@ export function PageEvents({ data }: PageEventsProps) {
 	const currentDate = new Date();
 	const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
 	const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
-
-	const isEventEnded = (eventDatetime: string | null | undefined) => {
-		if (!eventDatetime) return false;
-		const eventDate = new Date(eventDatetime);
-		// Compare dates by setting time to end of day for the event date
-		const eventDateEndOfDay = new Date(eventDate);
-		eventDateEndOfDay.setHours(23, 59, 59, 999);
-		return eventDateEndOfDay < currentDate;
-	};
-
-	// Helper function to get days until event (returns null if event has passed or is more than 3 days away)
-	const getDaysUntilEvent = (eventDatetime: string | null | undefined) => {
-		if (!eventDatetime) return null;
-		const eventDate = new Date(eventDatetime);
-		const eventDateStartOfDay = new Date(eventDate);
-		eventDateStartOfDay.setHours(0, 0, 0, 0);
-
-		const today = new Date(currentDate);
-		today.setHours(0, 0, 0, 0);
-
-		const diffTime = eventDateStartOfDay.getTime() - today.getTime();
-		const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-		// Only return days if event is in the future and within 3 days
-		if (diffDays >= 0 && diffDays <= 3) {
-			return diffDays;
-		}
-		return null;
-	};
 
 	const availableMonths = useMemo(() => {
 		if (!groupedEvents) return [];
@@ -139,7 +143,7 @@ export function PageEvents({ data }: PageEventsProps) {
 					transition={{
 						duration: 0.6,
 						delay: 0.3,
-						ease: [0, 0.71, 0.2, 1.01],
+						ease: EASE_HEADER,
 					}}
 					className="t-h-5 uppercase"
 				>
@@ -215,8 +219,8 @@ export function PageEvents({ data }: PageEventsProps) {
 							locationLink,
 						} = item || {};
 
-						const eventHasEnded = isEventEnded(eventDatetime);
-						const daysUntil = getDaysUntilEvent(eventDatetime);
+						const eventHasEnded = isEventEnded(eventDatetime, currentDate);
+						const daysUntil = getDaysUntilEvent(eventDatetime, currentDate);
 
 						return (
 							<motion.div
@@ -234,7 +238,7 @@ export function PageEvents({ data }: PageEventsProps) {
 								transition={{
 									duration: 2,
 									delay: (index + 1) * 0.12,
-									ease: [0, 0.5, 0.5, 1],
+									ease: EASE_EVENT_ROW,
 								}}
 							>
 								<Td
@@ -372,7 +376,7 @@ function Th({
 			transition={{
 				duration: 0.6,
 				delay: 0.3,
-				ease: [0, 0.5, 0.5, 1],
+				ease: EASE_EVENT_ROW,
 			}}
 			className={cn('font-bold lg:px-2', className)}
 			{...props}

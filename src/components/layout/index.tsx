@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import * as gtag from '@/lib/gtag';
 import AdaSkip from './AdaSkip';
@@ -25,15 +25,15 @@ export function Layout({ children, siteData }: LayoutProps) {
 		}
 	}, [gaID, pathname]);
 
-	const headerData = {
-		...header,
-		siteTitle: sharing?.siteTitle,
-	};
+	const headerData = useMemo(
+		() => ({ ...header, siteTitle: sharing?.siteTitle }),
+		[header, sharing?.siteTitle]
+	);
 
-	const footerData = {
-		...footer,
-		siteTitle: sharing?.siteTitle,
-	};
+	const footerData = useMemo(
+		() => ({ ...footer, siteTitle: sharing?.siteTitle }),
+		[footer, sharing?.siteTitle]
+	);
 
 	return (
 		<LazyMotion features={domAnimation}>
