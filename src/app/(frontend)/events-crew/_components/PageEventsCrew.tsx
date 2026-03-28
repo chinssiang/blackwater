@@ -231,15 +231,20 @@ export function PageEventCrew({
 											setSelectedMemberId(isActive ? null : member._id)
 										}
 										className={cn(
-											'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm transition-all cursor-pointer hover:scale-110 transition-transform',
+											'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm transition-all cursor-pointer hover:scale-110',
 											isActive
 												? 'bg-white/15 text-foreground ring-1 ring-white/20'
 												: 'bg-white/4 text-muted-foreground hover:bg-white/8 hover:text-foreground'
 										)}
 									>
 										{member.avatar ? (
-											<div className="size-4 rounded-full overflow-hidden shrink-0 relative">
-												<SanityImage image={member.avatar} />
+											<div className="size-4 aspect-square rounded-full overflow-hidden shrink-0 relative">
+												<SanityImage
+													image={member.avatar}
+													className="object-cover"
+													fill
+													sizes="16px"
+												/>
 											</div>
 										) : (
 											<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[8px] font-semibold">
@@ -446,25 +451,43 @@ function AssignmentCard({
 					return (
 						<div
 							key={member._id}
-							className={cn('flex items-center gap-1.5 transition-opacity', {
-								'opacity-30': isDimmed,
-							})}
+							data-comp="crew-person"
+							className={cn(
+								'group/person relative flex items-center gap-1.5 transition-opacity',
+								{ 'opacity-30': isDimmed }
+							)}
 						>
 							{member.avatar ? (
-								<div
-									className={cn(
-										'size-6 rounded-full overflow-hidden shrink-0 relative',
-										isHighlighted
-											? 'ring-2 ring-indigo-400'
-											: 'ring-1 ring-white/10'
-									)}
-								>
-									<SanityImage image={member.avatar} />
-								</div>
+								<>
+									<div
+										className={cn(
+											'size-6 aspect-square rounded-full overflow-hidden shrink-0 relative',
+											isHighlighted
+												? 'ring-2 ring-indigo-400'
+												: 'ring-1 ring-white/10'
+										)}
+									>
+										<SanityImage
+											image={member.avatar}
+											className="object-cover"
+											fill
+											sizes="24px"
+										/>
+									</div>
+									{/* Hover enlarged avatar */}
+									<div className="size-20 pointer-events-none absolute bottom-full left-0 mb-2 z-20 opacity-0 scale-75 origin-bottom-left transition-all duration-200 ease-out group-hover/person:opacity-100 group-hover/person:scale-100 rounded-full overflow-hidden">
+										<SanityImage
+											image={member.avatar}
+											className="object-cover"
+											fill
+											sizes="80px"
+										/>
+									</div>
+								</>
 							) : (
 								<span
 									className={cn(
-										'size-6 rounded-full bg-white/8 shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted-foreground',
+										'size-6 aspect-square rounded-full bg-white/8 shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted-foreground',
 										isHighlighted
 											? 'ring-2 ring-indigo-400'
 											: 'ring-1 ring-white/10'
