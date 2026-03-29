@@ -311,11 +311,17 @@ export function PageEventCrew({
 				)}
 			</div>
 			{hasArrayValue(filteredEvents) ? (
-				<div className="p-x-max mt-8 lg:mt-12 space-y-6">
+				<div className="p-x-max mt-8 space-y-6">
 					{selectedMember && (
-						<p className="t-b-2 text-muted-foreground">
-							{selectedMember.nickname || selectedMember.name} is assigned to{' '}
-							{filteredEvents.length} event
+						<p className="t-b-1 text-muted-foreground">
+							<span className="font-bold text-foreground">
+								{selectedMember.nickname || selectedMember.name}
+							</span>{' '}
+							is assigned to{' '}
+							<span className="font-bold text-foreground">
+								{filteredEvents.length}
+							</span>{' '}
+							event
 							{filteredEvents.length !== 1 ? 's' : ''} this month
 						</p>
 					)}
