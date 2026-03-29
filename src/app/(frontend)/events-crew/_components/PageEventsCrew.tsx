@@ -143,7 +143,7 @@ export function PageEventCrew({
 				return;
 			}
 			setScrolled((prev) => {
-				if (prev) return window.scrollY > 20;
+				if (prev) return window.scrollY > 10;
 				return window.scrollY > 60;
 			});
 		};
@@ -196,7 +196,7 @@ export function PageEventCrew({
 				)}
 			>
 				<div className="flex items-end justify-between gap-4 p-x-max">
-					<div className="space-y-3">
+					<div className="space-y-2">
 						<span
 							className={cn(
 								'uppercase text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
