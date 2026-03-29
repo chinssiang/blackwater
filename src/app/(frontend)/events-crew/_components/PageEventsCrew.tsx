@@ -311,7 +311,7 @@ export function PageEventCrew({
 				)}
 			</div>
 			{hasArrayValue(filteredEvents) ? (
-				<div className="p-x-max mt-8 space-y-6">
+				<div className="p-x-max py-8 space-y-6">
 					{selectedMember && (
 						<p className="t-b-1 text-muted-foreground">
 							<span className="font-bold text-foreground">
