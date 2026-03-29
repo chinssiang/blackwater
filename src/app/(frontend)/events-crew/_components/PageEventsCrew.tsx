@@ -199,7 +199,7 @@ export function PageEventCrew({
 					<div className="space-y-3">
 						<span
 							className={cn(
-								'text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
+								'uppercase text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
 								scrolled ? 't-h-6' : 't-h-5'
 							)}
 						>
