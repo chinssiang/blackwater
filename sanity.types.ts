@@ -635,6 +635,7 @@ export type GTeamMember = {
 	_updatedAt: string;
 	_rev: string;
 	name?: string;
+	slug?: Slug;
 	nickname?: string;
 	avatar?: {
 		asset?: SanityImageAssetReference;

@@ -148,7 +148,7 @@ export function PageEventCrew({
 				return;
 			}
 			setScrolled((prev) => {
-				if (prev) return window.scrollY > 20;
+				if (prev) return window.scrollY > 10;
 				return window.scrollY > 60;
 			});
 		};
@@ -196,10 +196,10 @@ export function PageEventCrew({
 				)}
 			>
 				<div className="flex items-end justify-between gap-4 p-x-max">
-					<div className="space-y-3">
+					<div className="space-y-2">
 						<span
 							className={cn(
-								'text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
+								'uppercase text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
 								scrolled ? 't-h-6' : 't-h-5'
 							)}
 						>
@@ -284,7 +284,8 @@ export function PageEventCrew({
 														image={member.avatar}
 														className="object-cover"
 														fill
-														sizes="16px"
+														alt={displayName}
+														sizes="120px"
 													/>
 												</div>
 											) : (
@@ -518,7 +519,7 @@ function AssignmentCard({
 											className="object-cover"
 											alt={member.nickname || 'member avatar'}
 											fill
-											sizes="24px"
+											sizes="120px"
 										/>
 									</div>
 									{/* Hover enlarged avatar */}
@@ -527,8 +528,8 @@ function AssignmentCard({
 											image={member.avatar}
 											className="object-cover"
 											fill
-											sizes="80px"
 											alt={member.nickname || 'member avatar'}
+											sizes="240px"
 										/>
 									</div>
 								</>

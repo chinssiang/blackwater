@@ -1,31 +1,24 @@
 import { apiVersion } from '@/sanity/env';
-import {
-	BookIcon,
-	CalendarIcon,
-	TagIcon,
-	TagsIcon,
-	UserIcon,
-	UsersIcon,
-} from '@sanity/icons';
+import { BookIcon, CalendarIcon, TagsIcon, UserIcon } from '@sanity/icons';
 import { client } from '@/sanity/lib/client';
 
 export const pageEventCategory = (S) => {
 	return S.listItem()
-		.title('Categories')
+		.title('Events Categories')
 		.child(S.documentTypeList('pEventCategory').title('Categories'))
 		.icon(TagsIcon);
 };
 
 export const pageEventStatus = (S) => {
 	return S.listItem()
-		.title('Status')
+		.title('Events Status')
 		.child(S.documentTypeList('pEventStatus').title('Status'))
 		.icon(UserIcon);
 };
 
 export const pageEventGroupByDate = (S) => {
 	return S.listItem()
-		.title('By Month/Year')
+		.title('Events by Month/Year')
 		.child(async () => {
 			const events = await client.fetch(`
 				*[_type == "pEvent" && defined(eventDatetime)] {
@@ -94,81 +87,57 @@ export const pageEventGroupByDate = (S) => {
 		.icon(CalendarIcon);
 };
 
-export const pageEvent = (S, context) => {
+export const pageEventItems = (S) => {
+	return [
+		// S.listItem()
+		// 	.title('Event Index Page')
+		// 	.child(
+		// 		S.editor()
+		// 			.id('pEvents')
+		// 			.title('Event Index Page')
+		// 			.schemaType('pEvents')
+		// 			.documentId('pEvents')
+		// 	)
+		// 	.icon(BookIcon),
+		S.listItem()
+			.title('Events')
+			.child(S.documentTypeList('pEvent').title('Events'))
+			.icon(BookIcon),
+		pageEventGroupByDate(S),
+		S.listItem()
+			.title('Events by Category')
+			.child(
+				S.documentTypeList('pEventCategory')
+					.title('Events by Category')
+					.child((categoryId) => {
+						return S.documentList()
+							.title('Events')
+							.apiVersion(apiVersion)
+							.filter('_type == "pEvent" && $categoryId in category[]._ref')
+							.params({ categoryId });
+					})
+			),
+		S.listItem()
+			.title('Events by Status')
+			.child(
+				S.documentTypeList('pEventStatus')
+					.title('Events by Status')
+					.child((statusId) =>
+						S.documentList()
+							.title('Events')
+							.apiVersion(apiVersion)
+							.filter('_type == "pEvent" && $statusId in status[]._ref')
+							.params({ statusId })
+					)
+			),
+		pageEventStatus(S),
+		pageEventCategory(S),
+	];
+};
+
+export const pageEvent = (S) => {
 	return S.listItem()
 		.title('Event')
-		.child(
-			S.list()
-				.title('Event')
-				.items([
-					S.listItem()
-						.title('Event Index Page')
-						.child(
-							S.editor()
-								.id('pEvents')
-								.title('Event Index Page')
-								.schemaType('pEvents')
-								.documentId('pEvents')
-						)
-						.icon(BookIcon),
-					S.listItem()
-						.title('Events')
-						.child(S.documentTypeList('pEvent').title('Events'))
-						.icon(BookIcon),
-					S.listItem()
-						.title('Filters')
-						.child(
-							S.list()
-								.title('Filters')
-								.items([
-									S.listItem()
-										.title('By Category')
-										.child(
-											S.documentTypeList('pEventCategory')
-												.title('Events by Category')
-												.child((categoryId) => {
-													return S.documentList()
-														.title('Events')
-														.apiVersion(apiVersion)
-														.filter(
-															'_type == "pEvent" && $categoryId in category[]._ref'
-														)
-														.params({ categoryId });
-												})
-										),
-									S.listItem()
-										.title('By Status')
-										.child(
-											S.documentTypeList('pEventStatus')
-												.title('Events by Status')
-												.child((statusId) =>
-													S.documentList()
-														.title('Events')
-														.apiVersion(apiVersion)
-														.filter(
-															'_type == "pEvent" && $statusId in status[]._ref'
-														)
-														.params({ statusId })
-												)
-										),
-									pageEventGroupByDate(S),
-								])
-						),
-					S.divider(),
-					pageEventStatus(S),
-					pageEventCategory(S),
-					S.divider(),
-					S.listItem()
-						.title('Team Members')
-						.child(
-							S.documentTypeList('gTeamMember').title('Team Members')
-						)
-						.icon(UsersIcon),
-					S.listItem()
-						.title('Roles')
-						.child(S.documentTypeList('pEventRole').title('Roles'))
-						.icon(TagIcon),
-				])
-		)
+		.child(S.list().title('Event').items(pageEventItems(S)))
 		.icon(BookIcon);
 };

@@ -83,6 +83,7 @@ function SanityImage({
 			sizes={sizes}
 			quality={quality}
 			priority={priority}
+			fetchPriority={priority ? 'high' : undefined}
 			alt={imageAlt}
 			blurDataURL={lqip || undefined}
 			placeholder={lqip ? 'blur' : undefined}
