@@ -4,10 +4,12 @@ import { sanityFetch } from '@/sanity/lib/live';
 import {
 	eventCrewMonthsQuery,
 	eventCrewByMonthQuery,
+	eventCrewMembersQuery,
 } from '@/sanity/lib/queries';
 import type {
 	EventCrewByMonthQueryResult,
 	EventCrewMonthsQueryResult,
+	EventCrewMembersQueryResult,
 } from 'sanity.types';
 import { PageEventCrew } from './_components/PageEventsCrew';
 
@@ -44,7 +46,6 @@ export default async function Page({
 		query: eventCrewMonthsQuery,
 		tags: ['pEvent'],
 	});
-	console.log('🚀 ~ :47 ~ Page ~ monthEntries:', monthEntries);
 
 	const entries: EventCrewMonthsQueryResult = monthEntries ?? [];
 	const availableMonthKeys = [
@@ -73,47 +74,42 @@ export default async function Page({
 		activeKey = futureKey || availableMonthKeys[availableMonthKeys.length - 1];
 	}
 
-	let allMonthEvents: EventCrewByMonthQueryResult = [];
 	let events: EventCrewByMonthQueryResult = [];
+	let uniqueMembers: EventCrewMembersQueryResult = [];
 
 	if (activeKey) {
 		const [year, month] = activeKey.split('_').map(Number);
 		const { startDate, endDate } = getMonthDateRange(year, month);
 		const tags = ['pEvent', 'gTeamMember', 'pEventRole'];
-
-		if (memberSlug) {
-			const [allResult, filteredResult] = await Promise.all([
-				sanityFetch({
-					query: eventCrewByMonthQuery,
-					params: { startDate, endDate, memberSlug: '' },
-					tags,
-				}),
-				sanityFetch({
-					query: eventCrewByMonthQuery,
-					params: { startDate, endDate, memberSlug },
-					tags,
-				}),
-			]);
-			allMonthEvents = allResult.data || [];
-			events = filteredResult.data || [];
-		} else {
-			const { data } = await sanityFetch({
+		const [{ data: eventsData }, { data: membersData }] = await Promise.all([
+			sanityFetch({
 				query: eventCrewByMonthQuery,
-				params: { startDate, endDate, memberSlug: '' },
+				params: { startDate, endDate, memberSlug: memberSlug || '' },
 				tags,
-			});
-			allMonthEvents = data || [];
-			events = allMonthEvents;
-		}
+			}),
+			sanityFetch({
+				query: eventCrewMembersQuery,
+				params: { startDate, endDate },
+				tags: ['gTeamMember'],
+			}),
+		]);
+		events = eventsData ?? [];
+		uniqueMembers = membersData ?? [];
 	}
+
+	const selectedMember = memberSlug
+		? uniqueMembers.find((m) => m.slug === memberSlug) ?? null
+		: null;
 
 	return (
 		<Suspense>
 			<PageEventCrew
 				events={events}
-				allMonthEvents={allMonthEvents}
 				activeKey={activeKey}
 				availableMonthKeys={availableMonthKeys}
+				selectedMemberSlug={memberSlug}
+				uniqueMembers={uniqueMembers}
+				selectedMember={selectedMember}
 			/>
 		</Suspense>
 	);

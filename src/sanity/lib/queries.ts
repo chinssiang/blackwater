@@ -276,6 +276,20 @@ export const eventCrewMonthsQuery = defineQuery(`
 	}
 `);
 
+export const eventCrewMembersQuery = defineQuery(`
+	*[_type == "gTeamMember" && _id in
+		*[_type == "pEvent" && defined(teamAssignments)
+			&& eventDatetime >= $startDate && eventDatetime < $endDate
+		].teamAssignments[].members[]._ref
+	] | order(coalesce(nickname, name) asc) {
+		_id,
+		name,
+		nickname,
+		"slug": slug.current,
+		avatar
+	}
+`);
+
 export const eventCrewByMonthQuery = defineQuery(`
 	*[_type == "pEvent" && defined(teamAssignments)
 		&& eventDatetime >= $startDate && eventDatetime < $endDate

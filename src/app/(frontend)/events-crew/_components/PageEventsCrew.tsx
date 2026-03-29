@@ -7,8 +7,11 @@ import { Button } from '@/components/ui/Button';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
-import type { EventCrewByMonthQueryResult } from 'sanity.types';
+import { useRouter } from 'next/navigation';
+import type {
+	EventCrewByMonthQueryResult,
+	EventCrewMembersQueryResult,
+} from 'sanity.types';
 import SanityImage from '@/components/SanityImage';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -54,76 +57,24 @@ function keyToDisplay(key: string): string {
 	return `${year}年${Number(month) + 1}月`;
 }
 
-const DisabledPrevButton = (
-	<Button disabled variant="ghost" size="sm" className="uppercase t-l-2">
-		<ArrowLeft className="size-3.5" />
-		Prev
-	</Button>
-);
-
-const DisabledNextButton = (
-	<Button disabled variant="ghost" size="sm" className="uppercase t-l-2">
-		Next
-		<ArrowRight className="size-3.5" />
-	</Button>
-);
+type UniqueMember = NonNullable<EventCrewMembersQueryResult>[number];
 
 interface PageEventCrewProps {
 	events: EventItem[];
-	allMonthEvents: EventItem[];
 	activeKey: string | null;
 	availableMonthKeys: string[];
-}
-
-function collectUniqueMembers(events: EventItem[]) {
-	type Member = NonNullable<
-		NonNullable<EventItem['teamAssignments']>[number]['members']
-	>[number];
-	const memberMap = new Map<
-		string,
-		{
-			_id: string;
-			slug: string | null;
-			name: string;
-			nickname: string | null;
-			avatar: Member['avatar'];
-		}
-	>();
-
-	for (const event of events) {
-		if (!event.teamAssignments) continue;
-		for (const assignment of event.teamAssignments) {
-			if (!assignment.members) continue;
-			for (const member of assignment.members) {
-				if (!memberMap.has(member._id)) {
-					memberMap.set(member._id, {
-						_id: member._id,
-						slug: member.slug,
-						name: member.name || 'Unknown',
-						nickname: member.nickname,
-						avatar: member.avatar,
-					});
-				}
-			}
-		}
-	}
-
-	return Array.from(memberMap.values()).sort((a, b) => {
-		const nameA = a.nickname || a.name;
-		const nameB = b.nickname || b.name;
-		return nameA.localeCompare(nameB);
-	});
+	uniqueMembers: UniqueMember[];
+	selectedMember: UniqueMember | null;
 }
 
 export function PageEventCrew({
 	events,
-	allMonthEvents,
 	activeKey,
 	availableMonthKeys,
+	uniqueMembers,
+	selectedMember,
 }: PageEventCrewProps) {
 	const router = useRouter();
-	const searchParams = useSearchParams();
-	const selectedMemberSlug = searchParams.get('member');
 	const [scrolled, setScrolled] = useState(false);
 
 	const setSelectedMemberSlug = useCallback(
@@ -165,24 +116,15 @@ export function PageEventCrew({
 		};
 	}, []);
 
-	const uniqueMembers = collectUniqueMembers(allMonthEvents);
-
-	const selectedMember = selectedMemberSlug
-		? uniqueMembers.find((m) => m.slug === selectedMemberSlug)
-		: null;
-
 	const currentIndex = activeKey ? availableMonthKeys.indexOf(activeKey) : -1;
 	const hasPrevious = currentIndex > 0;
 	const hasNext = currentIndex < availableMonthKeys.length - 1;
 
-	const memberSuffix = selectedMemberSlug
-		? `&member=${selectedMemberSlug}`
-		: '';
 	const prevHref = hasPrevious
-		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex - 1])}${memberSuffix}`
+		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex - 1])}`
 		: null;
 	const nextHref = hasNext
-		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex + 1])}${memberSuffix}`
+		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex + 1])}`
 		: null;
 
 	const monthDisplay = activeKey ? keyToDisplay(activeKey) : '';
@@ -217,37 +159,37 @@ export function PageEventCrew({
 					</div>
 					{availableMonthKeys.length > 0 && (
 						<nav className="flex items-center gap-1 shrink-0">
-							{prevHref ? (
-								<Button
-									asChild
-									variant="ghost"
-									size="sm"
-									className="uppercase t-l-2 cursor-pointer hover:opacity-60"
-								>
-									<Link href={prevHref}>
-										<ArrowLeft className="size-3.5" />
-										Prev
-									</Link>
-								</Button>
-							) : (
-								DisabledPrevButton
-							)}
+							<Button
+								asChild
+								variant="ghost"
+								size="sm"
+								className={cn(
+									'uppercase t-l-2 cursor-pointer hover:opacity-60',
+									{ 'pointer-events-none': !prevHref }
+								)}
+								disabled={!prevHref}
+							>
+								<Link href={prevHref || '#'}>
+									<ArrowLeft className="size-3.5" />
+									Prev
+								</Link>
+							</Button>
 							<span className="text-white/20 text-xs select-none">/</span>
-							{nextHref ? (
-								<Button
-									asChild
-									variant="ghost"
-									size="sm"
-									className="uppercase t-l-2 cursor-pointer hover:opacity-60"
-								>
-									<Link href={nextHref}>
-										Next
-										<ArrowRight className="size-3.5" />
-									</Link>
-								</Button>
-							) : (
-								DisabledNextButton
-							)}
+							<Button
+								asChild
+								variant="ghost"
+								size="sm"
+								className={cn(
+									'uppercase t-l-2 cursor-pointer hover:opacity-60',
+									{ 'pointer-events-none': !nextHref }
+								)}
+								disabled={!nextHref}
+							>
+								<Link href={nextHref || '#'}>
+									Next
+									<ArrowRight className="size-3.5" />
+								</Link>
+							</Button>
 						</nav>
 					)}
 				</div>
@@ -262,8 +204,9 @@ export function PageEventCrew({
 							<div className="pointer-events-none absolute inset-y-0 -right-px w-6 bg-linear-to-l from-background to-transparent z-10 lg:hidden" />
 							<div className="flex items-center gap-1 lg:gap-1.5 overflow-x-auto lg:flex-wrap scrollbar-none px-2 lg:px-0">
 								{uniqueMembers.map((member) => {
-									const displayName = member.nickname || member.name;
-									const isActive = selectedMemberSlug === member.slug;
+									const displayName =
+										member.nickname || member.name || 'Unknown';
+									const isActive = selectedMember?.slug === member.slug;
 									return (
 										<button
 											key={member._id}
@@ -329,14 +272,14 @@ export function PageEventCrew({
 							key={event._id}
 							event={event}
 							index={index}
-							highlightMemberSlug={selectedMemberSlug}
+							highlightMemberSlug={selectedMember?.slug || null}
 						/>
 					))}
 				</div>
 			) : (
 				<div className="py-20 text-center">
 					<p className="t-b-1 text-muted-foreground">
-						{selectedMemberSlug
+						{selectedMember
 							? `${selectedMember?.nickname || selectedMember?.name || 'This member'} has no assignments this month`
 							: 'No crew assignments for this month'}
 					</p>
@@ -389,11 +332,10 @@ function EventCard({
 		: [];
 
 	return (
-		<article
+		<div
 			className={cn(
 				'border border-white/8 rounded-lg overflow-hidden animate-fade-in',
-				'transition-opacity duration-500',
-				{ 'opacity-25 saturate-0': ended }
+				'transition-opacity duration-500'
 			)}
 			style={{
 				animationDelay: `${(index + 1) * 0.08}s`,
@@ -416,6 +358,11 @@ function EventCard({
 									}}
 								>
 									{categoryTitle}
+								</span>
+							)}
+							{ended && (
+								<span className="t-l-2 px-2 py-1 rounded uppercase shrink-0 bg-amber-700 text-foreground">
+									結束
 								</span>
 							)}
 						</div>
@@ -466,7 +413,7 @@ function EventCard({
 					<p className="t-b-1 text-muted-foreground">{teamNotes}</p>
 				</div>
 			)}
-		</article>
+		</div>
 	);
 }
 

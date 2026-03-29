@@ -43,7 +43,7 @@ function SanityImage({
 	alt,
 	className,
 	customRatio,
-	quality = 80,
+	quality = 75,
 	format = 'webp',
 	sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
 	priority = false,
