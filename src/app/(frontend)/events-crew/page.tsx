@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { sanityFetch } from '@/sanity/lib/live';
 import { eventCrewQuery } from '@/sanity/lib/queries';
 import { PageEventCrew } from './_components/PageEventsCrew';
@@ -21,7 +22,7 @@ function parseMonthParam(param: string | undefined) {
 export default async function Page({
 	searchParams,
 }: {
-	searchParams: Promise<{ month?: string }>;
+	searchParams: Promise<{ month?: string; member?: string }>;
 }) {
 	const { month: monthParam } = await searchParams;
 	const { data } = await sanityFetch({
@@ -72,10 +73,12 @@ export default async function Page({
 	const activeEvents = activeKey ? groupedEvents[activeKey] || [] : [];
 
 	return (
-		<PageEventCrew
-			events={activeEvents}
-			activeKey={activeKey}
-			availableMonthKeys={availableMonthKeys}
-		/>
+		<Suspense>
+			<PageEventCrew
+				events={activeEvents}
+				activeKey={activeKey}
+				availableMonthKeys={availableMonthKeys}
+			/>
+		</Suspense>
 	);
 }

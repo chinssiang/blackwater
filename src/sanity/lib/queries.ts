@@ -300,6 +300,7 @@ export const eventCrewQuery = defineQuery(`
 				_id,
 				name,
 				nickname,
+				"slug": slug.current,
 				avatar
 			}
 		}

@@ -7,10 +7,10 @@ import { Button } from '@/components/ui/Button';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import { format } from 'date-fns';
 import Link from 'next/link';
-import { buildImageSrc } from '@/lib/image-utils';
+import { useRouter, useSearchParams } from 'next/navigation';
 import type { EventCrewQueryResult } from 'sanity.types';
 import SanityImage from '@/components/SanityImage';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 
 type EventItem = NonNullable<EventCrewQueryResult>[number];
 
@@ -79,6 +79,7 @@ function collectUniqueMembers(events: EventItem[]) {
 		string,
 		{
 			_id: string;
+			slug: string | null;
 			name: string;
 			nickname: string | null;
 			avatar: EventItem['teamAssignments'] extends Array<infer T>
@@ -99,6 +100,7 @@ function collectUniqueMembers(events: EventItem[]) {
 				if (!memberMap.has(member._id)) {
 					memberMap.set(member._id, {
 						_id: member._id,
+						slug: member.slug,
 						name: member.name || 'Unknown',
 						nickname: member.nickname,
 						avatar: member.avatar,
@@ -117,11 +119,11 @@ function collectUniqueMembers(events: EventItem[]) {
 
 function filterEventsByMember(
 	events: EventItem[],
-	memberId: string
+	memberSlug: string
 ): EventItem[] {
 	return events.filter((event) =>
 		event.teamAssignments?.some((assignment) =>
-			assignment.members?.some((member) => member._id === memberId)
+			assignment.members?.some((member) => member.slug === memberSlug)
 		)
 	);
 }
@@ -131,8 +133,23 @@ export function PageEventCrew({
 	activeKey,
 	availableMonthKeys,
 }: PageEventCrewProps) {
-	const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+	const router = useRouter();
+	const searchParams = useSearchParams();
+	const selectedMemberSlug = searchParams.get('member');
 	const [scrolled, setScrolled] = useState(false);
+
+	const setSelectedMemberSlug = useCallback(
+		(slug: string | null) => {
+			const params = new URLSearchParams(window.location.search);
+			if (slug) {
+				params.set('member', slug);
+			} else {
+				params.delete('member');
+			}
+			router.replace(`?${params.toString()}`, { scroll: false });
+		},
+		[router]
+	);
 
 	useEffect(() => {
 		const lgQuery = window.matchMedia('(min-width: 1024px)');
@@ -164,25 +181,26 @@ export function PageEventCrew({
 
 	const filteredEvents = useMemo(
 		() =>
-			selectedMemberId
-				? filterEventsByMember(events, selectedMemberId)
+			selectedMemberSlug
+				? filterEventsByMember(events, selectedMemberSlug)
 				: events,
-		[events, selectedMemberId]
+		[events, selectedMemberSlug]
 	);
 
-	const selectedMember = selectedMemberId
-		? uniqueMembers.find((m) => m._id === selectedMemberId)
+	const selectedMember = selectedMemberSlug
+		? uniqueMembers.find((m) => m.slug === selectedMemberSlug)
 		: null;
 
 	const currentIndex = activeKey ? availableMonthKeys.indexOf(activeKey) : -1;
 	const hasPrevious = currentIndex > 0;
 	const hasNext = currentIndex < availableMonthKeys.length - 1;
 
+	const memberSuffix = selectedMemberSlug ? `&member=${selectedMemberSlug}` : '';
 	const prevHref = hasPrevious
-		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex - 1])}`
+		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex - 1])}${memberSuffix}`
 		: null;
 	const nextHref = hasNext
-		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex + 1])}`
+		? `/events-crew?month=${keyToMonthParam(availableMonthKeys[currentIndex + 1])}${memberSuffix}`
 		: null;
 
 	const monthDisplay = activeKey ? keyToDisplay(activeKey) : '';
@@ -263,13 +281,13 @@ export function PageEventCrew({
 							<div className="flex items-center gap-1 lg:gap-1.5 overflow-x-auto lg:flex-wrap scrollbar-none px-2 lg:px-0">
 								{uniqueMembers.map((member) => {
 									const displayName = member.nickname || member.name;
-									const isActive = selectedMemberId === member._id;
+									const isActive = selectedMemberSlug === member.slug;
 									return (
 										<button
 											key={member._id}
 											type="button"
 											onClick={() =>
-												setSelectedMemberId(isActive ? null : member._id)
+												setSelectedMemberSlug(isActive ? null : member.slug)
 											}
 											className={cn(
 												'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-2.5 py-1 rounded-full text-sm whitespace-nowrap shrink-0 transition-all cursor-pointer hover:scale-110',
@@ -302,7 +320,7 @@ export function PageEventCrew({
 						{selectedMember && (
 							<button
 								type="button"
-								onClick={() => setSelectedMemberId(null)}
+								onClick={() => setSelectedMemberSlug(null)}
 								className="shrink-0 p-1 rounded-full hover:bg-white/8 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
 							>
 								<X className="size-3.5" />
@@ -331,14 +349,14 @@ export function PageEventCrew({
 							key={event._id}
 							event={event}
 							index={index}
-							highlightMemberId={selectedMemberId}
+							highlightMemberSlug={selectedMemberSlug}
 						/>
 					))}
 				</div>
 			) : (
 				<div className="py-20 text-center">
 					<p className="t-b-1 text-muted-foreground">
-						{selectedMemberId
+						{selectedMemberSlug
 							? `${selectedMember?.nickname || selectedMember?.name || 'This member'} has no assignments this month`
 							: 'No crew assignments for this month'}
 					</p>
@@ -351,11 +369,11 @@ export function PageEventCrew({
 function EventCard({
 	event,
 	index,
-	highlightMemberId,
+	highlightMemberSlug,
 }: {
 	event: EventItem;
 	index: number;
-	highlightMemberId: string | null;
+	highlightMemberSlug: string | null;
 }) {
 	const {
 		title,
@@ -454,7 +472,7 @@ function EventCard({
 							<AssignmentCard
 								key={assignment._key}
 								assignment={assignment}
-								highlightMemberId={highlightMemberId}
+								highlightMemberSlug={highlightMemberSlug}
 							/>
 						))}
 					</div>
@@ -476,10 +494,10 @@ type Assignment = NonNullable<EventItem['teamAssignments']>[number];
 
 function AssignmentCard({
 	assignment,
-	highlightMemberId,
+	highlightMemberSlug,
 }: {
 	assignment: Assignment;
-	highlightMemberId: string | null;
+	highlightMemberSlug: string | null;
 }) {
 	const { role, group, members, note } = assignment;
 
@@ -494,8 +512,8 @@ function AssignmentCard({
 			<div className="flex flex-wrap items-center gap-4">
 				{members?.map((member) => {
 					const name = member.nickname || member.name || 'Unknown';
-					const isHighlighted = highlightMemberId === member._id;
-					const isDimmed = highlightMemberId !== null && !isHighlighted;
+					const isHighlighted = highlightMemberSlug === member.slug;
+					const isDimmed = highlightMemberSlug !== null && !isHighlighted;
 					return (
 						<div
 							key={member._id}
