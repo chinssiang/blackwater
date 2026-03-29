@@ -1,10 +1,11 @@
+import { TagIcon, UsersIcon } from '@sanity/icons';
 import type { StructureResolver } from 'sanity/structure';
 import { colorsMenu } from './deskStructure/colors';
 import { globalMenu } from './deskStructure/global';
 import { menusMenu } from './deskStructure/menus';
 import { pageBlog } from './deskStructure/p-blog';
 import { pageCurated } from './deskStructure/p-curated';
-import { pageEvent } from './deskStructure/p-event';
+import { pageEventItems } from './deskStructure/p-event';
 import { otherPagesMenu, pagesMenu } from './deskStructure/pages';
 import { settingsMenu } from './deskStructure/settings';
 
@@ -16,8 +17,18 @@ export const structure: StructureResolver = (S) =>
 			pagesMenu(S),
 			otherPagesMenu(S),
 			S.divider(),
-			pageEvent(S),
+			...pageEventItems(S),
+			S.divider(),
 			pageCurated(S),
+			S.listItem()
+				.title('Team Members')
+				.child(S.documentTypeList('gTeamMember').title('Team Members'))
+				.icon(UsersIcon),
+			S.listItem()
+				.title('Roles')
+				.child(S.documentTypeList('pEventRole').title('Roles'))
+				.icon(TagIcon),
+			S.divider(),
 			S.divider(),
 			menusMenu(S),
 			colorsMenu(S),
