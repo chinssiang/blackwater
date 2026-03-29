@@ -257,8 +257,6 @@
 			--t-h-2: 300 64px/1 var(--font-default);
 			--t-h-3: 300 48px/1 var(--font-default);
 			--t-h-4: 300 40px/1 var(--font-default);
-			--t-h-5: 500 24px/1 var(--font-default);
-			--t-h-6: 500 20px/1 var(--font-default);
 
 			--s-section: 96px;
 			--h-main: calc(var(--s-vp-height) - var(--height-announcement, 0px) - var(--height-header) - var(--height-footer));

@@ -495,16 +495,16 @@ function AssignmentCard({
 							data-comp="crew-person"
 							className={cn(
 								'group/person relative flex items-center gap-1.5 transition-opacity',
-								{ 'opacity-30': isDimmed }
+								{ 'opacity-30 pointer-events-none': isDimmed }
 							)}
 						>
 							{member.avatar ? (
 								<>
 									<div
 										className={cn(
-											'size-6 aspect-square rounded-full overflow-hidden shrink-0 relative',
+											'size-6 aspect-square rounded-full overflow-hidden shrink-0 relative transition-all',
 											isHighlighted
-												? 'ring-2 ring-indigo-400'
+												? 'ring-2 ring-indigo-400 size-8'
 												: 'ring-1 ring-white/10'
 										)}
 									>
