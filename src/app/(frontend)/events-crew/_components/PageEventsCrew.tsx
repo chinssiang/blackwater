@@ -499,8 +499,9 @@ function AssignmentCard({
 						<div
 							key={member._id}
 							data-comp="crew-person"
+							tabIndex={isDimmed ? -1 : 0}
 							className={cn(
-								'group/person relative flex items-center gap-1.5 transition-opacity',
+								'group/person relative flex items-center gap-1.5 transition-opacity outline-none',
 								{ 'opacity-30 pointer-events-none': isDimmed }
 							)}
 						>
@@ -522,7 +523,7 @@ function AssignmentCard({
 										/>
 									</div>
 									{/* Hover enlarged avatar */}
-									<div className="size-20 pointer-events-none absolute bottom-full left-0 mb-2 z-20 opacity-0 scale-75 origin-bottom-left transition-all duration-200 ease-out group-hover/person:opacity-100 group-hover/person:scale-100 rounded-full overflow-hidden">
+									<div className="size-20 pointer-events-none absolute bottom-full left-0 mb-2 z-20 opacity-0 scale-75 origin-bottom-left transition-all duration-200 ease-out group-hover/person:opacity-100 group-hover/person:scale-100 group-focus-within/person:opacity-100 group-focus-within/person:scale-100 rounded-full overflow-hidden">
 										<SanityImage
 											image={member.avatar}
 											className="object-cover"
