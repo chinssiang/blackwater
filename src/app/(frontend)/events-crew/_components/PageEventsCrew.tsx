@@ -272,10 +272,10 @@ export function PageEventCrew({
 												setSelectedMemberId(isActive ? null : member._id)
 											}
 											className={cn(
-												'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-2.5 py-1 rounded-full text-sm whitespace-nowrap shrink-0 transition-all cursor-pointer hover:scale-110',
+												'flex items-center gap-1 transition-colors px-2 lg:px-2.5 py-1 rounded-full text-sm whitespace-nowrap shrink-0 cursor-pointer',
 												isActive
-													? 'bg-white/15 text-foreground ring-1 ring-white/20'
-													: 'bg-white/4 text-muted-foreground hover:bg-white/8 hover:text-foreground'
+													? 'bg-white/30 text-foreground ring-1 ring-white/20'
+													: 'bg-white/4 text-muted-foreground hover:bg-white/25 hover:text-foreground'
 											)}
 										>
 											{member.avatar ? (
