@@ -20,6 +20,7 @@ export const structure: StructureResolver = (S) =>
 			...pageEventItems(S),
 			S.divider(),
 			pageCurated(S),
+			S.divider(),
 			S.listItem()
 				.title('Team Members')
 				.child(S.documentTypeList('gTeamMember').title('Team Members'))
@@ -28,7 +29,6 @@ export const structure: StructureResolver = (S) =>
 				.title('Roles')
 				.child(S.documentTypeList('pEventRole').title('Roles'))
 				.icon(TagIcon),
-			S.divider(),
 			S.divider(),
 			menusMenu(S),
 			colorsMenu(S),
