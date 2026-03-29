@@ -10,7 +10,7 @@ import Link from 'next/link';
 import { buildImageSrc } from '@/lib/image-utils';
 import type { EventCrewQueryResult } from 'sanity.types';
 import SanityImage from '@/components/SanityImage';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 type EventItem = NonNullable<EventCrewQueryResult>[number];
 
@@ -132,6 +132,33 @@ export function PageEventCrew({
 	availableMonthKeys,
 }: PageEventCrewProps) {
 	const [selectedMemberId, setSelectedMemberId] = useState<string | null>(null);
+	const [scrolled, setScrolled] = useState(false);
+
+	useEffect(() => {
+		const lgQuery = window.matchMedia('(min-width: 1024px)');
+
+		const handleScroll = () => {
+			if (!lgQuery.matches) {
+				setScrolled(false);
+				return;
+			}
+			setScrolled((prev) => {
+				if (prev) return window.scrollY > 20;
+				return window.scrollY > 60;
+			});
+		};
+
+		const handleMediaChange = () => {
+			if (!lgQuery.matches) setScrolled(false);
+		};
+
+		window.addEventListener('scroll', handleScroll, { passive: true });
+		lgQuery.addEventListener('change', handleMediaChange);
+		return () => {
+			window.removeEventListener('scroll', handleScroll);
+			lgQuery.removeEventListener('change', handleMediaChange);
+		};
+	}, []);
 
 	const uniqueMembers = useMemo(() => collectUniqueMembers(events), [events]);
 
@@ -161,16 +188,28 @@ export function PageEventCrew({
 	const monthDisplay = activeKey ? keyToDisplay(activeKey) : '';
 
 	return (
-		<div className="px-contain mx-auto min-h-[inherit] py-10 lg:py-17.5">
-			{/* Briefing Header */}
-			<div className="sticky top-header bg-background/95 backdrop-blur-sm z-10 py-4 border-b border-white/6">
-				<div className="flex items-end justify-between gap-4">
-					<div>
-						<span className="t-h-6 text-muted-foreground block mb-2 animate-fade-in">
-							CREW BRIEFING
+		<>
+			<div
+				className={cn(
+					'sticky top-header bg-background/95 backdrop-blur-sm z-10 border-b border-white/6 transition-all duration-300',
+					scrolled ? 'py-2' : 'py-4'
+				)}
+			>
+				<div className="flex items-end justify-between gap-4 p-x-max">
+					<div className="space-y-3">
+						<span
+							className={cn(
+								'text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
+								scrolled ? 't-h-6' : 't-h-5'
+							)}
+						>
+							Crew briefing
 						</span>
 						<h1
-							className="t-h-3 font-bold tracking-tight animate-fade-in"
+							className={cn(
+								'font-bold tracking-tight animate-fade-in transition-all duration-300',
+								scrolled ? 't-h-5' : 't-h-3'
+							)}
 							style={{ animationDelay: '0.15s' }}
 						>
 							{monthDisplay}
@@ -212,49 +251,52 @@ export function PageEventCrew({
 						</nav>
 					)}
 				</div>
-
 				{/* Crew Filter */}
 				{uniqueMembers.length > 0 && (
-					<div className="flex items-center gap-2 mt-3 pt-3 border-t border-white/4">
+					<div className="flex items-center gap-1.5 lg:gap-2 mt-3 pt-3 border-t border-white/4 p-x-max mx-auto">
 						<span className="t-l-2 text-muted-foreground uppercase shrink-0">
 							Filter
 						</span>
-						<div className="flex flex-wrap items-center gap-1.5">
-							{uniqueMembers.map((member) => {
-								const displayName = member.nickname || member.name;
-								const isActive = selectedMemberId === member._id;
-								return (
-									<button
-										key={member._id}
-										type="button"
-										onClick={() =>
-											setSelectedMemberId(isActive ? null : member._id)
-										}
-										className={cn(
-											'flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm transition-all cursor-pointer hover:scale-110',
-											isActive
-												? 'bg-white/15 text-foreground ring-1 ring-white/20'
-												: 'bg-white/4 text-muted-foreground hover:bg-white/8 hover:text-foreground'
-										)}
-									>
-										{member.avatar ? (
-											<div className="size-4 aspect-square rounded-full overflow-hidden shrink-0 relative">
-												<SanityImage
-													image={member.avatar}
-													className="object-cover"
-													fill
-													sizes="16px"
-												/>
-											</div>
-										) : (
-											<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[8px] font-semibold">
-												{displayName.charAt(0)}
-											</span>
-										)}
-										<span className="t-b-2">{displayName}</span>
-									</button>
-								);
-							})}
+						<div className="relative min-w-0 flex-1">
+							<div className="pointer-events-none absolute inset-y-0 -left-px w-6 bg-linear-to-r from-background to-transparent z-10 lg:hidden" />
+							<div className="pointer-events-none absolute inset-y-0 -right-px w-6 bg-linear-to-l from-background to-transparent z-10 lg:hidden" />
+							<div className="flex items-center gap-1 lg:gap-1.5 overflow-x-auto lg:flex-wrap scrollbar-none px-2 lg:px-0">
+								{uniqueMembers.map((member) => {
+									const displayName = member.nickname || member.name;
+									const isActive = selectedMemberId === member._id;
+									return (
+										<button
+											key={member._id}
+											type="button"
+											onClick={() =>
+												setSelectedMemberId(isActive ? null : member._id)
+											}
+											className={cn(
+												'flex items-center gap-1 lg:gap-1.5 px-2 lg:px-2.5 py-1 rounded-full text-sm whitespace-nowrap shrink-0 transition-all cursor-pointer hover:scale-110',
+												isActive
+													? 'bg-white/15 text-foreground ring-1 ring-white/20'
+													: 'bg-white/4 text-muted-foreground hover:bg-white/8 hover:text-foreground'
+											)}
+										>
+											{member.avatar ? (
+												<div className="size-4 aspect-square rounded-full overflow-hidden shrink-0 relative">
+													<SanityImage
+														image={member.avatar}
+														className="object-cover"
+														fill
+														sizes="16px"
+													/>
+												</div>
+											) : (
+												<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[8px] font-semibold">
+													{displayName.charAt(0)}
+												</span>
+											)}
+											<span className="t-b-2">{displayName}</span>
+										</button>
+									);
+								})}
+							</div>
 						</div>
 						{selectedMember && (
 							<button
@@ -268,9 +310,8 @@ export function PageEventCrew({
 					</div>
 				)}
 			</div>
-
 			{hasArrayValue(filteredEvents) ? (
-				<div className="mt-8 lg:mt-12 space-y-6">
+				<div className="p-x-max mt-8 lg:mt-12 space-y-6">
 					{selectedMember && (
 						<p className="t-b-2 text-muted-foreground">
 							{selectedMember.nickname || selectedMember.name} is assigned to{' '}
@@ -296,7 +337,7 @@ export function PageEventCrew({
 					</p>
 				</div>
 			)}
-		</div>
+		</>
 	);
 }
 

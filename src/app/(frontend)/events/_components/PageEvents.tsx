@@ -132,7 +132,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		: '';
 
 	return (
-		<div className="px-contain mx-auto min-h-[inherit] py-10 lg:py-17.5">
+		<div className="p-x-max mx-auto min-h-[inherit] py-10 lg:py-17.5">
 			<h1 className="sr-only">{title}</h1>
 			<div className="flex items-center justify-between sticky top-header bg-background/95 z-10 font-bold">
 				<motion.p

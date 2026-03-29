@@ -12,7 +12,7 @@ export function Header({ data }: { data: HeaderProps }) {
 	const { siteTitle, menu } = data || {};
 
 	return (
-		<header className="px-contain h-header sticky top-0 z-10 grid w-full grid-cols-2 lg:grid-cols-3 items-center bg-background leading-none">
+		<header className="p-x-max h-header sticky top-0 z-10 grid w-full grid-cols-2 lg:grid-cols-3 items-center bg-background leading-none">
 			{menu && (
 				<Menu
 					data={menu}
