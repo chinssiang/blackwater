@@ -284,7 +284,8 @@ export function PageEventCrew({
 														image={member.avatar}
 														className="object-cover"
 														fill
-														sizes="16px"
+														alt={displayName}
+														sizes="120px"
 													/>
 												</div>
 											) : (
@@ -519,7 +520,7 @@ function AssignmentCard({
 											image={member.avatar}
 											className="object-cover"
 											fill
-											sizes="24px"
+											sizes="120px"
 										/>
 									</div>
 									{/* Hover enlarged avatar */}
@@ -528,7 +529,7 @@ function AssignmentCard({
 											image={member.avatar}
 											className="object-cover"
 											fill
-											sizes="80px"
+											sizes="240px"
 										/>
 									</div>
 								</>
