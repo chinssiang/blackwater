@@ -109,7 +109,7 @@ export function TextReveal({
 		const resizeObserver = new ResizeObserver(() => {
 			// Debounce resize events to improve performance
 			clearTimeout(resizeTimeoutId);
-			resizeTimeoutId = setTimeout(updateLines, 100);
+			resizeTimeoutId = setTimeout(updateLines, 200);
 		});
 
 		if (containerRef.current) {

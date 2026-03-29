@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 import { pageTransitionFade } from '@/lib/animate';
 import Menu from '@/components/Menu';
 import { motion } from 'motion/react';
@@ -13,7 +13,7 @@ export function Footer({ data }: { data: FooterProps }) {
 	const { menu, note } = data || {};
 	const footerRef = useRef<HTMLElement | null>(null);
 
-	useEffect(() => {
+	useLayoutEffect(() => {
 		document.documentElement.style.setProperty(
 			'--h-footer',
 			`${footerRef?.current?.offsetHeight || 0}px`

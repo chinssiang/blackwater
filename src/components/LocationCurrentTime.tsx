@@ -29,7 +29,13 @@ export function LocationCurrentTime() {
 		};
 	}, []);
 
-	if (!time) return null;
+	if (!time) {
+		return (
+			<time aria-hidden="true" className="invisible">
+				Wednesday, 12:00 AM
+			</time>
+		);
+	}
 
 	const tzDate = new TZDate(time, 'Asia/Singapore');
 	const formattedTime = format(tzDate, 'iiii, p');
