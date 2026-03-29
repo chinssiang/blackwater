@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import { sanityFetch } from '@/sanity/lib/live';
-import { eventCrewQuery } from '@/sanity/lib/queries';
+import {
+	eventCrewMonthsQuery,
+	eventCrewByMonthQuery,
+} from '@/sanity/lib/queries';
+import type {
+	EventCrewByMonthQueryResult,
+	EventCrewMonthsQueryResult,
+} from 'sanity.types';
 import { PageEventCrew } from './_components/PageEventsCrew';
 
 export const metadata: Metadata = {
@@ -18,64 +26,95 @@ function parseMonthParam(param: string | undefined) {
 	return { year, month: month - 1 };
 }
 
+function getMonthDateRange(year: number, month: number) {
+	const startDate = new Date(year, month, 1).toISOString();
+	const endDate = new Date(year, month + 1, 1).toISOString();
+	return { startDate, endDate };
+}
+
 export default async function Page({
 	searchParams,
 }: {
-	searchParams: Promise<{ month?: string }>;
+	searchParams: Promise<{ month?: string; member?: string }>;
 }) {
-	const { month: monthParam } = await searchParams;
-	const { data } = await sanityFetch({
-		query: eventCrewQuery,
-		tags: ['pEvent', 'gTeamMember', 'pEventRole'],
+	const { month: monthParam, member: memberSlug } = await searchParams;
+
+	// Lightweight query: just dates for building month navigation
+	const { data: monthEntries } = await sanityFetch({
+		query: eventCrewMonthsQuery,
+		tags: ['pEvent'],
 	});
+	console.log('🚀 ~ :47 ~ Page ~ monthEntries:', monthEntries);
 
-	const events = data || [];
+	const entries: EventCrewMonthsQueryResult = monthEntries ?? [];
+	const availableMonthKeys = [
+		...new Set(
+			entries.map((entry) => {
+				const date = new Date(entry.eventDatetime);
+				return `${date.getFullYear()}_${date.getMonth()}`;
+			})
+		),
+	].sort();
 
-	const groupedEvents: Record<string, (typeof events)[number][]> = {};
-	const availableMonthKeys: string[] = [];
-
-	for (const event of events) {
-		const date = new Date(event.eventDatetime!);
-		const year = date.getFullYear();
-		const month = date.getMonth();
-		const key = `${year}_${month}`;
-
-		if (!groupedEvents[key]) {
-			groupedEvents[key] = [];
-			availableMonthKeys.push(key);
-		}
-		groupedEvents[key].push(event);
-	}
-
-	availableMonthKeys.sort();
-
-	// Determine which month to show
 	const parsed = parseMonthParam(monthParam);
 	let activeKey: string | null = null;
 
 	if (parsed) {
 		const requestedKey = `${parsed.year}_${parsed.month}`;
-		if (groupedEvents[requestedKey]) {
+		if (availableMonthKeys.includes(requestedKey)) {
 			activeKey = requestedKey;
 		}
 	}
 
-	// If no valid param or param doesn't match data, find the nearest upcoming month
 	if (!activeKey && availableMonthKeys.length > 0) {
 		const now = new Date();
 		const currentKey = `${now.getFullYear()}_${now.getMonth()}`;
-		// Find current or next available month
 		const futureKey = availableMonthKeys.find((key) => key >= currentKey);
 		activeKey = futureKey || availableMonthKeys[availableMonthKeys.length - 1];
 	}
 
-	const activeEvents = activeKey ? groupedEvents[activeKey] || [] : [];
+	let allMonthEvents: EventCrewByMonthQueryResult = [];
+	let events: EventCrewByMonthQueryResult = [];
+
+	if (activeKey) {
+		const [year, month] = activeKey.split('_').map(Number);
+		const { startDate, endDate } = getMonthDateRange(year, month);
+		const tags = ['pEvent', 'gTeamMember', 'pEventRole'];
+
+		if (memberSlug) {
+			const [allResult, filteredResult] = await Promise.all([
+				sanityFetch({
+					query: eventCrewByMonthQuery,
+					params: { startDate, endDate, memberSlug: '' },
+					tags,
+				}),
+				sanityFetch({
+					query: eventCrewByMonthQuery,
+					params: { startDate, endDate, memberSlug },
+					tags,
+				}),
+			]);
+			allMonthEvents = allResult.data || [];
+			events = filteredResult.data || [];
+		} else {
+			const { data } = await sanityFetch({
+				query: eventCrewByMonthQuery,
+				params: { startDate, endDate, memberSlug: '' },
+				tags,
+			});
+			allMonthEvents = data || [];
+			events = allMonthEvents;
+		}
+	}
 
 	return (
-		<PageEventCrew
-			events={activeEvents}
-			activeKey={activeKey}
-			availableMonthKeys={availableMonthKeys}
-		/>
+		<Suspense>
+			<PageEventCrew
+				events={events}
+				allMonthEvents={allMonthEvents}
+				activeKey={activeKey}
+				availableMonthKeys={availableMonthKeys}
+			/>
+		</Suspense>
 	);
 }

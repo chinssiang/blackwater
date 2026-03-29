@@ -270,8 +270,17 @@ export const pEventsQuery = defineQuery(`
 	}
 `);
 
-export const eventCrewQuery = defineQuery(`
-	*[_type == "pEvent" && defined(teamAssignments)] | order(eventDatetime asc) {
+export const eventCrewMonthsQuery = defineQuery(`
+	*[_type == "pEvent" && defined(teamAssignments) && defined(eventDatetime)] | order(eventDatetime asc) {
+		eventDatetime
+	}
+`);
+
+export const eventCrewByMonthQuery = defineQuery(`
+	*[_type == "pEvent" && defined(teamAssignments)
+		&& eventDatetime >= $startDate && eventDatetime < $endDate
+		&& ($memberSlug == "" || $memberSlug in teamAssignments[].members[]->slug.current)
+	] | order(eventDatetime asc) {
 		_id,
 		title,
 		"sharing":{},
@@ -300,6 +309,7 @@ export const eventCrewQuery = defineQuery(`
 				_id,
 				name,
 				nickname,
+				"slug": slug.current,
 				avatar
 			}
 		}

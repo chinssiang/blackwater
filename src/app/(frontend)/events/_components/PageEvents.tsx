@@ -297,12 +297,6 @@ export function PageEvents({ data }: PageEventsProps) {
 										'lg:justify-end gap-1 flex col-start-1 lg:col-start-[unset] mt-6 lg:mt-0'
 									}
 								>
-									{eventHasEnded && (
-										<StatusItem
-											key="ended"
-											data={{ eventStatus: { title: 'ended' } }}
-										/>
-									)}
 									{daysUntil !== null && daysUntil !== undefined && (
 										<StatusItem
 											key={`in-${daysUntil}-day`}
@@ -318,8 +312,18 @@ export function PageEvents({ data }: PageEventsProps) {
 									)}
 									{hasArrayValue(statusList) &&
 										statusList.map((item: any) => (
-											<StatusItem key={item._key} data={item} />
+											<StatusItem
+												key={item._key}
+												data={item}
+												className={cn(eventHasEnded ? 'opacity-30' : '')}
+											/>
 										))}
+									{eventHasEnded && (
+										<StatusItem
+											key="ended"
+											data={{ eventStatus: { title: 'ended' } }}
+										/>
+									)}
 								</Td>
 							</motion.div>
 						);
@@ -332,14 +336,17 @@ export function PageEvents({ data }: PageEventsProps) {
 	);
 }
 
-function StatusItem({ data }: { data: any }) {
+function StatusItem({ data, className }: { data: any; className?: string }) {
 	const { link, eventStatus } = data;
 
 	if (!eventStatus) return null;
 	const { title, statusTextColor, statusBgColor } = eventStatus || {};
 	return (
 		<span
-			className="rounded-4xl py-2 px-2.5 uppercase relative flex items-center gap-0.5 t-b-2"
+			className={cn(
+				'rounded-4xl py-2 px-2.5 uppercase relative flex items-center gap-0.5 t-b-2',
+				className
+			)}
 			style={{
 				color: buildRgbaCssString(statusTextColor) || 'var(--foreground)',
 				backgroundColor: buildRgbaCssString(statusBgColor) || 'var(--muted)',
