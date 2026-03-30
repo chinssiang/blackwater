@@ -85,7 +85,7 @@ export function PageEventCrew({
 			} else {
 				params.delete('member');
 			}
-			router.replace(`?${params.toString()}`, { scroll: false });
+			router.replace(`?${params.toString()}`);
 		},
 		[router]
 	);
@@ -110,6 +110,7 @@ export function PageEventCrew({
 
 		window.addEventListener('scroll', handleScroll, { passive: true });
 		lgQuery.addEventListener('change', handleMediaChange);
+		console.log('🚀 ~ :113 ~ PageEventCrew ~ lgQuery:', lgQuery);
 		return () => {
 			window.removeEventListener('scroll', handleScroll);
 			lgQuery.removeEventListener('change', handleMediaChange);

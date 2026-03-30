@@ -98,7 +98,7 @@ export default async function Page({
 	}
 
 	const selectedMember = memberSlug
-		? uniqueMembers.find((m) => m.slug === memberSlug) ?? null
+		? (uniqueMembers.find((m) => m.slug === memberSlug) ?? null)
 		: null;
 
 	return (
@@ -107,7 +107,6 @@ export default async function Page({
 				events={events}
 				activeKey={activeKey}
 				availableMonthKeys={availableMonthKeys}
-				selectedMemberSlug={memberSlug}
 				uniqueMembers={uniqueMembers}
 				selectedMember={selectedMember}
 			/>
