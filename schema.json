@@ -2786,6 +2786,28 @@
         },
         "optional": true
       },
+      "categories": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "array",
+          "of": {
+            "type": "object",
+            "attributes": {
+              "_key": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "string"
+                }
+              }
+            },
+            "rest": {
+              "type": "inline",
+              "name": "pCuratedCategory.reference"
+            }
+          }
+        },
+        "optional": true
+      },
       "collections": {
         "type": "objectAttribute",
         "value": {

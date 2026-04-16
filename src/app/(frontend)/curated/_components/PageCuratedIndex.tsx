@@ -13,6 +13,7 @@ type Props = {
 };
 
 export function PageCuratedIndex({ data }: Props) {
+	console.log('🚀 ~ :16 ~ PageCuratedIndex ~ data:', data);
 	const { title, description, collections, categories } = data || {};
 
 	return (

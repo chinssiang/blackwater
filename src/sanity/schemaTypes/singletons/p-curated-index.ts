@@ -30,6 +30,20 @@ export const pCuratedIndex = defineType({
 			description: 'Hero banner tagline on dark background',
 		}),
 		defineField({
+			name: 'categories',
+			title: 'Categories',
+			type: 'array',
+			description:
+				'Categories displayed on the index page, in order. If empty, all categories are shown alphabetically.',
+			of: [
+				defineArrayMember({
+					type: 'reference',
+					to: [{ type: 'pCuratedCategory' }],
+				}),
+			],
+			validation: (Rule) => Rule.unique(),
+		}),
+		defineField({
 			name: 'collections',
 			title: 'Collections',
 			type: 'array',

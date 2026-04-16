@@ -459,7 +459,14 @@ export const pageCuratedIndexQuery = defineQuery(`
 				${curatedProductCardFields}
 			}
 		},
-		${curatedCategoriesFields}
+		categories[]->{_id,
+			title,
+			"slug": slug.current,
+			coverImage {
+				${imageBlockMetaFields}
+			},
+			"count": count(*[_type == "pCurated" && references(^._id)])
+		}
 	}
 `);
 
