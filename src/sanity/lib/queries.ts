@@ -3,7 +3,7 @@ import { resolvedHrefGroq } from '@/lib/routes';
 export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 
 export const SITEMAP_QUERY =
-	defineQuery(`*[_type in ["pHome", "pGeneral", "pCuratedIndex", "pCurated", "pCuratedCollection", "pEventIndex", "pContact"] && defined(slug.current) && (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
+	defineQuery(`*[_type in ["pHome", "pGeneral", "pCuratedIndex", "pCurated", "pCuratedCategory", "pCuratedCollection", "pEventIndex", "pContact"] && defined(slug.current) && (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
     _type,
 		"slug": slug.current,
     _updatedAt
@@ -501,6 +501,53 @@ export const pageCuratedCollectionSingleQuery = defineQuery(`
 		${baseFields},
 		description,
 		"products": products[]->{
+			${curatedProductCardFields}
+		},
+		${curatedCategoriesFields}
+	}
+`);
+
+export const pageCuratedCategoriesIndexQuery = defineQuery(`
+	{
+		${curatedCategoriesFields}
+	}
+`);
+
+export const pageCuratedCategorySlugsQuery = defineQuery(`
+	*[_type == "pCuratedCategory" && defined(slug.current)]
+	{"slug": slug.current}
+`);
+
+export const pageCuratedCategorySingleQuery = defineQuery(`
+	*[_type == "pCuratedCategory" && slug.current == $slug][0]{
+		${baseFields},
+		coverImage {
+			${imageBlockMetaFields}
+		},
+		"products": *[_type == "pCurated" && references(^._id)] | order(title asc) {
+			${curatedProductCardFields}
+		}
+	}
+`);
+
+export const pageCuratedCollectionsIndexQuery = defineQuery(`
+	{
+		"collections": *[_type == "pCuratedCollection"] | order(title asc) {
+			_id,
+			title,
+			description,
+			"slug": slug.current,
+			coverImage {
+				${imageBlockMetaFields}
+			},
+			"count": count(products)
+		}
+	}
+`);
+
+export const pageCuratedProductsIndexQuery = defineQuery(`
+	{
+		"products": *[_type == "pCurated"] | order(title asc) {
 			${curatedProductCardFields}
 		},
 		${curatedCategoriesFields}

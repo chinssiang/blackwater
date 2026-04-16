@@ -8,8 +8,8 @@ import { fadeAnim } from '@/lib/animate';
 import { motion } from 'motion/react';
 import type { PageCuratedSingleQueryResult } from 'sanity.types';
 import { hasArrayValue } from '@/lib/utils';
-import CuratedProductCard from '../../_components/CuratedProductCard';
-import CuratedCategoriesGrid from '../../_components/CuratedCategoriesGrid';
+import CuratedProductCard from '../../../_components/CuratedProductCard';
+import CuratedCategoriesGrid from '../../../_components/CuratedCategoriesGrid';
 
 type Props = {
 	data: NonNullable<PageCuratedSingleQueryResult>;
@@ -212,7 +212,7 @@ export default function PageCuratedSingle({ data }: Props) {
 						</div>
 						<div className="flex justify-center">
 							<Link
-								href="/curated"
+								href="/curated/products"
 								className="inline-flex items-center justify-center bg-foreground text-background t-h-6 uppercase px-12 py-3 hover:bg-foreground/80 transition-colors"
 							>
 								View All

@@ -110,7 +110,6 @@ export function PageEventCrew({
 
 		window.addEventListener('scroll', handleScroll, { passive: true });
 		lgQuery.addEventListener('change', handleMediaChange);
-		console.log('🚀 ~ :113 ~ PageEventCrew ~ lgQuery:', lgQuery);
 		return () => {
 			window.removeEventListener('scroll', handleScroll);
 			lgQuery.removeEventListener('change', handleMediaChange);

@@ -103,7 +103,7 @@ export const pCurated = defineType({
 		}: Record<string, any>) {
 			return {
 				title,
-				subtitle: `[${categoryTitle ?? '(no category)'}] — /curated/${slug?.current ?? '(no slug)'}`,
+				subtitle: `[${categoryTitle ?? '(no category)'}] — /curated/products/${slug?.current ?? '(no slug)'}`,
 				media: mainImage?.image.asset || ImageIcon,
 			};
 		},

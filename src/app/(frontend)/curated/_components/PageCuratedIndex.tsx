@@ -13,7 +13,6 @@ type Props = {
 };
 
 export function PageCuratedIndex({ data }: Props) {
-	console.log('🚀 ~ :16 ~ PageCuratedIndex ~ data:', data);
 	const { title, description, collections, categories } = data || {};
 
 	return (
@@ -73,7 +72,7 @@ export function PageCuratedIndex({ data }: Props) {
 							{collection.slug && (
 								<div className="flex justify-center">
 									<Button asChild>
-										<Link href={`/curated/collection/${collection.slug}`}>
+										<Link href={`/curated/collections/${collection.slug}`}>
 											View All
 										</Link>
 									</Button>

@@ -31,11 +31,15 @@ export const mainDocuments = defineDocuments([
 		filter: `_type == "pCuratedIndex"`,
 	},
 	{
-		route: '/curated/:slug',
+		route: '/curated/products/:slug',
 		filter: `_type == "pCurated" && slug.current == $slug`,
 	},
 	{
-		route: '/curated/collection/:slug',
+		route: '/curated/categories/:slug',
+		filter: `_type == "pCuratedCategory" && slug.current == $slug`,
+	},
+	{
+		route: '/curated/collections/:slug',
 		filter: `_type == "pCuratedCollection" && slug.current == $slug`,
 	},
 ]);
@@ -99,6 +103,21 @@ export const locations = {
 					title: doc?.title || 'Untitled',
 					href:
 						resolveHref({ documentType: 'pCurated', slug: doc?.slug }) || '',
+				},
+			],
+		}),
+	}),
+	pCuratedCategory: defineLocations({
+		select: { title: 'title', slug: 'slug.current' },
+		resolve: (doc) => ({
+			locations: [
+				{
+					title: doc?.title || 'Untitled',
+					href:
+						resolveHref({
+							documentType: 'pCuratedCategory',
+							slug: doc?.slug,
+						}) || '',
 				},
 			],
 		}),

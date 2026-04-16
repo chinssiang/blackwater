@@ -43,7 +43,7 @@ export default function CuratedProductCard({
 			}}
 		>
 			<Link
-				href={`/curated/${product.slug}`}
+				href={`/curated/products/${product.slug}`}
 				className="group flex flex-col h-full"
 			>
 				{/* Badge */}

@@ -35,13 +35,14 @@ export default function CuratedCategoriesGrid({
 
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
 				{categories.map((cat, index) => (
-					<div
+					<Link
 						key={cat._id}
-						className="relative aspect-[4/3] overflow-hidden bg-foreground/5"
+						href={`/curated/categories/${cat.slug}`}
+						className="group relative aspect-[4/3] overflow-hidden bg-foreground/5"
 					>
 						{cat.coverImage && (
 							<ImageBlock
-								className="w-full h-full object-cover"
+								className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
 								imageObj={cat.coverImage}
 								alt={cat.title ?? ''}
 								priority={priority && index === 0}
@@ -56,14 +57,14 @@ export default function CuratedCategoriesGrid({
 								<span className="t-h-6 text-white/70">{cat.count}</span>
 							)}
 						</div>
-					</div>
+					</Link>
 				))}
 			</div>
 
 			{showViewAll && (
 				<div className="flex justify-center mt-8">
 					<Link
-						href="/curated"
+						href="/curated/categories"
 						className="inline-flex items-center justify-center bg-foreground text-background t-h-6 uppercase px-12 py-3 hover:bg-foreground/80 transition-colors"
 					>
 						View All
