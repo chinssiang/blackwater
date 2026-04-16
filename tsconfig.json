@@ -29,7 +29,7 @@
 		"/next-env.d.ts",
 		".next/dev/types/**/*.ts",
 		"**/*.mts",
-		"src/app/sitemap.js",
+		"src/app/sitemap.ts",
 		"sanity.types.ts"
 	],
 	"exclude": ["node_modules"]

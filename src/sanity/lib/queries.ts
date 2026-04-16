@@ -2,6 +2,13 @@ import { defineQuery } from 'next-sanity';
 import { resolvedHrefGroq } from '@/lib/routes';
 export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 
+export const SITEMAP_QUERY =
+	defineQuery(`*[_type in ["pHome", "pGeneral", "pCuratedIndex", "pCurated", "pCuratedCollection", "pEventIndex", "pContact"] && defined(slug.current) && (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
+    _type,
+		"slug": slug.current,
+    _updatedAt
+}`);
+
 const baseFields = `
 	_id,
 	_type,
