@@ -71,7 +71,7 @@ export function PageCuratedIndex({ data }: Props) {
 							)}
 							{collection.slug && (
 								<div className="flex justify-center">
-									<Button asChild>
+									<Button asChild size="xl" className="min-w-96 uppercase">
 										<Link href={`/curated/collections/${collection.slug}`}>
 											View All
 										</Link>

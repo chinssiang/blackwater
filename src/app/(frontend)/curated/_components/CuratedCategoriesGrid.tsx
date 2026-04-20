@@ -2,6 +2,8 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { fadeAnim } from '@/lib/animate';
+import { Button } from '@/components/ui/Button';
+import CustomLink from '@/components/CustomLink';
 
 type Category = {
 	_id: string;
@@ -25,7 +27,7 @@ export default function CuratedCategoriesGrid({
 	if (!categories || categories.length === 0) return null;
 
 	return (
-		<motion.section
+		<motion.div
 			initial="hide"
 			animate="show"
 			variants={fadeAnim}
@@ -38,7 +40,7 @@ export default function CuratedCategoriesGrid({
 					<Link
 						key={cat._id}
 						href={`/curated/categories/${cat.slug}`}
-						className="group relative aspect-[4/3] overflow-hidden bg-foreground/5"
+						className="group relative aspect-4/3 overflow-hidden bg-foreground/5"
 					>
 						{cat.coverImage && (
 							<ImageBlock
@@ -63,14 +65,13 @@ export default function CuratedCategoriesGrid({
 
 			{showViewAll && (
 				<div className="flex justify-center mt-8">
-					<Link
-						href="/curated/categories"
-						className="inline-flex items-center justify-center bg-foreground text-background t-h-6 uppercase px-12 py-3 hover:bg-foreground/80 transition-colors"
-					>
-						View All
-					</Link>
+					<Button asChild size="xl">
+						<CustomLink link={{ href: '/curated/categories' }}>
+							View All
+						</CustomLink>
+					</Button>
 				</div>
 			)}
-		</motion.section>
+		</motion.div>
 	);
 }

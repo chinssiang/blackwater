@@ -2,6 +2,8 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { fadeAnim } from '@/lib/animate';
+import { Button } from '@/components/ui/Button';
+import CustomLink from '@/components/CustomLink';
 
 type CuratedProductCardProps = {
 	product: {
@@ -32,7 +34,7 @@ export default function CuratedProductCard({
 		.join(', ');
 
 	return (
-		<motion.article
+		<motion.div
 			initial="hide"
 			animate="show"
 			variants={fadeAnim}
@@ -65,9 +67,11 @@ export default function CuratedProductCard({
 				</div>
 
 				{/* Details button */}
-				<div className="bg-foreground/40 text-background py-2.5 text-center t-h-6 uppercase group-hover:bg-foreground/60 transition-colors">
-					Details
-				</div>
+				<Button asChild size="xl" className="uppercase">
+					<CustomLink link={{ href: `/curated/products/${product.slug}` }}>
+						Details
+					</CustomLink>
+				</Button>
 
 				{/* Info */}
 				<div className="flex flex-col gap-1 mt-3">
@@ -84,11 +88,9 @@ export default function CuratedProductCard({
 					)}
 
 					{/* Price */}
-					{product.price && (
-						<p className="t-b-2 text-muted">{product.price}</p>
-					)}
+					{product.price && <p className="t-b-2 text-muted">{product.price}</p>}
 				</div>
 			</Link>
-		</motion.article>
+		</motion.div>
 	);
 }

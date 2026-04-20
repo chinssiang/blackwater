@@ -189,7 +189,12 @@ export function createDynamicResolver(fieldsArray: FormField[]) {
 		}
 
 		if (inputType === 'tel') {
-			schema = z.string().regex(VALIDATION_PATTERNS.phone.value, VALIDATION_PATTERNS.phone.message);
+			schema = z
+				.string()
+				.regex(
+					VALIDATION_PATTERNS.phone.value,
+					VALIDATION_PATTERNS.phone.message
+				);
 		}
 
 		if (minLength) {
@@ -455,6 +460,7 @@ export function CustomForm({
 				type="submit"
 				disabled={formState === FORM_STATES.SUBMITTING}
 				className="mt-15 cursor-pointer"
+				size="xl"
 			>
 				{formState === FORM_STATES.SUBMITTING ? (
 					<svg
