@@ -1,4 +1,3 @@
-'use client';
 import CustomPortableText from '@/components/CustomPortableText';
 import { CustomForm } from '@/components/CustomForm';
 

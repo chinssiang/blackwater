@@ -1,6 +1,16 @@
 'use client';
-import { cn } from '@/lib/utils';
 import { useState, useMemo } from 'react';
+import Link from 'next/link';
+import CustomLink from '@/components/CustomLink';
+import { format } from 'date-fns';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { motion } from 'motion/react';
+import type { PEvent } from 'sanity.types';
+import { ArrowUpRight } from '@/components/SvgIcons';
+import { Button } from '@/components/ui/Button';
+import { fadeAnim } from '@/lib/animate';
+import { buildRgbaCssString } from '@/lib/image-utils';
+import { cn, hasArrayValue } from '@/lib/utils';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
 const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
@@ -34,17 +44,6 @@ function getDaysUntilEvent(
 	}
 	return null;
 }
-import Link from 'next/link';
-import CustomLink from '@/components/CustomLink';
-import { format } from 'date-fns';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { ArrowUpRight } from '@/components/SvgIcons';
-import { hasArrayValue } from '@/lib/utils';
-import { buildRgbaCssString } from '@/lib/image-utils';
-import { fadeAnim } from '@/lib/animate';
-import { Button } from '@/components/ui/Button';
-import type { PEvent } from 'sanity.types';
-import { motion } from 'motion/react';
 
 interface PageEventsProps {
 	data: PEvent & {
@@ -92,9 +91,10 @@ export function PageEvents({ data }: PageEventsProps) {
 	}, [availableMonths, currentMonth, currentYear]);
 
 	const currentMonthData = availableMonths[currentMonthIndex];
-	const displayEvents = useMemo(() => {
-		return currentMonthData?.events || [];
-	}, [currentMonthData]);
+	const displayEvents = useMemo(
+		() => currentMonthData?.events || [],
+		[currentMonthData]
+	);
 
 	const isHideStatusColumn = useMemo(() => {
 		const isAllStatusEmpty = displayEvents.every((event) => {

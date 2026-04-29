@@ -16,8 +16,8 @@ export default function PageHome({ data }: PageHomeProps) {
 			<div className="px-contain mx-auto max-w-sm text-center text-sm text-balance uppercase sm:max-w-6xl">
 				<AnimatedTitle title={landingTitle} />
 			</div>
-			{pageModules?.map((module, i) => (
-				<PageModules key={`page-module-${i}`} module={module} />
+			{pageModules?.map((module) => (
+				<PageModules key={module._key} module={module} />
 			))}
 		</div>
 	);
