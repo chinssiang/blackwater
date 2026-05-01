@@ -5,8 +5,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start development server (also runs typegen first)
-npm run build        # Build for production (also runs typegen first)
+npm run dev          # Start development server (runs typegen first via predev hook)
+npm run build        # Build for production
 npm run typegen      # Extract Sanity schema and generate TypeScript types
 npm run lint         # Run ESLint
 npm run analyze      # Build and open Webpack Bundle Analyzer
@@ -111,7 +111,7 @@ EMAIL_SERVER_PORT
 
 ### Type Generation
 
-After modifying any Sanity schema file, run `npm run typegen` to update `src/sanity/extract.json` and regenerate `sanity.types.ts`. The `predev` and `prebuild` hooks run this automatically.
+After modifying any Sanity schema file, run `npm run typegen` to update `src/sanity/extract.json` and regenerate `sanity.types.ts`. The `predev` hook runs this automatically before `npm run dev`, but not before `npm run build`.
 
 ### Troubleshooting
 
