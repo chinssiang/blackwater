@@ -25,6 +25,7 @@ import { portableTextSimple } from './objects/portable-text-simple';
 import { sectionAppearance } from './objects/section-appearance';
 import { socialLink } from './objects/social-link';
 import { gAnnouncement } from './singletons/g-announcement';
+import { eventStation } from './objects/event-station';
 import { freeform } from './objects/freeform';
 import { gAuthor } from './singletons/g-author';
 import { gFooter } from './singletons/g-footer';
@@ -69,6 +70,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	pCuratedCategory,
 	pCuratedCollection,
 	pBrand,
+	eventStation,
 	freeform,
 	formField,
 	link(),

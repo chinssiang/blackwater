@@ -44,7 +44,14 @@ const nextConfig = {
 	async headers() {
 		return [
 			{
-				source: '/(.*)',
+				source: '/sanity/:path*',
+				headers: [
+					{ key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+					{ key: 'X-Content-Type-Options', value: 'nosniff' },
+				],
+			},
+			{
+				source: '/((?!sanity).*)',
 				headers: securityHeaders,
 			},
 		];

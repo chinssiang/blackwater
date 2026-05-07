@@ -8,6 +8,14 @@ export const pEvent = defineType({
 	name: 'pEvent',
 	type: 'document',
 	icon: BookIcon,
+	fieldsets: [
+		{
+			name: 'trail',
+			title: 'Trail / Multi-Station Route',
+			description: 'Optional — only fill in for trail-style events with stations',
+			options: { collapsible: true, collapsed: true },
+		},
+	],
 	fields: [
 		defineField({
 			name: 'title',
@@ -174,6 +182,25 @@ export const pEvent = defineType({
 			type: 'text',
 			rows: 2,
 			description: 'Event-level notes, e.g. OOO status',
+		}),
+		defineField({
+			name: 'startEndLocation',
+			title: 'Start & End Location',
+			type: 'object',
+			fieldset: 'trail',
+			description: 'The store or meeting point where runners start and finish',
+			fields: [
+				defineField({ name: 'name', type: 'string', title: 'Name' }),
+				defineField({ name: 'link', type: 'url', title: 'Google Maps Link' }),
+			],
+		}),
+		defineField({
+			name: 'stations',
+			title: 'Stations',
+			type: 'array',
+			fieldset: 'trail',
+			of: [{ type: 'eventStation' }],
+			description: 'Themed stops along the route — each with a quest, map link, and directions',
 		}),
 		defineField({
 			name: 'content',

@@ -553,3 +553,47 @@ export const pageCuratedProductsIndexQuery = defineQuery(`
 		${curatedCategoriesFields}
 	}
 `);
+
+export const pageEventSlugsQuery = defineQuery(`
+	*[_type == "pEvent" && defined(slug.current)]
+	{"slug": slug.current}
+`);
+
+export const pageEventSingleQuery = defineQuery(`
+	*[_type == "pEvent" && slug.current == $slug][0]{
+		${baseFields},
+		subtitle,
+		eventDatetime,
+		dateStatus,
+		location,
+		locationLink,
+		startEndLocation,
+		categories[]->{ _id, title, "slug": slug.current },
+		statusList[]{
+			_key,
+			link {
+				${linkFields}
+			},
+			eventStatus->{
+				_id,
+				title,
+				statusTextColor->{...color},
+				statusBgColor->{...color}
+			}
+		},
+		stations[]{
+			name,
+			flavorEmoji,
+			distance,
+			locationName,
+			locationLink,
+			questTitle,
+			questInstructions,
+			directionsIn,
+			directionsOut
+		},
+		content[]{
+			${portableTextContentFields}
+		}
+	}
+`);

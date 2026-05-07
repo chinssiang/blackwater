@@ -212,6 +212,7 @@ export function PageEvents({ data }: PageEventsProps) {
 							title,
 							subtitle,
 							_id,
+							slug,
 							statusList,
 							eventDatetime,
 							dateStatus,
@@ -249,7 +250,12 @@ export function PageEvents({ data }: PageEventsProps) {
 										}
 									)}
 								>
-									<p className="text-balance mb-4 lg:mb-0">{title}</p>
+									<p className="text-balance mb-4 lg:mb-0">
+										{slug ? (
+											<Link className="p-fill increase-target-size" href={`/events/${slug}`} />
+										) : null}
+										{title}
+									</p>
 									{subtitle && (
 										<p className="text-muted-foreground text-balance group-hover/row:text-muted">
 											{subtitle}
