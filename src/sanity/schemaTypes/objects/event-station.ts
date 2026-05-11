@@ -13,28 +13,22 @@ export const eventStation = defineType({
 			validation: (Rule) => Rule.required(),
 		}),
 		defineField({
-			name: 'flavorEmoji',
-			title: 'Flavor Emoji',
-			type: 'string',
-			description: 'Single emoji representing the flavor, e.g. 🌿',
-		}),
-		defineField({
-			name: 'distance',
-			title: 'Distance',
-			type: 'string',
-			description: 'e.g. ~5km roundtrip',
-		}),
-		defineField({
 			name: 'locationName',
 			title: 'Location Name',
 			type: 'string',
-			description: 'e.g. Da\'an Forest Park (Exit 2)',
+			description: "e.g. Da'an Forest Park (Exit 2)",
 			validation: (Rule) => Rule.required(),
 		}),
 		defineField({
 			name: 'locationLink',
 			title: 'Google Maps Link',
 			type: 'url',
+		}),
+		defineField({
+			name: 'distance',
+			title: 'Distance',
+			type: 'string',
+			description: 'e.g. ~5km roundtrip',
 		}),
 		defineField({
 			name: 'questTitle',
@@ -55,7 +49,8 @@ export const eventStation = defineType({
 			title: 'Getting Here',
 			type: 'text',
 			rows: 3,
-			description: 'How to reach this station (from store or from previous stop)',
+			description:
+				'How to reach this station (from store or from previous stop)',
 		}),
 		defineField({
 			name: 'directionsOut',
@@ -68,12 +63,11 @@ export const eventStation = defineType({
 	preview: {
 		select: {
 			name: 'name',
-			flavorEmoji: 'flavorEmoji',
 			locationName: 'locationName',
 		},
-		prepare({ name, flavorEmoji, locationName }) {
+		prepare({ name, locationName }) {
 			return {
-				title: [flavorEmoji, name].filter(Boolean).join(' '),
+				title: name,
 				subtitle: locationName,
 			};
 		},

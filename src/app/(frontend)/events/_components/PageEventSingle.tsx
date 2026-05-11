@@ -7,7 +7,6 @@ import { buildRgbaCssString } from '@/lib/image-utils';
 
 type Station = {
 	name?: string | null;
-	flavorEmoji?: string | null;
 	distance?: string | null;
 	locationName?: string | null;
 	locationLink?: string | null;
@@ -73,15 +72,22 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 			{/* Hero */}
 			<section className="px-4 pt-16 pb-8 lg:px-8 lg:pt-24 lg:pb-12 border-b border-foreground/20">
 				<div className="max-w-3xl">
-					<p className="t-b-2 uppercase text-muted-foreground mb-3">{formattedDate}</p>
+					<p className="t-b-2 uppercase text-muted-foreground mb-3">
+						{formattedDate}
+					</p>
 					<h1 className="t-h-2 uppercase text-balance mb-2">{title}</h1>
 					{subtitle && (
-						<p className="t-b-1 text-muted-foreground text-balance mb-6">{subtitle}</p>
+						<p className="t-b-1 text-muted-foreground text-balance mb-6">
+							{subtitle}
+						</p>
 					)}
 					{hasArrayValue(statusList) && (
 						<div className="flex flex-wrap gap-2">
 							{statusList!.map((item) => (
-								<EventStatusBadge key={item._key || item.eventStatus?.title} item={item} />
+								<EventStatusBadge
+									key={item._key || item.eventStatus?.title}
+									item={item}
+								/>
 							))}
 						</div>
 					)}
@@ -91,22 +97,22 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 			{/* Anchor nav */}
 			{hasStations && (
 				<nav className="sticky top-0 z-20 bg-background border-b border-foreground/20 overflow-x-auto">
-					<div className="flex gap-0 min-w-max">
+					<div className="flex gap-0">
 						{startName && (
 							<a
 								href="#start"
 								className="px-4 py-3 t-b-2 uppercase whitespace-nowrap border-r border-foreground/20 hover:bg-foreground hover:text-background transition-colors"
 							>
-								Start
+								{startName}
 							</a>
 						)}
 						{stations!.map((station, i) => (
 							<a
 								key={i}
 								href={`#station-${i}`}
-								className="px-4 py-3 t-b-2 uppercase whitespace-nowrap border-r border-foreground/20 hover:bg-foreground hover:text-background transition-colors"
+								className="px-4 py-3 t-b-2 uppercase whitespace-nowrap not-last:border-r border-foreground/20 hover:bg-foreground hover:text-background transition-colors"
 							>
-								{station.flavorEmoji} {station.name}
+								{station.name}
 							</a>
 						))}
 					</div>
@@ -117,21 +123,22 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 				{/* Start / End card */}
 				{startName && (
 					<section id="start" className="py-8 border-b border-foreground/20">
-						<p className="t-b-2 uppercase text-muted-foreground mb-1">Start &amp; Finish</p>
-						<div className="flex items-center gap-2">
+						<p className="t-b-2 uppercase text-muted-foreground mb-1">
+							Start &amp; Finish
+						</p>
+						{startLink ? (
+							<Link
+								href={startLink}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-1 t-h-5 uppercase hover:opacity-70 transition-opacity"
+							>
+								{startName}
+								<ArrowUpRight className="size-2" aria-hidden />
+							</Link>
+						) : (
 							<p className="t-h-5 uppercase">{startName}</p>
-							{startLink && (
-								<Link
-									href={startLink}
-									target="_blank"
-									rel="noopener noreferrer"
-									className="inline-flex items-center gap-0.5 t-b-2 uppercase hover:opacity-70 transition-opacity"
-									aria-label={`Open ${startName} in Maps`}
-								>
-									<ArrowUpRight className="size-3" />
-								</Link>
-							)}
-						</div>
+						)}
 					</section>
 				)}
 
@@ -144,7 +151,9 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 				{/* Event notes */}
 				{hasContent && (
 					<section className="py-10 border-t border-foreground/20">
-						<p className="t-b-2 uppercase text-muted-foreground mb-4">Event Notes</p>
+						<p className="t-b-2 uppercase text-muted-foreground mb-4">
+							Event Notes
+						</p>
 						<CustomPortableText value={content as any} />
 					</section>
 				)}
@@ -156,7 +165,6 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 function StationCard({ station, index }: { station: Station; index: number }) {
 	const {
 		name,
-		flavorEmoji,
 		distance,
 		locationName,
 		locationLink,
@@ -179,11 +187,6 @@ function StationCard({ station, index }: { station: Station; index: number }) {
 						{distance && <span className="ml-2">&mdash; {distance}</span>}
 					</p>
 					<div className="flex items-center gap-3">
-						{flavorEmoji && (
-							<span className="text-3xl leading-none" aria-hidden="true">
-								{flavorEmoji}
-							</span>
-						)}
 						<h2 className="t-h-4 uppercase">{name}</h2>
 					</div>
 				</div>
@@ -193,20 +196,19 @@ function StationCard({ station, index }: { station: Station; index: number }) {
 			{locationName && (
 				<div className="mb-6">
 					<p className="t-b-2 uppercase text-muted-foreground mb-1">Location</p>
-					<div className="flex items-center gap-2 group/loc">
+					{locationLink ? (
+						<Link
+							href={locationLink}
+							target="_blank"
+							rel="noopener noreferrer"
+							className="inline-flex items-center gap-1 t-b-1 uppercase hover:opacity-70 transition-opacity"
+						>
+							{locationName}
+							<ArrowUpRight className="size-2" aria-hidden />
+						</Link>
+					) : (
 						<p className="t-b-1 uppercase">{locationName}</p>
-						{locationLink && (
-							<Link
-								href={locationLink}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="inline-flex items-center gap-0.5 hover:opacity-70 transition-opacity"
-								aria-label={`Open ${locationName} in Maps`}
-							>
-								<ArrowUpRight className="size-3" />
-							</Link>
-						)}
-					</div>
+					)}
 				</div>
 			)}
 
@@ -223,16 +225,25 @@ function StationCard({ station, index }: { station: Station; index: number }) {
 			)}
 
 			{/* Directions */}
-			<div className={cn('grid gap-4', directionsIn && directionsOut ? 'lg:grid-cols-2' : '')}>
+			<div
+				className={cn(
+					'grid gap-4',
+					directionsIn && directionsOut ? 'lg:grid-cols-2' : ''
+				)}
+			>
 				{directionsIn && (
 					<div>
-						<p className="t-b-2 uppercase text-muted-foreground mb-1">Getting Here</p>
+						<p className="t-b-2 uppercase text-muted-foreground mb-1">
+							Getting Here
+						</p>
 						<p className="t-b-1 whitespace-pre-line">{directionsIn}</p>
 					</div>
 				)}
 				{directionsOut && (
 					<div>
-						<p className="t-b-2 uppercase text-muted-foreground mb-1">Heading Out</p>
+						<p className="t-b-2 uppercase text-muted-foreground mb-1">
+							Heading Out
+						</p>
 						<p className="t-b-1 whitespace-pre-line">{directionsOut}</p>
 					</div>
 				)}
@@ -249,14 +260,16 @@ function EventStatusBadge({ item }: { item: StatusListItem }) {
 		<span
 			className="rounded-4xl py-2 px-2.5 uppercase t-b-2 inline-flex items-center gap-1"
 			style={{
-				color: buildRgbaCssString(statusTextColor as any) || 'var(--foreground)',
-				backgroundColor: buildRgbaCssString(statusBgColor as any) || 'var(--muted)',
+				color:
+					buildRgbaCssString(statusTextColor as any) || 'var(--foreground)',
+				backgroundColor:
+					buildRgbaCssString(statusBgColor as any) || 'var(--muted)',
 			}}
 		>
 			{title}
 			{link?.href && (
 				<Link href={link.href} className="p-fill" aria-hidden>
-					<ArrowUpRight className="size-2.5" />
+					<ArrowUpRight className="size-2" />
 				</Link>
 			)}
 		</span>

@@ -583,7 +583,6 @@ export const pageEventSingleQuery = defineQuery(`
 		},
 		stations[]{
 			name,
-			flavorEmoji,
 			distance,
 			locationName,
 			locationLink,
