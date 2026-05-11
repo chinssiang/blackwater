@@ -84,9 +84,6 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 			)}
 			<section className="p-x-max pt-16 pb-8 lg:pt-24 lg:pb-12">
 				<div className="max-w-3xl">
-					<p className="t-b-2 uppercase text-muted-foreground mb-3">
-						{formattedDate}
-					</p>
 					<h1 className="t-h-2 uppercase text-balance mb-2">{title}</h1>
 					{subtitle && (
 						<p className="t-b-1 text-muted-foreground text-balance mb-6">
@@ -105,26 +102,41 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 					)}
 				</div>
 			</section>
-			{isMultiLocation ? (
-				<MultiLocationBody data={data} />
-			) : (
-				<SingleLocationBody data={data} formattedDate={formattedDate} />
-			)}
+			<EventBody
+				data={data}
+				formattedDate={formattedDate}
+				isMultiLocation={isMultiLocation}
+			/>
 		</div>
 	);
 }
 
-function MultiLocationBody({ data }: { data: PageEventSingleProps['data'] }) {
-	const { location, locationLink, startEndLocation, stations, content } =
-		data || {};
+function EventBody({
+	data,
+	formattedDate,
+	isMultiLocation,
+}: {
+	data: PageEventSingleProps['data'];
+	formattedDate: string;
+	isMultiLocation: boolean;
+}) {
+	const {
+		location,
+		locationLink,
+		startEndLocation,
+		highlights,
+		stations,
+		content,
+	} = data || {};
 
-	const hasStations = hasArrayValue(stations);
 	const hasContent = hasArrayValue(content);
-	const startName = startEndLocation?.name || location;
-	const startLink = startEndLocation?.link || locationLink;
+	const hasStations = hasArrayValue(stations);
+	const hasStartFinish = !!startEndLocation?.name;
 
 	const navItems = [
-		...(startName ? [{ id: 'start', label: startName }] : []),
+		...(hasStartFinish
+			? [{ id: 'start', label: startEndLocation!.name! }]
+			: []),
 		...(stations ?? []).map((s, i) => ({
 			id: `station-${i}`,
 			label: s.name ?? `Station ${i + 1}`,
@@ -132,63 +144,9 @@ function MultiLocationBody({ data }: { data: PageEventSingleProps['data'] }) {
 	];
 
 	return (
-		<>
-			{hasStations && <EventStationsNav items={navItems} />}
-			<div className="p-x-max">
-				{startName && (
-					<section
-						id="start"
-						className="py-8 border-b border-foreground/20 scroll-mt-12"
-					>
-						<p className="t-b-2 uppercase text-muted-foreground mb-1">
-							Start &amp; Finish
-						</p>
-						{startLink ? (
-							<Link
-								href={startLink}
-								target="_blank"
-								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1 t-h-5 uppercase hover:opacity-70 transition-opacity"
-							>
-								{startName}
-								<ArrowUpRight className="size-2" aria-hidden />
-							</Link>
-						) : (
-							<p className="t-h-5 uppercase">{startName}</p>
-						)}
-					</section>
-				)}
-				{hasStations &&
-					stations!.map((station, i) => (
-						<StationCard key={i} station={station} index={i} />
-					))}
-				{hasContent && (
-					<section className="py-10 border-t border-foreground/20">
-						<p className="t-b-2 uppercase text-muted-foreground mb-4">
-							Event Notes
-						</p>
-						<CustomPortableText blocks={content as any} />
-					</section>
-				)}
-			</div>
-		</>
-	);
-}
-
-function SingleLocationBody({
-	data,
-	formattedDate,
-}: {
-	data: PageEventSingleProps['data'];
-	formattedDate: string;
-}) {
-	const { location, locationLink, highlights, content } = data || {};
-	const hasContent = hasArrayValue(content);
-
-	return (
-		<section className="flex flex-col lg:flex-row p-x-max py-10 lg:py-17.5 gap-10">
-			{/* Left sticky column */}
-			<div className="flex-1 lg:sticky lg:top-header h-fit space-y-8">
+		<section className="flex flex-col lg:flex-row gap-10 lg:p-x-max">
+			{/* Left sticky meta — shared for both variants */}
+			<div className="lg:flex-1 lg:sticky lg:top-header h-fit space-y-8 px-contain lg:px-0">
 				{location && (
 					<div>
 						<p className="t-b-2 uppercase text-muted-foreground mb-1">
@@ -232,22 +190,63 @@ function SingleLocationBody({
 				)}
 			</div>
 
-			{/* Right column */}
-			<div className="flex-1">
+			{/* Right column — variant-specific */}
+			<div className="lg:flex-1 min-w-0">
+				{hasStations && <EventStationsNav items={navItems} />}
+				{hasStartFinish && (
+					<section
+						id="start"
+						className="py-8 border-b border-foreground/20 scroll-mt-12 px-contain lg:px-0"
+					>
+						<p className="t-b-2 uppercase text-muted-foreground mb-1">
+							Start &amp; Finish
+						</p>
+						{startEndLocation!.link ? (
+							<Link
+								href={startEndLocation!.link}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-1 t-h-5 uppercase hover:opacity-70 transition-opacity"
+							>
+								{startEndLocation!.name}
+								<ArrowUpRight className="size-2" aria-hidden />
+							</Link>
+						) : (
+							<p className="t-h-5 uppercase">{startEndLocation!.name}</p>
+						)}
+					</section>
+				)}
+				{hasStations &&
+					stations!.map((station, i) => (
+						<StationCard
+							key={i}
+							station={station}
+							index={i}
+							className="px-contain lg:px-0"
+						/>
+					))}
 				{hasContent && (
-					<div className="max-w-md">
+					<section className="py-10 border-t border-foreground/20 px-contain lg:px-0">
 						<p className="t-b-2 uppercase text-muted-foreground mb-4">
 							Event Notes
 						</p>
 						<CustomPortableText blocks={content as any} />
-					</div>
+					</section>
 				)}
 			</div>
 		</section>
 	);
 }
 
-function StationCard({ station, index }: { station: Station; index: number }) {
+function StationCard({
+	station,
+	index,
+	className,
+}: {
+	station: Station;
+	index: number;
+	className?: string;
+}) {
 	const {
 		name,
 		distance,
@@ -262,7 +261,10 @@ function StationCard({ station, index }: { station: Station; index: number }) {
 	return (
 		<section
 			id={`station-${index}`}
-			className="py-8 border-b border-foreground/20 scroll-mt-12"
+			className={cn(
+				'py-8 border-b border-foreground/20 scroll-mt-12',
+				className
+			)}
 		>
 			<div className="flex items-start justify-between gap-4 mb-6">
 				<div className="min-w-0">
@@ -301,7 +303,7 @@ function StationCard({ station, index }: { station: Station; index: number }) {
 						Flavor Challenge &mdash; {questTitle}
 					</p>
 					{questInstructions && (
-						<p className="t-b-1 leading-6 hitespace-pre-line">
+						<p className="t-b-1 leading-5 hitespace-pre-line">
 							{questInstructions}
 						</p>
 					)}

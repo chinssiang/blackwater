@@ -133,18 +133,6 @@
 		--font-default: var(--font-ABC-Display), 'Arial', 'Helvetica Neue', 'sans-serif';
 		--font-feature: var(--font-basel-typewriter), 'Arial', 'Helvetica Neue', 'sans-serif';
 
-		--t-h-1: 500 30px/0.9 var(--font-default);
-		--t-h-2: 500 24px/0.9 var(--font-default);
-		--t-h-3: 500 20px/1 var(--font-default);
-		--t-h-4: 500 18px/1 var(--font-default);
-		--t-h-5: 500 16px/1 var(--font-default);
-		--t-h-6: 500 14px/1 var(--font-default);
-
-		--t-b-1: 400 14px/1 var(--font-default);
-		--t-b-2: 400 12px/1 var(--font-default);
-		--t-l-1: 500 12px/1 var(--font-default);
-		--t-l-2: 500 10px/1 var(--font-feature);
-
 		--background: oklch(1 0 0);
 		--foreground: oklch(0.145 0 0);
 		--card: oklch(1 0 0);
@@ -253,10 +241,6 @@
 
 	@variant lg {
 		:root {
-			--t-h-1: 300 80px/1 var(--font-default);
-			--t-h-2: 300 64px/1 var(--font-default);
-			--t-h-3: 300 48px/1 var(--font-default);
-
 			--s-section: 96px;
 			--h-main: calc(var(--s-vp-height) - var(--height-announcement, 0px) - var(--height-header) - var(--height-footer));
 		}
@@ -289,24 +273,44 @@
 		}
 
 		h1 {
-			@apply t-h-1;
+			font-family: var(--font-default);
+			font-weight: 500;
+			font-size: 30px;
+			line-height: 0.9;
+			letter-spacing: -0.04em;
 		}
 
 		h2 {
-			@apply t-h-2;
+			font-family: var(--font-default);
+			font-weight: 500;
+			font-size: 24px;
+			line-height: 0.9;
+			letter-spacing: -0.02em;
 		}
 
 		h3 {
-			@apply t-h-3;
+			font-family: var(--font-default);
+			font-weight: 500;
+			font-size: 20px;
+			line-height: 1;
+			letter-spacing: -0.02em;
 		}
 
 		h4 {
-			@apply t-h-4;
+			font-family: var(--font-default);
+			font-weight: 500;
+			font-size: 18px;
+			line-height: 1;
+			letter-spacing: -0.02em;
 		}
 
 		h5,
 		h6 {
-			@apply t-h-5;
+			font-family: var(--font-default);
+			font-weight: 500;
+			font-size: 16px;
+			line-height: 1;
+			letter-spacing: -0.02em;
 		}
 
 		p,
@@ -333,7 +337,11 @@
 		p,
 		ol,
 		ul {
-			font: var(--t-b-1);
+			font-family: var(--font-default);
+			font-weight: 400;
+			font-size: 14px;
+			line-height: 1;
+			letter-spacing: -0.02em;
 
 			a {
 				text-decoration: underline;
@@ -368,7 +376,11 @@
 
 			&,
 			p {
-				font: var(--t-h-2);
+				font-family: var(--font-default);
+				font-weight: 500;
+				font-size: 24px;
+				line-height: 0.9;
+				letter-spacing: -0.02em;
 			}
 
 			p {
@@ -398,54 +410,106 @@
 	}
 }
 
-@utility t-h-1 {
-	font: var(--t-h-1);
-	letter-spacing: -0.04em;
-}
+@layer components {
+	.t-h-1 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: 30px;
+		line-height: 0.9;
+		letter-spacing: -0.04em;
+	}
 
-@utility t-h-2 {
-	font: var(--t-h-2);
-	letter-spacing: -0.02em;
-}
+	.t-h-2 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: 24px;
+		line-height: 0.9;
+		letter-spacing: -0.02em;
+	}
 
-@utility t-h-3 {
-	font: var(--t-h-3);
-	letter-spacing: -0.02em;
-}
+	.t-h-3 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: 20px;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
 
-@utility t-h-4 {
-	font: var(--t-h-4);
-	letter-spacing: -0.02em;
-}
+	.t-h-4 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: 18px;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
 
-@utility t-h-5 {
-	font: var(--t-h-5);
-	letter-spacing: -0.02em;
-}
+	.t-h-5 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: 16px;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
 
-@utility t-h-6 {
-	font: var(--t-h-6);
-	letter-spacing: -0.02em;
-}
+	.t-h-6 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: 14px;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
 
-@utility t-b-1 {
-	font: var(--t-b-1);
-	letter-spacing: -0.02em;
-}
+	.t-b-1 {
+		font-family: var(--font-default);
+		font-weight: 400;
+		font-size: 14px;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
 
-@utility t-b-2 {
-	font: var(--t-b-2);
-	letter-spacing: -0.02em;
-}
+	.t-b-2 {
+		font-family: var(--font-default);
+		font-weight: 400;
+		font-size: 12px;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
 
-@utility t-l-1 {
-	font: var(--t-l-1);
-	letter-spacing: -0.02em;
-}
+	.t-l-1 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: 12px;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
 
-@utility t-l-2 {
-	font: var(--t-l-2);
-	letter-spacing: 0.0625em;
+	.t-l-2 {
+		font-family: var(--font-feature);
+		font-weight: 500;
+		font-size: 10px;
+		line-height: 1;
+		letter-spacing: 0.0625em;
+	}
+
+	@variant lg {
+		.t-h-1 {
+			font-weight: 300;
+			font-size: 80px;
+			line-height: 1;
+		}
+
+		.t-h-2 {
+			font-weight: 300;
+			font-size: 64px;
+			line-height: 1;
+		}
+
+		.t-h-3 {
+			font-weight: 300;
+			font-size: 48px;
+			line-height: 1;
+		}
+	}
 }
 
 /* Layouts */
