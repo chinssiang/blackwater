@@ -562,11 +562,14 @@ export const pageEventSlugsQuery = defineQuery(`
 export const pageEventSingleQuery = defineQuery(`
 	*[_type == "pEvent" && slug.current == $slug][0]{
 		${baseFields},
+		format,
 		subtitle,
 		eventDatetime,
 		dateStatus,
 		location,
 		locationLink,
+		heroImage{${imageBlockMetaFields}},
+		highlights[]{label, value},
 		startEndLocation,
 		categories[]->{ _id, title, "slug": slug.current },
 		statusList[]{

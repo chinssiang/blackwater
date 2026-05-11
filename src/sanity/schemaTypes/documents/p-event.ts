@@ -1,5 +1,6 @@
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
+import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { BookIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
 
@@ -11,8 +12,9 @@ export const pEvent = defineType({
 	fieldsets: [
 		{
 			name: 'trail',
-			title: 'Trail / Multi-Station Route',
-			description: 'Optional — only fill in for trail-style events with stations',
+			title: 'Route / Multi-Station',
+			description:
+				'Optional — only fill in for multi-station events with stations',
 			options: { collapsible: true, collapsed: true },
 		},
 	],
@@ -24,6 +26,27 @@ export const pEvent = defineType({
 		}),
 		defineField({ name: 'subtitle', type: 'string' }),
 		slug(),
+		defineField({
+			name: 'format',
+			title: 'Event format',
+			type: 'string',
+			options: {
+				list: [
+					{ title: 'Single location', value: 'single' },
+					{ title: 'Multi-location', value: 'multi-location' },
+				],
+				layout: 'radio',
+			},
+			initialValue: 'single',
+		}),
+		customImage({
+			name: 'heroImage',
+			title: 'Hero image',
+			hasMobileOption: true,
+			hasCaptionOption: false,
+			hasCropOption: true,
+			options: { collapsible: true, collapsed: true },
+		}),
 		defineField({
 			name: 'eventDatetime',
 			type: 'datetime',
@@ -97,6 +120,34 @@ export const pEvent = defineType({
 				},
 			],
 			validation: (Rule) => Rule.unique(),
+		}),
+		defineField({
+			name: 'highlights',
+			title: 'Highlights ("Good to know")',
+			type: 'array',
+			description:
+				'Short label/value details shown in the left column — e.g. "Dress code: smart casual", "Capacity: 20", "Fee: $20".',
+			of: [
+				{
+					type: 'object',
+					fields: [
+						defineField({
+							name: 'label',
+							type: 'string',
+							validation: (Rule) => Rule.required(),
+						}),
+						defineField({
+							name: 'value',
+							type: 'string',
+							validation: (Rule) => Rule.required(),
+						}),
+					],
+					preview: {
+						select: { title: 'label', subtitle: 'value' },
+					},
+				},
+			],
+			hidden: ({ document }) => (document as any)?.format !== 'single',
 		}),
 		defineField({
 			name: 'teamAssignments',
@@ -189,6 +240,7 @@ export const pEvent = defineType({
 			type: 'object',
 			fieldset: 'trail',
 			description: 'The store or meeting point where runners start and finish',
+			hidden: ({ document }) => (document as any)?.format !== 'multi-location',
 			fields: [
 				defineField({ name: 'name', type: 'string', title: 'Name' }),
 				defineField({ name: 'link', type: 'url', title: 'Google Maps Link' }),
@@ -200,7 +252,9 @@ export const pEvent = defineType({
 			type: 'array',
 			fieldset: 'trail',
 			of: [{ type: 'eventStation' }],
-			description: 'Themed stops along the route — each with a quest, map link, and directions',
+			description:
+				'Themed stops along the route — each with a quest, map link, and directions',
+			hidden: ({ document }) => (document as any)?.format !== 'multi-location',
 		}),
 		defineField({
 			name: 'content',

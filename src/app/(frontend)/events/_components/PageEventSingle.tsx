@@ -1,9 +1,11 @@
 import Link from 'next/link';
-import { format } from 'date-fns';
+import { format as formatDate } from 'date-fns';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import CustomPortableText from '@/components/CustomPortableText';
+import ImageBlock from '@/components/ImageBlock';
 import { cn, hasArrayValue } from '@/lib/utils';
 import { buildRgbaCssString } from '@/lib/image-utils';
+import EventStationsNav from './EventStationsNav';
 
 type Station = {
 	name?: string | null;
@@ -26,6 +28,11 @@ type StatusListItem = {
 	link?: { href?: string | null } | null;
 };
 
+type Highlight = {
+	label?: string | null;
+	value?: string | null;
+};
+
 type PageEventSingleProps = {
 	data: {
 		title?: string | null;
@@ -39,6 +46,9 @@ type PageEventSingleProps = {
 		statusList?: StatusListItem[] | null;
 		stations?: Station[] | null;
 		content?: unknown[] | null;
+		format?: string | null;
+		heroImage?: Record<string, any> | null;
+		highlights?: Highlight[] | null;
 	} | null;
 };
 
@@ -48,29 +58,31 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 		subtitle,
 		eventDatetime,
 		dateStatus,
-		location,
-		locationLink,
-		startEndLocation,
 		statusList,
-		stations,
-		content,
+		format: eventFormat,
+		heroImage,
 	} = data || {};
 
 	const formattedDate =
 		eventDatetime && (!dateStatus || dateStatus === 'confirmed')
-			? format(new Date(eventDatetime), 'iii, MM.dd.yy, h:mm aaa')
+			? formatDate(new Date(eventDatetime), 'iii, MM.dd.yy, h:mm aaa')
 			: dateStatus?.toUpperCase() || 'TBA';
 
-	const startName = startEndLocation?.name || location;
-	const startLink = startEndLocation?.link || locationLink;
-
-	const hasStations = hasArrayValue(stations);
-	const hasContent = hasArrayValue(content);
+	const isMultiLocation =
+		eventFormat === 'multi-location' ||
+		(!eventFormat && hasArrayValue((data || {}).stations));
 
 	return (
 		<div className="min-h-screen">
-			{/* Hero */}
-			<section className="px-4 pt-16 pb-8 lg:px-8 lg:pt-24 lg:pb-12 border-b border-foreground/20">
+			{heroImage?.image && (
+				<ImageBlock
+					imageObj={heroImage as any}
+					alt={title || ''}
+					sizes="100vw"
+					priority
+				/>
+			)}
+			<section className="p-x-max pt-16 pb-8 lg:pt-24 lg:pb-12">
 				<div className="max-w-3xl">
 					<p className="t-b-2 uppercase text-muted-foreground mb-3">
 						{formattedDate}
@@ -93,36 +105,41 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 					)}
 				</div>
 			</section>
-
-			{/* Anchor nav */}
-			{hasStations && (
-				<nav className="sticky top-0 z-20 bg-background border-b border-foreground/20 overflow-x-auto">
-					<div className="flex gap-0">
-						{startName && (
-							<a
-								href="#start"
-								className="px-4 py-3 t-b-2 uppercase whitespace-nowrap border-r border-foreground/20 hover:bg-foreground hover:text-background transition-colors"
-							>
-								{startName}
-							</a>
-						)}
-						{stations!.map((station, i) => (
-							<a
-								key={i}
-								href={`#station-${i}`}
-								className="px-4 py-3 t-b-2 uppercase whitespace-nowrap not-last:border-r border-foreground/20 hover:bg-foreground hover:text-background transition-colors"
-							>
-								{station.name}
-							</a>
-						))}
-					</div>
-				</nav>
+			{isMultiLocation ? (
+				<MultiLocationBody data={data} />
+			) : (
+				<SingleLocationBody data={data} formattedDate={formattedDate} />
 			)}
+		</div>
+	);
+}
 
-			<div className="px-4 lg:px-8 max-w-3xl">
-				{/* Start / End card */}
+function MultiLocationBody({ data }: { data: PageEventSingleProps['data'] }) {
+	const { location, locationLink, startEndLocation, stations, content } =
+		data || {};
+
+	const hasStations = hasArrayValue(stations);
+	const hasContent = hasArrayValue(content);
+	const startName = startEndLocation?.name || location;
+	const startLink = startEndLocation?.link || locationLink;
+
+	const navItems = [
+		...(startName ? [{ id: 'start', label: startName }] : []),
+		...(stations ?? []).map((s, i) => ({
+			id: `station-${i}`,
+			label: s.name ?? `Station ${i + 1}`,
+		})),
+	];
+
+	return (
+		<>
+			{hasStations && <EventStationsNav items={navItems} />}
+			<div className="p-x-max">
 				{startName && (
-					<section id="start" className="py-8 border-b border-foreground/20">
+					<section
+						id="start"
+						className="py-8 border-b border-foreground/20 scroll-mt-12"
+					>
 						<p className="t-b-2 uppercase text-muted-foreground mb-1">
 							Start &amp; Finish
 						</p>
@@ -141,24 +158,92 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 						)}
 					</section>
 				)}
-
-				{/* Station cards */}
 				{hasStations &&
 					stations!.map((station, i) => (
 						<StationCard key={i} station={station} index={i} />
 					))}
-
-				{/* Event notes */}
 				{hasContent && (
 					<section className="py-10 border-t border-foreground/20">
 						<p className="t-b-2 uppercase text-muted-foreground mb-4">
 							Event Notes
 						</p>
-						<CustomPortableText value={content as any} />
+						<CustomPortableText blocks={content as any} />
 					</section>
 				)}
 			</div>
-		</div>
+		</>
+	);
+}
+
+function SingleLocationBody({
+	data,
+	formattedDate,
+}: {
+	data: PageEventSingleProps['data'];
+	formattedDate: string;
+}) {
+	const { location, locationLink, highlights, content } = data || {};
+	const hasContent = hasArrayValue(content);
+
+	return (
+		<section className="flex flex-col lg:flex-row p-x-max py-10 lg:py-17.5 gap-10">
+			{/* Left sticky column */}
+			<div className="flex-1 lg:sticky lg:top-header h-fit space-y-8">
+				{location && (
+					<div>
+						<p className="t-b-2 uppercase text-muted-foreground mb-1">
+							Location
+						</p>
+						{locationLink ? (
+							<Link
+								href={locationLink}
+								target="_blank"
+								rel="noopener noreferrer"
+								className="inline-flex items-center gap-1 t-h-5 uppercase hover:opacity-70 transition-opacity"
+							>
+								{location}
+								<ArrowUpRight className="size-2" aria-hidden />
+							</Link>
+						) : (
+							<p className="t-h-5 uppercase">{location}</p>
+						)}
+					</div>
+				)}
+				<div>
+					<p className="t-b-2 uppercase text-muted-foreground mb-1">When</p>
+					<p className="t-h-5 uppercase">{formattedDate}</p>
+				</div>
+				{hasArrayValue(highlights) && (
+					<div>
+						<p className="t-b-2 uppercase text-muted-foreground mb-3">
+							Good to know
+						</p>
+						<ul className="space-y-2">
+							{highlights!.map((h, i) => (
+								<li key={i} className="t-b-1">
+									<span className="uppercase text-muted-foreground">
+										{h.label}:
+									</span>{' '}
+									{h.value}
+								</li>
+							))}
+						</ul>
+					</div>
+				)}
+			</div>
+
+			{/* Right column */}
+			<div className="flex-1">
+				{hasContent && (
+					<div className="max-w-md">
+						<p className="t-b-2 uppercase text-muted-foreground mb-4">
+							Event Notes
+						</p>
+						<CustomPortableText blocks={content as any} />
+					</div>
+				)}
+			</div>
+		</section>
 	);
 }
 
@@ -179,20 +264,18 @@ function StationCard({ station, index }: { station: Station; index: number }) {
 			id={`station-${index}`}
 			className="py-8 border-b border-foreground/20 scroll-mt-12"
 		>
-			{/* Station header */}
 			<div className="flex items-start justify-between gap-4 mb-6">
-				<div>
-					<p className="t-b-2 uppercase text-muted-foreground mb-1">
+				<div className="min-w-0">
+					<p className="t-b-2 uppercase text-muted-foreground mb-3">
 						Station {index + 1}
-						{distance && <span className="ml-2">&mdash; {distance}</span>}
+						{distance && <span className="ml-2">{distance}</span>}
 					</p>
-					<div className="flex items-center gap-3">
-						<h2 className="t-h-4 uppercase">{name}</h2>
+					<div className="flex items-center gap-3 min-w-0">
+						<h2 className="t-h-4 uppercase text-balance">{name}</h2>
 					</div>
 				</div>
 			</div>
 
-			{/* Location */}
 			{locationName && (
 				<div className="mb-6">
 					<p className="t-b-2 uppercase text-muted-foreground mb-1">Location</p>
@@ -207,24 +290,24 @@ function StationCard({ station, index }: { station: Station; index: number }) {
 							<ArrowUpRight className="size-2" aria-hidden />
 						</Link>
 					) : (
-						<p className="t-b-1 uppercase">{locationName}</p>
+						<p className="t-b-1 uppercase wrap-break-word">{locationName}</p>
 					)}
 				</div>
 			)}
 
-			{/* Quest */}
 			{questTitle && (
 				<div className="mb-6 p-4 border border-foreground/20 rounded">
 					<p className="t-b-2 uppercase text-muted-foreground mb-1">
 						Flavor Challenge &mdash; {questTitle}
 					</p>
 					{questInstructions && (
-						<p className="t-b-1 whitespace-pre-line">{questInstructions}</p>
+						<p className="t-b-1 leading-6 hitespace-pre-line">
+							{questInstructions}
+						</p>
 					)}
 				</div>
 			)}
 
-			{/* Directions */}
 			<div
 				className={cn(
 					'grid gap-4',
@@ -268,7 +351,7 @@ function EventStatusBadge({ item }: { item: StatusListItem }) {
 		>
 			{title}
 			{link?.href && (
-				<Link href={link.href} className="p-fill" aria-hidden>
+				<Link href={link.href} className="p-fill" aria-hidden tabIndex={-1}>
 					<ArrowUpRight className="size-2" />
 				</Link>
 			)}
