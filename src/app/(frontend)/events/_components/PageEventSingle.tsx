@@ -1,3 +1,4 @@
+'use client';
 import Link from 'next/link';
 import { format as formatDate } from 'date-fns';
 import { ArrowUpRight } from '@/components/SvgIcons';
@@ -5,6 +6,12 @@ import CustomPortableText from '@/components/CustomPortableText';
 import ImageBlock from '@/components/ImageBlock';
 import { cn, hasArrayValue } from '@/lib/utils';
 import { buildRgbaCssString } from '@/lib/image-utils';
+import {
+	Accordion,
+	AccordionItem,
+	AccordionTrigger,
+	AccordionContent,
+} from '@/components/ui/Accordion';
 import EventStationsNav from './EventStationsNav';
 
 type Station = {
@@ -14,6 +21,7 @@ type Station = {
 	locationLink?: string | null;
 	questTitle?: string | null;
 	questInstructions?: string | null;
+	questExampleImage?: Record<string, any> | null;
 	directionsIn?: string | null;
 	directionsOut?: string | null;
 };
@@ -91,7 +99,7 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 						</p>
 					)}
 					{hasArrayValue(statusList) && (
-						<div className="flex flex-wrap gap-2">
+						<div className="flex flex-wrap gap-2 ">
 							{statusList!.map((item) => (
 								<EventStatusBadge
 									key={item._key || item.eventStatus?.title}
@@ -254,9 +262,12 @@ function StationCard({
 		locationLink,
 		questTitle,
 		questInstructions,
+		questExampleImage,
 		directionsIn,
 		directionsOut,
 	} = station;
+
+	const hasExampleImage = Boolean(questExampleImage?.image);
 
 	return (
 		<section
@@ -298,16 +309,46 @@ function StationCard({
 			)}
 
 			{questTitle && (
-				<div className="mb-6 p-4 border border-foreground/20 rounded">
-					<p className="t-b-2 uppercase text-muted-foreground mb-1">
-						Flavor Challenge &mdash; {questTitle}
-					</p>
-					{questInstructions && (
-						<p className="t-b-1 leading-5 hitespace-pre-line">
-							{questInstructions}
+				hasExampleImage ? (
+					<Accordion
+						type="single"
+						collapsible
+						className="mb-6 border border-foreground/20 rounded overflow-hidden"
+					>
+						<AccordionItem value="quest" className="border-b-0">
+							<AccordionTrigger className="p-4 rounded-none hover:no-underline hover:bg-foreground/5 [&>svg]:size-3">
+								<div className="min-w-0 flex-1">
+									<p className="t-b-2 uppercase text-muted-foreground mb-1">
+										Flavor Challenge &mdash; {questTitle}
+									</p>
+									{questInstructions && (
+										<p className="t-b-1 leading-5 whitespace-pre-line">
+											{questInstructions}
+										</p>
+									)}
+								</div>
+							</AccordionTrigger>
+							<AccordionContent className="p-0 border-t border-foreground/20">
+								<ImageBlock
+									imageObj={questExampleImage as any}
+									alt={`Example of ${questTitle}`}
+									sizes="(min-width: 1024px) 50vw, 100vw"
+								/>
+							</AccordionContent>
+						</AccordionItem>
+					</Accordion>
+				) : (
+					<div className="mb-6 border border-foreground/20 rounded overflow-hidden p-4">
+						<p className="t-b-2 uppercase text-muted-foreground mb-1">
+							Flavor Challenge &mdash; {questTitle}
 						</p>
-					)}
-				</div>
+						{questInstructions && (
+							<p className="t-b-1 leading-5 whitespace-pre-line">
+								{questInstructions}
+							</p>
+						)}
+					</div>
+				)
 			)}
 
 			<div
@@ -341,22 +382,25 @@ function EventStatusBadge({ item }: { item: StatusListItem }) {
 	const { eventStatus, link } = item;
 	if (!eventStatus) return null;
 	const { title, statusTextColor, statusBgColor } = eventStatus;
-	return (
-		<span
-			className="rounded-4xl py-2 px-2.5 uppercase t-b-2 inline-flex items-center gap-1"
-			style={{
-				color:
-					buildRgbaCssString(statusTextColor as any) || 'var(--foreground)',
-				backgroundColor:
-					buildRgbaCssString(statusBgColor as any) || 'var(--muted)',
-			}}
-		>
-			{title}
-			{link?.href && (
-				<Link href={link.href} className="p-fill" aria-hidden tabIndex={-1}>
-					<ArrowUpRight className="size-2" />
-				</Link>
-			)}
-		</span>
-	);
+
+	const sharedProps = {
+		className:
+			'rounded-4xl py-2 px-2.5 uppercase t-b-2 inline-flex items-center gap-1',
+		style: {
+			color: buildRgbaCssString(statusTextColor as any) || 'var(--foreground)',
+			backgroundColor:
+				buildRgbaCssString(statusBgColor as any) || 'var(--muted)',
+		},
+	};
+
+	if (link?.href) {
+		return (
+			<Link href={link.href} {...sharedProps}>
+				{title}
+				<ArrowUpRight className="size-2" aria-hidden />
+			</Link>
+		);
+	}
+
+	return <span {...sharedProps}>{title}</span>;
 }

@@ -591,6 +591,7 @@ export const pageEventSingleQuery = defineQuery(`
 			locationLink,
 			questTitle,
 			questInstructions,
+			questExampleImage{${imageBlockMetaFields}},
 			directionsIn,
 			directionsOut
 		},

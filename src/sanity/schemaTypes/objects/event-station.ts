@@ -1,4 +1,5 @@
 import { defineField, defineType } from 'sanity';
+import customImage from './custom-image';
 
 export const eventStation = defineType({
 	name: 'eventStation',
@@ -43,6 +44,14 @@ export const eventStation = defineType({
 			type: 'text',
 			rows: 3,
 			description: 'What the runner must do to earn the card',
+		}),
+		customImage({
+			name: 'questExampleImage',
+			title: 'Quest Example Image',
+			hasMobileOption: false,
+			hasCaptionOption: false,
+			hasCropOption: false,
+			options: { collapsible: true, collapsed: true },
 		}),
 		defineField({
 			name: 'directionsIn',
