@@ -5,11 +5,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start development server (also runs typegen first)
-npm run build        # Build for production (also runs typegen first)
+npm run dev          # Start development server (runs typegen first via predev hook)
+npm run build        # Build for production
 npm run typegen      # Extract Sanity schema and generate TypeScript types
 npm run lint         # Run ESLint
-npm run analyze      # Build and open Webpack Bundle Analyzer
 ```
 
 Sanity Studio is embedded at `/sanity` and runs alongside the Next.js app on the same port.
@@ -17,7 +16,7 @@ Sanity Studio is embedded at `/sanity` and runs alongside the Next.js app on the
 To regenerate Sanity TypeScript types after schema changes:
 ```bash
 npm run typegen
-# This runs: sanity schema extract --path=src/sanity/extract.json && sanity typegen generate
+# This runs: sanity schema extract && sanity typegen generate
 ```
 
 ## Architecture
@@ -28,24 +27,36 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 
 - `src/app/(frontend)/` — All public-facing routes using Next.js route groups
 - `src/app/sanity/` — Embedded Sanity Studio at `/sanity`
-- `src/app/api/` — API routes (draft mode, revalidation, email)
+- `src/app/api/` — API routes (draft mode, revalidation, email, page views)
+- `src/app/fonts/` — Web font files
 - `src/sanity/` — All Sanity configuration and schema
+- `src/sanity/schemaTypes/` — Schema split into `singletons/`, `documents/`, `objects/`, `components/`
+- `src/sanity/deskStructure/` — Sanity Studio desk customization
+- `src/sanity/migrations/` — Schema migration scripts
 - `src/components/` — Shared React components
+- `src/components/layout/` — Layout shell components (Header, Footer, Main, etc.)
+- `src/components/ui/` — shadcn/ui-style Radix UI components
 - `src/lib/` — Utilities, providers, metadata helpers
-- `src/hooks/` — Custom React hooks (also some `.js` files in `src/components/`)
+- `src/hooks/` — Custom React hooks
 
 ### Sanity Integration
 
 **Schema naming conventions:**
-- `g-*` = global singletons (header, footer, announcement)
-- `p-*` = page singletons or document types (home, contact, blog, events)
-- `settings-*` = settings singletons (general, colors, menus, integrations)
+- `g-*` = global singletons (header, footer, announcement, author, team-member)
+- `p-*` = page singletons or document types
+- `settings-*` = settings singletons (general, color, menus, integrations, redirect)
 
-Schema types live in `src/sanity/schemaTypes/` split into `singletons/`, `documents/`, and `objects/`. The full list is exported from `src/sanity/schemaTypes/index.ts`.
+**Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `gAuthor`, `pHome`, `pContact`, `p404`, `pCuratedIndex`, `settingsGeneral`, `settingsColor`, `settingsMenu`, `settingsIntegrations`, `settingsRedirect`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
 
-**Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `pHome`, `pContact`, `p404`, `settingsGeneral`, `settingsIntegration`. These are configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
+**Document types** (multi-instance, slug-based):
+- `pGeneral` — Generic pages at `/<slug>`
+- `pBlog` / `pBlogIndex` / `pBlogCategory` — Blog system (routes currently disabled)
+- `pCurated` / `pCuratedCategory` / `pCuratedCollection` — Curated/product system
+- `pEvent` / `pEvents` / `pEventCategory` / `pEventRole` / `pEventStatus` — Event system
+- `pBrand` — Brand entries
+- `gTeamMember` — Team member profiles
 
-**GROQ queries** are centralized in `src/sanity/lib/queries.ts` using `defineQuery()` from `next-sanity`. All queries are composed from reusable field fragments (`baseFields`, `linkFields`, `imageMetaFields`, etc.).
+**GROQ queries** are centralized in `src/sanity/lib/queries.ts` using `defineQuery()` from `next-sanity`. Composed from reusable fragments: `baseFields`, `linkFields`, `menuFields`, `imageMetaFields`, `imageBlockMetaFields`, `callToActionFields`, `portableTextContentFields`, `freeformField`, `pageModuleFields`, `formField`.
 
 **Data fetching** uses `sanityFetch` from `src/sanity/lib/live.ts` (wraps `defineLive` from `next-sanity`). This enables live content updates. Usage pattern in pages:
 ```ts
@@ -62,9 +73,20 @@ Each page route follows this pattern:
 3. `generateStaticParams()` — for dynamic slug routes, fetches all slugs at build time
 4. Render delegates to a `_components/Page*.tsx` client or server component
 
-The `[slug]` catch-all route handles `pGeneral` document type pages. Events (`/event/[slug]`) and blog posts (`/blog/[slug]`) have their own route directories.
+**Active frontend routes:**
+- `/` — Home (`pHome`)
+- `/[slug]` — Generic pages (`pGeneral`)
+- `/contact` — Contact page
+- `/curated` — Curated index; `/curated/products/[slug]`, `/curated/categories/[slug]`, `/curated/collections/[slug]`
+- `/events` — Events listing; `/events/[slug]` — single event
+- `/events-crew` — Event crew tracking (month-based with member filter)
+- `/email-signature` — Standalone email signature utility
 
 **Site-wide data** (`siteDataQuery`) fetches header, footer, announcement, sharing settings, and integrations in the root layout and passes to `<Layout>`.
+
+### Routing
+
+`src/lib/routes.ts` is the single source of truth for document type → URL resolution. `DOCUMENT_ROUTES` drives both `resolveHref()` (JS helper) and `buildDocumentHrefGroq()` (GROQ query builder). Add new routes here only — not scattered across files.
 
 ### PageModules System
 
@@ -72,20 +94,50 @@ The `[slug]` catch-all route handles `pGeneral` document type pages. Events (`/e
 
 ### Key Shared Components
 
-- `<SanityImage>` (`src/components/SanityImage.tsx`) — Renders a single Sanity image with LQIP placeholder and metadata-driven sizing. Use for individual Sanity images.
-- `<ImageBlock>` (`src/components/ImageBlock.tsx`) — Block-level image component with responsive mobile/desktop images, custom aspect ratios, and captions. Uses `<SanityImage>` internally. Use for image blocks from Sanity page modules.
-- `<CustomPortableText>` — Renders Sanity Portable Text blocks with custom components for headings, links, CTAs, images, and iframes.
+- `<SanityImage>` (`src/components/SanityImage.tsx`) — Renders a single Sanity image with LQIP placeholder and metadata-driven sizing.
+- `<ImageBlock>` (`src/components/ImageBlock.tsx`) — Block-level image with responsive mobile/desktop images, custom aspect ratios, and captions. Uses `<SanityImage>` internally.
+- `<CustomPortableText>` — Renders Sanity Portable Text with custom components for headings, links, CTAs, images, and iframes.
 - `<CustomLink>` — Handles internal/external links from Sanity `link` objects.
-- `src/components/ui/` — shadcn/ui-style components (Button, Input, Select, etc.) built on Radix UI.
+- `<CustomForm>` — Renders form fields from Sanity `formField` schema via controlled inputs.
+- `<JsonLd>` — Injects JSON-LD schema.org markup (event and site variants).
+- `<BlogCard>` — Card component for blog post listings.
+- `<Caption>` — Shared caption for image/media blocks.
+- `<LocationCurrentTime>` — Displays location name with live local time.
+- `<LogoSvg>` — SVG logo component.
+- `<SvgIcons>` — SVG icon set.
+- `<TextReveal>` / `<Typewriter>` — Motion-based text animation components.
+- `<Menu>` / `<MenuDropdown>` / `<MobileMenu>` — Navigation components.
+- `<DraftModeToast>` — Draft mode indicator banner.
+- `src/components/layout/` — Shell: `AdaSkip`, `Footer`, `Header`, `HeadTrackingCode`, `Main`, `ToolBar`.
+- `src/components/ui/` — Radix UI-based: Accordion, Button, Checkbox, Dialog, Field, Input, InputGroup, Label, Progress, RadioGroup, Select, Separator, Sheet, Table, Textarea, Tooltip.
+- `src/components/PortableTable/` — Table rendering for Portable Text.
 
-### Utilities (`src/lib/utils.ts`)
+### Utilities (`src/lib/`)
 
-Central utility file with:
-- `cn()` — Tailwind class merging (clsx + tailwind-merge)
-- `buildImageSrc()` / `buildImageSrcSet()` — Sanity image URL builder helpers
-- `resolveHref()` — Maps Sanity document type + slug to URL path
-- `buildRgbaCssString()` — Converts Sanity color objects to CSS rgba strings
-- Many format/validation/array helpers
+- `utils.ts` — `cn()` (Tailwind merge), format helpers (`formatDateUsStandard`, `formatUrl`, `formatHandleize`, etc.), validate helpers (`validateEmail`, `validateUsPhone`), array helpers (`arrayIntersection`, `arrayUniqueValues`, `arraySortObjVal*`), DOM helpers (`scrollDisable`, `scrollEnable`, `debounce`, `sleeper`).
+- `image-utils.ts` — `buildImageSrc()`, `buildImageSrcSet()`, `buildRgbaCssString()`.
+- `routes.ts` — `DOCUMENT_ROUTES`, `resolveHref()`, `buildDocumentHrefGroq()`, `checkIfLinkIsActive()`.
+- `animate.ts` — Motion animation presets: `pageTransitionFade`, `fadeAnim`.
+- `defineEventJsonLd.ts` — schema.org `Event` JSON-LD builder (supports multi-location via subEvents).
+- `defineSiteJsonLd.ts` — schema.org `Organization` JSON-LD builder.
+- `defineMetadata.ts` — Next.js metadata builder from Sanity SEO fields.
+- `icons.ts` — Maps social platform names to icon identifiers (facebook, instagram, linkedin, spotify, strava, x, youtube, github).
+- `providers/` — `ReactQueryProvider` (TanStack React Query wrapper).
+- `gtag/` — Google Analytics helpers.
+
+### Hooks (`src/hooks/`)
+
+- `useKey.js` — Keyboard event listener.
+- `useOutsideClick.js` — Click outside detection.
+- `useWindowDimensions.js` — Window size tracking.
+- `useWindowScroll.js` — Scroll position tracking.
+
+### API Routes (`src/app/api/`)
+
+- `/contact-form/submit` — Contact form submission (email dispatch).
+- `/draft-mode/enable` — Enables Sanity draft mode.
+- `/revalidate-tag` — On-demand ISR via tag invalidation.
+- `/view-page` — Page view tracking.
 
 ### Sanity Studio Structure
 
@@ -111,7 +163,7 @@ EMAIL_SERVER_PORT
 
 ### Type Generation
 
-After modifying any Sanity schema file, run `npm run typegen` to update `src/sanity/extract.json` and regenerate `sanity.types.ts`. The `predev` and `prebuild` hooks run this automatically.
+After modifying any Sanity schema file, run `npm run typegen` to update `src/sanity/extract.json` and regenerate `sanity.types.ts`. The `predev` hook runs this automatically.
 
 ### Troubleshooting
 
