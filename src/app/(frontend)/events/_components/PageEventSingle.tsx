@@ -308,15 +308,15 @@ function StationCard({
 				</div>
 			)}
 
-			{questTitle && (
-				hasExampleImage ? (
+			{questTitle &&
+				(hasExampleImage ? (
 					<Accordion
 						type="single"
 						collapsible
 						className="mb-6 border border-foreground/20 rounded overflow-hidden"
 					>
 						<AccordionItem value="quest" className="border-b-0">
-							<AccordionTrigger className="p-4 rounded-none hover:no-underline hover:bg-foreground/5 [&>svg]:size-3">
+							<AccordionTrigger className="p-4 rounded-none hover:no-underline hover:bg-foreground/5 [&>svg]:size-3 cursor-pointer">
 								<div className="min-w-0 flex-1">
 									<p className="t-b-2 uppercase text-muted-foreground mb-1">
 										Flavor Challenge &mdash; {questTitle}
@@ -348,8 +348,7 @@ function StationCard({
 							</p>
 						)}
 					</div>
-				)
-			)}
+				))}
 
 			<div
 				className={cn(

@@ -3,11 +3,14 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
-import { pageEventSingleQuery, pageEventSlugsQuery } from '@/sanity/lib/queries';
+import {
+	pageEventSingleQuery,
+	pageEventSlugsQuery,
+} from '@/sanity/lib/queries';
 import defineMetadata from '@/lib/defineMetadata';
-import defineEventJsonLd from '@/lib/defineEventJsonLd';
+import defineEventJsonLd from '../_components/defineEventJsonLd';
 import JsonLd from '@/components/JsonLd';
-import PageEventSingle from '../_components/PageEventSingle';
+import PageEventSingle from './PageEventSingle';
 
 export async function generateStaticParams() {
 	const { data } = await sanityFetch({
@@ -32,7 +35,9 @@ const getCachedEventData = cache(async (slug: string) =>
 	})
 );
 
-export async function generateMetadata(props: MetadataProps): Promise<Metadata> {
+export async function generateMetadata(
+	props: MetadataProps
+): Promise<Metadata> {
 	const { slug } = await props.params;
 	const { data } = await getCachedEventData(slug);
 	return defineMetadata({ data: stegaClean(data) });

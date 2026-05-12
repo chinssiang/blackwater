@@ -158,6 +158,7 @@ export default async function RootLayout({
 							data={{
 								'@context': 'https://schema.org',
 								'@type': 'Organization',
+								'@id': `${siteUrl}#organization`,
 								name: siteTitle,
 								url: siteUrl,
 							}}

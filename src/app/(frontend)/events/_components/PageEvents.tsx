@@ -227,7 +227,7 @@ export function PageEvents({ data }: PageEventsProps) {
 							<motion.div
 								key={_id}
 								className={cn(
-									't-b-1 transition-colors hover:bg-foreground/85 grid items-center border-b group py-4 border-white/80 lg:py-2 lg:min-h-15 group/row',
+									'relative t-b-1 transition-colors hover:bg-foreground/85 grid items-center border-b group py-4 border-white/80 lg:py-2 lg:min-h-15 group/row',
 									colStyle,
 									{
 										'pointer-events-none': eventHasEnded,
@@ -250,12 +250,7 @@ export function PageEvents({ data }: PageEventsProps) {
 										}
 									)}
 								>
-									<p className="text-balance mb-4 lg:mb-0">
-										{slug ? (
-											<Link className="p-fill increase-target-size" href={`/events/${slug}`} />
-										) : null}
-										{title}
-									</p>
+									<p className="text-balance mb-4 lg:mb-0">{title}</p>
 									{subtitle && (
 										<p className="text-muted-foreground text-balance group-hover/row:text-muted">
 											{subtitle}
@@ -274,6 +269,7 @@ export function PageEvents({ data }: PageEventsProps) {
 										? format(new Date(eventDatetime), 'iii, MM.dd.yy, h:mm aaa')
 										: dateStatus || 'TBA'}
 								</Td>
+								<Link className="p-fill" href={`/events/${slug}`} />
 								<Td
 									className={cn(
 										't-h-6 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line group/location',
