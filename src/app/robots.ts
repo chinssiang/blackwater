@@ -7,6 +7,6 @@ export default function robots() {
 				disallow: ['/sanity/', '/api/'],
 			},
 		],
-		sitemap: `${process.env.SITE_URL}/sitemap.xml`,
+		sitemap: `${process.env.SITE_URL}/sitemap_index.xml`,
 	};
 }

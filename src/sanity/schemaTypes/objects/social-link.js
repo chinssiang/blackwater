@@ -23,6 +23,7 @@ export const socialLink = defineType({
 					{ title: 'YouTube', value: 'youTube' },
 					{ title: 'Github', value: 'github' },
 					{ title: 'Spotify', value: 'spotify' },
+					{ title: 'Strava', value: 'strava' },
 				],
 			},
 		},

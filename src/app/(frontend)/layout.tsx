@@ -15,6 +15,7 @@ import DraftModeToast from '@/components/DraftModeToast';
 import { Layout } from '@/components/layout';
 import HeadTrackingCode from '@/components/layout/HeadTrackingCode';
 import JsonLd from '@/components/JsonLd';
+import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
 import { Toaster } from 'sonner';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -135,8 +136,9 @@ export default async function RootLayout({
 }>) {
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
 	const { data } = await getCachedSiteData();
-	const siteTitle = (data as any)?.sharing?.siteTitle;
+	const cleanData = stegaClean(data) || ({} as typeof data);
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
+	const siteJsonLd = defineSiteJsonLd({ sharing: cleanData?.sharing, siteUrl });
 
 	return (
 		<ReactQueryProvider>
@@ -153,17 +155,7 @@ export default async function RootLayout({
 					<meta httpEquiv="X-UA-Compatible" content="IE=edge" />
 					<link rel="preconnect" href="https://cdn.sanity.io" />
 					<HeadTrackingCode siteData={data} />
-					{siteTitle && (
-						<JsonLd
-							data={{
-								'@context': 'https://schema.org',
-								'@type': 'Organization',
-								'@id': `${siteUrl}#organization`,
-								name: siteTitle,
-								url: siteUrl,
-							}}
-						/>
-					)}
+					{siteJsonLd && <JsonLd data={siteJsonLd} />}
 				</head>
 
 				<body className="antialiased">

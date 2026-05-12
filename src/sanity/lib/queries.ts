@@ -2,12 +2,32 @@ import { defineQuery } from 'next-sanity';
 import { resolvedHrefGroq } from '@/lib/routes';
 export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 
-export const SITEMAP_QUERY =
-	defineQuery(`*[_type in ["pHome", "pGeneral", "pCuratedIndex", "pCurated", "pCuratedCategory", "pCuratedCollection", "pEventIndex", "pContact"] && defined(slug.current) && (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
-    _type,
+export const SITEMAP_PAGES_QUERY = defineQuery(`
+	*[_type in ["pHome", "pGeneral", "pContact"]
+		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
+		_type,
 		"slug": slug.current,
-    _updatedAt
-}`);
+		_updatedAt
+	}
+`);
+
+export const SITEMAP_EVENTS_QUERY = defineQuery(`
+	*[_type in ["pEvents", "pEvent"]
+		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
+		_type,
+		"slug": slug.current,
+		_updatedAt
+	}
+`);
+
+export const SITEMAP_CURATED_QUERY = defineQuery(`
+	*[_type in ["pCuratedIndex", "pCurated", "pCuratedCategory", "pCuratedCollection"]
+		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
+		_type,
+		"slug": slug.current,
+		_updatedAt
+	}
+`);
 
 const baseFields = `
 	_id,
@@ -170,10 +190,17 @@ export const siteDataQuery = defineQuery(`{
 		},
 		"sharing": *[_type == "settingsGeneral"][0]{
 			siteTitle,
+			siteDescription,
+			logo,
 			shareGraphic,
 			"shareVideo": shareVideo.asset->url,
 			favicon,
-			faviconLight
+			faviconLight,
+			contactEmail,
+			socialLinks[]{
+				icon,
+				url
+			}
 		},
 		"integrations": *[_type == "settingsIntegration"][0]{
 			gaIDs,

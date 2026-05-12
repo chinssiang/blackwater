@@ -4,6 +4,7 @@ import {
 	FaInstagram,
 	FaLinkedin,
 	FaSpotify,
+	FaStrava,
 	FaXTwitter,
 	FaYoutube,
 } from 'react-icons/fa6';
@@ -14,6 +15,7 @@ type SocialIconKey =
 	| 'instagram'
 	| 'linkedin'
 	| 'spotify'
+	| 'strava'
 	| 'x'
 	| 'youTube'
 	| 'github'
@@ -29,6 +31,8 @@ export function getIcon(icon: SocialIconKey): IconType | null {
 			return FaLinkedin;
 		case 'spotify':
 			return FaSpotify;
+		case 'strava':
+			return FaStrava;
 		case 'x':
 			return FaXTwitter;
 		case 'youTube':
