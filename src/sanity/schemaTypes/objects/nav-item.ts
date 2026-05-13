@@ -13,7 +13,8 @@ export const navItem = defineType({
 			title: 'Title',
 			name: 'title',
 			type: 'string',
-			validation: (Rule) => Rule.required(),
+			description:
+				"If left empty, the linked page's title (for internal links) or the URL (for external links) will be used.",
 		}),
 		link({
 			showLabel: false,
@@ -23,12 +24,20 @@ export const navItem = defineType({
 	preview: {
 		select: {
 			title: 'title',
+			internalLinkTitle: 'link.internalLink.title',
 			internalLinkSlug: 'link.internalLink.slug.current',
 			internalLinkType: 'link.internalLink._type',
 			href: 'link.href',
 			linkType: 'link.linkType',
 		},
-		prepare({ title, internalLinkSlug, internalLinkType, href, linkType }) {
+		prepare({
+			title,
+			internalLinkTitle,
+			internalLinkSlug,
+			internalLinkType,
+			href,
+			linkType,
+		}) {
 			if ((!linkType || !internalLinkType) && !href) {
 				return {
 					title: 'Empty Item',
@@ -36,9 +45,10 @@ export const navItem = defineType({
 				};
 			}
 			const isExternal = linkType === 'external';
+			const displayTitle = title || internalLinkTitle || href;
 
 			return {
-				title: title,
+				title: displayTitle,
 				subtitle: isExternal
 					? href
 					: resolveHref({

@@ -1533,6 +1533,10 @@
                     },
                     {
                       "type": "string",
+                      "value": "h6"
+                    },
+                    {
+                      "type": "string",
                       "value": "normal"
                     },
                     {

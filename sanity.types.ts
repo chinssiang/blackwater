@@ -319,7 +319,7 @@ export type PortableText = Array<
 				_type: 'span';
 				_key: string;
 			}>;
-			style?: 'h2' | 'h3' | 'h4' | 'normal' | 'normal-2';
+			style?: 'h2' | 'h3' | 'h4' | 'h6' | 'normal' | 'normal-2';
 			listItem?: 'bullet' | 'number';
 			markDefs?: Array<
 				| {
@@ -1766,7 +1766,7 @@ export type PageHomeQueryResult = {
 						_type: 'span';
 						_key: string;
 					}>;
-					style?: 'h2' | 'h3' | 'h4' | 'normal-2' | 'normal';
+					style?: 'h2' | 'h3' | 'h4' | 'h6' | 'normal-2' | 'normal';
 					listItem?: 'bullet' | 'number';
 					markDefs: Array<
 						| {
@@ -2061,7 +2061,7 @@ export type PageGeneralQueryResult = {
 					_type: 'span';
 					_key: string;
 				}>;
-				style?: 'h2' | 'h3' | 'h4' | 'normal-2' | 'normal';
+				style?: 'h2' | 'h3' | 'h4' | 'h6' | 'normal-2' | 'normal';
 				listItem?: 'bullet' | 'number';
 				markDefs: Array<
 					| {
@@ -2615,7 +2615,7 @@ export type PageBlogSingleQueryResult = {
 					_type: 'span';
 					_key: string;
 				}>;
-				style?: 'h2' | 'h3' | 'h4' | 'normal-2' | 'normal';
+				style?: 'h2' | 'h3' | 'h4' | 'h6' | 'normal-2' | 'normal';
 				listItem?: 'bullet' | 'number';
 				markDefs: Array<
 					| {
@@ -3013,7 +3013,7 @@ export type PageCuratedSingleQueryResult = {
 					_type: 'span';
 					_key: string;
 				}>;
-				style?: 'h2' | 'h3' | 'h4' | 'normal-2' | 'normal';
+				style?: 'h2' | 'h3' | 'h4' | 'h6' | 'normal-2' | 'normal';
 				listItem?: 'bullet' | 'number';
 				markDefs: Array<
 					| {
@@ -3794,7 +3794,7 @@ export type PageEventSingleQueryResult = {
 					_type: 'span';
 					_key: string;
 				}>;
-				style?: 'h2' | 'h3' | 'h4' | 'normal-2' | 'normal';
+				style?: 'h2' | 'h3' | 'h4' | 'h6' | 'normal-2' | 'normal';
 				listItem?: 'bullet' | 'number';
 				markDefs: Array<
 					| {

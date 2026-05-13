@@ -52,13 +52,13 @@ const menuFields = `
 	_type,
 	title,
 	items[]{
-		title,
+		"title": coalesce(title, link.internalLink->title, link.href),
 		link {
 			${linkFields}
 		},
 		dropdownItems[]{
 			_key,
-			title,
+			"title": coalesce(title, link.internalLink->title, link.href),
 			link {
 				${linkFields}
 			}

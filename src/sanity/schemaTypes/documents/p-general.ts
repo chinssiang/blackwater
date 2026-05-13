@@ -23,7 +23,7 @@ export const pGeneral = defineType({
 		prepare({ title = 'Untitled', slug = {} }) {
 			return {
 				title,
-				subtitle: slug.current ? `/${slug.current}` : 'Missing page slug',
+				subtitle: slug?.current ? `/${slug.current}` : 'Missing page slug',
 			};
 		},
 	},
