@@ -26,7 +26,6 @@ export function resolveHref({
 	slug?: string | null;
 }) {
 	if (!documentType) return undefined;
-	if (documentType === 'externalUrl') return slug;
 
 	const route = DOCUMENT_ROUTES.find((r) => r.type === documentType);
 
@@ -51,8 +50,7 @@ export function buildDocumentHrefGroq(slugField = 'slug.current') {
 // NOTE: This GROQ fragment must be kept in sync with DOCUMENT_ROUTES above.
 // It cannot use buildDocumentHrefGroq() here because Sanity's static query
 // extractor cannot evaluate function calls inside template literal interpolations.
-export const resolvedHrefGroq = `"resolvedHref": select(
-		linkType == "external" => externalUrl,
+export const resolvedHrefGroq = `select(
 		linkType == "internal" => internalLink-> {
 			"url": select(
 				_type == "pHome" => "/",
@@ -68,7 +66,7 @@ export const resolvedHrefGroq = `"resolvedHref": select(
 				null
 			)
 		}.url,
-		''
+		href
 	)`;
 
 /**

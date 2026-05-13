@@ -1,15 +1,20 @@
 import customIframe from '@/sanity/schemaTypes/objects/custom-iframe';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { link } from '@/sanity/schemaTypes/objects/link';
+import { PortableTextNormalizer } from '@/sanity/schemaTypes/components/PortableTextNormalizer';
 import { BlockquoteIcon, InfoOutlineIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
+import type { ReactNode } from 'react';
 
-const H2 = (props) => <span>{props.children}</span>;
-const H3 = (props) => <span>{props.children}</span>;
-const H4 = (props) => <span>{props.children}</span>;
-const Normal = (props) => <span>{props.children}</span>;
-const Normal2 = (props) => <span>{props.children}</span>;
-const Blockquote = (props) => {
+type StyleProps = { children?: ReactNode };
+type BlockquoteProps = StyleProps & { renderDefault: (props: BlockquoteProps) => ReactNode };
+
+const H2 = (props: StyleProps) => <span>{props.children}</span>;
+const H3 = (props: StyleProps) => <span>{props.children}</span>;
+const H4 = (props: StyleProps) => <span>{props.children}</span>;
+const Normal = (props: StyleProps) => <span>{props.children}</span>;
+const Normal2 = (props: StyleProps) => <span>{props.children}</span>;
+const Blockquote = (props: BlockquoteProps) => {
 	return (
 		<blockquote className="before:inline before:content-[open-quote] after:inline after:content-[close-quote]">
 			{props.renderDefault(props)}
@@ -20,6 +25,12 @@ const Blockquote = (props) => {
 export const portableText = defineType({
 	name: 'portableText',
 	type: 'array',
+	components: {
+		// Sanity infers `ArrayOfPrimitivesInputProps` for this slot but at
+		// runtime portableText is an array of objects, so the normalizer's
+		// shape is correct. Cast through unknown to bridge the inference gap.
+		input: PortableTextNormalizer as unknown as never,
+	},
 	of: [
 		{
 			title: 'Block',
@@ -94,7 +105,7 @@ export const portableText = defineType({
 				],
 			},
 		},
-		customImage({ hasLinkOptions: true, hasCaptionOptions: true }),
+		customImage({ hasLinkOption: true, hasCaptionOption: true }),
 		customIframe(),
 	],
 });

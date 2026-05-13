@@ -27,10 +27,11 @@ export const settingsRedirect = defineType({
 			),
 		}),
 		defineField({
-			type: 'linkInput',
+			type: 'link',
 			title: 'Destination',
 			name: 'destination',
 			validation: (Rule) => Rule.required(),
+			options: { hideNewTab: true },
 		}),
 		defineField({
 			name: 'permanent',
@@ -43,22 +44,16 @@ export const settingsRedirect = defineType({
 			title: 'url.current',
 			internalLinkSlug: 'destination.internalLink.slug.current',
 			internalLinkType: 'destination.internalLink._type',
-			externalUrl: 'destination.externalUrl',
+			href: 'destination.href',
 			linkType: 'destination.linkType',
 		},
-		prepare({
-			title,
-			linkType,
-			internalLinkSlug,
-			internalLinkType,
-			externalUrl,
-		}) {
+		prepare({ title, linkType, internalLinkSlug, internalLinkType, href }) {
 			const isExternal = linkType === 'external';
 			return {
 				title: `Source: ${title}`,
 				subtitle: `Destination: ${
 					isExternal
-						? externalUrl
+						? href
 						: resolveHref({
 								documentType: internalLinkType,
 								slug: internalLinkSlug,

@@ -1,10 +1,25 @@
-import { LinkInput } from '@/sanity/schemaTypes/components/LinkInput';
 import { toPlainText } from '@portabletext/toolkit';
 import { ThLargeIcon } from '@sanity/icons';
+import type { PortableTextBlock } from '@portabletext/toolkit';
 import { TablePreview, createTableInput } from './components';
-import { defineField, definePlugin } from 'sanity';
+import { definePlugin } from 'sanity';
 
-const defaultPortableTextSchema = {
+type CellSchema = {
+	name: string;
+	type: string;
+	marks?: unknown;
+	[key: string]: unknown;
+};
+
+type TableSchemaConfig = {
+	name?: string;
+	title?: string;
+	cellSchema: CellSchema;
+};
+
+type TableCell = { text?: PortableTextBlock[] };
+
+const defaultPortableTextSchema: TableSchemaConfig = {
 	name: 'portableTable',
 	title: 'Portable Table',
 	cellSchema: {
@@ -15,30 +30,14 @@ const defaultPortableTextSchema = {
 			annotations: [
 				{
 					name: 'link',
-					type: 'object',
-					fields: [
-						defineField({
-							title: ' ',
-							name: 'linkInput',
-							type: 'linkInput',
-							options: {
-								collapsible: false,
-							},
-						}),
-						defineField({
-							title: 'Open in new tab',
-							name: 'isNewTab',
-							type: 'boolean',
-							initialValue: false,
-						}),
-					],
+					type: 'link',
 				},
 			],
 		},
 	},
 };
 
-export const portableTable = definePlugin((schema) => {
+export const portableTable = definePlugin<TableSchemaConfig | void>((schema) => {
 	const tableSchema = schema || defaultPortableTextSchema;
 	const portableTextSchema = tableSchema.cellSchema;
 	const WrappedTableInput = createTableInput(portableTextSchema);
@@ -64,7 +63,7 @@ export const portableTable = definePlugin((schema) => {
 						select: {
 							text: 'text',
 						},
-						prepare({ text }) {
+						prepare({ text }: { text?: PortableTextBlock[] }) {
 							return { title: toPlainText(text ?? []) };
 						},
 					},
@@ -83,7 +82,7 @@ export const portableTable = definePlugin((schema) => {
 						select: {
 							cells: 'cells',
 						},
-						prepare({ cells = [] }) {
+						prepare({ cells = [] }: { cells?: TableCell[] }) {
 							return {
 								title: cells
 									.map((cell) => toPlainText(cell.text ?? []))
@@ -119,7 +118,7 @@ export const portableTable = definePlugin((schema) => {
 						select: {
 							rows: 'rows',
 						},
-						prepare({ rows = [] }) {
+						prepare({ rows = [] }: { rows?: unknown[] }) {
 							return { rows };
 						},
 					},
@@ -127,7 +126,9 @@ export const portableTable = definePlugin((schema) => {
 						{
 							name: 'columnNumber',
 							type: 'number',
-							validation: (Rule) => Rule.required().min(1),
+							validation: (Rule: {
+								required: () => { min: (n: number) => unknown };
+							}) => Rule.required().min(1),
 							initialValue: 3,
 						},
 						{

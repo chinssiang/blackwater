@@ -1,6 +1,6 @@
 import { LinkIcon, MasterDetailIcon, WarningOutlineIcon } from '@sanity/icons';
 import { resolveHref } from '@/lib/routes';
-import { defineType } from 'sanity';
+import { defineField, defineType } from 'sanity';
 import { link } from '@/sanity/schemaTypes/objects/link';
 
 export const navItem = defineType({
@@ -9,33 +9,27 @@ export const navItem = defineType({
 	type: 'object',
 	icon: LinkIcon,
 	fields: [
-		{
+		defineField({
 			title: 'Title',
 			name: 'title',
 			type: 'string',
 			validation: (Rule) => Rule.required(),
-		},
+		}),
 		link({
 			showLabel: false,
-			validation: (Rule) => Rule.required(),
+			validation: (Rule: { required: () => unknown }) => Rule.required(),
 		}),
 	],
 	preview: {
 		select: {
 			title: 'title',
-			internalLinkSlug: 'link.linkInput.internalLink.slug.current',
-			internalLinkType: 'link.linkInput.internalLink._type',
-			externalUrl: 'link.linkInput.externalUrl',
-			linkType: 'link.linkInput.linkType',
+			internalLinkSlug: 'link.internalLink.slug.current',
+			internalLinkType: 'link.internalLink._type',
+			href: 'link.href',
+			linkType: 'link.linkType',
 		},
-		prepare({
-			title,
-			internalLinkSlug,
-			internalLinkType,
-			externalUrl,
-			linkType,
-		}) {
-			if ((!linkType || !internalLinkType) && !externalUrl) {
+		prepare({ title, internalLinkSlug, internalLinkType, href, linkType }) {
+			if ((!linkType || !internalLinkType) && !href) {
 				return {
 					title: 'Empty Item',
 					media: WarningOutlineIcon,
@@ -46,7 +40,7 @@ export const navItem = defineType({
 			return {
 				title: title,
 				subtitle: isExternal
-					? externalUrl
+					? href
 					: resolveHref({
 							documentType: internalLinkType,
 							slug: internalLinkSlug,

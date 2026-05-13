@@ -17,7 +17,6 @@ import { pBrand } from './documents/p-brand';
 // Objects
 import { formField } from './objects/form-builder/form-field';
 import { link } from './objects/link';
-import { linkInput } from './objects/link-input';
 import { navDropdown } from './objects/nav-dropdown';
 import { navItem } from './objects/nav-item';
 import { portableText } from './objects/portable-text';
@@ -74,7 +73,6 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	freeform,
 	formField,
 	link(),
-	linkInput,
 	navDropdown,
 	navItem,
 	portableText,

@@ -42,14 +42,9 @@ const baseFields = `
 
 const linkFields = `
 	_type,
-	"linkType": linkInput.linkType,
-	"href": linkInput {
-		${resolvedHrefGroq}
-	}.resolvedHref,
-	"isNewTab": select(
-		linkInput.linkType == "external" => true,
-		isNewTab
-	)
+	linkType,
+	"href": ${resolvedHrefGroq},
+	isNewTab
 `;
 
 const menuFields = `
