@@ -34,10 +34,16 @@ export default function PageCuratedSingle({ data }: Props) {
 			: defaultRelatedProducts;
 
 	const categoryLabel = hasArrayValue(categories)
-		? categories.map((c: any) => c.title).filter(Boolean).join(', ')
+		? categories
+				.map((c: any) => c.title)
+				.filter(Boolean)
+				.join(', ')
 		: null;
 	const brandLabel = hasArrayValue(brands)
-		? (brands as any[]).map((b: any) => b.title).filter(Boolean).join(', ')
+		? (brands as any[])
+				.map((b: any) => b.title)
+				.filter(Boolean)
+				.join(', ')
 		: null;
 
 	const firstCategoryTitle = hasArrayValue(categories)
@@ -45,13 +51,13 @@ export default function PageCuratedSingle({ data }: Props) {
 		: null;
 
 	return (
-		<div className="min-h-[inherit]">
+		<div className="theme-light bg-background text-foreground min-h-[inherit]">
 			<div className="px-contain mx-auto py-10 lg:py-17.5">
 				{/* Product hero */}
 				<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16 lg:mb-24">
 					{/* Image */}
 					<motion.div
-						className="relative aspect-4/3 overflow-hidden bg-foreground"
+						className="relative aspect-4/3 overflow-hidden"
 						initial="hide"
 						animate="show"
 						variants={fadeAnim}
@@ -88,9 +94,7 @@ export default function PageCuratedSingle({ data }: Props) {
 									ease: [0, 0.71, 0.2, 1.01],
 								}}
 							>
-								{[categoryLabel, brandLabel]
-									.filter(Boolean)
-									.join(' \u2014 ')}
+								{[categoryLabel, brandLabel].filter(Boolean).join(' \u2014 ')}
 							</motion.p>
 						)}
 

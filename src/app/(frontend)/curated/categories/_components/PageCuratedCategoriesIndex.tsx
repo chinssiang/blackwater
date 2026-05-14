@@ -13,7 +13,7 @@ export function PageCuratedCategoriesIndex({ data }: Props) {
 	const { categories } = data || {};
 
 	return (
-		<div className="px-contain mx-auto min-h-[inherit] py-10 lg:py-17.5">
+		<div className="theme-light bg-background text-foreground px-contain mx-auto min-h-[inherit] py-10 lg:py-17.5">
 			<motion.div
 				className="mb-10 lg:mb-17.5"
 				initial="hide"
