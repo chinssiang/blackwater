@@ -18,6 +18,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 	const { header, footer, sharing } = siteData || {};
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaID;
+	const isCuratedSubpage = pathname.startsWith('/curated/');
 
 	useEffect(() => {
 		if (gaID) {
@@ -38,7 +39,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 	return (
 		<LazyMotion features={domAnimation}>
 			<AdaSkip />
-			<Header data={headerData} />
+			<Header data={headerData} isLightHeader={isCuratedSubpage} />
 			<Main>{children}</Main>
 			<Footer data={footerData} />
 			<ToolBar menu={footerData.toolbarMenu} />

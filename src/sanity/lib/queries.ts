@@ -181,12 +181,23 @@ export const siteDataQuery = defineQuery(`{
 			"toolbarMenu": toolbarMenu->{
 				${menuFields}
 			},
-			note
+			note,
+			"newsletter": *[_type == "gNewsletter"][0]{
+				klaviyoListID,
+				heading,
+				subheading,
+				submitButtonText,
+				disclaimer,
+				successHeading,
+				successBody,
+				errorHeading,
+				errorBody,
+			}
 		},
 		"sharing": *[_type == "settingsGeneral"][0]{
 			siteTitle,
 			siteDescription,
-			logo,
+			siteLogo,
 			shareGraphic,
 			"shareVideo": shareVideo.asset->url,
 			favicon,

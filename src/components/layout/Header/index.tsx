@@ -3,16 +3,31 @@ import Link from 'next/link';
 import { LogoSvg } from '@/components/LogoSvg';
 import Menu from '@/components/Menu';
 import { LocationCurrentTime } from '@/components/LocationCurrentTime';
+import { cn } from '@/lib/utils';
+
 type HeaderProps = GHeader & {
 	siteTitle?: string;
 	menu?: SettingsMenu;
 };
 
-export function Header({ data }: { data: HeaderProps }) {
+export function Header({
+	data,
+	isLightHeader = false,
+}: {
+	data: HeaderProps;
+	isLightHeader?: boolean;
+}) {
 	const { siteTitle, menu } = data || {};
 
 	return (
-		<header className="p-x-max h-header sticky top-0 z-10 grid w-full grid-cols-2 lg:grid-cols-3 items-center bg-background leading-none">
+		<header
+			className={cn(
+				'p-x-max h-header sticky top-0 z-10 grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none',
+				isLightHeader
+					? 'theme-light bg-background/80 backdrop-blur-md'
+					: 'bg-background'
+			)}
+		>
 			{menu && (
 				<Menu
 					data={menu}
@@ -28,7 +43,7 @@ export function Header({ data }: { data: HeaderProps }) {
 				<LogoSvg className="h-full" />
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
-			<div className="t-b-2 ml-auto flex items-center gap-0.5 uppercase">
+			<div className="t-b-2 ml-auto flex items-center gap-0.5 uppercase text-foreground">
 				<LocationCurrentTime />
 				(TPE)
 			</div>

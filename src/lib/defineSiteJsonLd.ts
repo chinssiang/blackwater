@@ -5,7 +5,7 @@ type SocialLink = { icon?: string | null; url?: string | null };
 type SiteSharing = {
 	siteTitle?: string | null;
 	siteDescription?: string | null;
-	logo?: unknown;
+	siteLogo?: unknown;
 	shareGraphic?: unknown;
 	contactEmail?: string | null;
 	socialLinks?: SocialLink[] | null;
@@ -25,8 +25,8 @@ export default function defineSiteJsonLd({
 	const siteId = `${siteUrl}#website`;
 	const description = sharing?.siteDescription || undefined;
 
-	const logoUrl = sharing?.logo
-		? imageBuilder.image(sharing.logo as never).format('webp').width(512).url()
+	const logoUrl = sharing?.siteLogo
+		? imageBuilder.image(sharing.siteLogo as never).format('webp').width(512).url()
 		: undefined;
 
 	const imageUrl = sharing?.shareGraphic
