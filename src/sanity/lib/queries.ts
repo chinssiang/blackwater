@@ -187,7 +187,9 @@ export const siteDataQuery = defineQuery(`{
 				heading,
 				subheading,
 				submitButtonText,
-				disclaimer,
+				"disclaimer": disclaimer[]{
+					${portableTextContentFields}
+				},
 				successHeading,
 				successBody,
 				errorHeading,

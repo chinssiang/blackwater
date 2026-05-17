@@ -13,7 +13,7 @@ type FooterProps = GFooter & {
 
 export function Footer({ data }: { data: FooterProps }) {
 	const { menu, note, newsletter } = data || {};
-const footerRef = useRef<HTMLElement | null>(null);
+	const footerRef = useRef<HTMLElement | null>(null);
 
 	useLayoutEffect(() => {
 		document.documentElement.style.setProperty(
@@ -28,7 +28,7 @@ const footerRef = useRef<HTMLElement | null>(null);
 			initial="initial"
 			animate="animate"
 			variants={pageTransitionFade}
-			className="bg-background text-foreground px-contain py-6 lg:py-10 lg:mb-0 empty:hidden"
+			className="bg-background text-foreground px-contain py-6 lg:py-10 lg:mb-0 empty:hidden border-t border-t-foreground/30"
 		>
 			{menu && (
 				<Menu
@@ -57,7 +57,7 @@ const footerRef = useRef<HTMLElement | null>(null);
 				</motion.p>
 			)}
 			{newsletter?.klaviyoListID && (
-				<Newsletter data={newsletter} className="max-w-sm mx-auto" />
+				<Newsletter data={newsletter} className="max-w-sm mx-auto space-y-4" />
 			)}
 		</motion.footer>
 	);

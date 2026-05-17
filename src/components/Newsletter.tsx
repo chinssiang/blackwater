@@ -1,14 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { validateEmail } from '@/lib/utils';
+import { cn, validateEmail } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import {
-	Field,
-	FieldError,
-	FieldLabel,
-} from '@/components/ui/Field';
+import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import CustomPortableText from '@/components/CustomPortableText';
 import type { PortableTextSimple } from 'sanity.types';
 
@@ -48,6 +44,7 @@ export function Newsletter({
 	const [email, setEmail] = useState('');
 	const [formState, setFormState] = useState<FormState>('idle');
 	const [validationError, setValidationError] = useState('');
+	const [isFocused, setIsFocused] = useState(false);
 
 	if (!klaviyoListID) return null;
 
@@ -83,7 +80,9 @@ export function Newsletter({
 	if (formState === 'success') {
 		return (
 			<div className={className}>
-				{successHeading && <p className="t-b-1 font-medium">{successHeading}</p>}
+				{successHeading && (
+					<p className="t-b-1 font-medium">{successHeading}</p>
+				)}
 				{successBody && <p className="t-b-2 text-foreground">{successBody}</p>}
 				{!successHeading && !successBody && (
 					<p className="t-b-2 text-foreground">You&apos;re subscribed!</p>
@@ -98,7 +97,9 @@ export function Newsletter({
 				{errorHeading && <p className="t-b-1 font-medium">{errorHeading}</p>}
 				{errorBody && <p className="t-b-2 text-foreground">{errorBody}</p>}
 				{!errorHeading && !errorBody && (
-					<p className="t-b-2 text-foreground">Something went wrong. Please try again.</p>
+					<p className="t-b-2 text-foreground">
+						Something went wrong. Please try again.
+					</p>
 				)}
 			</div>
 		);
@@ -113,8 +114,8 @@ export function Newsletter({
 					<FieldLabel htmlFor="newsletter-email" className="sr-only">
 						Email address
 					</FieldLabel>
-					<div className="flex gap-2 items-start">
-						<div className="flex-1 flex flex-col gap-1">
+					<div className="flex gap-2">
+						<div className="relative grid flex-1">
 							<Input
 								id="newsletter-email"
 								type="email"
@@ -124,16 +125,23 @@ export function Newsletter({
 									setEmail(e.target.value);
 									if (validationError) setValidationError('');
 								}}
+								onFocus={() => setIsFocused(true)}
+								onBlur={() => setIsFocused(false)}
 								aria-invalid={!!validationError}
 								disabled={formState === 'submitting'}
 								autoComplete="email"
+								className={cn({ 'pr-8': !!validationError })}
 							/>
-							{validationError && <FieldError>{validationError}</FieldError>}
-							{disclaimer && (
-								<div className="t-b-3">
-									<CustomPortableText blocks={disclaimer as any} />
-								</div>
-							)}
+							<FieldStatus
+								fieldState={{
+									invalid: !!validationError,
+									error: validationError
+										? { message: validationError }
+										: undefined,
+								}}
+								isFocused={isFocused}
+								isShowErrorOnFocus={true}
+							/>
 						</div>
 						<Button
 							type="submit"
@@ -147,6 +155,11 @@ export function Newsletter({
 					</div>
 				</Field>
 			</form>
+			{disclaimer && (
+				<div className="t-b-2">
+					<CustomPortableText blocks={disclaimer as any} />
+				</div>
+			)}
 		</div>
 	);
 }
