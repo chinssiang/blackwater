@@ -17,7 +17,7 @@ export default function callToAction({
 						{
 							name: 'label',
 							title: 'Label',
-							type: 'string',
+							type: 'internationalizedArrayString',
 						},
 					]
 				: []),

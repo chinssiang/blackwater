@@ -27,7 +27,7 @@ export function link({
 						defineField({
 							name: 'label',
 							title: 'Label',
-							type: 'string',
+							type: 'internationalizedArrayString',
 						}),
 					]
 				: []),
@@ -77,13 +77,13 @@ export function link({
 		},
 		preview: {
 			select: {
-				title: 'label',
+				label: 'label',
 				internalLinkSlug: 'internalLink.slug.current',
 				internalLinkType: 'internalLink._type',
 				href: 'href',
 				linkType: 'linkType',
 			},
-			prepare({ title, internalLinkSlug, internalLinkType, href, linkType }) {
+			prepare({ label, internalLinkSlug, internalLinkType, href, linkType }) {
 				if ((!linkType || !internalLinkType) && !href) {
 					return {
 						title: 'Empty Item',
@@ -91,9 +91,14 @@ export function link({
 					};
 				}
 				const isExternal = linkType === 'external';
+				const labelText = Array.isArray(label)
+					? label.find((entry: { _key?: string; value?: string }) => entry._key === 'en')?.value ||
+						label[0]?.value ||
+						undefined
+					: label;
 
 				return {
-					title: title,
+					title: labelText,
 					subtitle: isExternal
 						? href
 						: resolveHref({

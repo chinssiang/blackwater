@@ -52,13 +52,27 @@ const menuFields = `
 	_type,
 	title,
 	items[]{
-		"title": coalesce(title, link.internalLink->title, link.href),
+		"title": coalesce(
+			title[_key == $locale][0].value,
+			title[_key == "en"][0].value,
+			link.label[_key == $locale][0].value,
+			link.label[_key == "en"][0].value,
+			link.internalLink->title,
+			link.href
+		),
 		link {
 			${linkFields}
 		},
 		dropdownItems[]{
 			_key,
-			"title": coalesce(title, link.internalLink->title, link.href),
+			"title": coalesce(
+				title[_key == $locale][0].value,
+				title[_key == "en"][0].value,
+				link.label[_key == $locale][0].value,
+				link.label[_key == "en"][0].value,
+				link.internalLink->title,
+				link.href
+			),
 			link {
 				${linkFields}
 			}

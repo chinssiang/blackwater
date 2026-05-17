@@ -4,7 +4,8 @@ import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { VisualEditing } from 'next-sanity/visual-editing';
 import localFont from 'next/font/local';
-import { draftMode } from 'next/headers';
+import { draftMode, headers } from 'next/headers';
+import { DEFAULT_LOCALE, htmlLangFor, isLocale } from '@/lib/i18n';
 import '@/globals.css';
 import { imageBuilder } from '@/sanity/lib/image';
 import { sanityFetch } from '@/sanity/lib/live';
@@ -29,9 +30,19 @@ const SITE_DATA_TAGS = [
 	'settingsBrandColors',
 ] as const;
 
-const getCachedSiteData = cache(() =>
-	sanityFetch({ query: siteDataQuery, tags: [...SITE_DATA_TAGS] })
+const getCachedSiteData = cache((locale: string) =>
+	sanityFetch({
+		query: siteDataQuery,
+		params: { locale },
+		tags: [...SITE_DATA_TAGS, `locale:${locale}`],
+	})
 );
+
+async function resolveLocale() {
+	const headerList = await headers();
+	const localeHeader = headerList.get('x-locale');
+	return isLocale(localeHeader) ? localeHeader : DEFAULT_LOCALE;
+}
 
 const fontABCDisplay = localFont({
 	src: [
@@ -58,7 +69,8 @@ const baselTypewriter = localFont({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-	const { data } = await getCachedSiteData();
+	const locale = await resolveLocale();
+	const { data } = await getCachedSiteData(locale);
 	const { sharing } = stegaClean(data) || ({} as typeof data);
 
 	const { siteTitle } = sharing || {};
@@ -135,7 +147,8 @@ export default async function RootLayout({
 	children: React.ReactNode;
 }>) {
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
-	const { data } = await getCachedSiteData();
+	const locale = await resolveLocale();
+	const { data } = await getCachedSiteData(locale);
 	const cleanData = stegaClean(data) || ({} as typeof data);
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 	const siteJsonLd = defineSiteJsonLd({ sharing: cleanData?.sharing, siteUrl });
@@ -143,7 +156,7 @@ export default async function RootLayout({
 	return (
 		<ReactQueryProvider>
 			<html
-				lang="en"
+				lang={htmlLangFor(locale)}
 				className={`${fontABCDisplay.variable} ${baselTypewriter.variable} dark bg-background`}
 			>
 				<head>

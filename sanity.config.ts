@@ -20,6 +20,7 @@ import { LogoSvg } from '@/components/LogoSvg';
 import { defineConfig, isDev } from 'sanity';
 import { media } from 'sanity-plugin-media';
 import { noteField } from 'sanity-plugin-note-field';
+import { internationalizedArray } from 'sanity-plugin-internationalized-array';
 import { presentationTool } from 'sanity/presentation';
 import { structureTool } from 'sanity/structure';
 
@@ -31,6 +32,14 @@ const commonPlugins = [
 	media(),
 	colorInput(),
 	noteField(),
+	internationalizedArray({
+		languages: [
+			{ id: 'en', title: 'English' },
+			{ id: 'zh_tw', title: '中文 (繁體)' },
+		],
+		defaultLanguages: ['en'],
+		fieldTypes: ['string', 'text'],
+	}),
 	presentationTool({
 		resolve: presentationResolver,
 		previewUrl: {
