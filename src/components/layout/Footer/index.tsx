@@ -57,7 +57,7 @@ export function Footer({ data }: { data: FooterProps }) {
 				</motion.p>
 			)}
 			{newsletter?.klaviyoListID && (
-				<Newsletter data={newsletter} className="max-w-sm mx-auto space-y-4" />
+				<Newsletter data={newsletter} className="" />
 			)}
 		</motion.footer>
 	);
