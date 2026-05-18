@@ -41,7 +41,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 		<LazyMotion features={domAnimation}>
 			<AdaSkip />
 			<Header data={headerData} isLightHeader={isCuratedSubpage} />
-			<Main className="[--height-newsletter:158px] md:[--height-newsletter:116px]">
+			<Main className="[--height-newsletter:183px] md:[--height-newsletter:116px]">
 				{children}
 			</Main>
 			<div className="border-t border-t-foreground/36 px-contain">

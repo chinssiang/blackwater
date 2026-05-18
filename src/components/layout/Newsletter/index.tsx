@@ -134,7 +134,7 @@ export function Newsletter({
 						Email address
 					</FieldLabel>
 					<div className="relative flex flex-1 gap-3">
-						<div className="relative flex-1">
+						<div className="field-hint-ring relative flex-1">
 							<Input
 								id="newsletter-email"
 								type="email"

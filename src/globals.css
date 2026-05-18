@@ -67,9 +67,11 @@
 
 	/* Semantic Colors */
 	--color-subtle: color-mix(in srgb, var(--color-gray) 20%, rgba(0, 0, 0, 0));
-	--color-placeholder: color-mix(in srgb,
-			var(--color-gray) 80%,
-			rgba(0, 0, 0, 0));
+	--color-placeholder: color-mix(
+		in srgb,
+		var(--color-gray) 80%,
+		rgba(0, 0, 0, 0)
+	);
 	--color-error: var(--color-red-600);
 	--color-success: var(--color-green-600);
 
@@ -104,9 +106,16 @@
 	--z-index-dialog: calc(var(--z-index-overlay) + 1);
 }
 
+@property --hint-angle {
+	syntax: '<angle>';
+	initial-value: 0deg;
+	inherits: false;
+}
+
 @theme {
 	--animate-blinker: blinker 1s linear infinite;
 	--animate-fade-in: fade-in 0.6s cubic-bezier(0, 0.5, 0.5, 1) both;
+	--animate-field-hint: field-hint 6s linear infinite;
 
 	@keyframes blinker {
 		50% {
@@ -123,6 +132,18 @@
 			opacity: 1;
 		}
 	}
+
+	@keyframes field-hint {
+		0% {
+			--hint-angle: 0deg;
+		}
+		50% {
+			--hint-angle: 180deg;
+		}
+		100% {
+			--hint-angle: 360deg;
+		}
+	}
 }
 
 /* Specificity: @layer base < components < utilities */
@@ -130,8 +151,10 @@
 /* BASE: contains reset rules and default styles */
 @layer base {
 	:root {
-		--font-default: var(--font-ABC-Display), 'Arial', 'Helvetica Neue', 'sans-serif';
-		--font-feature: var(--font-basel-typewriter), 'Arial', 'Helvetica Neue', 'sans-serif';
+		--font-default:
+			var(--font-ABC-Display), 'Arial', 'Helvetica Neue', 'sans-serif';
+		--font-feature:
+			var(--font-basel-typewriter), 'Arial', 'Helvetica Neue', 'sans-serif';
 
 		--background: oklch(1 0 0);
 		--foreground: oklch(0.145 0 0);
@@ -171,8 +194,10 @@
 		--neutral: oklch(0.85 0.03 260);
 
 		--s-contain: max(3vw, 15px);
-		--s-contain-dynamic: max(var(--s-contain),
-				calc((100vw - var(--s-max)) / 2));
+		--s-contain-dynamic: max(
+			var(--s-contain),
+			calc((100vw - var(--s-max)) / 2)
+		);
 		--s-section: 80px;
 
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
@@ -197,7 +222,10 @@
 			--s-vp-height: 100svh;
 		}
 
-		--h-main: calc(var(--s-vp-height) - var(--height-announcement, 0px) - var(--height-header) - var(--height-g-toolbar));
+		--h-main: calc(
+			var(--s-vp-height) - var(--height-announcement, 0px) -
+				var(--height-header) - var(--height-g-toolbar)
+		);
 	}
 
 	.dark {
@@ -263,14 +291,19 @@
 	@variant lg {
 		:root {
 			--s-section: 96px;
-			--h-main: calc(var(--s-vp-height) - var(--height-announcement, 0px) - var(--height-header) - var(--height-footer));
+			--h-main: calc(
+				var(--s-vp-height) - var(--height-announcement, 0px) -
+					var(--height-header) - var(--height-footer)
+			);
 		}
 	}
 
 	html {
 		@apply bg-black text-white antialiased;
 		scroll-behavior: smooth;
-		scroll-padding-top: calc(var(--height-announcement, 0px) + var(--height-header, 0px) + 20px);
+		scroll-padding-top: calc(
+			var(--height-announcement, 0px) + var(--height-header, 0px) + 20px
+		);
 		font-family: var(--font-default);
 	}
 
@@ -286,10 +319,39 @@
 }
 
 @layer components {
+	.field-hint-ring {
+		&::before {
+			content: '';
+			position: absolute;
+			inset: -1px;
+			border-radius: 5px;
+			pointer-events: none;
+			padding: 1.5px;
+			background: conic-gradient(
+				from var(--hint-angle),
+				transparent 0deg,
+				var(--ring) 60deg,
+				transparent 120deg
+			);
+			mask:
+				linear-gradient(#000 0 0) content-box,
+				linear-gradient(#000 0 0);
+			mask-composite: exclude;
+			-webkit-mask-composite: xor;
+			z-index: 10;
+			animation: var(--animate-field-hint);
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			&::before {
+				animation: none;
+			}
+		}
+	}
 
 	.wysiwyg,
 	.wysiwyg-page {
-		>*:not(:last-child) {
+		> *:not(:last-child) {
 			margin-bottom: 20px;
 		}
 
@@ -536,17 +598,30 @@
 /* Layouts */
 
 @utility pt-header-space-* {
-	padding-top: calc(var(--height-header) + var(--height-announcement) + --value(number) * var(--spacing));
-	padding-top: calc(var(--height-header) + var(--height-announcement) + --value([*]));
+	padding-top: calc(
+		var(--height-header) + var(--height-announcement) + --value(number) *
+			var(--spacing)
+	);
+	padding-top: calc(
+		var(--height-header) + var(--height-announcement) + --value([*])
+	);
 }
 
 @utility mt-header-space-* {
-	margin-top: calc(var(--height-header) + var(--height-announcement) + --value(number) * var(--spacing));
-	margin-top: calc(var(--height-header) + var(--height-announcement) + --value([*]));
+	margin-top: calc(
+		var(--height-header) + var(--height-announcement) + --value(number) *
+			var(--spacing)
+	);
+	margin-top: calc(
+		var(--height-header) + var(--height-announcement) + --value([*])
+	);
 }
 
 @utility top-header-space-* {
-	top: calc(var(--height-header) + var(--height-announcement) + --value(number) * var(--spacing));
+	top: calc(
+		var(--height-header) + var(--height-announcement) + --value(number) *
+			var(--spacing)
+	);
 	top: calc(var(--height-header) + var(--height-announcement) + --value([*]));
 }
 
@@ -605,7 +680,7 @@
 	overflow: hidden;
 	user-select: none;
 
-	>* {
+	> * {
 		position: absolute;
 		max-width: unset;
 		top: 50%;
@@ -617,7 +692,7 @@
 		object-fit: cover;
 	}
 
-	>picture {
+	> picture {
 		display: block;
 		width: 100%;
 		height: 100%;
@@ -636,7 +711,7 @@
 	overflow: hidden;
 	user-select: none;
 
-	>* {
+	> * {
 		position: absolute;
 		max-width: unset;
 		top: 50%;
@@ -648,7 +723,7 @@
 		object-fit: contain;
 	}
 
-	>picture {
+	> picture {
 		display: block;
 		width: 100%;
 		height: 100%;
