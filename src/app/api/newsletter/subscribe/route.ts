@@ -3,20 +3,30 @@ import { validateEmail } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
 	const body = await req.json();
+	console.log('🚀 ~ POST ~ body:', body);
 	const { email, listId } = body as { email?: string; listId?: string };
 
 	if (!email || !validateEmail(email)) {
-		return NextResponse.json({ ok: false, message: 'Invalid email address.' }, { status: 400 });
+		return NextResponse.json(
+			{ ok: false, message: 'Invalid email address.' },
+			{ status: 400 }
+		);
 	}
 
 	if (!listId) {
-		return NextResponse.json({ ok: false, message: 'Missing list ID.' }, { status: 400 });
+		return NextResponse.json(
+			{ ok: false, message: 'Missing list ID.' },
+			{ status: 400 }
+		);
 	}
 
-	const apiKey = process.env.KLAVIYO_API_KEY;
+	const apiKey = process.env.KLAVIYO_PRIVATE_API_KEY;
 	if (!apiKey) {
-		console.error('[newsletter] KLAVIYO_API_KEY is not set');
-		return NextResponse.json({ ok: false, message: 'Server configuration error.' }, { status: 500 });
+		console.error('[newsletter] KLAVIYO_PRIVATE_API_KEY is not set');
+		return NextResponse.json(
+			{ ok: false, message: 'Server configuration error.' },
+			{ status: 500 }
+		);
 	}
 
 	try {
@@ -66,6 +76,9 @@ export async function POST(req: NextRequest) {
 		return Response.json({ ok: true });
 	} catch (err) {
 		console.error('[newsletter] fetch error', err);
-		return NextResponse.json({ ok: false, message: 'Subscription failed.' }, { status: 500 });
+		return NextResponse.json(
+			{ ok: false, message: 'Subscription failed.' },
+			{ status: 500 }
+		);
 	}
 }

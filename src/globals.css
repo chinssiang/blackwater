@@ -295,6 +295,7 @@
 				var(--s-vp-height) - var(--height-announcement, 0px) -
 					var(--height-header) - var(--height-footer)
 			);
+			--animate-field-hint: field-hint 12s linear infinite;
 		}
 	}
 

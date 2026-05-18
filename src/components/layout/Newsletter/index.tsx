@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import { motion } from 'motion/react';
+import { toast } from 'sonner';
+import { fadeAnim } from '@/lib/animate';
 import { cn, validateEmail } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -13,7 +16,7 @@ import {
 import CustomPortableText from '@/components/CustomPortableText';
 import type { PortableTextSimple } from 'sanity.types';
 
-type FormState = 'idle' | 'submitting' | 'success' | 'error';
+type FormState = 'idle' | 'submitting' | 'success';
 
 type NewsletterData = {
 	klaviyoListID?: string | null;
@@ -75,45 +78,23 @@ export function Newsletter({
 				setEmail('');
 				setFormState('success');
 			} else {
-				setFormState('error');
+				toast.error(errorHeading || 'Something went wrong', {
+					description: errorBody || 'Please try again.',
+				});
+				setFormState('idle');
 			}
 		} catch {
-			setFormState('error');
+			toast.error(errorHeading || 'Something went wrong', {
+				description: errorBody || 'Please try again.',
+			});
+			setFormState('idle');
 		}
 	};
-
-	if (formState === 'success') {
-		return (
-			<div className={className}>
-				{successHeading && (
-					<p className="t-b-1 font-medium">{successHeading}</p>
-				)}
-				{successBody && <p className="t-b-2 text-foreground">{successBody}</p>}
-				{!successHeading && !successBody && (
-					<p className="t-b-2 text-foreground">You&apos;re subscribed!</p>
-				)}
-			</div>
-		);
-	}
-
-	if (formState === 'error') {
-		return (
-			<div className={className}>
-				{errorHeading && <p className="t-b-1 font-medium">{errorHeading}</p>}
-				{errorBody && <p className="t-b-2 text-foreground">{errorBody}</p>}
-				{!errorHeading && !errorBody && (
-					<p className="t-b-2 text-foreground">
-						Something went wrong. Please try again.
-					</p>
-				)}
-			</div>
-		);
-	}
 
 	return (
 		<div
 			className={cn(
-				'flex gap-2 md:gap-10 items-center md:justify-center w-full flex-wrap',
+				'flex gap-6 md:gap-10 items-center md:justify-center w-full flex-wrap',
 				className
 			)}
 		>
@@ -124,61 +105,81 @@ export function Newsletter({
 				{subheading && <p className="t-b-2 text-balance">{subheading}</p>}
 			</div>
 
-			<form
-				onSubmit={handleSubmit}
-				noValidate
-				className="basis-full md:flex-1 mt-3 max-w-sm"
-			>
-				<Field data-invalid={!!validationError || undefined}>
-					<FieldLabel htmlFor="newsletter-email" className="sr-only">
-						Email address
-					</FieldLabel>
-					<div className="relative flex flex-1 gap-3">
-						<div className="field-hint-ring relative flex-1">
-							<Input
-								id="newsletter-email"
-								type="email"
-								placeholder="Your email"
-								value={email}
-								onChange={(e) => {
-									setEmail(e.target.value);
-									if (validationError) setValidationError('');
-								}}
-								onFocus={() => setIsFocused(true)}
-								onBlur={() => setIsFocused(false)}
-								aria-invalid={!!validationError}
+			{formState === 'success' ? (
+				<motion.div
+					key="newsletter-success"
+					initial="hide"
+					animate="show"
+					variants={fadeAnim}
+					transition={{ duration: 0.6, delay: 0.1, ease: [0, 0.71, 0.2, 1.01] }}
+					className="basis-full md:flex-1 max-w-sm"
+					role="status"
+					aria-live="polite"
+				>
+					{successHeading && (
+						<p className="t-b-1 font-medium">{successHeading}</p>
+					)}
+					{successBody && (
+						<p className="t-b-2 mt-1 text-pretty">{successBody}</p>
+					)}
+				</motion.div>
+			) : (
+				<form
+					onSubmit={handleSubmit}
+					noValidate
+					className="basis-full md:flex-1 max-w-sm"
+				>
+					<Field data-invalid={!!validationError || undefined}>
+						<FieldLabel htmlFor="newsletter-email" className="sr-only">
+							Email address
+						</FieldLabel>
+						<div className="relative flex flex-1 gap-3">
+							<div className="field-hint-ring relative flex-1">
+								<Input
+									id="newsletter-email"
+									type="email"
+									placeholder="Your email"
+									value={email}
+									onChange={(e) => {
+										setEmail(e.target.value);
+										if (validationError) setValidationError('');
+									}}
+									onFocus={() => setIsFocused(true)}
+									onBlur={() => setIsFocused(false)}
+									aria-invalid={!!validationError}
+									disabled={formState === 'submitting'}
+									autoComplete="email"
+									className={cn({ 'pr-8': !!validationError })}
+								/>
+								<FieldStatus
+									fieldState={{
+										invalid: !!validationError,
+										error: validationError
+											? { message: validationError }
+											: undefined,
+									}}
+									isFocused={isFocused}
+									isShowErrorOnFocus={true}
+								/>
+							</div>
+							<Button
+								type="submit"
 								disabled={formState === 'submitting'}
-								autoComplete="email"
-								className={cn({ 'pr-8': !!validationError })}
-							/>
-							<FieldStatus
-								fieldState={{
-									invalid: !!validationError,
-									error: validationError
-										? { message: validationError }
-										: undefined,
-								}}
-								isFocused={isFocused}
-								isShowErrorOnFocus={true}
-							/>
+								variant="outline"
+							>
+								{formState === 'submitting'
+									? 'Subscribing…'
+									: submitButtonText || 'Subscribe'}
+							</Button>
 						</div>
-						<Button
-							type="submit"
-							disabled={formState === 'submitting'}
-							variant="outline"
-						>
-							{formState === 'submitting'
-								? 'Subscribing…'
-								: submitButtonText || 'Subscribe'}
-						</Button>
-					</div>
-				</Field>
-				{disclaimer && (
-					<div className="t-b-2 mt-3 text-pretty">
-						<CustomPortableText blocks={disclaimer as any} />
-					</div>
-				)}
-			</form>
+					</Field>
+					{disclaimer && (
+						<div className="t-b-2 mt-3 text-pretty">
+							<CustomPortableText blocks={disclaimer as any} />
+						</div>
+					)}
+				</form>
+			)}
 		</div>
 	);
 }
