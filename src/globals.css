@@ -75,7 +75,7 @@
 	--color-error: var(--color-red-600);
 	--color-success: var(--color-green-600);
 
-	--height-announcement: var(--h-announcement);
+	--height-announcement: var(--h-announcement, 0px);
 	--height-header: 52px;
 	--height-footer: var(--h-footer, 90px);
 	--height-main: var(--h-main);
@@ -622,9 +622,7 @@
 }
 
 @utility min-h-main-* {
-	min-height: calc(
-		var(--height-main) - --value(number) * var(--spacing)
-	);
+	min-height: calc(var(--height-main) - --value(number) * var(--spacing));
 	min-height: calc(var(--height-main) - --value([*]));
 }
 

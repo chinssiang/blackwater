@@ -53,7 +53,9 @@ export function Newsletter({
 	const [formState, setFormState] = useState<FormState>('idle');
 	const [validationError, setValidationError] = useState('');
 	const [isFocused, setIsFocused] = useState(false);
+	const [formHeight, setFormHeight] = useState<number | null>(null);
 	const sectionRef = useRef<HTMLDivElement>(null);
+	const formRef = useRef<HTMLFormElement>(null);
 
 	useEffect(() => {
 		const el = sectionRef.current;
@@ -69,6 +71,18 @@ export function Newsletter({
 		observer.observe(el);
 		return () => observer.disconnect();
 	}, []);
+
+	useEffect(() => {
+		const el = formRef.current;
+		if (!el) return;
+		const observer = new ResizeObserver(([entry]) => {
+			const height =
+				entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height;
+			setFormHeight(height);
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, [formState]);
 
 	if (!klaviyoListID) return null;
 
@@ -108,7 +122,7 @@ export function Newsletter({
 	};
 
 	return (
-		<div ref={sectionRef} className={className}>
+		<div ref={sectionRef} className={cn('', className)}>
 			<div className="space-y-1">
 				{heading && (
 					<p className="t-b-1 text-balance font-medium mb-2">{heading}</p>
@@ -126,7 +140,8 @@ export function Newsletter({
 						delay: 0.1,
 						ease: [0, 0.71, 0.2, 1.01],
 					}}
-					className="max-w-sm"
+					className="max-w-sm flex flex-col justify-center"
+					style={formHeight ? { minHeight: formHeight } : undefined}
 					role="status"
 					aria-live="polite"
 				>
@@ -138,7 +153,12 @@ export function Newsletter({
 					)}
 				</motion.div>
 			) : (
-				<form onSubmit={handleSubmit} noValidate className="max-w-sm">
+				<form
+					ref={formRef}
+					onSubmit={handleSubmit}
+					noValidate
+					className="max-w-sm"
+				>
 					<Field data-invalid={!!validationError || undefined}>
 						<FieldLabel htmlFor="newsletter-email" className="sr-only">
 							Email address
