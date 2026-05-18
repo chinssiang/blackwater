@@ -12,7 +12,7 @@ export default function PageHome({ data }: PageHomeProps) {
 	const { pageModules, landingTitle } = data || {};
 
 	return (
-		<div className="flex min-h-[calc(var(--height-main)-var(--height-newsletter))] flex-col justify-center gap-5">
+		<div className="flex min-h-main-(--height-newsletter) flex-col justify-center gap-5">
 			<div className="px-contain mx-auto max-w-sm text-center text-sm text-balance uppercase sm:max-w-6xl">
 				<AnimatedTitle title={landingTitle} />
 			</div>

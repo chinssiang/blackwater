@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'motion/react';
 import { toast } from 'sonner';
 import { fadeAnim } from '@/lib/animate';
@@ -53,6 +53,22 @@ export function Newsletter({
 	const [formState, setFormState] = useState<FormState>('idle');
 	const [validationError, setValidationError] = useState('');
 	const [isFocused, setIsFocused] = useState(false);
+	const sectionRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		const el = sectionRef.current;
+		if (!el) return;
+		const observer = new ResizeObserver(([entry]) => {
+			const height =
+				entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height;
+			document.documentElement.style.setProperty(
+				'--h-newsletter',
+				`${height + 1}px`
+			);
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, []);
 
 	if (!klaviyoListID) return null;
 
@@ -92,27 +108,25 @@ export function Newsletter({
 	};
 
 	return (
-		<div
-			className={cn(
-				'flex gap-6 md:gap-10 items-center md:justify-center w-full flex-wrap',
-				className
-			)}
-		>
+		<div ref={sectionRef} className={className}>
 			<div className="space-y-1">
 				{heading && (
 					<p className="t-b-1 text-balance font-medium mb-2">{heading}</p>
 				)}
 				{subheading && <p className="t-b-2 text-balance">{subheading}</p>}
 			</div>
-
 			{formState === 'success' ? (
 				<motion.div
 					key="newsletter-success"
 					initial="hide"
 					animate="show"
 					variants={fadeAnim}
-					transition={{ duration: 0.6, delay: 0.1, ease: [0, 0.71, 0.2, 1.01] }}
-					className="basis-full md:flex-1 max-w-sm"
+					transition={{
+						duration: 0.6,
+						delay: 0.1,
+						ease: [0, 0.71, 0.2, 1.01],
+					}}
+					className="max-w-sm"
 					role="status"
 					aria-live="polite"
 				>
@@ -124,11 +138,7 @@ export function Newsletter({
 					)}
 				</motion.div>
 			) : (
-				<form
-					onSubmit={handleSubmit}
-					noValidate
-					className="basis-full md:flex-1 max-w-sm"
-				>
+				<form onSubmit={handleSubmit} noValidate className="max-w-sm">
 					<Field data-invalid={!!validationError || undefined}>
 						<FieldLabel htmlFor="newsletter-email" className="sr-only">
 							Email address

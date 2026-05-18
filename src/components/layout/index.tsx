@@ -41,15 +41,15 @@ export function Layout({ children, siteData }: LayoutProps) {
 		<LazyMotion features={domAnimation}>
 			<AdaSkip />
 			<Header data={headerData} isLightHeader={isCuratedSubpage} />
-			<Main className="[--height-newsletter:183px] md:[--height-newsletter:116px]">
+			<Main>
 				{children}
+				<div className="border-t border-t-foreground/36 ">
+					<Newsletter
+						data={newsletter}
+						className="px-contain grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[400px_1fr] gap-6 items-center md:justify-center mx-auto py-6 w-full flex-wrap max-w-lg"
+					/>
+				</div>
 			</Main>
-			<div className="border-t border-t-foreground/36 px-contain">
-				<Newsletter
-					data={newsletter}
-					className="max-w-sm md:max-w-full mx-auto py-5"
-				/>
-			</div>
 			<Footer data={footerData} />
 			<ToolBar menu={footerData.toolbarMenu} />
 		</LazyMotion>

@@ -79,6 +79,7 @@
 	--height-header: 52px;
 	--height-footer: var(--h-footer, 90px);
 	--height-main: var(--h-main);
+	--height-newsletter: var(--h-newsletter);
 	--height-g-toolbar: 60px;
 
 	--container-3xs: initial;
@@ -221,6 +222,8 @@
 		@supports (height: 100svh) {
 			--s-vp-height: 100svh;
 		}
+
+		--h-newsletter: 0px;
 
 		--h-main: calc(
 			var(--s-vp-height) - var(--height-announcement, 0px) -
@@ -616,6 +619,13 @@
 	margin-top: calc(
 		var(--height-header) + var(--height-announcement) + --value([*])
 	);
+}
+
+@utility min-h-main-* {
+	min-height: calc(
+		var(--height-main) - --value(number) * var(--spacing)
+	);
+	min-height: calc(var(--height-main) - --value([*]));
 }
 
 @utility top-header-space-* {

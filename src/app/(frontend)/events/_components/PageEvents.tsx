@@ -132,7 +132,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		: '';
 
 	return (
-		<div className="min-h-[80vh] p-x-max mx-auto py-10 lg:py-17.5">
+		<div className="min-h-main-(--height-newsletter) p-x-max mx-auto py-10 lg:py-17.5">
 			<h1 className="sr-only">{title}</h1>
 			<div className="flex items-center justify-between sticky top-header bg-background/95 z-10 font-bold">
 				<motion.p
@@ -150,7 +150,7 @@ export function PageEvents({ data }: PageEventsProps) {
 					{monthYearDisplay}
 				</motion.p>
 				{availableMonths.length > 0 && (
-					<div className="flex items-center justify-between">
+					<div className="flex items-center justify-between gap-1">
 						<Button
 							onClick={goToPreviousMonth}
 							disabled={!hasPrevious}

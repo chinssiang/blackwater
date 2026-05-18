@@ -3,7 +3,6 @@ import { validateEmail } from '@/lib/utils';
 
 export async function POST(req: NextRequest) {
 	const body = await req.json();
-	console.log('🚀 ~ POST ~ body:', body);
 	const { email, listId } = body as { email?: string; listId?: string };
 
 	if (!email || !validateEmail(email)) {

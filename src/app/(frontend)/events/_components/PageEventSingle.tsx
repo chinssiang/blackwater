@@ -81,7 +81,7 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 		(!eventFormat && hasArrayValue((data || {}).stations));
 
 	return (
-		<div className="min-h-[calc(var(--height-main)-200px)]">
+		<div className="min-h-main-(--height-newsletter)">
 			{heroImage?.image && (
 				<ImageBlock
 					imageObj={heroImage as any}
