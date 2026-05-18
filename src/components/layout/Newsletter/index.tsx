@@ -113,11 +113,11 @@ export function Newsletter({
 	return (
 		<div
 			className={cn(
-				'flex gap-2 items-center justify-between w-full flex-wrap',
+				'flex gap-2 md:gap-10 items-center md:justify-center w-full flex-wrap',
 				className
 			)}
 		>
-			<div className="space-y-1 basis-full">
+			<div className="space-y-1">
 				{heading && (
 					<p className="t-b-1 text-balance font-medium mb-2">{heading}</p>
 				)}
@@ -127,7 +127,7 @@ export function Newsletter({
 			<form
 				onSubmit={handleSubmit}
 				noValidate
-				className="basis-full md:flex-1 mt-3"
+				className="basis-full md:flex-1 mt-3 max-w-sm"
 			>
 				<Field data-invalid={!!validationError || undefined}>
 					<FieldLabel htmlFor="newsletter-email" className="sr-only">

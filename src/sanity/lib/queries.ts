@@ -182,19 +182,19 @@ export const siteDataQuery = defineQuery(`{
 				${menuFields}
 			},
 			note,
-			"newsletter": *[_type == "gNewsletter"][0]{
-				klaviyoListID,
-				heading,
-				subheading,
-				submitButtonText,
-				"disclaimer": disclaimer[]{
-					${portableTextContentFields}
-				},
-				successHeading,
-				successBody,
-				errorHeading,
-				errorBody,
-			}
+		},
+		"newsletter": *[_type == "gNewsletter"][0]{
+			klaviyoListID,
+			heading,
+			subheading,
+			submitButtonText,
+			"disclaimer": disclaimer[]{
+				${portableTextContentFields}
+			},
+			successHeading,
+			successBody,
+			errorHeading,
+			errorBody,
 		},
 		"sharing": *[_type == "settingsGeneral"][0]{
 			siteTitle,

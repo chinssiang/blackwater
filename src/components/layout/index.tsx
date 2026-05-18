@@ -6,6 +6,7 @@ import * as gtag from '@/lib/gtag';
 import AdaSkip from './AdaSkip';
 import { Footer } from './Footer';
 import { Header } from './Header';
+import { Newsletter } from './Newsletter';
 import { ToolBar } from './ToolBar';
 import { Main } from './Main';
 import { LazyMotion, domAnimation } from 'motion/react';
@@ -15,7 +16,7 @@ type LayoutProps = {
 	siteData: any;
 };
 export function Layout({ children, siteData }: LayoutProps) {
-	const { header, footer, sharing } = siteData || {};
+	const { header, footer, newsletter, sharing } = siteData || {};
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaID;
 	const isCuratedSubpage = pathname.startsWith('/curated/');
@@ -40,7 +41,15 @@ export function Layout({ children, siteData }: LayoutProps) {
 		<LazyMotion features={domAnimation}>
 			<AdaSkip />
 			<Header data={headerData} isLightHeader={isCuratedSubpage} />
-			<Main>{children}</Main>
+			<Main className="[--height-newsletter:158px] md:[--height-newsletter:116px]">
+				{children}
+			</Main>
+			<div className="border-t border-t-foreground/36 px-contain">
+				<Newsletter
+					data={newsletter}
+					className="max-w-sm md:max-w-full mx-auto py-5"
+				/>
+			</div>
 			<Footer data={footerData} />
 			<ToolBar menu={footerData.toolbarMenu} />
 		</LazyMotion>

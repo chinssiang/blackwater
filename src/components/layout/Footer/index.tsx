@@ -1,18 +1,16 @@
 import { useLayoutEffect, useRef } from 'react';
 import { pageTransitionFade } from '@/lib/animate';
 import Menu from '@/components/Menu';
-import { Newsletter } from '@/components/Newsletter';
 import { motion } from 'motion/react';
-import type { GFooter, GNewsletter, SettingsMenu } from 'sanity.types';
+import type { GFooter, SettingsMenu } from 'sanity.types';
 
 type FooterProps = GFooter & {
 	siteTitle?: string;
 	menu?: SettingsMenu;
-	newsletter?: GNewsletter;
 };
 
 export function Footer({ data }: { data: FooterProps }) {
-	const { menu, note, newsletter } = data || {};
+	const { menu, note } = data || {};
 	const footerRef = useRef<HTMLElement | null>(null);
 
 	useLayoutEffect(() => {
@@ -56,9 +54,6 @@ export function Footer({ data }: { data: FooterProps }) {
 					{note}
 				</motion.p>
 			)}
-			{newsletter?.klaviyoListID && (
-				<Newsletter data={newsletter} className="" />
-			)}
-		</motion.footer>
+			</motion.footer>
 	);
 }
