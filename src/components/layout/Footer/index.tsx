@@ -26,7 +26,7 @@ export function Footer({ data }: { data: FooterProps }) {
 			initial="initial"
 			animate="animate"
 			variants={pageTransitionFade}
-			className="bg-background text-foreground px-contain py-6 lg:py-10 lg:mb-0 empty:hidden"
+			className="bg-background text-foreground px-contain py-6 lg:py-10 lg:mb-0 empty:hidden border-t border-t-foreground/30"
 		>
 			{menu && (
 				<Menu
@@ -54,6 +54,6 @@ export function Footer({ data }: { data: FooterProps }) {
 					{note}
 				</motion.p>
 			)}
-		</motion.footer>
+			</motion.footer>
 	);
 }

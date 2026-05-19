@@ -15,6 +15,7 @@ import { pEventStatus } from './documents/p-event-status';
 import { pGeneral } from './documents/p-general';
 import { pBrand } from './documents/p-brand';
 // Objects
+import { gNewsletter } from './singletons/g-newsletter';
 import { formField } from './objects/form-builder/form-field';
 import { link } from './objects/link';
 import { navDropdown } from './objects/nav-dropdown';
@@ -46,7 +47,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	settingsMenu,
 	settingsRedirect,
 	settingsIntegration,
-
+	gNewsletter,
 	gAnnouncement,
 	gHeader,
 	gFooter,

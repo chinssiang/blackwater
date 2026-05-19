@@ -29,9 +29,18 @@ export const settingsGeneral = defineType({
 			validation: (Rule) => Rule.max(300).warning('Keep under ~300 chars.'),
 		}),
 		defineField({
-			name: 'logo',
+			name: 'siteLogo',
 			type: 'image',
-			title: 'Logo',
+			title: 'Site Logo',
+			description:
+				'Transparent PNG or SVG preferred. Used as the Organization logo in structured data.',
+			group: 'identity',
+			options: { accept: '.png,.svg,.jpg' },
+		}),
+		defineField({
+			name: 'wordmarkLogo',
+			type: 'image',
+			title: 'Wordmark Logo',
 			description:
 				'Transparent PNG or SVG preferred. Used as the Organization logo in structured data.',
 			group: 'identity',
@@ -85,7 +94,8 @@ export const settingsGeneral = defineType({
 			description:
 				'Public-facing contact email. Used as Organization contactPoint in structured data.',
 			group: 'contact',
-			validation: (Rule) => Rule.email().error('Must be a valid email address.'),
+			validation: (Rule) =>
+				Rule.email().error('Must be a valid email address.'),
 		}),
 		defineField({
 			name: 'socialLinks',

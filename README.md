@@ -60,7 +60,7 @@
 
 - `EMAIL_SERVER_PASSWORD`: Set up the password here: https://security.google.com/settings/security/apppasswords. If the link leads to a 404 page, you need to enable 2-Step Verification first. Once you've set up 2-Step Verification, you can then create an app password.
 
-- `KLAVIYO_API_KEY`: Create a Private API Key from your Klaviyo Account "Settings" → "API Keys"
+- `KLAVIYO_PRIVATE_API_KEY`: Create a Private API Key from your Klaviyo Account "Settings" → "API Keys"
 - `MAILCHIMP_API_KEY`: Create an API key from "Account → "Extras" → API Keys"
 - `MAILCHIMP_SERVER`: This is the server your account is from. It's in the URL when logged in and at the end of your API Key.
 

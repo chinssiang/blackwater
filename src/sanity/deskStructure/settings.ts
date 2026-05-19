@@ -1,11 +1,13 @@
 import {
 	CogIcon,
 	EarthGlobeIcon,
+	EnvelopeIcon,
 	PackageIcon,
 	EnterRightIcon,
 } from '@sanity/icons';
+import type { StructureBuilder } from 'sanity/structure';
 
-export const settingsMenu = (S) => {
+export const settingsMenu = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Settings')
 		.child(
@@ -34,6 +36,15 @@ export const settingsMenu = (S) => {
 						.title('Redirects')
 						.child(S.documentTypeList('settingsRedirect').title('Redirects'))
 						.icon(EnterRightIcon),
+					S.listItem()
+						.title('Newsletter')
+						.child(
+							S.editor()
+								.id('gNewsletter')
+								.schemaType('gNewsletter')
+								.documentId('gNewsletter')
+						)
+						.icon(EnvelopeIcon),
 				])
 		)
 		.icon(CogIcon);

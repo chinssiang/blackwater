@@ -3,7 +3,6 @@ import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { fadeAnim } from '@/lib/animate';
 import { Button } from '@/components/ui/Button';
-import CustomLink from '@/components/CustomLink';
 
 type CuratedProductCardProps = {
 	product: {
@@ -68,9 +67,7 @@ export default function CuratedProductCard({
 
 				{/* Details button */}
 				<Button asChild size="xl" className="uppercase">
-					<CustomLink link={{ href: `/curated/products/${product.slug}` }}>
-						Details
-					</CustomLink>
+					<div>Details</div>
 				</Button>
 
 				{/* Info */}
