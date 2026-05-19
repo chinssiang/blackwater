@@ -1,4 +1,5 @@
 import { getPortableTextPreview } from '@/sanity/lib/utils';
+import { language } from '@/sanity/schemaTypes/objects/language';
 import { EditIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
 
@@ -7,6 +8,7 @@ export const gAnnouncement = defineType({
 	name: 'gAnnouncement',
 	type: 'document',
 	fields: [
+		language(),
 		{
 			name: 'display',
 			type: 'string',

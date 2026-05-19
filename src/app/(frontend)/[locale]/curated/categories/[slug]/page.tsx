@@ -11,7 +11,7 @@ import defineMetadata from '@/lib/defineMetadata';
 import PageCuratedCategory from './_components/PageCuratedCategory';
 
 type Props = {
-	params: Promise<{ slug: string }>;
+	params: Promise<{ locale: string; slug: string }>;
 };
 
 export async function generateStaticParams() {
@@ -23,23 +23,23 @@ export async function generateStaticParams() {
 	return data ?? [];
 }
 
-const getCachedCategoryData = cache(async (slug: string) =>
+const getCachedCategoryData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageCuratedCategorySingleQuery,
-		params: { slug },
+		params: { slug, locale },
 		tags: ['pCuratedCategory', 'pCurated'],
 	})
 );
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-	const { slug } = await params;
-	const { data } = await getCachedCategoryData(slug);
+	const { slug, locale } = await params;
+	const { data } = await getCachedCategoryData(slug, locale);
 	return defineMetadata({ data: stegaClean(data) });
 }
 
 export default async function Page({ params }: Props) {
-	const { slug } = await params;
-	const { data } = await getCachedCategoryData(slug);
+	const { slug, locale } = await params;
+	const { data } = await getCachedCategoryData(slug, locale);
 
 	if (!data) return notFound();
 

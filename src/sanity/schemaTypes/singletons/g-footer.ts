@@ -1,3 +1,4 @@
+import { language } from '@/sanity/schemaTypes/objects/language';
 import { defineType } from 'sanity';
 
 export const gFooter = defineType({
@@ -5,6 +6,7 @@ export const gFooter = defineType({
 	name: 'gFooter',
 	type: 'document',
 	fields: [
+		language(),
 		{
 			name: 'menu',
 			type: 'reference',

@@ -7,17 +7,21 @@ import { pageHomeQuery } from '@/sanity/lib/queries';
 import defineMetadata from '@/lib/defineMetadata';
 import PageHome from './_components/PageHome';
 
-const getCachedHomeData = cache(async () =>
-	sanityFetch({ query: pageHomeQuery, tags: ['pHome'] })
+const getCachedHomeData = cache(async (locale: string) =>
+	sanityFetch({ query: pageHomeQuery, params: { locale }, tags: ['pHome'] })
 );
 
-export async function generateMetadata(): Promise<Metadata> {
-	const { data } = await getCachedHomeData();
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+	const { locale } = await props.params;
+	const { data } = await getCachedHomeData(locale);
 	return defineMetadata({ data: stegaClean(data) });
 }
 
-export default async function Page() {
-	const { data } = await getCachedHomeData();
+export default async function Page(props: Props) {
+	const { locale } = await props.params;
+	const { data } = await getCachedHomeData(locale);
 
 	if (!data)
 		return (

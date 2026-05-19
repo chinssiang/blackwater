@@ -18,14 +18,14 @@ export async function generateStaticParams() {
 }
 
 type MetadataProps = {
-	params: Promise<{ slug: string }>;
+	params: Promise<{ locale: string; slug: string }>;
 	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-const getCachedPageData = cache(async (slug: string) =>
+const getCachedPageData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageGeneralQuery,
-		params: { slug },
+		params: { slug, locale },
 		tags: [`pGeneral:${slug}`],
 	})
 );
@@ -33,15 +33,15 @@ const getCachedPageData = cache(async (slug: string) =>
 export async function generateMetadata(
 	props: MetadataProps
 ): Promise<Metadata> {
-	const { slug } = await props.params;
-	const { data } = await getCachedPageData(slug);
+	const { slug, locale } = await props.params;
+	const { data } = await getCachedPageData(slug, locale);
 	return defineMetadata({ data: stegaClean(data) });
 }
 
 export default async function PageSlugRoute(props: MetadataProps) {
 	const params = await props.params;
 
-	const { data } = await getCachedPageData(params.slug);
+	const { data } = await getCachedPageData(params.slug, params.locale);
 
 	const { sharing } = data || {};
 	if (!data || sharing.disableIndex === true) return notFound();

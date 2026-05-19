@@ -7,17 +7,21 @@ import { pageContactQuery } from '@/sanity/lib/queries';
 import defineMetadata from '@/lib/defineMetadata';
 import { PageContact } from './_components/PageContact';
 
-const getCachedContactData = cache(async () =>
-	sanityFetch({ query: pageContactQuery, tags: ['pContact'] })
+const getCachedContactData = cache(async (locale: string) =>
+	sanityFetch({ query: pageContactQuery, params: { locale }, tags: ['pContact'] })
 );
 
-export async function generateMetadata(): Promise<Metadata> {
-	const { data } = await getCachedContactData();
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+	const { locale } = await props.params;
+	const { data } = await getCachedContactData(locale);
 	return defineMetadata({ data: stegaClean(data) });
 }
 
-export default async function Page() {
-	const { data } = await getCachedContactData();
+export default async function Page(props: Props) {
+	const { locale } = await props.params;
+	const { data } = await getCachedContactData(locale);
 	const { sharing } = data || {};
 
 	if (!data || sharing.disableIndex === true) return notFound();

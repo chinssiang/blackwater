@@ -4,6 +4,7 @@ import { defaultDocumentNode } from '@/sanity/defaultDocumentNode';
 import { apiVersion, dataset, projectId } from '@/sanity/env';
 import * as presentationResolver from '@/sanity/lib/presentation-resolver';
 import { schemaTypes } from '@/sanity/schemaTypes';
+import { TRANSLATABLE_TYPES } from '@/sanity/i18n-types';
 import { gAnnouncement } from '@/sanity/schemaTypes/singletons/g-announcement';
 import { gFooter } from '@/sanity/schemaTypes/singletons/g-footer';
 import { gHeader } from '@/sanity/schemaTypes/singletons/g-header';
@@ -15,8 +16,10 @@ import { settingsGeneral } from '@/sanity/schemaTypes/singletons/settings-genera
 import { settingsIntegration } from '@/sanity/schemaTypes/singletons/settings-integrations';
 import { structure } from '@/sanity/structure';
 import { colorInput } from '@sanity/color-input';
+import { documentInternationalization } from '@sanity/document-internationalization';
 import { visionTool } from '@sanity/vision';
 import { LogoSvg } from '@/components/LogoSvg';
+import { SANITY_LANGUAGES } from '@/lib/i18n';
 import { defineConfig, isDev } from 'sanity';
 import { media } from 'sanity-plugin-media';
 import { noteField } from 'sanity-plugin-note-field';
@@ -33,12 +36,14 @@ const commonPlugins = [
 	colorInput(),
 	noteField(),
 	internationalizedArray({
-		languages: [
-			{ id: 'en', title: 'English' },
-			{ id: 'zh_tw', title: '中文 (繁體)' },
-		],
+		languages: SANITY_LANGUAGES,
 		defaultLanguages: ['en'],
 		fieldTypes: ['string', 'text'],
+	}),
+	documentInternationalization({
+		supportedLanguages: SANITY_LANGUAGES,
+		schemaTypes: [...TRANSLATABLE_TYPES],
+		languageField: 'language',
 	}),
 	presentationTool({
 		resolve: presentationResolver,
@@ -100,7 +105,9 @@ export default defineConfig({
 
 			return prev;
 		},
-		// Removes the "duplicate" action on the Singletons (such as Home)
+		// Removes the "duplicate" action on the Singletons (such as Home).
+		// schemaType is the doc type (e.g. "pHome"), not the translation id,
+		// so this correctly blocks duplicating both the original and its i18n siblings.
 		actions: (prev, { schemaType }) => {
 			if (singletonDocuments.includes(schemaType as any)) {
 				return prev.filter(({ action }) => action !== 'duplicate');

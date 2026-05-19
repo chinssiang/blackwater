@@ -20,27 +20,27 @@ export async function generateStaticParams() {
 }
 
 type MetadataProps = {
-	params: Promise<{ slug: string }>;
+	params: Promise<{ locale: string; slug: string }>;
 	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-const getCachedEventData = cache(async (slug: string) =>
+const getCachedEventData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageEventSingleQuery,
-		params: { slug },
+		params: { slug, locale },
 		tags: [`pEvent:${slug}`],
 	})
 );
 
 export async function generateMetadata(props: MetadataProps): Promise<Metadata> {
-	const { slug } = await props.params;
-	const { data } = await getCachedEventData(slug);
+	const { slug, locale } = await props.params;
+	const { data } = await getCachedEventData(slug, locale);
 	return defineMetadata({ data: stegaClean(data) });
 }
 
 export default async function PageEventSlugRoute(props: MetadataProps) {
-	const { slug } = await props.params;
-	const { data } = await getCachedEventData(slug);
+	const { slug, locale } = await props.params;
+	const { data } = await getCachedEventData(slug, locale);
 
 	if (!data) return notFound();
 

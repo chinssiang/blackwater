@@ -1,3 +1,4 @@
+import { language } from '@/sanity/schemaTypes/objects/language';
 import { defineType } from 'sanity';
 
 export const gHeader = defineType({
@@ -5,6 +6,7 @@ export const gHeader = defineType({
 	name: 'gHeader',
 	type: 'document',
 	fields: [
+		language(),
 		{
 			title: 'Menu',
 			name: 'menu',

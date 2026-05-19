@@ -1,4 +1,5 @@
 import callToAction from '@/sanity/schemaTypes/objects/call-to-action';
+import { language } from '@/sanity/schemaTypes/objects/language';
 import { UnknownIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
 
@@ -8,6 +9,7 @@ export const p404 = defineType({
 	type: 'document',
 	icon: UnknownIcon,
 	fields: [
+		language(),
 		{
 			title: 'Heading',
 			name: 'heading',

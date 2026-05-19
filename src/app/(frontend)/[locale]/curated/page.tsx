@@ -7,20 +7,25 @@ import { pageCuratedIndexQuery } from '@/sanity/lib/queries';
 import defineMetadata from '@/lib/defineMetadata';
 import { PageCuratedIndex } from './_components/PageCuratedIndex';
 
-const getCachedCuratedIndexData = cache(async () =>
+const getCachedCuratedIndexData = cache(async (locale: string) =>
 	sanityFetch({
 		query: pageCuratedIndexQuery,
+		params: { locale },
 		tags: ['pCuratedIndex', 'pCurated', 'pCuratedCategory', 'pCuratedCollection'],
 	})
 );
 
-export async function generateMetadata(): Promise<Metadata> {
-	const { data } = await getCachedCuratedIndexData();
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+	const { locale } = await props.params;
+	const { data } = await getCachedCuratedIndexData(locale);
 	return defineMetadata({ data: stegaClean(data) });
 }
 
-export default async function Page() {
-	const { data } = await getCachedCuratedIndexData();
+export default async function Page(props: Props) {
+	const { locale } = await props.params;
+	const { data } = await getCachedCuratedIndexData(locale);
 
 	if (!data) return notFound();
 

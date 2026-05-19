@@ -7,17 +7,21 @@ import { pEventsQuery } from '@/sanity/lib/queries';
 import defineMetadata from '@/lib/defineMetadata';
 import { PageEvents } from './_components/PageEvents';
 
-const getCachedEventsData = cache(async () =>
-	sanityFetch({ query: pEventsQuery, tags: ['pEvents', 'pEvent'] })
+const getCachedEventsData = cache(async (locale: string) =>
+	sanityFetch({ query: pEventsQuery, params: { locale }, tags: ['pEvents', 'pEvent'] })
 );
 
-export async function generateMetadata(): Promise<Metadata> {
-	const { data } = await getCachedEventsData();
+type Props = { params: Promise<{ locale: string }> };
+
+export async function generateMetadata(props: Props): Promise<Metadata> {
+	const { locale } = await props.params;
+	const { data } = await getCachedEventsData(locale);
 	return defineMetadata({ data: stegaClean(data) });
 }
 
-export default async function Page() {
-	const { data } = await getCachedEventsData();
+export default async function Page(props: Props) {
+	const { locale } = await props.params;
+	const { data } = await getCachedEventsData(locale);
 
 	if (!data) return notFound();
 

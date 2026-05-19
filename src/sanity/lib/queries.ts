@@ -169,8 +169,13 @@ const formField = `
 	}
 `;
 
+// Helper GROQ expression: returns the locale-preferred doc from a type,
+// falling back to the English doc (or any doc with no language field yet).
+const byLocale = (type: string) =>
+	`*[_type == "${type}" && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)`;
+
 export const siteDataQuery = defineQuery(`{
-		"announcement": *[_type == "gAnnouncement"][0]{
+		"announcement": ${byLocale('gAnnouncement')}[0]{
 			display,
 			messages,
 			autoplay,
@@ -180,12 +185,12 @@ export const siteDataQuery = defineQuery(`{
 			emphasizeColor,
 			"link": ${linkFields}
 		},
-		"header": *[_type == "gHeader"][0]{
+		"header": ${byLocale('gHeader')}[0]{
 			menu->{
 				${menuFields}
 			}
 		},
-		"footer": *[_type == "gFooter"][0]{
+		"footer": ${byLocale('gFooter')}[0]{
 			menu->{
 				${menuFields}
 			},
@@ -232,7 +237,7 @@ export const siteDataQuery = defineQuery(`{
 `);
 
 export const pageHomeQuery = defineQuery(`
-	*[_type == "pHome"][0]{
+	${byLocale('pHome')}[0]{
 		${baseFields},
 		"isHomepage": true,
 		landingTitle,
@@ -244,7 +249,7 @@ export const pageHomeQuery = defineQuery(`
 `);
 
 export const page404Query = defineQuery(`
-	*[_type == "p404" && _id == "p404"][0]{
+	${byLocale('p404')}[0]{
 		${baseFields},
 		heading,
 		paragraph[]{
@@ -257,7 +262,7 @@ export const page404Query = defineQuery(`
 `);
 
 export const pageGeneralQuery = defineQuery(`
-	*[_type == "pGeneral" && slug.current == $slug][0]{
+	*[_type == "pGeneral" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
 		${baseFields},
 		content[]{
 			${portableTextContentFields}
@@ -271,7 +276,7 @@ export const pageGeneralSlugsQuery = defineQuery(`
 `);
 
 export const pageContactQuery = defineQuery(`
-	*[_type == "pContact"][0]{
+	${byLocale('pContact')}[0]{
 		${baseFields},
 		description,
 		contactForm {
@@ -294,7 +299,7 @@ export const pageContactQuery = defineQuery(`
 `);
 
 export const pEventsQuery = defineQuery(`
-	*[_type == "pEvents"][0]{
+	${byLocale('pEvents')}[0]{
 		${baseFields},
 		"eventList": *[_type == "pEvent"] | order(eventDatetime asc) {
 			${baseFields},
@@ -426,13 +431,13 @@ const blogIndexBaseQuery = `
 `;
 
 export const pageBlogIndexQuery = defineQuery(`
-	*[_type == "pBlogIndex"][0]{
+	${byLocale('pBlogIndex')}[0]{
 		${blogIndexBaseQuery}
 	}
 `);
 
 export const pageBlogIndexWithArticleDataSSGQuery = defineQuery(`
-	*[_type == "pBlogIndex"][0]{
+	${byLocale('pBlogIndex')}[0]{
 		${blogIndexBaseQuery},
 		${articleListAllQuery}
 	}
@@ -450,7 +455,7 @@ export const pageBlogSlugsQuery = defineQuery(`
 `);
 
 export const pageBlogSingleQuery = defineQuery(`
-	*[_type == "pBlog" && slug.current == $slug][0]{
+	*[_type == "pBlog" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
 		${blogPostFullFields},
 		"defaultRelatedBlogs": *[_type == "pBlog"
 			&& count(categories[@._ref in ^.^.categories[]._ref ]) > 0
@@ -494,7 +499,7 @@ const curatedCategoriesFields = `
 `;
 
 export const pageCuratedIndexQuery = defineQuery(`
-	*[_type == "pCuratedIndex"][0]{
+	${byLocale('pCuratedIndex')}[0]{
 		${baseFields},
 		"slug": "curated",
 		subtitle,
@@ -525,7 +530,7 @@ export const pageCuratedSlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedSingleQuery = defineQuery(`
-	*[_type == "pCurated" && slug.current == $slug][0]{
+	*[_type == "pCurated" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
 		${curatedProductBaseFields},
 		"relatedProducts": relatedProducts[]->{
 			${curatedProductCardFields}
@@ -546,7 +551,7 @@ export const pageCuratedCollectionSlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedCollectionSingleQuery = defineQuery(`
-	*[_type == "pCuratedCollection" && slug.current == $slug][0]{
+	*[_type == "pCuratedCollection" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
 		${baseFields},
 		description,
 		"products": products[]->{
@@ -568,7 +573,7 @@ export const pageCuratedCategorySlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedCategorySingleQuery = defineQuery(`
-	*[_type == "pCuratedCategory" && slug.current == $slug][0]{
+	*[_type == "pCuratedCategory" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
 		${baseFields},
 		coverImage {
 			${imageBlockMetaFields}
@@ -609,7 +614,7 @@ export const pageEventSlugsQuery = defineQuery(`
 `);
 
 export const pageEventSingleQuery = defineQuery(`
-	*[_type == "pEvent" && slug.current == $slug][0]{
+	*[_type == "pEvent" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
 		${baseFields},
 		format,
 		subtitle,

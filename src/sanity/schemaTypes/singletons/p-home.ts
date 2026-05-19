@@ -1,5 +1,6 @@
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
+import { language } from '@/sanity/schemaTypes/objects/language';
 import { defineType } from 'sanity';
 
 export const pHome = defineType({
@@ -9,6 +10,7 @@ export const pHome = defineType({
 	fields: [
 		{ name: 'title', type: 'string', validation: (Rule) => [Rule.required()] },
 		slug({ initialValue: { _type: 'slug', current: '/' }, readOnly: true }),
+		language(),
 		{
 			title: 'Landing Title',
 			name: 'landingTitle',

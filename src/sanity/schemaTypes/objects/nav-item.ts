@@ -12,7 +12,7 @@ export const navItem = defineType({
 		defineField({
 			title: 'Title',
 			name: 'title',
-			type: 'internationalizedArrayString',
+			type: 'string',
 			description:
 				"If left empty, the linked page's title (for internal links) or the URL (for external links) will be used.",
 		}),
@@ -45,12 +45,7 @@ export const navItem = defineType({
 				};
 			}
 			const isExternal = linkType === 'external';
-			const titleText = Array.isArray(title)
-				? title.find((entry: { _key?: string; value?: string }) => entry._key === 'en')?.value ||
-					title[0]?.value ||
-					undefined
-				: title;
-			const displayTitle = titleText || internalLinkTitle || href;
+			const displayTitle = title || internalLinkTitle || href;
 
 			return {
 				title: displayTitle,
