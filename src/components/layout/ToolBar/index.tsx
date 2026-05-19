@@ -4,7 +4,7 @@ import type { SettingsMenu } from 'sanity.types';
 
 export function ToolBar({ menu }: { menu: SettingsMenu }) {
 	return (
-		<motion.div className="bg-background/85 backdrop-blur-xs text-foreground px-contain lg:hidden sticky bottom-0 w-full h-g-toolbar">
+		<motion.div className="bg-background/85 backdrop-blur-xs text-foreground px-contain lg:hidden sticky bottom-0 w-full h-g-toolbar border-t border-t-foreground/36">
 			{menu && (
 				<Menu
 					data={menu}

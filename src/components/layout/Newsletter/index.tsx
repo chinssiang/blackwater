@@ -65,7 +65,7 @@ export function Newsletter({
 				entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height;
 			document.documentElement.style.setProperty(
 				'--h-newsletter',
-				`${height + 1}px`
+				`${height + 2}px`
 			);
 		});
 		observer.observe(el);
