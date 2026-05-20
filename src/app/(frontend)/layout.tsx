@@ -4,8 +4,9 @@ import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { VisualEditing } from 'next-sanity/visual-editing';
 import localFont from 'next/font/local';
-import { draftMode, headers } from 'next/headers';
-import { DEFAULT_LOCALE, htmlLangFor, isLocale } from '@/lib/i18n';
+import { draftMode } from 'next/headers';
+import { htmlLangFor } from '@/lib/i18n';
+import { resolveLocale } from '@/lib/locale-server';
 import '@/globals.css';
 import { imageBuilder } from '@/sanity/lib/image';
 import { sanityFetch } from '@/sanity/lib/live';
@@ -37,12 +38,6 @@ const getCachedSiteData = cache((locale: string) =>
 		tags: [...SITE_DATA_TAGS, `locale:${locale}`],
 	})
 );
-
-async function resolveLocale() {
-	const headerList = await headers();
-	const localeHeader = headerList.get('x-locale');
-	return isLocale(localeHeader) ? localeHeader : DEFAULT_LOCALE;
-}
 
 const fontABCDisplay = localFont({
 	src: [

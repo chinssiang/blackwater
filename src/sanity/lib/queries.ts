@@ -172,7 +172,7 @@ const formField = `
 // Helper GROQ expression: returns the locale-preferred doc from a type,
 // falling back to the English doc (or any doc with no language field yet).
 const byLocale = (type: string) =>
-	`*[_type == "${type}" && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)`;
+	`*[_type == "${type}" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)`;
 
 export const siteDataQuery = defineQuery(`{
 		"announcement": ${byLocale('gAnnouncement')}[0]{
@@ -262,7 +262,7 @@ export const page404Query = defineQuery(`
 `);
 
 export const pageGeneralQuery = defineQuery(`
-	*[_type == "pGeneral" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
+	*[_type == "pGeneral" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
 		content[]{
 			${portableTextContentFields}
@@ -455,7 +455,7 @@ export const pageBlogSlugsQuery = defineQuery(`
 `);
 
 export const pageBlogSingleQuery = defineQuery(`
-	*[_type == "pBlog" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
+	*[_type == "pBlog" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${blogPostFullFields},
 		"defaultRelatedBlogs": *[_type == "pBlog"
 			&& count(categories[@._ref in ^.^.categories[]._ref ]) > 0
@@ -530,7 +530,7 @@ export const pageCuratedSlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedSingleQuery = defineQuery(`
-	*[_type == "pCurated" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
+	*[_type == "pCurated" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${curatedProductBaseFields},
 		"relatedProducts": relatedProducts[]->{
 			${curatedProductCardFields}
@@ -551,7 +551,7 @@ export const pageCuratedCollectionSlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedCollectionSingleQuery = defineQuery(`
-	*[_type == "pCuratedCollection" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
+	*[_type == "pCuratedCollection" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
 		description,
 		"products": products[]->{
@@ -573,7 +573,7 @@ export const pageCuratedCategorySlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedCategorySingleQuery = defineQuery(`
-	*[_type == "pCuratedCategory" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
+	*[_type == "pCuratedCategory" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
 		coverImage {
 			${imageBlockMetaFields}
@@ -614,7 +614,7 @@ export const pageEventSlugsQuery = defineQuery(`
 `);
 
 export const pageEventSingleQuery = defineQuery(`
-	*[_type == "pEvent" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(language == $locale desc)[0]{
+	*[_type == "pEvent" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
 		format,
 		subtitle,

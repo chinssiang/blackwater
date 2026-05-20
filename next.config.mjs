@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 
 // NOTE: unsafe-inline is required for Next.js + GTM inline scripts.
-// To harden further, implement nonce-based CSP via Next.js middleware.
+// To harden further, implement nonce-based CSP via Next.js proxy.
 const csp = [
 	"default-src 'self'",
 	"script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://va.vercel-scripts.com",

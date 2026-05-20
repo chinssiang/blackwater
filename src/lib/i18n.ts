@@ -42,3 +42,4 @@ export function stripLocaleFromPath(path: string): { locale: Locale; path: strin
 	}
 	return { locale: DEFAULT_LOCALE, path };
 }
+
