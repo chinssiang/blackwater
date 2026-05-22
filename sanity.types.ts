@@ -12,6 +12,8 @@
  * ---------------------------------------------------------------------------------
  */
 
+export declare const internalGroqTypeReferenceTo: unique symbol;
+
 // Source: schema.json
 export type PHomeReference = {
 	_ref: string;
@@ -1306,6 +1308,7 @@ export type SanityImageMetadata = {
 	palette?: SanityImagePalette;
 	lqip?: string;
 	blurHash?: string;
+	thumbHash?: string;
 	hasAlpha?: boolean;
 	isOpaque?: boolean;
 };
@@ -1451,8 +1454,6 @@ export type AllSanitySchemaTypes =
 	| SanityAssetSourceData
 	| SanityImageAsset
 	| Geopoint;
-
-export declare const internalGroqTypeReferenceTo: unique symbol;
 
 // Source: src/sanity/lib/queries.ts
 // Variable: homeID

@@ -20,6 +20,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaID;
 	const isCuratedSubpage = pathname.startsWith('/curated/');
+	const isEventsCrew = pathname === '/events-crew';
 
 	useEffect(() => {
 		if (gaID) {
@@ -43,12 +44,14 @@ export function Layout({ children, siteData }: LayoutProps) {
 			<Header data={headerData} isLightHeader={isCuratedSubpage} />
 			<Main>
 				{children}
-				<div className="border-t border-t-foreground/36 ">
-					<Newsletter
-						data={newsletter}
-						className="px-contain grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[400px_1fr] gap-6 items-center md:justify-center mx-auto py-6 w-full flex-wrap max-w-lg"
-					/>
-				</div>
+				{!isEventsCrew && (
+					<div className="border-t border-t-foreground/36 ">
+						<Newsletter
+							data={newsletter}
+							className="px-contain grid grid-cols-1 md:grid-cols-[300px_1fr] lg:grid-cols-[400px_1fr] gap-6 items-center md:justify-center mx-auto py-6 w-full flex-wrap max-w-lg"
+						/>
+					</div>
+				)}
 			</Main>
 			<Footer data={footerData} />
 			<ToolBar menu={footerData.toolbarMenu} />
