@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { LogoSvg } from '@/components/LogoSvg';
 import Menu from '@/components/Menu';
 import { LocationCurrentTime } from '@/components/LocationCurrentTime';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { cn } from '@/lib/utils';
 
 type HeaderProps = GHeader & {
@@ -43,7 +44,9 @@ export function Header({
 				<LogoSvg className="h-full" />
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
-			<div className="t-b-2 ml-auto flex items-center gap-0.5 uppercase text-foreground">
+			<div className="t-b-2 ml-auto flex items-center gap-2 uppercase text-foreground">
+				<LanguageSwitcher />
+				<span className="text-muted">·</span>
 				<LocationCurrentTime />
 				(TPE)
 			</div>

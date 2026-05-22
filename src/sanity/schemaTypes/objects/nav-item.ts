@@ -2,6 +2,7 @@ import { LinkIcon, MasterDetailIcon, WarningOutlineIcon } from '@sanity/icons';
 import { resolveHref } from '@/lib/routes';
 import { defineField, defineType } from 'sanity';
 import { link } from '@/sanity/schemaTypes/objects/link';
+import { pickLocalizedValue } from '@/lib/i18n';
 
 export const navItem = defineType({
 	title: 'Item',
@@ -12,9 +13,8 @@ export const navItem = defineType({
 		defineField({
 			title: 'Title',
 			name: 'title',
-			type: 'string',
-			description:
-				"If left empty, the linked page's title (for internal links) or the URL (for external links) will be used.",
+			type: 'internationalizedArrayString',
+			description: 'If left empty, the URL will be shown in the Studio preview.',
 		}),
 		link({
 			showLabel: false,
@@ -24,7 +24,6 @@ export const navItem = defineType({
 	preview: {
 		select: {
 			title: 'title',
-			internalLinkTitle: 'link.internalLink.title',
 			internalLinkSlug: 'link.internalLink.slug.current',
 			internalLinkType: 'link.internalLink._type',
 			href: 'link.href',
@@ -32,7 +31,6 @@ export const navItem = defineType({
 		},
 		prepare({
 			title,
-			internalLinkTitle,
 			internalLinkSlug,
 			internalLinkType,
 			href,
@@ -45,7 +43,7 @@ export const navItem = defineType({
 				};
 			}
 			const isExternal = linkType === 'external';
-			const displayTitle = title || internalLinkTitle || href;
+			const displayTitle = pickLocalizedValue(title) || href;
 
 			return {
 				title: displayTitle,

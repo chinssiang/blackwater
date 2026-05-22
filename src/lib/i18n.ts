@@ -13,6 +13,17 @@ export const SANITY_LANGUAGES = LOCALES.map((id) => ({
 	title: LOCALE_LABELS[id],
 }));
 
+export function pickLocalizedValue(value: unknown): string | undefined {
+	if (typeof value === 'string') return value || undefined;
+	if (!Array.isArray(value)) return undefined;
+	for (const entry of value) {
+		if (entry && typeof entry.value === 'string' && entry.value.length > 0) {
+			return entry.value;
+		}
+	}
+	return undefined;
+}
+
 export function isLocale(value: unknown): value is Locale {
 	return typeof value === 'string' && (LOCALES as readonly string[]).includes(value);
 }

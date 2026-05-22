@@ -44,6 +44,7 @@ const linkFields = `
 	_type,
 	linkType,
 	"href": ${resolvedHrefGroq},
+	"label": coalesce(label[_key == $locale][0].value, label[_key == "en"][0].value),
 	isNewTab
 `;
 
@@ -52,13 +53,19 @@ const menuFields = `
 	_type,
 	title,
 	items[]{
-		"title": coalesce(
-			title[_key == $locale][0].value,
-			title[_key == "en"][0].value,
-			link.label[_key == $locale][0].value,
-			link.label[_key == "en"][0].value,
-			link.internalLink->title,
-			link.href
+		"title": select(
+			_type == "navDropdown" => coalesce(
+				title[_key == $locale][0].value,
+				title[_key == "en"][0].value
+			),
+			coalesce(
+				title[_key == $locale][0].value,
+				title[_key == "en"][0].value,
+				link.label[_key == $locale][0].value,
+				link.label[_key == "en"][0].value,
+				link.internalLink->title,
+				link.href
+			)
 		),
 		link {
 			${linkFields}
@@ -109,7 +116,7 @@ export const imageBlockMetaFields = `
 `;
 
 const callToActionFields = `
-	label,
+	"label": coalesce(label[_key == $locale][0].value, label[_key == "en"][0].value),
 	link {
 		${linkFields}
 	},

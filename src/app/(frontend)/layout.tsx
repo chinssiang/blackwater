@@ -144,6 +144,17 @@ export default async function RootLayout({
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
 	const locale = await resolveLocale();
 	const { data } = await getCachedSiteData(locale);
+
+	if (process.env.NODE_ENV === 'development') {
+		console.log('[i18n-debug] resolvedLocale =', locale);
+		console.log('[i18n-debug] header menu items =',
+			JSON.stringify(data?.header?.menu?.items?.map((i: any) => ({
+				_type: i?._type,
+				title: i?.title,
+				href: i?.link?.href,
+			})), null, 2)
+		);
+	}
 	const cleanData = stegaClean(data) || ({} as typeof data);
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 	const siteJsonLd = defineSiteJsonLd({ sharing: cleanData?.sharing, siteUrl });
