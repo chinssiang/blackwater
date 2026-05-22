@@ -103,7 +103,7 @@ const fetchOptions = async (): Promise<LinkOption[]> => {
 	const DEFAULT_RANK = pageDocumentOrder.length;
 
 	const getPageTitle = (type: string, title?: string): string =>
-		type === 'pHome' ? 'Home Page' : title ?? '';
+		type === 'pHome' ? 'Home Page' : (title ?? '');
 
 	const fileOptions: LinkOption[] = (data.files || []).map((fileItem) => ({
 		value: fileItem.url,
@@ -183,7 +183,8 @@ const renderOption = (option: LinkOption) => {
 
 export const LinkObject = (props: ObjectInputProps<LinkValue>) => {
 	const { elementProps, onChange, schemaType, value } = props;
-	const { style: _unusedStyle, ...autocompleteInputProps } = elementProps;
+	const { style: _unusedStyle, ...autocompleteInputProps } =
+		elementProps as Omit<typeof elementProps, 'style'> & { style?: unknown };
 	const hideNewTab = (
 		schemaType?.options as { hideNewTab?: boolean } | undefined
 	)?.hideNewTab;
@@ -215,8 +216,7 @@ export const LinkObject = (props: ObjectInputProps<LinkValue>) => {
 				]);
 			} else {
 				const isBareEmail =
-					!selectedValue.startsWith('mailto:') &&
-					validateEmail(selectedValue);
+					!selectedValue.startsWith('mailto:') && validateEmail(selectedValue);
 				const hrefValue = isBareEmail
 					? `mailto:${selectedValue}`
 					: selectedValue;
@@ -246,8 +246,7 @@ export const LinkObject = (props: ObjectInputProps<LinkValue>) => {
 				);
 			});
 
-			const isSpecialLink =
-				q.startsWith('mailto:') || q.startsWith('tel:');
+			const isSpecialLink = q.startsWith('mailto:') || q.startsWith('tel:');
 			const isHashLink = q.startsWith('#') && q.length > 1;
 			const isEmail = !isSpecialLink && validateEmail(q);
 			const processedQuery = isEmail ? `mailto:${q}` : q;
