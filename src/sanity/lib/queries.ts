@@ -44,7 +44,7 @@ const linkFields = `
 	_type,
 	linkType,
 	"href": ${resolvedHrefGroq},
-	"label": coalesce(label[_key == $locale][0].value, label[_key == "en"][0].value),
+	"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
 	isNewTab
 `;
 
@@ -55,14 +55,14 @@ const menuFields = `
 	items[]{
 		"title": select(
 			_type == "navDropdown" => coalesce(
-				title[_key == $locale][0].value,
-				title[_key == "en"][0].value
+				title[language == $locale][0].value,
+				title[language == "en"][0].value
 			),
 			coalesce(
-				title[_key == $locale][0].value,
-				title[_key == "en"][0].value,
-				link.label[_key == $locale][0].value,
-				link.label[_key == "en"][0].value,
+				title[language == $locale][0].value,
+				title[language == "en"][0].value,
+				link.label[language == $locale][0].value,
+				link.label[language == "en"][0].value,
 				link.internalLink->title,
 				link.href
 			)
@@ -73,10 +73,10 @@ const menuFields = `
 		dropdownItems[]{
 			_key,
 			"title": coalesce(
-				title[_key == $locale][0].value,
-				title[_key == "en"][0].value,
-				link.label[_key == $locale][0].value,
-				link.label[_key == "en"][0].value,
+				title[language == $locale][0].value,
+				title[language == "en"][0].value,
+				link.label[language == $locale][0].value,
+				link.label[language == "en"][0].value,
 				link.internalLink->title,
 				link.href
 			),
@@ -116,7 +116,7 @@ export const imageBlockMetaFields = `
 `;
 
 const callToActionFields = `
-	"label": coalesce(label[_key == $locale][0].value, label[_key == "en"][0].value),
+	"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
 	link {
 		${linkFields}
 	},

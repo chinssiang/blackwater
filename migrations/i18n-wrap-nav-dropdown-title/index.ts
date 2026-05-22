@@ -23,8 +23,8 @@ function isAlreadyWrapped(value: unknown): boolean {
 	);
 }
 
-function wrap(value: string): { _key: string; value: string }[] {
-	return [{ _key: 'en', value }];
+function wrap(value: string): { _key: string; language: string; value: string }[] {
+	return [{ _key: 'en', language: 'en', value }];
 }
 
 function walk(node: unknown, currentPath: string, patches: NodePatch[]): void {

@@ -2,8 +2,8 @@ import { GHeader, SettingsMenu } from 'sanity.types';
 import Link from 'next/link';
 import { LogoSvg } from '@/components/LogoSvg';
 import Menu from '@/components/Menu';
-import { LocationCurrentTime } from '@/components/LocationCurrentTime';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { LocationCurrentTime } from '@/components/LocationCurrentTime';
 import { cn } from '@/lib/utils';
 
 type HeaderProps = GHeader & {
@@ -44,11 +44,12 @@ export function Header({
 				<LogoSvg className="h-full" />
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
-			<div className="t-b-2 ml-auto flex items-center gap-2 uppercase text-foreground">
+			<div className="ml-auto flex text-foreground gap-2">
 				<LanguageSwitcher />
-				<span className="text-muted">·</span>
-				<LocationCurrentTime />
-				(TPE)
+				<div className="t-b-2 flex items-center gap-1 uppercase">
+					<LocationCurrentTime />
+					<span>(TPE)</span>
+				</div>
 			</div>
 		</header>
 	);

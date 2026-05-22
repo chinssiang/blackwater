@@ -577,26 +577,6 @@
 		line-height: 1;
 		letter-spacing: 0.0625em;
 	}
-
-	@variant lg {
-		.t-h-1 {
-			font-weight: 300;
-			font-size: 80px;
-			line-height: 1;
-		}
-
-		.t-h-2 {
-			font-weight: 300;
-			font-size: 64px;
-			line-height: 1;
-		}
-
-		.t-h-3 {
-			font-weight: 300;
-			font-size: 48px;
-			line-height: 1;
-		}
-	}
 }
 
 /* Layouts */
