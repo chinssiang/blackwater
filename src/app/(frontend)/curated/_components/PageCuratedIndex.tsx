@@ -24,9 +24,9 @@ export function PageCuratedIndex({ data }: Props) {
 				variants={fadeAnim}
 				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
 			>
-				{title && <h1 className="t-h-4 uppercase">{title}</h1>}
+				{title && <h1 className="t-h-3 uppercase">{title}</h1>}
 				{description && (
-					<p className="t-h-5 uppercase max-w-3xl">{description}</p>
+					<p className="t-h-3 uppercase max-w-3xl">{description}</p>
 				)}
 			</motion.section>
 			<section className="px-contain mx-auto py-10 lg:py-17.5 bg-white text-black">
@@ -49,7 +49,7 @@ export function PageCuratedIndex({ data }: Props) {
 						>
 							{/* Collection header */}
 							<div className="mb-6">
-								<h2 className="t-h-5 uppercase">{collection.title}</h2>
+								<h2 className="t-h-3 uppercase">{collection.title}</h2>
 								{collection.description && (
 									<p className="t-b-2 text-muted mt-1">
 										{collection.description}

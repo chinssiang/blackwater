@@ -123,12 +123,10 @@ export function Newsletter({
 
 	return (
 		<div ref={sectionRef} className={cn('', className)}>
-			<div className="space-y-1">
-				{heading && (
-					<p className="t-b-1 text-balance font-medium mb-2">{heading}</p>
-				)}
-				{subheading && <p className="t-b-2 text-balance">{subheading}</p>}
-			</div>
+			{heading && (
+				<p className="t-h-1 text-balance font-medium mb-3 md:mb-0">{heading}</p>
+			)}
+
 			{formState === 'success' ? (
 				<motion.div
 					key="newsletter-success"
@@ -153,62 +151,65 @@ export function Newsletter({
 					)}
 				</motion.div>
 			) : (
-				<form
-					ref={formRef}
-					onSubmit={handleSubmit}
-					noValidate
-					className="max-w-sm"
-				>
-					<Field data-invalid={!!validationError || undefined}>
-						<FieldLabel htmlFor="newsletter-email" className="sr-only">
-							Email address
-						</FieldLabel>
-						<div className="relative flex flex-1 gap-3">
-							<div className="field-hint-ring relative flex-1">
-								<Input
-									id="newsletter-email"
-									type="email"
-									placeholder="Your email"
-									value={email}
-									onChange={(e) => {
-										setEmail(e.target.value);
-										if (validationError) setValidationError('');
-									}}
-									onFocus={() => setIsFocused(true)}
-									onBlur={() => setIsFocused(false)}
-									aria-invalid={!!validationError}
+				<div className="space-y-4 w-full md:flex-1 md:max-w-[500px]">
+					{subheading && <p className="t-b-1 text-balance">{subheading}</p>}
+					<form
+						ref={formRef}
+						onSubmit={handleSubmit}
+						noValidate
+						className="max-w-sm"
+					>
+						<Field data-invalid={!!validationError || undefined}>
+							<FieldLabel htmlFor="newsletter-email" className="sr-only">
+								Email address
+							</FieldLabel>
+							<div className="relative flex flex-1 gap-3">
+								<div className="field-hint-ring relative flex-1">
+									<Input
+										id="newsletter-email"
+										type="email"
+										placeholder="Your email"
+										value={email}
+										onChange={(e) => {
+											setEmail(e.target.value);
+											if (validationError) setValidationError('');
+										}}
+										onFocus={() => setIsFocused(true)}
+										onBlur={() => setIsFocused(false)}
+										aria-invalid={!!validationError}
+										disabled={formState === 'submitting'}
+										autoComplete="email"
+										className={cn({ 'pr-8': !!validationError })}
+									/>
+									<FieldStatus
+										fieldState={{
+											invalid: !!validationError,
+											error: validationError
+												? { message: validationError }
+												: undefined,
+										}}
+										isFocused={isFocused}
+										isShowErrorOnFocus={true}
+									/>
+								</div>
+								<Button
+									type="submit"
 									disabled={formState === 'submitting'}
-									autoComplete="email"
-									className={cn({ 'pr-8': !!validationError })}
-								/>
-								<FieldStatus
-									fieldState={{
-										invalid: !!validationError,
-										error: validationError
-											? { message: validationError }
-											: undefined,
-									}}
-									isFocused={isFocused}
-									isShowErrorOnFocus={true}
-								/>
+									variant="outline"
+								>
+									{formState === 'submitting'
+										? 'Subscribing…'
+										: submitButtonText || 'Subscribe'}
+								</Button>
 							</div>
-							<Button
-								type="submit"
-								disabled={formState === 'submitting'}
-								variant="outline"
-							>
-								{formState === 'submitting'
-									? 'Subscribing…'
-									: submitButtonText || 'Subscribe'}
-							</Button>
-						</div>
-					</Field>
+						</Field>
+					</form>
 					{disclaimer && (
-						<div className="t-b-2 mt-3 text-pretty">
+						<div className="t-b-2 text-pretty">
 							<CustomPortableText blocks={disclaimer as any} />
 						</div>
 					)}
-				</form>
+				</div>
 			)}
 		</div>
 	);

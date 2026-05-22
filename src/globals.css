@@ -501,7 +501,7 @@
 	.t-h-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 30px;
+		font-size: 28px;
 		line-height: 0.9;
 		letter-spacing: -0.04em;
 	}
@@ -517,31 +517,7 @@
 	.t-h-3 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 20px;
-		line-height: 1;
-		letter-spacing: -0.02em;
-	}
-
-	.t-h-4 {
-		font-family: var(--font-default);
-		font-weight: 500;
-		font-size: 18px;
-		line-height: 1;
-		letter-spacing: -0.02em;
-	}
-
-	.t-h-5 {
-		font-family: var(--font-default);
-		font-weight: 500;
 		font-size: 16px;
-		line-height: 1;
-		letter-spacing: -0.02em;
-	}
-
-	.t-h-6 {
-		font-family: var(--font-default);
-		font-weight: 500;
-		font-size: 14px;
 		line-height: 1;
 		letter-spacing: -0.02em;
 	}
@@ -579,23 +555,6 @@
 	}
 
 	@variant lg {
-		.t-h-1 {
-			font-weight: 300;
-			font-size: 80px;
-			line-height: 1;
-		}
-
-		.t-h-2 {
-			font-weight: 300;
-			font-size: 64px;
-			line-height: 1;
-		}
-
-		.t-h-3 {
-			font-weight: 300;
-			font-size: 48px;
-			line-height: 1;
-		}
 	}
 }
 

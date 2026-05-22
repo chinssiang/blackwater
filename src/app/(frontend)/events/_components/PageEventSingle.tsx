@@ -165,19 +165,19 @@ function EventBody({
 								href={locationLink}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1 t-h-5 uppercase hover:opacity-70 transition-opacity"
+								className="inline-flex items-center gap-1 t-h-3 uppercase hover:opacity-70 transition-opacity"
 							>
 								{location}
 								<ArrowUpRight className="size-2" aria-hidden />
 							</Link>
 						) : (
-							<p className="t-h-5 uppercase">{location}</p>
+							<p className="t-h-3 uppercase">{location}</p>
 						)}
 					</div>
 				)}
 				<div>
 					<p className="t-b-2 uppercase text-muted-foreground mb-1">When</p>
-					<p className="t-h-5 uppercase">{formattedDate}</p>
+					<p className="t-h-3 uppercase">{formattedDate}</p>
 				</div>
 				{hasArrayValue(highlights) && (
 					<div>
@@ -214,13 +214,13 @@ function EventBody({
 								href={startEndLocation!.link}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1 t-h-5 uppercase hover:opacity-70 transition-opacity"
+								className="inline-flex items-center gap-1 t-h-3 uppercase hover:opacity-70 transition-opacity"
 							>
 								{startEndLocation!.name}
 								<ArrowUpRight className="size-2" aria-hidden />
 							</Link>
 						) : (
-							<p className="t-h-5 uppercase">{startEndLocation!.name}</p>
+							<p className="t-h-3 uppercase">{startEndLocation!.name}</p>
 						)}
 					</section>
 				)}
@@ -284,7 +284,7 @@ function StationCard({
 						{distance && <span className="ml-2">{distance}</span>}
 					</p>
 					<div className="flex items-center gap-3 min-w-0">
-						<h2 className="t-h-4 uppercase text-balance">{name}</h2>
+						<h2 className="t-h-3 uppercase text-balance">{name}</h2>
 					</div>
 				</div>
 			</div>

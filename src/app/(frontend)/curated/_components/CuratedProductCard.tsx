@@ -49,7 +49,7 @@ export default function CuratedProductCard({
 			>
 				{/* Badge */}
 				{product.badge && (
-					<p className="t-h-6 uppercase text-muted mb-2">{product.badge}</p>
+					<p className="t-b-1 uppercase text-muted mb-2">{product.badge}</p>
 				)}
 
 				{/* Image */}
@@ -74,7 +74,7 @@ export default function CuratedProductCard({
 				<div className="flex flex-col gap-1 mt-3">
 					{/* Category → Brand */}
 					{(categoryLabel || brandLabel) && (
-						<p className="t-h-6 uppercase">
+						<p className="t-b-1 uppercase">
 							{[brandLabel, categoryLabel].filter(Boolean).join(' → ')}
 						</p>
 					)}
