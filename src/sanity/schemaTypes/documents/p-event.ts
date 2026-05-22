@@ -4,6 +4,7 @@ import { language } from '@/sanity/schemaTypes/objects/language';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { BookIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
+import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
 
 export const pEvent = defineType({
 	title: 'Event',
@@ -155,6 +156,8 @@ export const pEvent = defineType({
 			name: 'teamAssignments',
 			title: 'Team Assignments',
 			type: 'array',
+			components: { field: ViewPageField },
+			options: { viewPageUrl: '/events-crew' },
 			of: [
 				{
 					name: 'assignment',

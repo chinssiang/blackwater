@@ -1,4 +1,4 @@
-import { SlugField } from '@/sanity/schemaTypes/components/SlugField';
+import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
 import { defineField } from 'sanity';
 
 export function slug({ initialValue, readOnly, group } = {}) {
@@ -7,7 +7,7 @@ export function slug({ initialValue, readOnly, group } = {}) {
 		name: 'slug',
 		type: 'slug',
 		components: {
-			field: SlugField,
+			field: ViewPageField,
 		},
 		options: {
 			source: 'title',
