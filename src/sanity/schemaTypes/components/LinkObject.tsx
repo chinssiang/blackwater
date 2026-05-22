@@ -183,6 +183,7 @@ const renderOption = (option: LinkOption) => {
 
 export const LinkObject = (props: ObjectInputProps<LinkValue>) => {
 	const { elementProps, onChange, schemaType, value } = props;
+	const { style: _unusedStyle, ...autocompleteInputProps } = elementProps;
 	const hideNewTab = (
 		schemaType?.options as { hideNewTab?: boolean } | undefined
 	)?.hideNewTab;
@@ -358,7 +359,7 @@ export const LinkObject = (props: ObjectInputProps<LinkValue>) => {
 	return (
 		<Stack space={3}>
 			<Autocomplete
-				{...elementProps}
+				{...autocompleteInputProps}
 				loading={loading}
 				disabled={loading}
 				options={optionsList}

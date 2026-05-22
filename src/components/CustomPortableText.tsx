@@ -14,9 +14,6 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 		h1: ({ children }) => <h1>{children}</h1>,
 		h2: ({ children }) => <h2>{children}</h2>,
 		h3: ({ children }) => <h3>{children}</h3>,
-		h4: ({ children }) => <h4>{children}</h4>,
-		h5: ({ children }) => <h5>{children}</h5>,
-		h6: ({ children }) => <h6>{children}</h6>,
 		label: ({ children }) => <p className="text-sm uppercase">{children}</p>,
 	},
 	list: {
@@ -47,9 +44,15 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 				allowedTags: ['iframe'],
 				allowedAttributes: {
 					iframe: [
-						'src', 'width', 'height', 'frameborder',
-						'allow', 'allowfullscreen', 'title',
-						'loading', 'referrerpolicy',
+						'src',
+						'width',
+						'height',
+						'frameborder',
+						'allow',
+						'allowfullscreen',
+						'title',
+						'loading',
+						'referrerpolicy',
 					],
 				},
 			});
@@ -60,7 +63,8 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 			const heightMatch = sanitized.match(/height="\s*(\d+)"/);
 			const width = widthMatch?.[1];
 			const height = heightMatch?.[1];
-			const aspectRatio = width && height ? Number(width) / Number(height) : 1.77;
+			const aspectRatio =
+				width && height ? Number(width) / Number(height) : 1.77;
 
 			return (
 				<div

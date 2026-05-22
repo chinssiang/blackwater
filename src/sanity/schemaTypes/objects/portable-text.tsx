@@ -7,12 +7,12 @@ import { defineType } from 'sanity';
 import type { ReactNode } from 'react';
 
 type StyleProps = { children?: ReactNode };
-type BlockquoteProps = StyleProps & { renderDefault: (props: BlockquoteProps) => ReactNode };
+type BlockquoteProps = StyleProps & {
+	renderDefault: (props: BlockquoteProps) => ReactNode;
+};
 
 const H2 = (props: StyleProps) => <span>{props.children}</span>;
 const H3 = (props: StyleProps) => <span>{props.children}</span>;
-const H4 = (props: StyleProps) => <span>{props.children}</span>;
-const H6 = (props: StyleProps) => <span>{props.children}</span>;
 const Normal = (props: StyleProps) => <span>{props.children}</span>;
 const Normal2 = (props: StyleProps) => <span>{props.children}</span>;
 const Blockquote = (props: BlockquoteProps) => {
@@ -47,12 +47,6 @@ export const portableText = defineType({
 					value: 'h3',
 					component: H3,
 				},
-				{
-					title: 'Heading 4',
-					value: 'h4',
-					component: H4,
-				},
-				{ title: 'Heading 6', value: 'h6', component: H6 },
 				{ title: 'Paragraph', value: 'normal', component: Normal },
 				{ title: 'Paragraph 2', value: 'normal-2', component: Normal2 },
 			],

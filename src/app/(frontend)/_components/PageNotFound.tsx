@@ -16,7 +16,7 @@ export function PageNotFound({ data }: { data?: Page404Data }) {
 	const { heading, paragraph, callToAction } = data || {};
 
 	return (
-		<div className="min-h-[inherit] wysiwyg flex flex-col justify-center items-center">
+		<div className="min-h-main wysiwyg flex flex-col justify-center items-center">
 			<h1 className="t-b-1 uppercase">{heading || 'Page not found'}</h1>
 
 			{paragraph && <CustomPortableText blocks={paragraph} />}
