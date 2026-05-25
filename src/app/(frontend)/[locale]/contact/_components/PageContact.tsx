@@ -47,7 +47,7 @@ export function PageContact({ data }: PageContactProps) {
 	return (
 		<div className="p-x-max m-auto flex flex-col md:flex-row md:justify-center min-h-main-(--height-newsletter) gap-2.5 py-10 lg:py-17.5">
 			<div className="md:flex-1 space-y-2 text-left w-full">
-				{title && <h1 className="t-h-5 uppercase">{title}</h1>}
+				{title && <h1 className="t-h-3 uppercase">{title}</h1>}
 				{description && <p>{description}</p>}
 			</div>
 

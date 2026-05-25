@@ -84,7 +84,7 @@ export default function PageCuratedSingle({ data }: Props) {
 						{/* Category → Brand */}
 						{(categoryLabel || brandLabel) && (
 							<motion.p
-								className="t-h-6 uppercase text-muted"
+								className="t-b-1 uppercase text-muted"
 								initial="hide"
 								animate="show"
 								variants={fadeAnim}
@@ -114,7 +114,7 @@ export default function PageCuratedSingle({ data }: Props) {
 
 						{price && (
 							<motion.p
-								className="t-h-4 uppercase"
+								className="t-h-3 uppercase"
 								initial="hide"
 								animate="show"
 								variants={fadeAnim}
@@ -143,7 +143,7 @@ export default function PageCuratedSingle({ data }: Props) {
 									href={purchaseLink}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="inline-flex items-center justify-center w-full bg-foreground text-background t-h-6 uppercase py-3.5 hover:bg-foreground/80 transition-colors"
+									className="inline-flex items-center justify-center w-full bg-foreground text-background t-b-1 uppercase py-3.5 hover:bg-foreground/80 transition-colors"
 								>
 									Buy Now
 								</a>
@@ -180,7 +180,7 @@ export default function PageCuratedSingle({ data }: Props) {
 						>
 							<Link
 								href="/curated"
-								className="t-h-6 uppercase text-muted hover:text-foreground transition-colors inline-flex items-center gap-1"
+								className="t-b-1 uppercase text-muted hover:text-foreground transition-colors inline-flex items-center gap-1"
 							>
 								← Back
 							</Link>
@@ -192,7 +192,7 @@ export default function PageCuratedSingle({ data }: Props) {
 				{displayRelated && displayRelated.length > 0 && (
 					<div className="mb-16 lg:mb-24">
 						<div className="flex items-baseline justify-between mb-6">
-							<p className="t-h-5 uppercase text-muted">
+							<p className="t-h-3 uppercase text-muted">
 								{firstCategoryTitle
 									? `More ${firstCategoryTitle}`
 									: 'More Picks'}
@@ -200,7 +200,7 @@ export default function PageCuratedSingle({ data }: Props) {
 							{displayRelated.some(
 								(p: any) => p.badge === "Founder's Pick"
 							) && (
-								<p className="t-h-6 uppercase text-muted">
+								<p className="t-b-1 uppercase text-muted">
 									Founder&apos;s Picks
 								</p>
 							)}
@@ -217,7 +217,7 @@ export default function PageCuratedSingle({ data }: Props) {
 						<div className="flex justify-center">
 							<Link
 								href="/curated/products"
-								className="inline-flex items-center justify-center bg-foreground text-background t-h-6 uppercase px-12 py-3 hover:bg-foreground/80 transition-colors"
+								className="inline-flex items-center justify-center bg-foreground text-background t-b-1 uppercase px-12 py-3 hover:bg-foreground/80 transition-colors"
 							>
 								View All
 							</Link>

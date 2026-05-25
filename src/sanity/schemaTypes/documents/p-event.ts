@@ -5,6 +5,7 @@ import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { BookIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
 import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
+import '@/sanity/schemaTypes/view-page-field-types';
 
 export const pEvent = defineType({
 	title: 'Event',

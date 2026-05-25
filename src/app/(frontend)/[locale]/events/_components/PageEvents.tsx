@@ -132,7 +132,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		: '';
 
 	return (
-		<div className="min-h-main-(--height-newsletter) p-x-max mx-auto py-10 lg:py-17.5">
+		<div className="min-h-main-(--height-newsletter) p-x-max mx-auto py-8.5 lg:py-16">
 			<h1 className="sr-only">{title}</h1>
 			<div className="flex items-center justify-between sticky top-header bg-background/95 z-10 font-bold">
 				<motion.p
@@ -145,7 +145,7 @@ export function PageEvents({ data }: PageEventsProps) {
 						delay: 0.3,
 						ease: EASE_HEADER,
 					}}
-					className="t-h-5 uppercase"
+					className="t-h-3 uppercase"
 				>
 					{monthYearDisplay}
 				</motion.p>
@@ -181,7 +181,7 @@ export function PageEvents({ data }: PageEventsProps) {
 				<div className="mt-10 lg:mt-17.5">
 					<div
 						className={cn(
-							't-h-6 uppercase grid border-y border-b border-white/80 py-2 lg:py-6',
+							't-b-1 uppercase grid border-y border-b border-white/80 py-2 lg:py-6',
 							colStyle
 						)}
 					>
@@ -244,7 +244,7 @@ export function PageEvents({ data }: PageEventsProps) {
 							>
 								<Td
 									className={cn(
-										'font-bold uppercase lg:pl-0 t-h-6 lg:flex flex-wrap items-center gap-2.5 text-balance group-hover/row:translate-x-1 transition-transform',
+										'font-bold uppercase lg:pl-0 t-b-1 lg:flex flex-wrap items-center gap-2.5 text-balance group-hover/row:translate-x-1 transition-transform',
 										{
 											'opacity-30': eventHasEnded,
 										}
@@ -272,7 +272,7 @@ export function PageEvents({ data }: PageEventsProps) {
 								<Link className="p-fill" href={`/events/${slug}`} />
 								<Td
 									className={cn(
-										't-h-6 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line group/location',
+										't-b-1 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line group/location',
 										{
 											'opacity-30': eventHasEnded,
 										}

@@ -33,7 +33,7 @@ export default function CuratedCategoriesGrid({
 			variants={fadeAnim}
 			transition={{ duration: 0.8, ease: [0, 0.5, 0.5, 1] }}
 		>
-			<h2 className="t-h-5 uppercase mb-6">Categories</h2>
+			<h2 className="t-h-3 uppercase mb-6">Categories</h2>
 
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
 				{categories.map((cat, index) => (
@@ -54,9 +54,9 @@ export default function CuratedCategoriesGrid({
 						<div className="absolute inset-0 bg-black/30" />
 						{/* Title + count */}
 						<div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
-							<span className="t-h-6 uppercase text-white">{cat.title}</span>
+							<span className="t-b-1 uppercase text-white">{cat.title}</span>
 							{cat.count != null && (
-								<span className="t-h-6 text-white/70">{cat.count}</span>
+								<span className="t-b-1 text-white/70">{cat.count}</span>
 							)}
 						</div>
 					</Link>

@@ -142,7 +142,7 @@ export function PageEventCrew({
 						<span
 							className={cn(
 								'uppercase text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
-								scrolled ? 't-h-6' : 't-h-5'
+								scrolled ? 't-b-1' : 't-h-3'
 							)}
 						>
 							Crew briefing
@@ -150,7 +150,7 @@ export function PageEventCrew({
 						<h1
 							className={cn(
 								'font-bold tracking-tight animate-fade-in transition-all duration-300',
-								scrolled ? 't-h-5' : 't-h-3'
+								scrolled ? 't-h-3' : 't-h-3'
 							)}
 							style={{ animationDelay: '0.15s' }}
 						>
@@ -348,7 +348,7 @@ function EventCard({
 				<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
 					<div className="flex flex-col gap-1.5 lg:gap-2">
 						<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
-							<h2 className="t-h-6 font-bold">{title}</h2>
+							<h2 className="t-b-1 font-bold">{title}</h2>
 							{categoryTitle && (
 								<span
 									className="t-l-2 px-2 py-1 rounded uppercase shrink-0"

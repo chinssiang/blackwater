@@ -55,11 +55,9 @@ export function PageCuratedCollectionsIndex({ data }: Props) {
 									)}
 								</div>
 								<div className="flex items-baseline justify-between">
-									<h2 className="t-h-5 uppercase">{collection.title}</h2>
+									<h2 className="t-h-3 uppercase">{collection.title}</h2>
 									{collection.count != null && (
-										<span className="t-h-6 text-muted">
-											{collection.count}
-										</span>
+										<span className="t-b-1 text-muted">{collection.count}</span>
 									)}
 								</div>
 								{collection.description && (
