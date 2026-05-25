@@ -16,6 +16,7 @@ export const TRANSLATABLE_TYPES = [
 	'gAnnouncement',
 	'gFooter',
 	'gHeader',
+	'gNewsletter',
 ] as const;
 
 export type TranslatableType = (typeof TRANSLATABLE_TYPES)[number];

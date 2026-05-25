@@ -209,7 +209,7 @@ export const siteDataQuery = defineQuery(`{
 			},
 			note,
 		},
-		"newsletter": *[_type == "gNewsletter"][0]{
+		"newsletter": ${byLocale('gNewsletter')}[0]{
 			klaviyoListID,
 			heading,
 			subheading,

@@ -6,6 +6,7 @@ import * as presentationResolver from '@/sanity/lib/presentation-resolver';
 import { schemaTypes } from '@/sanity/schemaTypes';
 import { TRANSLATABLE_TYPES } from '@/sanity/i18n-types';
 import { gAnnouncement } from '@/sanity/schemaTypes/singletons/g-announcement';
+import { gNewsletter } from '@/sanity/schemaTypes/singletons/g-newsletter';
 import { gFooter } from '@/sanity/schemaTypes/singletons/g-footer';
 import { gHeader } from '@/sanity/schemaTypes/singletons/g-header';
 import { p404 } from '@/sanity/schemaTypes/singletons/p-404';
@@ -66,6 +67,7 @@ const singletonDocuments = [
 	pContact.name,
 	pCuratedIndex.name,
 	gAnnouncement.name,
+	gNewsletter.name,
 ];
 
 export default defineConfig({
