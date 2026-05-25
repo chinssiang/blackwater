@@ -1,15 +1,9 @@
 'use client';
 
+import { Fragment } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LOCALES, LOCALE_LABELS, localizePath, stripLocaleFromPath } from '@/lib/i18n';
-import {
-	DropdownMenu,
-	DropdownMenuTrigger,
-	DropdownMenuContent,
-	DropdownMenuItem,
-} from '@/components/ui/DropdownMenu';
-import { Check, Globe } from 'lucide-react';
+import { LOCALES, LOCALE_SHORT_LABELS, localizePath, stripLocaleFromPath } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
 export default function LanguageSwitcher({ className }: { className?: string }) {
@@ -17,36 +11,27 @@ export default function LanguageSwitcher({ className }: { className?: string }) 
 	const { locale: currentLocale, path: strippedPath } = stripLocaleFromPath(pathname);
 
 	return (
-		<DropdownMenu>
-			<DropdownMenuTrigger asChild>
-				<button
-					type="button"
-					aria-label="Switch language"
-					className={cn('inline-flex items-center outline-none focus-visible:underline', className)}
-				>
-					<Globe className="size-4" aria-hidden="true" />
-				</button>
-			</DropdownMenuTrigger>
-			<DropdownMenuContent align="end" className="min-w-32">
-				{LOCALES.map((locale) => {
-					const isCurrent = locale === currentLocale;
-					if (isCurrent) {
-						return (
-							<DropdownMenuItem key={locale} disabled className="justify-between">
-								{LOCALE_LABELS[locale]}
-								<Check className="ml-2 size-3.5" />
-							</DropdownMenuItem>
-						);
-					}
-					return (
-						<DropdownMenuItem key={locale} asChild>
-							<Link href={localizePath(strippedPath, locale)}>
-								{LOCALE_LABELS[locale]}
+		<div className={cn('t-b-2 flex items-center gap-1 uppercase', className)}>
+			{LOCALES.map((locale, i) => {
+				const isCurrent = locale === currentLocale;
+				return (
+					<Fragment key={locale}>
+						{i > 0 && <span aria-hidden="true">/</span>}
+						{isCurrent ? (
+							<span aria-current="true" className="text-foreground">
+								{LOCALE_SHORT_LABELS[locale]}
+							</span>
+						) : (
+							<Link
+								href={localizePath(strippedPath, locale)}
+								className="text-muted transition-colors hover:text-foreground"
+							>
+								{LOCALE_SHORT_LABELS[locale]}
 							</Link>
-						</DropdownMenuItem>
-					);
-				})}
-			</DropdownMenuContent>
-		</DropdownMenu>
+						)}
+					</Fragment>
+				);
+			})}
+		</div>
 	);
 }

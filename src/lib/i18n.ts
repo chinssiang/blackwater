@@ -8,6 +8,11 @@ export const LOCALE_LABELS: Record<Locale, string> = {
 	zh_tw: '中文',
 };
 
+export const LOCALE_SHORT_LABELS: Record<Locale, string> = {
+	en: 'EN',
+	zh_tw: '中文',
+};
+
 export const SANITY_LANGUAGES = LOCALES.map((id) => ({
 	id,
 	title: LOCALE_LABELS[id],

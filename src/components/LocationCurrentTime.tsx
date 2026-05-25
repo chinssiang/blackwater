@@ -38,7 +38,7 @@ export function LocationCurrentTime() {
 	}
 
 	const tzDate = new TZDate(time, 'Asia/Singapore');
-	const formattedTime = format(tzDate, 'iiii, p');
+	const formattedTime = format(tzDate, 'iii, p');
 	const colonIndex = formattedTime.indexOf(':');
 
 	return (

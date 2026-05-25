@@ -44,7 +44,7 @@ export function Header({
 				<LogoSvg className="h-full" />
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
-			<div className="ml-auto flex text-foreground gap-2">
+			<div className="ml-auto flex text-foreground gap-3">
 				<LanguageSwitcher />
 				<div className="t-b-2 flex items-center gap-1 uppercase">
 					<LocationCurrentTime />

@@ -1,6 +1,5 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
-import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { VisualEditing } from 'next-sanity/visual-editing';
 import localFont from 'next/font/local';
@@ -9,35 +8,15 @@ import { htmlLangFor } from '@/lib/i18n';
 import { resolveLocale } from '@/lib/locale-server';
 import '@/globals.css';
 import { imageBuilder } from '@/sanity/lib/image';
-import { sanityFetch } from '@/sanity/lib/live';
 import { SanityLive } from '@/sanity/lib/live';
-import { siteDataQuery } from '@/sanity/lib/queries';
+import { getCachedSiteData } from '@/sanity/lib/siteData';
 import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
 import DraftModeToast from '@/components/DraftModeToast';
-import { Layout } from '@/components/layout';
 import HeadTrackingCode from '@/components/layout/HeadTrackingCode';
 import JsonLd from '@/components/JsonLd';
 import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
 import { Toaster } from 'sonner';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-
-const SITE_DATA_TAGS = [
-	'gAnnouncement',
-	'gHeader',
-	'gFooter',
-	'settingsMenu',
-	'settingsGeneral',
-	'settingsIntegration',
-	'settingsBrandColors',
-] as const;
-
-const getCachedSiteData = cache((locale: string) =>
-	sanityFetch({
-		query: siteDataQuery,
-		params: { locale },
-		tags: [...SITE_DATA_TAGS, `locale:${locale}`],
-	})
-);
 
 const fontABCDisplay = localFont({
 	src: [
@@ -144,17 +123,6 @@ export default async function RootLayout({
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
 	const locale = await resolveLocale();
 	const { data } = await getCachedSiteData(locale);
-
-	if (process.env.NODE_ENV === 'development') {
-		console.log('[i18n-debug] resolvedLocale =', locale);
-		console.log('[i18n-debug] header menu items =',
-			JSON.stringify(data?.header?.menu?.items?.map((i: any) => ({
-				_type: i?._type,
-				title: i?.title,
-				href: i?.link?.href,
-			})), null, 2)
-		);
-	}
 	const cleanData = stegaClean(data) || ({} as typeof data);
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 	const siteJsonLd = defineSiteJsonLd({ sharing: cleanData?.sharing, siteUrl });
@@ -178,7 +146,7 @@ export default async function RootLayout({
 				</head>
 
 				<body className="antialiased">
-					<Layout siteData={data}>{children}</Layout>
+					{children}
 					<SanityLive refreshOnFocus={isDraftModeEnabled} />
 					<Toaster />
 					{isDraftModeEnabled && (
