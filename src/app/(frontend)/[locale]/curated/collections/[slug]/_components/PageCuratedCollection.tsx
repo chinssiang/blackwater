@@ -14,7 +14,7 @@ export default function PageCuratedCollection({ data }: Props) {
 	const { title, description, products, categories } = data || {};
 
 	return (
-		<div className="theme-light bg-background text-foreground px-contain mx-auto min-h-[inherit] py-10 lg:py-17.5">
+		<div className="theme-light bg-background text-foreground p-x-max mx-auto min-h-main py-10 lg:py-17.5">
 			{/* Header */}
 			<motion.div
 				className="mb-10 lg:mb-17.5"
@@ -24,9 +24,7 @@ export default function PageCuratedCollection({ data }: Props) {
 				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
 			>
 				<h1 className="t-h-2 uppercase">{title}</h1>
-				{description && (
-					<p className="t-b-1 mt-3 text-muted">{description}</p>
-				)}
+				{description && <p className="t-b-1 mt-3 text-muted">{description}</p>}
 			</motion.div>
 
 			{/* Product grid */}
@@ -43,10 +41,7 @@ export default function PageCuratedCollection({ data }: Props) {
 			)}
 
 			{/* Categories section */}
-			<CuratedCategoriesGrid
-				categories={categories ?? null}
-				showViewAll
-			/>
+			<CuratedCategoriesGrid categories={categories ?? null} showViewAll />
 		</div>
 	);
 }

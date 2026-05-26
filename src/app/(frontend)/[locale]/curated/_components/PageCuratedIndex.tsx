@@ -29,7 +29,7 @@ export function PageCuratedIndex({ data }: Props) {
 					<p className="t-h-3 uppercase max-w-3xl">{description}</p>
 				)}
 			</motion.section>
-			<section className="px-contain mx-auto py-10 lg:py-17.5 bg-white text-black">
+			<section className="p-x-max mx-auto py-10 lg:py-17.5 bg-white text-black">
 				<div className="mb-16 lg:mb-24">
 					<CuratedCategoriesGrid categories={categories ?? null} priority />
 				</div>
