@@ -3,6 +3,10 @@
     "previous": "Previous",
     "next": "Next"
   },
+  "locationCurrentTime": {
+    "dateFormat": "iii, p",
+    "placeholder": "Wednesday, 12:00 AM"
+  },
   "events": {
     "headers": {
       "codex": "codex",

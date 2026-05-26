@@ -11,7 +11,6 @@ type MenuProps = {
 };
 
 export default function Menu({ data, className }: MenuProps) {
-	console.log("🚀 ~ Menu ~ data:", data)
 	const pathName = usePathname();
 	const { items } = data || {};
 	if (!hasArrayValue(items)) {

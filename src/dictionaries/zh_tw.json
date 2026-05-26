@@ -3,6 +3,10 @@
     "previous": "上一頁",
     "next": "下一頁"
   },
+  "locationCurrentTime": {
+    "dateFormat": "iii, p",
+    "placeholder": "週三, 下午12:00"
+  },
   "events": {
     "headers": {
       "codex": "活動",
