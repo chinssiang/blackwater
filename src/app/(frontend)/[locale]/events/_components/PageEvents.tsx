@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
 import { format } from 'date-fns';
+import { enUS, zhTW } from 'date-fns/locale';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { PEvent } from 'sanity.types';
@@ -11,9 +12,20 @@ import { Button } from '@/components/ui/Button';
 import { fadeAnim } from '@/lib/animate';
 import { buildRgbaCssString } from '@/lib/image-utils';
 import { cn, hasArrayValue } from '@/lib/utils';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { interpolate, pickPlural } from '@/lib/dictionary';
+import type { Locale } from '@/lib/i18n';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
 const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
+
+const DATE_FNS_LOCALES: Record<
+	Locale,
+	Locale extends 'zh_tw' ? typeof zhTW : typeof enUS
+> = {
+	en: enUS,
+	zh_tw: zhTW,
+} as Record<Locale, typeof enUS | typeof zhTW>;
 
 function isEventEnded(
 	eventDatetime: string | null | undefined,
@@ -55,6 +67,11 @@ interface PageEventsProps {
 
 export function PageEvents({ data }: PageEventsProps) {
 	const { title, groupedEvents } = data || {};
+	const locale = useLocale();
+	const t = useTranslations('events');
+	const common = useTranslations('common');
+	const dateFnsLocale = DATE_FNS_LOCALES[locale];
+
 	const currentDate = new Date();
 	const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
 	const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
@@ -128,7 +145,9 @@ export function PageEvents({ data }: PageEventsProps) {
 	const hasNext = currentMonthIndex < availableMonths.length - 1;
 
 	const monthYearDisplay = currentMonthData
-		? format(currentMonthData.date, 'MMMM yyyy')
+		? format(currentMonthData.date, t.monthYearFormat, {
+				locale: dateFnsLocale,
+			})
 		: '';
 
 	return (
@@ -154,24 +173,24 @@ export function PageEvents({ data }: PageEventsProps) {
 						<Button
 							onClick={goToPreviousMonth}
 							disabled={!hasPrevious}
-							aria-label="Previous month"
+							aria-label={t.aria.previousMonth}
 							variant="ghost"
 							size="sm"
 							className="uppercase t-b-2 cursor-pointer hover:opacity-60"
 						>
 							<ArrowLeft />
-							Previous
+							{t.aria.previousMonth}
 						</Button>
 						/
 						<Button
 							onClick={goToNextMonth}
 							disabled={!hasNext}
-							aria-label="Next month"
+							aria-label={t.aria.nextMonth}
 							variant="ghost"
 							size="sm"
 							className="uppercase t-b-2 cursor-pointer hover:opacity-60"
 						>
-							Next
+							{t.aria.nextMonth}
 							<ArrowRight className="size-3.5" />
 						</Button>
 					</div>
@@ -185,25 +204,25 @@ export function PageEvents({ data }: PageEventsProps) {
 							colStyle
 						)}
 					>
-						<Th className="lg:pl-0">codex</Th>
+						<Th className="lg:pl-0">{t.headers.codex}</Th>
 						<Th
 							isHideStatusColumn={isHideStatusColumn}
 							className="text-right lg:text-left"
 						>
-							time
+							{t.headers.time}
 						</Th>
 						<Th
 							isHideStatusColumn={isHideStatusColumn}
 							className="hidden lg:block"
 						>
-							location
+							{t.headers.location}
 						</Th>
 						{!isHideStatusColumn && (
 							<Th
 								isHideStatusColumn={isHideStatusColumn}
 								className="hidden lg:block text-right"
 							>
-								status
+								{t.headers.status}
 							</Th>
 						)}
 					</div>
@@ -266,8 +285,10 @@ export function PageEvents({ data }: PageEventsProps) {
 									)}
 								>
 									{(!dateStatus || dateStatus === 'confirmed') && eventDatetime
-										? format(new Date(eventDatetime), 'iii, MM.dd.yy, h:mm aaa')
-										: dateStatus || 'TBA'}
+										? format(new Date(eventDatetime), t.dateFormat, {
+												locale: dateFnsLocale,
+											})
+										: dateStatus || t.status.tba}
 								</Td>
 								<Link className="p-fill" href={`/events/${slug}`} />
 								<Td
@@ -306,8 +327,11 @@ export function PageEvents({ data }: PageEventsProps) {
 												eventStatus: {
 													title:
 														daysUntil === 0
-															? 'today'
-															: `in ${daysUntil} day${daysUntil === 1 ? '' : 's'}`,
+															? t.status.today
+															: interpolate(
+																	pickPlural(t.daysUntil, daysUntil),
+																	{ count: daysUntil }
+																),
 												},
 											}}
 										/>
@@ -323,7 +347,7 @@ export function PageEvents({ data }: PageEventsProps) {
 									{eventHasEnded && (
 										<StatusItem
 											key="ended"
-											data={{ eventStatus: { title: 'ended' } }}
+											data={{ eventStatus: { title: t.status.ended } }}
 										/>
 									)}
 								</Td>
@@ -332,7 +356,7 @@ export function PageEvents({ data }: PageEventsProps) {
 					})}
 				</div>
 			) : (
-				<p className="py-8 text-center">No events for this month</p>
+				<p className="py-8 text-center">{t.emptyMonth}</p>
 			)}
 		</div>
 	);

@@ -1,0 +1,30 @@
+{
+  "common": {
+    "previous": "Previous",
+    "next": "Next"
+  },
+  "events": {
+    "headers": {
+      "codex": "codex",
+      "time": "time",
+      "location": "location",
+      "status": "status"
+    },
+    "aria": {
+      "previousMonth": "Previous month",
+      "nextMonth": "Next month"
+    },
+    "status": {
+      "today": "today",
+      "ended": "ended",
+      "tba": "TBA"
+    },
+    "daysUntil": {
+      "one": "in {count} day",
+      "other": "in {count} days"
+    },
+    "emptyMonth": "No events for this month",
+    "dateFormat": "iii, MM.dd.yy, h:mm aaa",
+    "monthYearFormat": "MMMM yyyy"
+  }
+}

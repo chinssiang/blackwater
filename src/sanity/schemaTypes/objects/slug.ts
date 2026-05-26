@@ -1,7 +1,39 @@
 import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
-import { defineField } from 'sanity';
+import { defineField, SlugValidationContext } from 'sanity';
 
-export function slug({ initialValue, readOnly, group } = {}) {
+export async function isUniqueOtherThanLanguage(
+	slug: string,
+	context: SlugValidationContext
+) {
+	const { document, getClient } = context;
+	if (!document?.language) {
+		return true;
+	}
+	const client = getClient({ apiVersion: '2025-02-19' });
+	const id = document._id.replace(/^drafts\./, '');
+	const params = {
+		id,
+		type: document._type,
+		language: document.language,
+		slug,
+	};
+	const query = `!defined(*[
+    !(sanity::versionOf($id)) &&
+    _type == $type &&
+    slug.current == $slug &&
+    language == $language
+  ][0]._id)`;
+	const result = await client.fetch(query, params);
+	return result;
+}
+
+type SlugFieldOptions = {
+	initialValue?: {_type: 'slug'; current: string};
+	readOnly?: boolean;
+	group?: string | string[];
+};
+
+export function slug({ initialValue, readOnly, group }: SlugFieldOptions = {}) {
 	return defineField({
 		title: 'Slug (Page URL)',
 		name: 'slug',
@@ -12,6 +44,7 @@ export function slug({ initialValue, readOnly, group } = {}) {
 		options: {
 			source: 'title',
 			maxLength: 200,
+			isUnique: isUniqueOtherThanLanguage,
 			slugify: (input) => {
 				if (!input) return '';
 				// Convert common ligatures to their regular character equivalents

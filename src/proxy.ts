@@ -14,7 +14,7 @@ function localeForPath(pathname: string): Locale | null {
 	return null;
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
 	const { pathname } = request.nextUrl;
 
 	for (const prefix of PASSTHROUGH_PREFIXES) {
