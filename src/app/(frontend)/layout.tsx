@@ -4,7 +4,7 @@ import { stegaClean } from '@sanity/client/stega';
 import { VisualEditing } from 'next-sanity/visual-editing';
 import localFont from 'next/font/local';
 import { draftMode } from 'next/headers';
-import { htmlLangFor } from '@/lib/i18n';
+import { htmlLangFor, ogLocaleFor, LOCALES } from '@/lib/i18n';
 import { resolveLocale } from '@/lib/locale-server';
 import '@/globals.css';
 import { imageBuilder } from '@/sanity/lib/image';
@@ -97,7 +97,8 @@ export async function generateMetadata(): Promise<Metadata> {
 			}),
 			url: process.env.SITE_URL,
 			siteName: siteTitle,
-			locale: 'en_US',
+			locale: ogLocaleFor(locale),
+			alternateLocale: LOCALES.filter((l) => l !== locale).map(ogLocaleFor),
 			type: 'website',
 		},
 		icons: {
@@ -125,7 +126,7 @@ export default async function RootLayout({
 	const { data } = await getCachedSiteData(locale);
 	const cleanData = stegaClean(data) || ({} as typeof data);
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
-	const siteJsonLd = defineSiteJsonLd({ sharing: cleanData?.sharing, siteUrl });
+	const siteJsonLd = defineSiteJsonLd({ sharing: cleanData?.sharing, siteUrl, locale });
 
 	return (
 		<ReactQueryProvider>

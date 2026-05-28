@@ -4,7 +4,8 @@ import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageHomeQuery } from '@/sanity/lib/queries';
-import defineMetadata from '@/lib/defineMetadata';
+import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import { type Locale } from '@/lib/i18n';
 import PageHome from './_components/PageHome';
 
 const getCachedHomeData = cache(async (locale: string) =>
@@ -16,7 +17,12 @@ type Props = { params: Promise<{ locale: string }> };
 export async function generateMetadata(props: Props): Promise<Metadata> {
 	const { locale } = await props.params;
 	const { data } = await getCachedHomeData(locale);
-	return defineMetadata({ data: stegaClean(data) });
+	const cleanData = stegaClean(data);
+	return defineMetadata({
+		data: cleanData,
+		locale: locale as Locale,
+		availableLocales: normalizeLocales(cleanData?.availableLocales),
+	});
 }
 
 export default async function Page(props: Props) {

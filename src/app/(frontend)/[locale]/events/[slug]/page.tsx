@@ -3,10 +3,14 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
-import { pageEventSingleQuery, pageEventSlugsQuery } from '@/sanity/lib/queries';
-import defineMetadata from '@/lib/defineMetadata';
+import {
+	pageEventSingleQuery,
+	pageEventSlugsQuery,
+} from '@/sanity/lib/queries';
+import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import defineEventJsonLd from '@/lib/defineEventJsonLd';
 import JsonLd from '@/components/JsonLd';
+import { type Locale } from '@/lib/i18n';
 import PageEventSingle from '../_components/PageEventSingle';
 
 export async function generateStaticParams() {
@@ -35,7 +39,12 @@ const getCachedEventData = cache(async (slug: string, locale: string) =>
 export async function generateMetadata(props: MetadataProps): Promise<Metadata> {
 	const { slug, locale } = await props.params;
 	const { data } = await getCachedEventData(slug, locale);
-	return defineMetadata({ data: stegaClean(data) });
+	const cleanData = stegaClean(data);
+	return defineMetadata({
+		data: cleanData,
+		locale: locale as Locale,
+		availableLocales: normalizeLocales(cleanData?.availableLocales),
+	});
 }
 
 export default async function PageEventSlugRoute(props: MetadataProps) {
@@ -48,7 +57,7 @@ export default async function PageEventSlugRoute(props: MetadataProps) {
 
 	return (
 		<>
-			<JsonLd data={defineEventJsonLd({ data: cleanData })} />
+			<JsonLd data={defineEventJsonLd({ data: cleanData, locale: locale as Locale })} />
 			<PageEventSingle data={data} />
 		</>
 	);

@@ -51,6 +51,10 @@ export function localizePath(path: string, locale: Locale): string {
 	return `${prefix}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
+export function ogLocaleFor(locale: Locale): string {
+	return locale === 'zh_tw' ? 'zh_TW' : 'en_US';
+}
+
 export function stripLocaleFromPath(path: string): {
 	locale: Locale;
 	path: string;

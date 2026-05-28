@@ -3,8 +3,12 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
-import { pageGeneralQuery, pageGeneralSlugsQuery } from '@/sanity/lib/queries';
-import defineMetadata from '@/lib/defineMetadata';
+import {
+	pageGeneralQuery,
+	pageGeneralSlugsQuery,
+} from '@/sanity/lib/queries';
+import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import { type Locale } from '@/lib/i18n';
 import PageGeneral from '../_components/PageGeneral';
 
 export async function generateStaticParams() {
@@ -35,7 +39,12 @@ export async function generateMetadata(
 ): Promise<Metadata> {
 	const { slug, locale } = await props.params;
 	const { data } = await getCachedPageData(slug, locale);
-	return defineMetadata({ data: stegaClean(data) });
+	const cleanData = stegaClean(data);
+	return defineMetadata({
+		data: cleanData,
+		locale: locale as Locale,
+		availableLocales: normalizeLocales(cleanData?.availableLocales),
+	});
 }
 
 export default async function PageSlugRoute(props: MetadataProps) {

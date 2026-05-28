@@ -25,7 +25,10 @@ export function Header({
 	isLightHeader?: boolean;
 }) {
 	const { siteTitle, menu } = data || {};
-	const [{ y }] = useWindowScroll();
+	const [{ y }] = useWindowScroll() as [
+		{ x: number | null; y: number | null },
+		(...args: unknown[]) => void,
+	];
 	const isScrolled = (y ?? 0) > HEADER_HEIGHT;
 
 	return (

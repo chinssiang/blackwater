@@ -1,6 +1,7 @@
 import { imageBuilder } from '@/sanity/lib/image';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
+import { type Locale, htmlLangFor } from '@/lib/i18n';
 
 const EVENT_STATUS_MAP: Record<string, string> = {
 	confirmed: 'https://schema.org/EventScheduled',
@@ -10,13 +11,16 @@ const EVENT_STATUS_MAP: Record<string, string> = {
 
 export default function defineEventJsonLd({
 	data,
+	locale,
 }: {
 	data: any;
+	locale?: Locale;
 }): Record<string, unknown> {
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 	const pageRoute = resolveHref({
 		documentType: 'pEvent',
 		slug: data?.slug ?? null,
+		locale,
 	});
 	const url = pageRoute ? formatUrl(`${siteUrl}${pageRoute}`) : undefined;
 
@@ -65,6 +69,7 @@ export default function defineEventJsonLd({
 		...(location && { location }),
 		...(image && { image }),
 		...(url && { url }),
+		...(locale && { inLanguage: htmlLangFor(locale) }),
 		organizer: { '@id': `${siteUrl}#organization` },
 		...(subEvent && subEvent.length > 0 && { subEvent }),
 	};

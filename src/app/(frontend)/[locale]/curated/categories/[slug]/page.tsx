@@ -7,7 +7,8 @@ import {
 	pageCuratedCategorySingleQuery,
 	pageCuratedCategorySlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata from '@/lib/defineMetadata';
+import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import { type Locale } from '@/lib/i18n';
 import PageCuratedCategory from './_components/PageCuratedCategory';
 
 type Props = {
@@ -34,7 +35,12 @@ const getCachedCategoryData = cache(async (slug: string, locale: string) =>
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const { slug, locale } = await params;
 	const { data } = await getCachedCategoryData(slug, locale);
-	return defineMetadata({ data: stegaClean(data) });
+	const cleanData = stegaClean(data);
+	return defineMetadata({
+		data: cleanData,
+		locale: locale as Locale,
+		availableLocales: normalizeLocales(cleanData?.availableLocales),
+	});
 }
 
 export default async function Page({ params }: Props) {
