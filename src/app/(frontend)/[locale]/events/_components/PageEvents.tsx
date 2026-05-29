@@ -239,6 +239,12 @@ export function PageEvents({ data }: PageEventsProps) {
 							locationLink,
 						} = item || {};
 
+						const locationRef = (item as any)?.locationRef as
+							| { name?: string | null; mapLink?: string | null }
+							| undefined;
+						const displayLocation = locationRef?.name || location;
+						const displayLocationLink = locationRef?.mapLink || locationLink;
+
 						const eventHasEnded = isEventEnded(eventDatetime, currentDate);
 						const daysUntil = getDaysUntilEvent(eventDatetime, currentDate);
 
@@ -299,18 +305,18 @@ export function PageEvents({ data }: PageEventsProps) {
 										}
 									)}
 								>
-									{location}
-									{locationLink && (
+									{displayLocation}
+									{displayLocationLink && (
 										<span className="whitespace-nowrap -translate-y-0.25 ml-1 inline-block group-hover/location:translate-x-0.5 group-hover/location:-translate-y-0.5 transition-transform">
 											&#8203;
 											<ArrowUpRight className="size-2 inline-block" />
 										</span>
 									)}
-									{locationLink && (
+									{displayLocationLink && (
 										<Link
 											className="p-fill increase-target-size"
-											href={locationLink}
-											aria-label={location}
+											href={displayLocationLink}
+											aria-label={displayLocation || ''}
 											target="_blank"
 										/>
 									)}

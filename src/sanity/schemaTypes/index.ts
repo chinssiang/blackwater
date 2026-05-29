@@ -7,6 +7,7 @@ import { pCuratedCollection } from './documents/p-curated-collection';
 import { pBlogCategory } from './documents/p-blog-category';
 import { pBlogIndex } from './documents/p-blog-index';
 import { gTeamMember } from './documents/g-team-member';
+import { gLocation } from './documents/g-location';
 import { pEvent } from './documents/p-event';
 import { pEventCategory } from './documents/p-event-category';
 import { pEventRole } from './documents/p-event-role';
@@ -61,6 +62,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	pEventRole,
 	gAuthor,
 	gTeamMember,
+	gLocation,
 	pEventCategory,
 	pEvents,
 	pEventStatus,

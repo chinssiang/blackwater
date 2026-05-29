@@ -334,6 +334,10 @@ export const pEventsQuery = defineQuery(`
 				dateStatus,
 				location,
 				locationLink,
+				locationRef->{
+					"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
+					mapLink,
+				},
 				categories[]-> {
 					_id,
 					title,
@@ -365,6 +369,10 @@ export const pEventsQuery = defineQuery(`
 				dateStatus,
 				location,
 				locationLink,
+				locationRef->{
+					"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
+					mapLink,
+				},
 				categories[]-> {
 					_id,
 					title,

@@ -1,5 +1,5 @@
 import { apiVersion } from '@/sanity/env';
-import { BookIcon, CalendarIcon, TagsIcon, UserIcon } from '@sanity/icons';
+import { BookIcon, CalendarIcon, PinIcon, TagsIcon, UserIcon } from '@sanity/icons';
 import { client } from '@/sanity/lib/client';
 
 export const pageEventCategory = (S) => {
@@ -103,6 +103,10 @@ export const pageEventItems = (S) => {
 			.title('Events')
 			.child(S.documentTypeList('pEvent').title('Events'))
 			.icon(BookIcon),
+		S.listItem()
+			.title('Locations')
+			.child(S.documentTypeList('gLocation').title('Locations'))
+			.icon(PinIcon),
 		pageEventGroupByDate(S),
 		S.listItem()
 			.title('Events by Category')

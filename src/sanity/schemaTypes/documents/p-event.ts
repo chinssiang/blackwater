@@ -73,14 +73,28 @@ export const pEvent = defineType({
 			initialValue: 'confirmed',
 		}),
 		defineField({
+			name: 'locationRef',
+			title: 'Location (reference)',
+			type: 'reference',
+			to: [{ type: 'gLocation' }],
+		}),
+		defineField({
 			name: 'location',
 			type: 'string',
-			validation: (Rule) => Rule.required(),
+			validation: (Rule) =>
+				Rule.custom((value, context) => {
+					const hasRef = !!(context.document as any)?.locationRef;
+					if (!value && !hasRef) {
+						return 'Location is required when no location reference is selected';
+					}
+					return true;
+				}),
 		}),
 		defineField({
 			name: 'locationLink',
 			type: 'url',
 		}),
+
 		defineField({
 			name: 'categories',
 			type: 'array',
@@ -272,12 +286,20 @@ export const pEvent = defineType({
 		select: {
 			title: 'title',
 			location: 'location',
+			locationRefName: 'locationRef.name.0.value',
 			eventDatetime: 'eventDatetime',
 			categories: 'categories.0.title',
 		},
-		prepare({ title = 'Untitled', location, eventDatetime, categories }) {
+		prepare({
+			title = 'Untitled',
+			location,
+			locationRefName,
+			eventDatetime,
+			categories,
+		}) {
 			const categoryTitle = categories ?? '';
-			const subtitle = `${location} - ${categoryTitle ? `[${categoryTitle}]` : ''}`;
+			const locationName = location || locationRefName || '';
+			const subtitle = `${locationName} - ${categoryTitle ? `[${categoryTitle}]` : ''}`;
 
 			return {
 				title: `${title} - ${new Date(eventDatetime).toLocaleDateString('en-US')}`,

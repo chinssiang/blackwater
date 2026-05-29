@@ -5874,6 +5874,36 @@
   },
   {
     "type": "type",
+    "name": "gLocation.reference",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "_ref": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          }
+        },
+        "_type": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string",
+            "value": "reference"
+          }
+        },
+        "_weak": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "boolean"
+          },
+          "optional": true
+        }
+      },
+      "dereferencesTo": "gLocation"
+    }
+  },
+  {
+    "type": "type",
     "name": "pEventStatus.reference",
     "value": {
       "type": "object",
@@ -6191,6 +6221,14 @@
               "value": "postponed"
             }
           ]
+        },
+        "optional": true
+      },
+      "locationRef": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "gLocation.reference"
         },
         "optional": true
       },
@@ -6640,6 +6678,66 @@
         "value": {
           "type": "inline",
           "name": "settingsBrandColors.reference"
+        },
+        "optional": true
+      }
+    }
+  },
+  {
+    "name": "gLocation",
+    "type": "document",
+    "attributes": {
+      "_id": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_type": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string",
+          "value": "gLocation"
+        }
+      },
+      "_createdAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_updatedAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_rev": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "name": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "slug": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "slug"
+        },
+        "optional": true
+      },
+      "mapLink": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
         },
         "optional": true
       }
