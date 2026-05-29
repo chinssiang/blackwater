@@ -326,33 +326,66 @@ export const pEventsQuery = defineQuery(`
 	${byLocale('pEvents')}[0]{
 		${baseFields},
 		${availableLocalesField},
-		"eventList": *[_type == "pEvent"] | order(eventDatetime asc) {
-			${baseFields},
-			subtitle,
-			eventDatetime,
-			dateStatus,
-			location,
-			locationLink,
-			categories[]-> {
-				_id,
-				title,
-				"slug": slug.current,
-				categoryColor->{...color}
-			},
-			statusList[]{
-				_key,
-				link {
-					${linkFields}
-				},
-				eventStatus-> {
+		"eventList": (
+			*[_type == "pEvent" && language == $locale]{
+				${baseFields},
+				subtitle,
+				eventDatetime,
+				dateStatus,
+				location,
+				locationLink,
+				categories[]-> {
 					_id,
 					title,
 					"slug": slug.current,
-					statusTextColor->{...color},
-					statusBgColor->{...color}
+					categoryColor->{...color}
+				},
+				statusList[]{
+					_key,
+					link {
+						${linkFields}
+					},
+					eventStatus-> {
+						_id,
+						title,
+						"slug": slug.current,
+						statusTextColor->{...color},
+						statusBgColor->{...color}
+					}
 				}
 			}
-		},
+			+ *[
+				_type == "pEvent"
+				&& (language == "en" || !defined(language))
+				&& !(slug.current in *[_type == "pEvent" && language == $locale].slug.current)
+			]{
+				${baseFields},
+				subtitle,
+				eventDatetime,
+				dateStatus,
+				location,
+				locationLink,
+				categories[]-> {
+					_id,
+					title,
+					"slug": slug.current,
+					categoryColor->{...color}
+				},
+				statusList[]{
+					_key,
+					link {
+						${linkFields}
+					},
+					eventStatus-> {
+						_id,
+						title,
+						"slug": slug.current,
+						statusTextColor->{...color},
+						statusBgColor->{...color}
+					}
+				}
+			}
+		) | order(eventDatetime asc),
 	}
 `);
 
