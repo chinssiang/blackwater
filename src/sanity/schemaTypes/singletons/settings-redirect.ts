@@ -12,19 +12,8 @@ export const settingsRedirect = defineType({
 			name: 'url',
 			type: 'slug',
 			validation: (Rule) => [Rule.required()],
-			description: (
-				<>
-					Enter path (e.g. /blog/lorem-ipsum). Source path supports{' '}
-					<a
-						href="https://nextjs.org/docs/pages/api-reference/next-config-js/redirects#path-matching"
-						target="_blank"
-						rel="noopener noreferrer"
-					>
-						path matching
-					</a>
-					.
-				</>
-			),
+			description:
+				'Enter path (e.g. /blog/lorem-ipsum). Source path supports path matching — see https://nextjs.org/docs/pages/api-reference/next-config-js/redirects#path-matching',
 		}),
 		defineField({
 			type: 'link',

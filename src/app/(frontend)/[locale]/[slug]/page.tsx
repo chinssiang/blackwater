@@ -55,5 +55,5 @@ export default async function PageSlugRoute(props: MetadataProps) {
 	const { sharing } = data || {};
 	if (!data || sharing.disableIndex === true) return notFound();
 
-	return <PageGeneral data={data} />;
+	return <PageGeneral data={data} locale={params.locale as Locale} />;
 }

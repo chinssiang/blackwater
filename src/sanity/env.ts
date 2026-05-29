@@ -20,7 +20,7 @@ export const revalidateSecret = process.env.SANITY_REVALIDATE_SECRET;
  */
 
 export const studioUrl =
-	process.env.NEXT_PUBLIC_SANITY_STUDIO_URL || 'http://localhost:3000';
+	`${process.env.SITE_URL}/sanity` || 'http://localhost:3000/sanity';
 
 function assertValue<T>(v: T | undefined, errorMessage: string): T {
 	if (v === undefined) {

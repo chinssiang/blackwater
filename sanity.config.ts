@@ -49,7 +49,7 @@ const commonPlugins = [
 	presentationTool({
 		resolve: presentationResolver,
 		previewUrl: {
-			origin: process.env.SANITY_STUDIO_PREVIEW_ORIGIN,
+			origin: process.env.SITE_URL,
 			previewMode: {
 				enable: '/api/draft-mode/enable',
 			},

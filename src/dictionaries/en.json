@@ -1,7 +1,8 @@
 {
   "common": {
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "lastUpdated": "Last updated"
   },
   "locationCurrentTime": {
     "dateFormat": "iii, p",
