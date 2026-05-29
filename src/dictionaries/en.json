@@ -5,8 +5,7 @@
     "lastUpdated": "Last updated"
   },
   "locationCurrentTime": {
-    "dateFormat": "iii, p",
-    "placeholder": "Wednesday, 12:00 AM"
+    "dateFormat": "iii, p"
   },
   "events": {
     "headers": {
