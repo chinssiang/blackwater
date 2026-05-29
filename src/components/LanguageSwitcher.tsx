@@ -21,7 +21,7 @@ export default function LanguageSwitcher({
 		stripLocaleFromPath(pathname);
 
 	return (
-		<div className={cn('t-b-2 flex items-center gap-1 uppercase', className)}>
+		<div className={cn('t-b-2 flex items-center gap-2 uppercase', className)}>
 			{LOCALES.map((locale, i) => {
 				const isCurrent = locale === currentLocale;
 				return (
