@@ -1,10 +1,13 @@
 /** @type {import('next').NextConfig} */
 
 // NOTE: unsafe-inline is required for Next.js + GTM inline scripts.
-// To harden further, implement nonce-based CSP via Next.js middleware.
+// To harden further, implement nonce-based CSP via Next.js proxy.
+const isDev = process.env.NODE_ENV === 'development';
+
 const csp = [
 	"default-src 'self'",
-	"script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://va.vercel-scripts.com",
+	// unsafe-eval is needed in dev for React/Turbopack debugging features (never used in prod)
+	`script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://va.vercel-scripts.com`,
 	"style-src 'self' 'unsafe-inline'",
 	"img-src 'self' data: blob: https://cdn.sanity.io https://www.google-analytics.com https://www.googletagmanager.com",
 	"font-src 'self'",

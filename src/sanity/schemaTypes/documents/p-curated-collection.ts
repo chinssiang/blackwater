@@ -1,5 +1,6 @@
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
+import { language } from '@/sanity/schemaTypes/objects/language';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { StackIcon } from '@sanity/icons';
 import { defineArrayMember, defineField, defineType } from 'sanity';
@@ -16,6 +17,7 @@ export const pCuratedCollection = defineType({
 			validation: (Rule) => [Rule.required()],
 		}),
 		slug(),
+		language(),
 		defineField({
 			name: 'description',
 			type: 'text',

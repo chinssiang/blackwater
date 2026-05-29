@@ -2,6 +2,7 @@ import { LinkObject } from '@/sanity/schemaTypes/components/LinkObject';
 import { LinkIcon, MasterDetailIcon, WarningOutlineIcon } from '@sanity/icons';
 import { resolveHref } from '@/lib/routes';
 import { defineField, defineType } from 'sanity';
+import { pickLocalizedValue } from '@/lib/i18n';
 
 type LinkFactoryArgs = {
 	title?: string;
@@ -27,7 +28,7 @@ export function link({
 						defineField({
 							name: 'label',
 							title: 'Label',
-							type: 'string',
+							type: 'internationalizedArrayString',
 						}),
 					]
 				: []),
@@ -93,7 +94,7 @@ export function link({
 				const isExternal = linkType === 'external';
 
 				return {
-					title: title,
+					title: pickLocalizedValue(title),
 					subtitle: isExternal
 						? href
 						: resolveHref({

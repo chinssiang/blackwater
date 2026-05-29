@@ -1,6 +1,7 @@
 import formBuilder from '@/sanity/schemaTypes/objects/form-builder';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
+import { language } from '@/sanity/schemaTypes/objects/language';
 import { BookIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
 
@@ -12,6 +13,7 @@ export const pContact = defineType({
 	fields: [
 		{ name: 'title', type: 'string', validation: (Rule) => [Rule.required()] },
 		slug(),
+		language(),
 		{
 			name: 'description',
 			type: 'text',

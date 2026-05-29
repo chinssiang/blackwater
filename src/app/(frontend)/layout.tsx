@@ -1,37 +1,22 @@
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
-import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { VisualEditing } from 'next-sanity/visual-editing';
 import localFont from 'next/font/local';
 import { draftMode } from 'next/headers';
+import { htmlLangFor, ogLocaleFor, LOCALES } from '@/lib/i18n';
+import { resolveLocale } from '@/lib/locale-server';
 import '@/globals.css';
 import { imageBuilder } from '@/sanity/lib/image';
-import { sanityFetch } from '@/sanity/lib/live';
 import { SanityLive } from '@/sanity/lib/live';
-import { siteDataQuery } from '@/sanity/lib/queries';
+import { getCachedSiteData } from '@/sanity/lib/siteData';
 import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
 import DraftModeToast from '@/components/DraftModeToast';
-import { Layout } from '@/components/layout';
 import HeadTrackingCode from '@/components/layout/HeadTrackingCode';
 import JsonLd from '@/components/JsonLd';
 import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
 import { Toaster } from 'sonner';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-
-const SITE_DATA_TAGS = [
-	'gAnnouncement',
-	'gHeader',
-	'gFooter',
-	'settingsMenu',
-	'settingsGeneral',
-	'settingsIntegration',
-	'settingsBrandColors',
-] as const;
-
-const getCachedSiteData = cache(() =>
-	sanityFetch({ query: siteDataQuery, tags: [...SITE_DATA_TAGS] })
-);
 
 const fontABCDisplay = localFont({
 	src: [
@@ -58,7 +43,8 @@ const baselTypewriter = localFont({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-	const { data } = await getCachedSiteData();
+	const locale = await resolveLocale();
+	const { data } = await getCachedSiteData(locale);
 	const { sharing } = stegaClean(data) || ({} as typeof data);
 
 	const { siteTitle } = sharing || {};
@@ -111,7 +97,8 @@ export async function generateMetadata(): Promise<Metadata> {
 			}),
 			url: process.env.SITE_URL,
 			siteName: siteTitle,
-			locale: 'en_US',
+			locale: ogLocaleFor(locale),
+			alternateLocale: LOCALES.filter((l) => l !== locale).map(ogLocaleFor),
 			type: 'website',
 		},
 		icons: {
@@ -135,15 +122,16 @@ export default async function RootLayout({
 	children: React.ReactNode;
 }>) {
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
-	const { data } = await getCachedSiteData();
+	const locale = await resolveLocale();
+	const { data } = await getCachedSiteData(locale);
 	const cleanData = stegaClean(data) || ({} as typeof data);
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
-	const siteJsonLd = defineSiteJsonLd({ sharing: cleanData?.sharing, siteUrl });
+	const siteJsonLd = defineSiteJsonLd({ sharing: cleanData?.sharing, siteUrl, locale });
 
 	return (
 		<ReactQueryProvider>
 			<html
-				lang="en"
+				lang={htmlLangFor(locale)}
 				className={`${fontABCDisplay.variable} ${baselTypewriter.variable} dark bg-background`}
 			>
 				<head>
@@ -159,7 +147,7 @@ export default async function RootLayout({
 				</head>
 
 				<body className="antialiased">
-					<Layout siteData={data}>{children}</Layout>
+					{children}
 					<SanityLive refreshOnFocus={isDraftModeEnabled} />
 					<Toaster />
 					{isDraftModeEnabled && (

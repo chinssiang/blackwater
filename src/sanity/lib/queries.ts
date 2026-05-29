@@ -7,7 +7,8 @@ export const SITEMAP_PAGES_QUERY = defineQuery(`
 		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
 		_type,
 		"slug": slug.current,
-		_updatedAt
+		_updatedAt,
+		language
 	}
 `);
 
@@ -16,7 +17,8 @@ export const SITEMAP_EVENTS_QUERY = defineQuery(`
 		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
 		_type,
 		"slug": slug.current,
-		_updatedAt
+		_updatedAt,
+		language
 	}
 `);
 
@@ -25,7 +27,8 @@ export const SITEMAP_CURATED_QUERY = defineQuery(`
 		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
 		_type,
 		"slug": slug.current,
-		_updatedAt
+		_updatedAt,
+		language
 	}
 `);
 
@@ -44,6 +47,7 @@ const linkFields = `
 	_type,
 	linkType,
 	"href": ${resolvedHrefGroq},
+	"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
 	isNewTab
 `;
 
@@ -52,13 +56,33 @@ const menuFields = `
 	_type,
 	title,
 	items[]{
-		"title": coalesce(title, link.internalLink->title, link.href),
+		"title": select(
+			_type == "navDropdown" => coalesce(
+				title[language == $locale][0].value,
+				title[language == "en"][0].value
+			),
+			coalesce(
+				title[language == $locale][0].value,
+				title[language == "en"][0].value,
+				link.label[language == $locale][0].value,
+				link.label[language == "en"][0].value,
+				link.internalLink->title,
+				link.href
+			)
+		),
 		link {
 			${linkFields}
 		},
 		dropdownItems[]{
 			_key,
-			"title": coalesce(title, link.internalLink->title, link.href),
+			"title": coalesce(
+				title[language == $locale][0].value,
+				title[language == "en"][0].value,
+				link.label[language == $locale][0].value,
+				link.label[language == "en"][0].value,
+				link.internalLink->title,
+				link.href
+			),
 			link {
 				${linkFields}
 			}
@@ -95,7 +119,7 @@ export const imageBlockMetaFields = `
 `;
 
 const callToActionFields = `
-	label,
+	"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
 	link {
 		${linkFields}
 	},
@@ -155,8 +179,24 @@ const formField = `
 	}
 `;
 
+// Helper GROQ expression: returns the locale-preferred doc from a type,
+// falling back to the English doc (or any doc with no language field yet).
+const byLocale = (type: string) =>
+	`*[_type == "${type}" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)`;
+
+// Inline projection field: lists which locale codes have a translated document.
+// Uses GROQ implication — if the parent doc has a slug, narrow to that slug;
+// for slug-less singletons the condition is vacuously true and only type is matched.
+const availableLocalesField = `
+"availableLocales": *[
+	_type == ^._type
+	&& (!defined(^.slug.current) || slug.current == ^.slug.current)
+	&& defined(language)
+].language
+`;
+
 export const siteDataQuery = defineQuery(`{
-		"announcement": *[_type == "gAnnouncement"][0]{
+		"announcement": ${byLocale('gAnnouncement')}[0]{
 			display,
 			messages,
 			autoplay,
@@ -166,12 +206,12 @@ export const siteDataQuery = defineQuery(`{
 			emphasizeColor,
 			"link": ${linkFields}
 		},
-		"header": *[_type == "gHeader"][0]{
+		"header": ${byLocale('gHeader')}[0]{
 			menu->{
 				${menuFields}
 			}
 		},
-		"footer": *[_type == "gFooter"][0]{
+		"footer": ${byLocale('gFooter')}[0]{
 			menu->{
 				${menuFields}
 			},
@@ -183,7 +223,7 @@ export const siteDataQuery = defineQuery(`{
 			},
 			note,
 		},
-		"newsletter": *[_type == "gNewsletter"][0]{
+		"newsletter": ${byLocale('gNewsletter')}[0]{
 			klaviyoListID,
 			heading,
 			subheading,
@@ -218,8 +258,9 @@ export const siteDataQuery = defineQuery(`{
 `);
 
 export const pageHomeQuery = defineQuery(`
-	*[_type == "pHome"][0]{
+	${byLocale('pHome')}[0]{
 		${baseFields},
+		${availableLocalesField},
 		"isHomepage": true,
 		landingTitle,
 		"textColor": textColor->color,
@@ -230,7 +271,7 @@ export const pageHomeQuery = defineQuery(`
 `);
 
 export const page404Query = defineQuery(`
-	*[_type == "p404" && _id == "p404"][0]{
+	${byLocale('p404')}[0]{
 		${baseFields},
 		heading,
 		paragraph[]{
@@ -243,8 +284,9 @@ export const page404Query = defineQuery(`
 `);
 
 export const pageGeneralQuery = defineQuery(`
-	*[_type == "pGeneral" && slug.current == $slug][0]{
+	*[_type == "pGeneral" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
+		${availableLocalesField},
 		content[]{
 			${portableTextContentFields}
 		},
@@ -257,8 +299,9 @@ export const pageGeneralSlugsQuery = defineQuery(`
 `);
 
 export const pageContactQuery = defineQuery(`
-	*[_type == "pContact"][0]{
+	${byLocale('pContact')}[0]{
 		${baseFields},
+		${availableLocalesField},
 		description,
 		contactForm {
 			formTitle[]{
@@ -280,8 +323,9 @@ export const pageContactQuery = defineQuery(`
 `);
 
 export const pEventsQuery = defineQuery(`
-	*[_type == "pEvents"][0]{
+	${byLocale('pEvents')}[0]{
 		${baseFields},
+		${availableLocalesField},
 		"eventList": *[_type == "pEvent"] | order(eventDatetime asc) {
 			${baseFields},
 			subtitle,
@@ -412,13 +456,13 @@ const blogIndexBaseQuery = `
 `;
 
 export const pageBlogIndexQuery = defineQuery(`
-	*[_type == "pBlogIndex"][0]{
+	${byLocale('pBlogIndex')}[0]{
 		${blogIndexBaseQuery}
 	}
 `);
 
 export const pageBlogIndexWithArticleDataSSGQuery = defineQuery(`
-	*[_type == "pBlogIndex"][0]{
+	${byLocale('pBlogIndex')}[0]{
 		${blogIndexBaseQuery},
 		${articleListAllQuery}
 	}
@@ -436,7 +480,7 @@ export const pageBlogSlugsQuery = defineQuery(`
 `);
 
 export const pageBlogSingleQuery = defineQuery(`
-	*[_type == "pBlog" && slug.current == $slug][0]{
+	*[_type == "pBlog" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${blogPostFullFields},
 		"defaultRelatedBlogs": *[_type == "pBlog"
 			&& count(categories[@._ref in ^.^.categories[]._ref ]) > 0
@@ -480,8 +524,9 @@ const curatedCategoriesFields = `
 `;
 
 export const pageCuratedIndexQuery = defineQuery(`
-	*[_type == "pCuratedIndex"][0]{
+	${byLocale('pCuratedIndex')}[0]{
 		${baseFields},
+		${availableLocalesField},
 		"slug": "curated",
 		subtitle,
 		description,
@@ -511,8 +556,9 @@ export const pageCuratedSlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedSingleQuery = defineQuery(`
-	*[_type == "pCurated" && slug.current == $slug][0]{
+	*[_type == "pCurated" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${curatedProductBaseFields},
+		${availableLocalesField},
 		"relatedProducts": relatedProducts[]->{
 			${curatedProductCardFields}
 		},
@@ -532,8 +578,9 @@ export const pageCuratedCollectionSlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedCollectionSingleQuery = defineQuery(`
-	*[_type == "pCuratedCollection" && slug.current == $slug][0]{
+	*[_type == "pCuratedCollection" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
+		${availableLocalesField},
 		description,
 		"products": products[]->{
 			${curatedProductCardFields}
@@ -554,8 +601,9 @@ export const pageCuratedCategorySlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedCategorySingleQuery = defineQuery(`
-	*[_type == "pCuratedCategory" && slug.current == $slug][0]{
+	*[_type == "pCuratedCategory" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
+		${availableLocalesField},
 		coverImage {
 			${imageBlockMetaFields}
 		},
@@ -595,8 +643,9 @@ export const pageEventSlugsQuery = defineQuery(`
 `);
 
 export const pageEventSingleQuery = defineQuery(`
-	*[_type == "pEvent" && slug.current == $slug][0]{
+	*[_type == "pEvent" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
+		${availableLocalesField},
 		format,
 		subtitle,
 		eventDatetime,

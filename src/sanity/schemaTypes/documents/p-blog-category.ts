@@ -1,5 +1,6 @@
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
+import { language } from '@/sanity/schemaTypes/objects/language';
 import { TagsIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
 
@@ -15,6 +16,7 @@ export const pBlogCategory = defineType({
 			validation: (Rule) => [Rule.required()],
 		},
 		slug(),
+		language(),
 		{
 			title: 'Category Color',
 			name: 'categoryColor',

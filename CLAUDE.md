@@ -14,6 +14,7 @@ npm run lint         # Run ESLint
 Sanity Studio is embedded at `/sanity` and runs alongside the Next.js app on the same port.
 
 To regenerate Sanity TypeScript types after schema changes:
+
 ```bash
 npm run typegen
 # This runs: sanity schema extract && sanity typegen generate
@@ -42,6 +43,7 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 ### Sanity Integration
 
 **Schema naming conventions:**
+
 - `g-*` = global singletons (header, footer, announcement, author, team-member)
 - `p-*` = page singletons or document types
 - `settings-*` = settings singletons (general, color, menus, integrations, redirect)
@@ -49,6 +51,7 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 **Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `gAuthor`, `pHome`, `pContact`, `p404`, `pCuratedIndex`, `settingsGeneral`, `settingsColor`, `settingsMenu`, `settingsIntegrations`, `settingsRedirect`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
 
 **Document types** (multi-instance, slug-based):
+
 - `pGeneral` — Generic pages at `/<slug>`
 - `pBlog` / `pBlogIndex` / `pBlogCategory` — Blog system (routes currently disabled)
 - `pCurated` / `pCuratedCategory` / `pCuratedCollection` — Curated/product system
@@ -59,6 +62,7 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 **GROQ queries** are centralized in `src/sanity/lib/queries.ts` using `defineQuery()` from `next-sanity`. Composed from reusable fragments: `baseFields`, `linkFields`, `menuFields`, `imageMetaFields`, `imageBlockMetaFields`, `callToActionFields`, `portableTextContentFields`, `freeformField`, `pageModuleFields`, `formField`.
 
 **Data fetching** uses `sanityFetch` from `src/sanity/lib/live.ts` (wraps `defineLive` from `next-sanity`). This enables live content updates. Usage pattern in pages:
+
 ```ts
 const { data } = await sanityFetch({ query: someQuery, tags: ['docType'] });
 ```
@@ -68,12 +72,14 @@ const { data } = await sanityFetch({ query: someQuery, tags: ['docType'] });
 ### Page Architecture
 
 Each page route follows this pattern:
+
 1. Server component in `src/app/(frontend)/[route]/page.tsx` — fetches data via `sanityFetch`
 2. `generateMetadata()` — fetches data with `stega: false` for clean metadata
 3. `generateStaticParams()` — for dynamic slug routes, fetches all slugs at build time
 4. Render delegates to a `_components/Page*.tsx` client or server component
 
 **Active frontend routes:**
+
 - `/` — Home (`pHome`)
 - `/[slug]` — Generic pages (`pGeneral`)
 - `/contact` — Contact page
@@ -146,12 +152,11 @@ The Studio sidebar is structured via `src/sanity/structure.ts` and `src/sanity/d
 ### Environment Variables
 
 Required in `.env`:
+
 ```
 NEXT_PUBLIC_SANITY_PROJECT_ID
 NEXT_PUBLIC_SANITY_DATASET
-NEXT_PUBLIC_SANITY_STUDIO_URL
 SITE_URL
-SANITY_STUDIO_PREVIEW_ORIGIN
 SANITY_API_READ_TOKEN       # Needs read+write access
 SANITY_REVALIDATE_SECRET
 EMAIL_DISPLAY_NAME

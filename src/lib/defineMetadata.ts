@@ -3,6 +3,13 @@ import type { Metadata } from 'next';
 import { imageBuilder } from '@/sanity/lib/image';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
+import {
+	type Locale,
+	DEFAULT_LOCALE,
+	htmlLangFor,
+	ogLocaleFor,
+	isLocale,
+} from '@/lib/i18n';
 
 type Props = {
 	data: {
@@ -12,9 +19,21 @@ type Props = {
 		_type?: string;
 		slug?: string;
 	};
+	locale?: Locale;
+	availableLocales?: Locale[];
 };
 
-export default function defineMetadata({ data }: Props): Metadata {
+export function normalizeLocales(raw: unknown): Locale[] {
+	const arr = Array.isArray(raw) ? raw : [];
+	const filtered = [...new Set(arr.filter(isLocale))] as Locale[];
+	return filtered.length > 0 ? filtered : [DEFAULT_LOCALE];
+}
+
+export default function defineMetadata({
+	data,
+	locale = DEFAULT_LOCALE,
+	availableLocales = [DEFAULT_LOCALE],
+}: Props): Metadata {
 	const { sharing, title, isHomepage, _type, slug } = data || {};
 
 	const siteTitle = sharing?.siteTitle || '';
@@ -26,10 +45,35 @@ export default function defineMetadata({ data }: Props): Metadata {
 		: null;
 
 	const disableIndex = sharing?.disableIndex;
+
 	const pageRoute = resolveHref({
 		documentType: _type ?? null,
 		slug: slug ?? null,
+		locale,
 	});
+
+	const canonicalUrl = pageRoute
+		? formatUrl(`${process.env.SITE_URL}${pageRoute}`)
+		: undefined;
+
+	// Build hreflang map only when multiple locales are available for this document
+	let languagesMap: Record<string, string> | undefined;
+	if (availableLocales.length > 1) {
+		const entries: [string, string][] = [];
+		for (const l of availableLocales) {
+			const href = resolveHref({ documentType: _type ?? null, slug: slug ?? null, locale: l });
+			if (href) {
+				entries.push([htmlLangFor(l), formatUrl(`${process.env.SITE_URL}${href}`)]);
+			}
+		}
+		const defaultHref = resolveHref({ documentType: _type ?? null, slug: slug ?? null, locale: DEFAULT_LOCALE });
+		if (defaultHref) {
+			entries.push(['x-default', formatUrl(`${process.env.SITE_URL}${defaultHref}`)]);
+		}
+		if (entries.length > 0) languagesMap = Object.fromEntries(entries);
+	}
+
+	const alternateLocales = availableLocales.filter((l) => l !== locale);
 
 	return {
 		...(isHomepage ? null : { title: metaTitle }),
@@ -46,6 +90,10 @@ export default function defineMetadata({ data }: Props): Metadata {
 						},
 					]
 				: [],
+			locale: ogLocaleFor(locale),
+			...(alternateLocales.length > 0 && {
+				alternateLocale: alternateLocales.map(ogLocaleFor),
+			}),
 		},
 		twitter: {
 			card: 'summary_large_image',
@@ -55,13 +103,8 @@ export default function defineMetadata({ data }: Props): Metadata {
 			images: shareGraphicUrl ? [shareGraphicUrl] : [],
 		},
 		alternates: {
-			...(pageRoute && {
-				canonical: formatUrl(`${process.env.SITE_URL}${pageRoute}`),
-			}),
-			// TODO: Enable when site is multilingual
-			// languages: {
-			// 	'en-US': '/en-US',
-			// },
+			...(canonicalUrl && { canonical: canonicalUrl }),
+			...(languagesMap && { languages: languagesMap }),
 		},
 		robots: {
 			index: !disableIndex,

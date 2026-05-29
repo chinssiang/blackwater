@@ -1,11 +1,12 @@
 import { Flex, Stack, Text } from '@sanity/ui';
 import { useFormValue } from 'sanity';
 
-function buildDefaultUrl({ docType, docId, slug }) {
+function buildDefaultUrl({ docType, docId, slug, lang }) {
 	const host = window.location.host;
 	const baseUrl = host.includes('localhost:') ? `http://${host}` : `https://${host}`;
 	const params = new URLSearchParams({ documentType: docType ?? '', docId: docId ?? '' });
 	if (slug) params.set('slug', slug);
+	if (lang) params.set('lang', lang);
 	return `${baseUrl}/api/view-page?${params.toString()}`;
 }
 
@@ -16,8 +17,9 @@ export const ViewPageField = (props) => {
 	const docType = useFormValue(['_type']);
 	const docId = useFormValue(['_id']);
 	const slugCurrent = useFormValue(['slug', 'current']);
+	const language = useFormValue(['language']);
 
-	const pageUrl = customUrl || buildDefaultUrl({ docType, docId, slug: slugCurrent });
+	const pageUrl = customUrl || buildDefaultUrl({ docType, docId, slug: slugCurrent, lang: language });
 
 	return (
 		<Stack space={3}>

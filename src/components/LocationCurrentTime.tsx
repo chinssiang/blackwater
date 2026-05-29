@@ -2,9 +2,19 @@
 import { useState, useEffect } from 'react';
 import { TZDate } from '@date-fns/tz';
 import { format } from 'date-fns';
+import { enUS, zhTW } from 'date-fns/locale';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import type { Locale } from '@/lib/i18n';
+
+const DATE_FNS_LOCALES: Record<Locale, Locale extends 'zh_tw' ? typeof zhTW : typeof enUS> = {
+	en: enUS,
+	zh_tw: zhTW,
+} as Record<Locale, typeof enUS | typeof zhTW>;
 
 export function LocationCurrentTime() {
 	const [time, setTime] = useState<Date | null>(null);
+	const locale = useLocale();
+	const t = useTranslations('locationCurrentTime');
 
 	useEffect(() => {
 		let intervalId: ReturnType<typeof setInterval>;
@@ -32,13 +42,13 @@ export function LocationCurrentTime() {
 	if (!time) {
 		return (
 			<time aria-hidden="true" className="invisible">
-				Wednesday, 12:00 AM
+				{t.placeholder}
 			</time>
 		);
 	}
 
 	const tzDate = new TZDate(time, 'Asia/Singapore');
-	const formattedTime = format(tzDate, 'iiii, p');
+	const formattedTime = format(tzDate, t.dateFormat, { locale: DATE_FNS_LOCALES[locale] });
 	const colonIndex = formattedTime.indexOf(':');
 
 	return (

@@ -1,12 +1,14 @@
 import { EnvelopeIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
+import { language } from '@/sanity/schemaTypes/objects/language';
 
 export const gNewsletter = defineType({
 	title: 'Newsletter Form',
 	name: 'gNewsletter',
-	type: 'object',
+	type: 'document',
 	icon: EnvelopeIcon,
 	fields: [
+		language(),
 		{
 			title: 'Klaviyo List ID',
 			name: 'klaviyoListID',

@@ -1,0 +1,35 @@
+{
+  "common": {
+    "previous": "上一頁",
+    "next": "下一頁",
+    "lastUpdated": "最後更新"
+  },
+  "locationCurrentTime": {
+    "dateFormat": "iii, p",
+    "placeholder": "週三, 下午12:00"
+  },
+  "events": {
+    "headers": {
+      "codex": "活動",
+      "time": "時間",
+      "location": "地點",
+      "status": "狀態"
+    },
+    "aria": {
+      "previousMonth": "上一個月",
+      "nextMonth": "下一個月"
+    },
+    "status": {
+      "today": "今天",
+      "ended": "已結束",
+      "tba": "待定"
+    },
+    "daysUntil": {
+      "one": "{count} 天後",
+      "other": "{count} 天後"
+    },
+    "emptyMonth": "本月暫無活動",
+    "dateFormat": "yyyy/MM/dd (iii) HH:mm",
+    "monthYearFormat": "yyyy年M月"
+  }
+}

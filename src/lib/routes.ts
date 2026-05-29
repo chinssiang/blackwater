@@ -4,6 +4,8 @@
  * adding/changing a route only requires editing this file.
  */
 
+import { DEFAULT_LOCALE, localizePath, type Locale } from '@/lib/i18n';
+
 export const DOCUMENT_ROUTES = [
 	{ type: 'pHome', path: '/', slug: false },
 	{ type: 'pGeneral', path: '/', slug: true },
@@ -21,18 +23,23 @@ export const DOCUMENT_ROUTES = [
 export function resolveHref({
 	documentType,
 	slug,
+	locale,
 }: {
 	documentType: string | null;
 	slug?: string | null;
+	locale?: Locale | null;
 }) {
 	if (!documentType) return undefined;
 
 	const route = DOCUMENT_ROUTES.find((r) => r.type === documentType);
 
 	// Fallback: any unknown type with a slug becomes "/<slug>"
-	if (!route) return slug ? `/${slug}` : undefined;
+	const path = !route
+		? (slug ? `/${slug}` : undefined)
+		: route.slug ? `${route.path}${slug}` : route.path;
 
-	return route.slug ? `${route.path}${slug}` : route.path;
+	if (!path) return undefined;
+	return localizePath(path, locale ?? DEFAULT_LOCALE);
 }
 
 export function buildDocumentHrefGroq(slugField = 'slug.current') {
@@ -50,20 +57,24 @@ export function buildDocumentHrefGroq(slugField = 'slug.current') {
 // NOTE: This GROQ fragment must be kept in sync with DOCUMENT_ROUTES above.
 // It cannot use buildDocumentHrefGroq() here because Sanity's static query
 // extractor cannot evaluate function calls inside template literal interpolations.
+// Uses $locale param (passed by every query that includes this via linkFields).
+// For the default locale (en) the prefix is empty; for others it is "/<locale>".
 export const resolvedHrefGroq = `select(
 		linkType == "internal" => internalLink-> {
 			"url": select(
-				_type == "pHome" => "/",
-				_type == "pGeneral" => "/" + slug.current,
-				_type == "pCuratedIndex" => "/curated",
-				_type == "pCurated" => "/curated/products/" + slug.current,
-				_type == "pCuratedCategory" => "/curated/categories/" + slug.current,
-				_type == "pCuratedCollection" => "/curated/collections/" + slug.current,
-				_type == "pEvents" => "/events/",
-				_type == "pEvent" => "/events/" + slug.current,
-				_type == "pContact" => "/contact",
-				defined(slug.current) => "/" + slug.current,
-				null
+				_type == "pHome" => select($locale == "en" => "/", "/" + $locale),
+				select($locale == "en" => "", "/" + $locale) + select(
+					_type == "pGeneral" => "/" + slug.current,
+					_type == "pCuratedIndex" => "/curated",
+					_type == "pCurated" => "/curated/products/" + slug.current,
+					_type == "pCuratedCategory" => "/curated/categories/" + slug.current,
+					_type == "pCuratedCollection" => "/curated/collections/" + slug.current,
+					_type == "pEvents" => "/events/",
+					_type == "pEvent" => "/events/" + slug.current,
+					_type == "pContact" => "/contact",
+					defined(slug.current) => "/" + slug.current,
+					null
+				)
 			)
 		}.url,
 		href

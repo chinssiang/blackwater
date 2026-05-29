@@ -1,4 +1,5 @@
 import { imageBuilder } from '@/sanity/lib/image';
+import { type Locale, htmlLangFor } from '@/lib/i18n';
 
 type SocialLink = { icon?: string | null; url?: string | null };
 
@@ -14,9 +15,11 @@ type SiteSharing = {
 export default function defineSiteJsonLd({
 	sharing,
 	siteUrl,
+	locale,
 }: {
 	sharing: SiteSharing;
 	siteUrl: string;
+	locale?: Locale;
 }): Record<string, unknown> | null {
 	const siteTitle = sharing?.siteTitle ?? undefined;
 	if (!siteTitle) return null;
@@ -68,6 +71,7 @@ export default function defineSiteJsonLd({
 		name: siteTitle,
 		...(description && { description }),
 		publisher: { '@id': orgId },
+		...(locale && { inLanguage: htmlLangFor(locale) }),
 	};
 
 	return {

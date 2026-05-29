@@ -1,9 +1,16 @@
+'use client';
+
 import { GHeader, SettingsMenu } from 'sanity.types';
 import Link from 'next/link';
 import { LogoSvg } from '@/components/LogoSvg';
 import Menu from '@/components/Menu';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { LocationCurrentTime } from '@/components/LocationCurrentTime';
 import { cn } from '@/lib/utils';
+import { useWindowScroll } from '@/hooks/useWindowScroll';
+
+// matches --height-header in globals.css
+const HEADER_HEIGHT = 52;
 
 type HeaderProps = GHeader & {
 	siteTitle?: string;
@@ -18,13 +25,19 @@ export function Header({
 	isLightHeader?: boolean;
 }) {
 	const { siteTitle, menu } = data || {};
+	const [{ y }] = useWindowScroll() as [
+		{ x: number | null; y: number | null },
+		(...args: unknown[]) => void,
+	];
+	const isScrolled = (y ?? 0) > HEADER_HEIGHT;
 
 	return (
 		<header
 			className={cn(
-				'p-x-max h-header sticky top-0 z-10 grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none',
-				isLightHeader
-					? 'theme-light bg-background/80 backdrop-blur-md'
+				'p-x-max h-header sticky top-0 z-10 grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none transition-colors',
+				isLightHeader && 'theme-light',
+				isLightHeader && isScrolled
+					? 'bg-background/80 backdrop-blur-md'
 					: 'bg-background'
 			)}
 		>
@@ -43,9 +56,12 @@ export function Header({
 				<LogoSvg className="h-full" />
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
-			<div className="t-b-2 ml-auto flex items-center gap-0.5 uppercase text-foreground">
-				<LocationCurrentTime />
-				(TPE)
+			<div className="ml-auto flex text-foreground gap-3">
+				<LanguageSwitcher />
+				<div className="t-b-2 flex items-center gap-1 uppercase">
+					<LocationCurrentTime />
+					<span>(TPE)</span>
+				</div>
 			</div>
 		</header>
 	);
