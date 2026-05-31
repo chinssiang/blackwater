@@ -8,7 +8,7 @@ export function ToolBar({ menu }: { menu: SettingsMenu }) {
 			{menu && (
 				<Menu
 					data={menu}
-					className="flex items-center t-b-2 gap-2.5 select-none uppercase justify-between [&_a]:leading-g-toolbar [&_a]:h-g-toolbar"
+					className="flex items-center t-b-2 gap-2.5 select-none uppercase justify-between [&_a]:w-full [&_a]:leading-g-toolbar [&_a]:h-g-toolbar [&_li]:text-center [&_li]:flex-1 [&_li:first-child]:text-left [&_li:last-child]:text-right"
 				/>
 			)}
 		</motion.nav>
