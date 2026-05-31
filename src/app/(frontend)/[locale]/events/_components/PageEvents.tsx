@@ -120,8 +120,8 @@ export function PageEvents({ data }: PageEventsProps) {
 		return isAllStatusEmpty;
 	}, [displayEvents]);
 	const colStyle = isHideStatusColumn
-		? 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_1fr]'
-		: 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_1fr_230px]';
+		? 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_minmax(0,1fr)]'
+		: 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_minmax(0,1fr)_230px]';
 
 	const goToPreviousMonth = () => {
 		if (currentMonthIndex > 0) {
@@ -151,7 +151,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		: '';
 
 	return (
-		<div className="min-h-main-(--height-newsletter) p-x-max mx-auto py-8.5 lg:py-16">
+		<div className="min-h-main p-x-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
 			<h1 className="sr-only">{title}</h1>
 			<div className="flex items-center justify-between sticky top-header bg-background/95 z-10 font-bold">
 				<motion.p
@@ -299,7 +299,7 @@ export function PageEvents({ data }: PageEventsProps) {
 								<Link className="p-fill" href={`/events/${slug}`} />
 								<Td
 									className={cn(
-										't-b-1 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line group/location',
+										't-b-1 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line break-words min-w-0 group/location',
 										{
 											'opacity-30': eventHasEnded,
 										}
@@ -323,7 +323,7 @@ export function PageEvents({ data }: PageEventsProps) {
 								</Td>
 								<Td
 									className={
-										'lg:justify-end gap-1 flex col-start-1 lg:col-start-[unset] mt-6 lg:mt-0'
+										'lg:justify-end gap-1 flex flex-wrap min-w-0 col-start-1 lg:col-start-[unset] mt-6 lg:mt-0'
 									}
 								>
 									{daysUntil !== null && daysUntil !== undefined && (

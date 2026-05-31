@@ -2,6 +2,7 @@ import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { language } from '@/sanity/schemaTypes/objects/language';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
+import { pickLocalizedValue } from '@/lib/i18n';
 import { BookIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
 import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
@@ -129,9 +130,9 @@ export const pEvent = defineType({
 						select: {
 							title: 'eventStatus.title',
 						},
-						prepare({ title = 'Untitled' }) {
+						prepare({ title }) {
 							return {
-								title: title,
+								title: pickLocalizedValue(title) || 'Untitled',
 							};
 						},
 					},

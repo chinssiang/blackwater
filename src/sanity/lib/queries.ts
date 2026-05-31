@@ -351,7 +351,7 @@ export const pEventsQuery = defineQuery(`
 					},
 					eventStatus-> {
 						_id,
-						title,
+						"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
 						"slug": slug.current,
 						statusTextColor->{...color},
 						statusBgColor->{...color}
@@ -386,7 +386,7 @@ export const pEventsQuery = defineQuery(`
 					},
 					eventStatus-> {
 						_id,
-						title,
+						"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
 						"slug": slug.current,
 						statusTextColor->{...color},
 						statusBgColor->{...color}
@@ -704,7 +704,7 @@ export const pageEventSingleQuery = defineQuery(`
 			},
 			eventStatus->{
 				_id,
-				title,
+				"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
 				statusTextColor->{...color},
 				statusBgColor->{...color}
 			}
