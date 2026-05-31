@@ -73,8 +73,10 @@ export function PageEvents({ data }: PageEventsProps) {
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
 
 	const currentDate = new Date();
-	const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth());
-	const [currentYear, setCurrentYear] = useState(currentDate.getFullYear());
+	const [selectedMonth, setSelectedMonth] = useState<{
+		month: number;
+		year: number;
+	} | null>(null);
 
 	const availableMonths = useMemo(() => {
 		if (!groupedEvents) return [];
@@ -99,13 +101,30 @@ export function PageEvents({ data }: PageEventsProps) {
 			.sort((a, b) => a.date.getTime() - b.date.getTime());
 	}, [groupedEvents]);
 
-	const currentMonthIndex = useMemo(() => {
-		const index = availableMonths.findIndex((itemMonth) => {
-			return itemMonth.month === currentMonth && itemMonth.year === currentYear;
-		});
+	const defaultMonthIndex = useMemo(() => {
+		if (availableMonths.length === 0) return 0;
+		const index = availableMonths.findIndex((itemMonth) =>
+			itemMonth.events.some(
+				(event) => !isEventEnded(event.eventDatetime, currentDate)
+			)
+		);
+		// All events are in the past -> open on the most recent month.
+		return index >= 0 ? index : availableMonths.length - 1;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [availableMonths]);
 
-		return index >= 0 ? index : 0;
-	}, [availableMonths, currentMonth, currentYear]);
+	const currentMonthIndex = useMemo(() => {
+		if (selectedMonth) {
+			const index = availableMonths.findIndex((itemMonth) => {
+				return (
+					itemMonth.month === selectedMonth.month &&
+					itemMonth.year === selectedMonth.year
+				);
+			});
+			if (index >= 0) return index;
+		}
+		return defaultMonthIndex;
+	}, [availableMonths, selectedMonth, defaultMonthIndex]);
 
 	const currentMonthData = availableMonths[currentMonthIndex];
 	const displayEvents = useMemo(
@@ -127,8 +146,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		if (currentMonthIndex > 0) {
 			const prevMonth = availableMonths[currentMonthIndex - 1];
 			if (!prevMonth) return;
-			setCurrentMonth(prevMonth.month);
-			setCurrentYear(prevMonth.year);
+			setSelectedMonth({ month: prevMonth.month, year: prevMonth.year });
 		}
 	};
 
@@ -136,8 +154,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		if (currentMonthIndex < availableMonths.length - 1) {
 			const nextMonth = availableMonths[currentMonthIndex + 1];
 			if (!nextMonth) return;
-			setCurrentMonth(nextMonth.month);
-			setCurrentYear(nextMonth.year);
+			setSelectedMonth({ month: nextMonth.month, year: nextMonth.year });
 		}
 	};
 
