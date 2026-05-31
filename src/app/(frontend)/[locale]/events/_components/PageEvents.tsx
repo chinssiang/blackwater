@@ -147,6 +147,7 @@ export function PageEvents({ data }: PageEventsProps) {
 			const prevMonth = availableMonths[currentMonthIndex - 1];
 			if (!prevMonth) return;
 			setSelectedMonth({ month: prevMonth.month, year: prevMonth.year });
+			window.scrollTo({ top: 0 });
 		}
 	};
 
@@ -155,6 +156,7 @@ export function PageEvents({ data }: PageEventsProps) {
 			const nextMonth = availableMonths[currentMonthIndex + 1];
 			if (!nextMonth) return;
 			setSelectedMonth({ month: nextMonth.month, year: nextMonth.year });
+			window.scrollTo({ top: 0 });
 		}
 	};
 
