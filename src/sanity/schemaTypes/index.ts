@@ -8,6 +8,7 @@ import { pBlogCategory } from './documents/p-blog-category';
 import { pBlogIndex } from './documents/p-blog-index';
 import { gTeamMember } from './documents/g-team-member';
 import { gLocation } from './documents/g-location';
+import { gFaq } from './documents/g-faq';
 import { pEvent } from './documents/p-event';
 import { pEventCategory } from './documents/p-event-category';
 import { pEventRole } from './documents/p-event-role';
@@ -28,12 +29,14 @@ import { socialLink } from './objects/social-link';
 import { gAnnouncement } from './singletons/g-announcement';
 import { eventStation } from './objects/event-station';
 import { freeform } from './objects/freeform';
+import { faqList } from './objects/faq';
 import { gAuthor } from './singletons/g-author';
 import { gFooter } from './singletons/g-footer';
 import { gHeader } from './singletons/g-header';
 import { p404 } from './singletons/p-404';
 import { pContact } from './singletons/p-contact';
 import { pCuratedIndex } from './singletons/p-curated-index';
+import { pFaq } from './singletons/p-faq';
 import { pHome } from './singletons/p-home';
 // Singletons
 import { settingsBrandColors } from './singletons/settings-color';
@@ -63,10 +66,12 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	gAuthor,
 	gTeamMember,
 	gLocation,
+	gFaq,
 	pEventCategory,
 	pEvents,
 	pEventStatus,
 	pContact,
+	pFaq,
 	pCuratedIndex,
 	pCurated,
 	pCuratedCategory,
@@ -74,6 +79,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	pBrand,
 	eventStation,
 	freeform,
+	faqList,
 	formField,
 	link(),
 	navDropdown,

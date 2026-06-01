@@ -8,6 +8,11 @@ import {
 	pageGeneralSlugsQuery,
 } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineFaqJsonLd, { collectFaqItems } from '@/lib/defineFaqJsonLd';
+import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
+import { resolveHref } from '@/lib/routes';
+import { getDictionary } from '@/lib/dictionary.server';
+import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
 import PageGeneral from '../_components/PageGeneral';
 
@@ -55,5 +60,18 @@ export default async function PageSlugRoute(props: MetadataProps) {
 	const { sharing } = data || {};
 	if (!data || sharing.disableIndex === true) return notFound();
 
-	return <PageGeneral data={data} locale={params.locale as Locale} />;
+	const faqJsonLd = defineFaqJsonLd(collectFaqItems(stegaClean(data.pageModules)));
+	const dict = await getDictionary(params.locale as Locale);
+	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
+		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: params.locale as Locale }) },
+		{ name: data.title, path: resolveHref({ documentType: 'pGeneral', slug: params.slug, locale: params.locale as Locale }) },
+	]);
+
+	return (
+		<>
+			{faqJsonLd && <JsonLd data={faqJsonLd} />}
+			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
+			<PageGeneral data={data} locale={params.locale as Locale} />
+		</>
+	);
 }

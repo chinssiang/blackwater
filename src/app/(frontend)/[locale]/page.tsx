@@ -5,6 +5,8 @@ import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageHomeQuery } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineFaqJsonLd, { collectFaqItems } from '@/lib/defineFaqJsonLd';
+import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
 import PageHome from './_components/PageHome';
 
@@ -44,5 +46,12 @@ export default async function Page(props: Props) {
 			</div>
 		);
 
-	return <PageHome data={data} />;
+	const faqJsonLd = defineFaqJsonLd(collectFaqItems(stegaClean(data.pageModules)));
+
+	return (
+		<>
+			{faqJsonLd && <JsonLd data={faqJsonLd} />}
+			<PageHome data={data} />
+		</>
+	);
 }

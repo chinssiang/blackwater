@@ -1,4 +1,5 @@
-import { ComponentIcon, EnvelopeIcon } from '@sanity/icons';
+import { ComponentIcon, EnvelopeIcon, HelpCircleIcon } from '@sanity/icons';
+import { apiVersion } from '@/sanity/env';
 
 export const globalMenu = (S) => {
 	return S.listItem()
@@ -34,6 +35,22 @@ export const globalMenu = (S) => {
 								.documentId('gFooter')
 						)
 						.icon(ComponentIcon),
+					S.listItem()
+						.title('FAQ')
+						.child(
+							S.documentTypeList('gFaq')
+								.title('FAQ')
+								.filter(`_type == "gFaq"`)
+								.apiVersion(apiVersion)
+								.child((documentId) =>
+									S.document().documentId(documentId).schemaType('gFaq')
+								)
+								.canHandleIntent(
+									(intent, { type }) =>
+										['create', 'edit'].includes(intent) && type === 'gFaq'
+								)
+						)
+						.icon(HelpCircleIcon),
 				])
 		)
 		.icon(ComponentIcon);

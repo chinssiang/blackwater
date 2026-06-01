@@ -29,6 +29,38 @@ export const gLocation = defineType({
 			type: 'url',
 			description: 'Google Maps URL for this location',
 		}),
+		defineField({
+			name: 'address',
+			title: 'Address',
+			type: 'object',
+			description:
+				'Optional postal address. Emitted as a PostalAddress on Event structured data — improves event rich results and local discovery.',
+			options: { collapsible: true, collapsed: true },
+			fields: [
+				defineField({ name: 'streetAddress', type: 'string', title: 'Street Address' }),
+				defineField({ name: 'addressLocality', type: 'string', title: 'City / Locality' }),
+				defineField({ name: 'addressRegion', type: 'string', title: 'Region / State' }),
+				defineField({ name: 'postalCode', type: 'string', title: 'Postal Code' }),
+				defineField({
+					name: 'addressCountry',
+					type: 'string',
+					title: 'Country Code',
+					description: 'ISO 3166-1 alpha-2, e.g. "TW".',
+				}),
+			],
+		}),
+		defineField({
+			name: 'geo',
+			title: 'Coordinates',
+			type: 'object',
+			description:
+				'Optional latitude/longitude. Emitted as GeoCoordinates on Event structured data.',
+			options: { collapsible: true, collapsed: true },
+			fields: [
+				defineField({ name: 'lat', type: 'number', title: 'Latitude' }),
+				defineField({ name: 'lng', type: 'number', title: 'Longitude' }),
+			],
+		}),
 	],
 	preview: {
 		select: {

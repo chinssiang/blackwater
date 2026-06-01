@@ -148,10 +148,16 @@ export default async function RootLayout({
 
 				<body className="antialiased">
 					{children}
-					<SanityLive refreshOnFocus={isDraftModeEnabled} />
 					<Toaster />
 					{isDraftModeEnabled && (
 						<>
+							{/* Live Content API: only subscribe in draft mode. For
+							    published traffic, content stays fresh via the
+							    /api/revalidate-tag webhook. Rendering <SanityLive>
+							    for anonymous visitors on Next.js 16 + next-sanity 12
+							    triggers a prefetch/revalidate cascade (4–10x request
+							    overage). See https://www.sanity.io/docs/help/nextjs-16-sanitylive-status */}
+							<SanityLive refreshOnFocus />
 							<DraftModeToast />
 							<VisualEditing />
 						</>

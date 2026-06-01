@@ -16,6 +16,7 @@ export const DOCUMENT_ROUTES = [
 	{ type: 'pEvents', path: '/events/', slug: false },
 	{ type: 'pEvent', path: '/events/', slug: true },
 	{ type: 'pContact', path: '/contact', slug: false },
+	{ type: 'pFaq', path: '/faq', slug: false },
 	// { type: 'pBlogIndex', path: '/blog', slug: false },
 	// { type: 'pBlog', path: '/blog/', slug: true },
 ];
@@ -72,6 +73,7 @@ export const resolvedHrefGroq = `select(
 					_type == "pEvents" => "/events/",
 					_type == "pEvent" => "/events/" + slug.current,
 					_type == "pContact" => "/contact",
+					_type == "pFaq" => "/faq",
 					defined(slug.current) => "/" + slug.current,
 					null
 				)

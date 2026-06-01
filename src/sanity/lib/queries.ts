@@ -3,7 +3,7 @@ import { resolvedHrefGroq } from '@/lib/routes';
 export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 
 export const SITEMAP_PAGES_QUERY = defineQuery(`
-	*[_type in ["pHome", "pGeneral", "pContact"]
+	*[_type in ["pHome", "pGeneral", "pContact", "pFaq"]
 		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
 		_type,
 		"slug": slug.current,
@@ -39,7 +39,10 @@ const baseFields = `
 	"slug": slug.current,
 	"sharing":{
 		...sharing,
-		"siteTitle": *[_type == "settingsGeneral"][0].siteTitle,
+		"siteTitle": coalesce(
+			*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,
+			*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value
+		),
 	}
 `;
 
@@ -158,9 +161,37 @@ const freeformField = `
 	}
 `;
 
+// Projects a gFaq entry. Each gFaq is a single-locale document (document-level
+// i18n), so no coalesce is needed — referencing pages resolve same-locale docs.
+// `answer` is rich text (for rendering); `answerText` is flattened plain text
+// for FAQPage JSON-LD.
+const gFaqItemFields = `
+	_id,
+	question,
+	"answer": answer[]{ ${portableTextContentFields} },
+	"answerText": pt::text(answer)
+`;
+
+const faqListField = `
+	_type,
+	_key,
+	heading,
+	"items": questions[]->{
+		${gFaqItemFields}
+	},
+	sectionAppearance {
+		...,
+		"backgroundColor": backgroundColor->color,
+		"textColor": textColor->color
+	}
+`;
+
 const pageModuleFields = `
 	_type == 'freeform' => {
 		${freeformField}
+	},
+	_type == 'faqList' => {
+		${faqListField}
 	},
 `;
 
@@ -237,8 +268,18 @@ export const siteDataQuery = defineQuery(`{
 			errorBody,
 		},
 		"sharing": *[_type == "settingsGeneral"][0]{
-			siteTitle,
-			siteDescription,
+			"siteTitle": coalesce(siteTitle[language == $locale][0].value, siteTitle[language == "en"][0].value),
+			"siteDescription": coalesce(siteDescription[language == $locale][0].value, siteDescription[language == "en"][0].value),
+			"alternateName": coalesce(alternateName[language == $locale][0].value, alternateName[language == "en"][0].value),
+			"areaServed": coalesce(areaServed[language == $locale][0].value, areaServed[language == "en"][0].value),
+			foundingDate,
+			"address": {
+				"streetAddress": address.streetAddress,
+				"addressLocality": coalesce(address.addressLocality[language == $locale][0].value, address.addressLocality[language == "en"][0].value),
+				"addressRegion": coalesce(address.addressRegion[language == $locale][0].value, address.addressRegion[language == "en"][0].value),
+				"postalCode": address.postalCode,
+				"addressCountry": address.addressCountry
+			},
 			siteLogo,
 			shareGraphic,
 			"shareVideo": shareVideo.asset->url,
@@ -290,6 +331,9 @@ export const pageGeneralQuery = defineQuery(`
 		content[]{
 			${portableTextContentFields}
 		},
+		pageModules[]{
+			${pageModuleFields}
+		},
 		_updatedAt
 	}
 `);
@@ -322,12 +366,23 @@ export const pageContactQuery = defineQuery(`
 	}
 `);
 
+export const pageFaqQuery = defineQuery(`
+	${byLocale('pFaq')}[0]{
+		${baseFields},
+		${availableLocalesField},
+		intro,
+		"items": *[_type == "gFaq" && language == $locale] | order(order asc){
+			${gFaqItemFields}
+		}
+	}
+`);
+
 export const pEventsQuery = defineQuery(`
 	${byLocale('pEvents')}[0]{
 		${baseFields},
 		${availableLocalesField},
 		"eventList": (
-			*[_type == "pEvent" && language == $locale]{
+			*[_type == "pEvent" && language == $locale && eventDatetime >= $cutoff]{
 				${baseFields},
 				subtitle,
 				eventDatetime,
@@ -361,7 +416,8 @@ export const pEventsQuery = defineQuery(`
 			+ *[
 				_type == "pEvent"
 				&& (language == "en" || !defined(language))
-				&& !(slug.current in *[_type == "pEvent" && language == $locale].slug.current)
+				&& eventDatetime >= $cutoff
+				&& !(slug.current in *[_type == "pEvent" && language == $locale && eventDatetime >= $cutoff].slug.current)
 			]{
 				${baseFields},
 				subtitle,
@@ -689,10 +745,21 @@ export const pageEventSingleQuery = defineQuery(`
 		${availableLocalesField},
 		format,
 		subtitle,
+		excerpt,
 		eventDatetime,
+		endDatetime,
 		dateStatus,
+		eventType,
+		distanceKm,
+		isFree,
 		location,
 		locationLink,
+		locationRef->{
+			"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
+			mapLink,
+			address,
+			geo
+		},
 		heroImage{${imageBlockMetaFields}},
 		highlights[]{label, value},
 		startEndLocation,

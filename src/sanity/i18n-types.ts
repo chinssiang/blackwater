@@ -1,6 +1,7 @@
 export const TRANSLATABLE_TYPES = [
 	'pHome',
 	'pContact',
+	'pFaq',
 	'p404',
 	'pCuratedIndex',
 	'pGeneral',
@@ -17,6 +18,7 @@ export const TRANSLATABLE_TYPES = [
 	'gFooter',
 	'gHeader',
 	'gNewsletter',
+	'gFaq',
 ] as const;
 
 export type TranslatableType = (typeof TRANSLATABLE_TYPES)[number];

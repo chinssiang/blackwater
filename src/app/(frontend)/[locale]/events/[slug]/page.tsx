@@ -9,6 +9,9 @@ import {
 } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import defineEventJsonLd from '@/lib/defineEventJsonLd';
+import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
+import { resolveHref } from '@/lib/routes';
+import { getDictionary } from '@/lib/dictionary.server';
 import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
 import PageEventSingle from '../_components/PageEventSingle';
@@ -54,10 +57,17 @@ export default async function PageEventSlugRoute(props: MetadataProps) {
 	if (!data) return notFound();
 
 	const cleanData = stegaClean(data);
+	const dict = await getDictionary(locale as Locale);
+	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
+		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: locale as Locale }) },
+		{ name: dict.breadcrumb.events, path: resolveHref({ documentType: 'pEvents', locale: locale as Locale }) },
+		{ name: cleanData?.title, path: resolveHref({ documentType: 'pEvent', slug, locale: locale as Locale }) },
+	]);
 
 	return (
 		<>
 			<JsonLd data={defineEventJsonLd({ data: cleanData, locale: locale as Locale })} />
+			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
 			<PageEventSingle data={data} />
 		</>
 	);

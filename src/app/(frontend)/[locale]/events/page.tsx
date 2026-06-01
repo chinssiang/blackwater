@@ -5,11 +5,58 @@ import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pEventsQuery } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import { resolveHref } from '@/lib/routes';
+import { formatUrl } from '@/lib/utils';
+import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
 import { PageEvents } from './_components/PageEvents';
 
+const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
+
+function defineEventsItemListJsonLd(
+	eventList: Array<{ title?: string; slug?: string }>,
+	locale: Locale
+): Record<string, unknown> | null {
+	const itemListElement = (eventList || [])
+		.map((event, i) => {
+			const href = resolveHref({ documentType: 'pEvent', slug: event?.slug, locale });
+			if (!event?.title || !href) return null;
+			return {
+				'@type': 'ListItem',
+				position: i + 1,
+				name: event.title,
+				url: formatUrl(`${siteUrl}${href}`),
+			};
+		})
+		.filter(Boolean);
+
+	if (itemListElement.length === 0) return null;
+	return {
+		'@context': 'https://schema.org',
+		'@type': 'ItemList',
+		itemListElement,
+	};
+}
+
+// Only fetch events from the last N months forward. The listing defaults to the
+// first upcoming month and rarely surfaces deep history, so bounding the past
+// keeps the payload (and the locale-dedup subquery) roughly constant as events
+// accumulate over the years.
+const EVENTS_PAST_WINDOW_MONTHS = 12;
+
+function getEventsCutoff(): string {
+	const cutoff = new Date();
+	cutoff.setMonth(cutoff.getMonth() - EVENTS_PAST_WINDOW_MONTHS);
+	cutoff.setHours(0, 0, 0, 0);
+	return cutoff.toISOString();
+}
+
 const getCachedEventsData = cache(async (locale: string) =>
-	sanityFetch({ query: pEventsQuery, params: { locale }, tags: ['pEvents', 'pEvent'] })
+	sanityFetch({
+		query: pEventsQuery,
+		params: { locale, cutoff: getEventsCutoff() },
+		tags: ['pEvents', 'pEvent'],
+	})
 );
 
 type Props = { params: Promise<{ locale: string }> };
@@ -55,5 +102,16 @@ export default async function Page(props: Props) {
 		{}
 	);
 
-	return <PageEvents data={{ groupedEvents, ...data }} />;
+	const cleanList = stegaClean(eventList);
+	const itemListJsonLd = defineEventsItemListJsonLd(
+		cleanList,
+		locale as Locale
+	);
+
+	return (
+		<>
+			{itemListJsonLd && <JsonLd data={itemListJsonLd} />}
+			<PageEvents data={{ groupedEvents, ...data }} />
+		</>
+	);
 }

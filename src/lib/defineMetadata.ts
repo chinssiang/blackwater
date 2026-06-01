@@ -109,7 +109,13 @@ export default function defineMetadata({
 		robots: {
 			index: !disableIndex,
 			follow: !disableIndex,
-			nocache: true,
+			googleBot: {
+				index: !disableIndex,
+				follow: !disableIndex,
+				'max-image-preview': 'large',
+				'max-snippet': -1,
+				'max-video-preview': -1,
+			},
 		},
 	};
 }

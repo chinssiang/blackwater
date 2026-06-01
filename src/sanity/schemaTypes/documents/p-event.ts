@@ -61,6 +61,18 @@ export const pEvent = defineType({
 			validation: (Rule) => Rule.required(),
 		}),
 		defineField({
+			name: 'endDatetime',
+			title: 'End date & time',
+			type: 'datetime',
+			description:
+				'Optional. When the event finishes — used as Event endDate in structured data (required for some rich results).',
+			options: { dateFormat: 'MM/DD/YY' },
+			validation: (Rule) =>
+				Rule.min(Rule.valueOfField('eventDatetime')).warning(
+					'End time should be after the start time.'
+				),
+		}),
+		defineField({
 			name: 'dateStatus',
 			type: 'string',
 			options: {
@@ -68,10 +80,47 @@ export const pEvent = defineType({
 					{ title: 'Confirmed', value: 'confirmed' },
 					{ title: 'TBA', value: 'tba' },
 					{ title: 'Postponed', value: 'postponed' },
+					{ title: 'Cancelled', value: 'cancelled' },
 				],
 				layout: 'radio',
 			},
 			initialValue: 'confirmed',
+		}),
+		defineField({
+			name: 'eventType',
+			title: 'Event type',
+			type: 'string',
+			description: 'Used as a keyword in structured data.',
+			options: {
+				list: [
+					{ title: 'Group run', value: 'group-run' },
+					{ title: 'Race', value: 'race' },
+					{ title: 'Social', value: 'social' },
+					{ title: 'Trail', value: 'trail' },
+				],
+			},
+		}),
+		defineField({
+			name: 'distanceKm',
+			title: 'Distance (km)',
+			type: 'number',
+			description: 'Optional. Approximate route distance in kilometres.',
+		}),
+		defineField({
+			name: 'isFree',
+			title: 'Free to attend',
+			type: 'boolean',
+			description:
+				'Used as isAccessibleForFree in structured data. Leave unset if unknown.',
+		}),
+		defineField({
+			name: 'excerpt',
+			title: 'Excerpt',
+			type: 'text',
+			rows: 2,
+			description:
+				'Short one-line summary (≤160 chars) used in listings and as a fallback structured-data description.',
+			validation: (Rule) => Rule.max(160).warning('Keep under ~160 chars.'),
 		}),
 		defineField({
 			name: 'locationRef',

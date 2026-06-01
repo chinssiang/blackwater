@@ -16,6 +16,14 @@ export const pGeneral = defineType({
 			name: 'content',
 			type: 'portableText',
 		},
+		{
+			title: 'Page Modules',
+			name: 'pageModules',
+			type: 'array',
+			description:
+				'Optional modules rendered below the main content — e.g. an FAQ section.',
+			of: [{ type: 'freeform' }, { type: 'faqList' }],
+		},
 		sharing(),
 	],
 	preview: {

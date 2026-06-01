@@ -48,7 +48,7 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 - `p-*` = page singletons or document types
 - `settings-*` = settings singletons (general, color, menus, integrations, redirect)
 
-**Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `gAuthor`, `pHome`, `pContact`, `p404`, `pCuratedIndex`, `settingsGeneral`, `settingsColor`, `settingsMenu`, `settingsIntegrations`, `settingsRedirect`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
+**Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `gAuthor`, `pHome`, `pContact`, `pFaq`, `p404`, `pCuratedIndex`, `settingsGeneral`, `settingsColor`, `settingsMenu`, `settingsIntegrations`, `settingsRedirect`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
 
 **Document types** (multi-instance, slug-based):
 
@@ -58,8 +58,12 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 - `pEvent` / `pEvents` / `pEventCategory` / `pEventRole` / `pEventStatus` — Event system
 - `pBrand` — Brand entries
 - `gTeamMember` — Team member profiles
+- `gLocation` — Event venues (referenced by `pEvent`; carries `address` + `geo` for structured data)
+- `gFaq` — Global FAQ entries (document-level i18n via `documentInternationalization`; referenced by the `faqList` module and listed on the FAQ page)
 
-**GROQ queries** are centralized in `src/sanity/lib/queries.ts` using `defineQuery()` from `next-sanity`. Composed from reusable fragments: `baseFields`, `linkFields`, `menuFields`, `imageMetaFields`, `imageBlockMetaFields`, `callToActionFields`, `portableTextContentFields`, `freeformField`, `pageModuleFields`, `formField`.
+**Localization:** Two locales (`en`, `zh_tw`) defined in `src/lib/i18n.ts`. Page/global docs are localized at the **document level** via the `documentInternationalization` plugin (`src/sanity/i18n-types.ts` lists translatable types; fetched per-locale via the `byLocale()` GROQ helper). Short, referenced strings (e.g. `gLocation.name`, `pEventStatus.title`, `settingsGeneral.alternateName`) use **inline `internationalizedArray`** instead, resolved with `coalesce(field[language == $locale][0].value, field[language == "en"][0].value)`.
+
+**GROQ queries** are centralized in `src/sanity/lib/queries.ts` using `defineQuery()` from `next-sanity`. Composed from reusable fragments: `baseFields`, `linkFields`, `menuFields`, `imageMetaFields`, `imageBlockMetaFields`, `callToActionFields`, `portableTextContentFields`, `freeformField`, `faqListField`, `gFaqItemFields`, `pageModuleFields`, `formField`.
 
 **Data fetching** uses `sanityFetch` from `src/sanity/lib/live.ts` (wraps `defineLive` from `next-sanity`). This enables live content updates. Usage pattern in pages:
 
@@ -83,6 +87,7 @@ Each page route follows this pattern:
 - `/` — Home (`pHome`)
 - `/[slug]` — Generic pages (`pGeneral`)
 - `/contact` — Contact page
+- `/faq` — FAQ page (`pFaq`; renders the full set of locale-matched `gFaq` entries)
 - `/curated` — Curated index; `/curated/products/[slug]`, `/curated/categories/[slug]`, `/curated/collections/[slug]`
 - `/events` — Events listing; `/events/[slug]` — single event
 - `/events-crew` — Event crew tracking (month-based with member filter)
@@ -96,7 +101,14 @@ Each page route follows this pattern:
 
 ### PageModules System
 
-`src/components/PageModules.tsx` is a switch-based renderer that maps Sanity `_type` values to React components. Currently renders `freeform` → `<Freeform>`. When adding new page module types, add the GROQ field selector to `pageModuleFields` in `queries.ts` and a case in `PageModules.tsx`.
+`src/components/PageModules.tsx` is a switch-based renderer that maps Sanity `_type` values to React components. Renders `freeform` → `<Freeform>` and `faqList` → `<FaqList>`. When adding new page module types, add the GROQ field selector to `pageModuleFields` in `queries.ts` and a case in `PageModules.tsx`. The `faqList` module is available on `pHome.pageModules` and `pGeneral.pageModules`.
+
+### SEO & Structured Data
+
+- **Metadata** is built by `src/lib/defineMetadata.ts` from each doc's `sharing` fields (hreflang `alternates`, OG/Twitter, canonical, `googleBot` snippet directives). Site-level metadata (title template, favicons, OG defaults) lives in the root layout.
+- **JSON-LD** is injected via `<JsonLd>`. Builders in `src/lib/`: `defineSiteJsonLd` (Organization+SportsClub & WebSite, site-wide in root layout), `defineEventJsonLd` (Event, on event detail), `defineFaqJsonLd` (FAQPage, on home/general/FAQ pages — use `collectFaqItems()` to pull items from `faqList` modules), `defineBreadcrumbJsonLd` (BreadcrumbList). The events index emits an inline `ItemList`. JSON-LD must be built from `stegaClean`-ed data so draft mode doesn't leak stega characters.
+- **Sitemap** (`src/app/sitemap.ts`) and **robots** (`src/app/robots.ts`, which explicitly allows AI/answer-engine crawlers) are dynamic; `SITE_URL` must be set for absolute URLs.
+- **FAQ system**: author entries once in `gFaq` (Global → FAQ), surface a subset via the `faqList` module's reference array (resolved by `gFaqItemFields`), or show all on `/faq`.
 
 ### Key Shared Components
 
@@ -105,7 +117,8 @@ Each page route follows this pattern:
 - `<CustomPortableText>` — Renders Sanity Portable Text with custom components for headings, links, CTAs, images, and iframes.
 - `<CustomLink>` — Handles internal/external links from Sanity `link` objects.
 - `<CustomForm>` — Renders form fields from Sanity `formField` schema via controlled inputs.
-- `<JsonLd>` — Injects JSON-LD schema.org markup (event and site variants).
+- `<JsonLd>` — Injects JSON-LD schema.org markup (site/Organization, Event, FAQPage, BreadcrumbList, ItemList).
+- `<FaqList>` — Renders an FAQ section (question headings + Portable Text answers) from resolved `gFaq` entries; used by the `faqList` module and the FAQ page.
 - `<BlogCard>` — Card component for blog post listings.
 - `<Caption>` — Shared caption for image/media blocks.
 - `<LocationCurrentTime>` — Displays location name with live local time.
@@ -124,8 +137,10 @@ Each page route follows this pattern:
 - `image-utils.ts` — `buildImageSrc()`, `buildImageSrcSet()`, `buildRgbaCssString()`.
 - `routes.ts` — `DOCUMENT_ROUTES`, `resolveHref()`, `buildDocumentHrefGroq()`, `checkIfLinkIsActive()`.
 - `animate.ts` — Motion animation presets: `pageTransitionFade`, `fadeAnim`.
-- `defineEventJsonLd.ts` — schema.org `Event` JSON-LD builder (supports multi-location via subEvents).
-- `defineSiteJsonLd.ts` — schema.org `Organization` JSON-LD builder.
+- `defineEventJsonLd.ts` — schema.org `Event` JSON-LD builder (multi-location subEvents; emits endDate, PostalAddress + GeoCoordinates from `locationRef`, keywords, offers).
+- `defineSiteJsonLd.ts` — schema.org `Organization` + `SportsClub` and `WebSite` JSON-LD builder (areaServed, knowsLanguage, alternateName, address).
+- `defineFaqJsonLd.ts` — `FAQPage` JSON-LD builder; `collectFaqItems()` flattens `faqList` modules into items.
+- `defineBreadcrumbJsonLd.ts` — `BreadcrumbList` JSON-LD builder (1-based positions, absolute URLs).
 - `defineMetadata.ts` — Next.js metadata builder from Sanity SEO fields.
 - `icons.ts` — Maps social platform names to icon identifiers (facebook, instagram, linkedin, spotify, strava, x, youtube, github).
 - `providers/` — `ReactQueryProvider` (TanStack React Query wrapper).

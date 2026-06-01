@@ -12,21 +12,44 @@ export const settingsGeneral = defineType({
 	fields: [
 		defineField({
 			name: 'siteTitle',
-			type: 'string',
+			type: 'internationalizedArrayString',
 			title: 'Site Title',
-			description: 'The name of your site, usually your company/brand name',
+			description:
+				'The name of your site, usually your company/brand name. Per language.',
 			group: 'identity',
-			validation: (Rule) => Rule.required().min(2).max(80),
+			validation: (Rule) => Rule.required(),
 		}),
 		defineField({
 			name: 'siteDescription',
-			type: 'text',
-			rows: 3,
+			type: 'internationalizedArrayText',
 			title: 'Site Description',
 			description:
-				'1–3 sentences describing the site overall. Used as the Organization and WebSite description in structured data (JSON-LD).',
+				'1–3 sentences describing the site overall, per language. Used as the Organization and WebSite description in structured data (JSON-LD).',
 			group: 'identity',
-			validation: (Rule) => Rule.max(300).warning('Keep under ~300 chars.'),
+		}),
+		defineField({
+			name: 'alternateName',
+			type: 'internationalizedArrayString',
+			title: 'Alternate Name',
+			description:
+				'Other names the organization is known by, per language (e.g. 台北跑團). Used as Organization alternateName in structured data — helps AI/search match brand searches.',
+			group: 'identity',
+		}),
+		defineField({
+			name: 'areaServed',
+			type: 'internationalizedArrayString',
+			title: 'Area Served',
+			description:
+				'The place this organization primarily serves, e.g. "Taipei, Taiwan". Per language. Used as Organization areaServed in structured data.',
+			group: 'identity',
+		}),
+		defineField({
+			name: 'foundingDate',
+			type: 'date',
+			title: 'Founding Date',
+			description:
+				'When the organization was established. Used as Organization foundingDate in structured data.',
+			group: 'identity',
 		}),
 		defineField({
 			name: 'siteLogo',
@@ -104,6 +127,27 @@ export const settingsGeneral = defineType({
 			description: 'Listed in Organization.sameAs for structured data.',
 			group: 'contact',
 			of: [{ type: 'socialLink' }],
+		}),
+		defineField({
+			name: 'address',
+			type: 'object',
+			title: 'Address',
+			description:
+				'Optional postal address. Emitted as Organization address (PostalAddress) in structured data — strengthens local/place signals.',
+			group: 'contact',
+			options: { collapsible: true, collapsed: true },
+			fields: [
+				defineField({ name: 'streetAddress', type: 'string', title: 'Street Address' }),
+				defineField({ name: 'addressLocality', type: 'internationalizedArrayString', title: 'City / Locality' }),
+				defineField({ name: 'addressRegion', type: 'internationalizedArrayString', title: 'Region / State' }),
+				defineField({ name: 'postalCode', type: 'string', title: 'Postal Code' }),
+				defineField({
+					name: 'addressCountry',
+					type: 'string',
+					title: 'Country Code',
+					description: 'ISO 3166-1 alpha-2, e.g. "TW".',
+				}),
+			],
 		}),
 	],
 	preview: {

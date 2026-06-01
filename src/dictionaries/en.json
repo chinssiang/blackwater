@@ -4,6 +4,12 @@
 		"next": "Next",
 		"lastUpdated": "Last updated"
 	},
+	"breadcrumb": {
+		"home": "Home",
+		"events": "Events",
+		"curated": "Curated",
+		"faq": "FAQ"
+	},
 	"locationCurrentTime": {
 		"dateFormat": "iii, p"
 	},

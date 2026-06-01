@@ -31,6 +31,7 @@ export const mainDocuments = defineDocuments([
 	...withLocales('/blog', `_type == "pBlogIndex"`),
 	...withLocales('/blog/:slug', `_type == "pBlog" && slug.current == $slug`),
 	...withLocales('/contact', `_type == "pContact"`),
+	...withLocales('/faq', `_type == "pFaq"`),
 	...withLocales('/curated', `_type == "pCuratedIndex"`),
 	...withLocales('/curated/products/:slug', `_type == "pCurated" && slug.current == $slug`),
 	...withLocales('/curated/categories/:slug', `_type == "pCuratedCategory" && slug.current == $slug`),
@@ -83,6 +84,16 @@ export const locations = {
 				},
 			],
 		}),
+	}),
+	pFaq: defineLocations({
+		message: 'This document is used to render the FAQ page',
+		tone: 'positive',
+		locations: locationsForAll('pFaq', 'FAQ'),
+	}),
+	gFaq: defineLocations({
+		message: 'FAQ entries appear on the FAQ page and in FAQ modules',
+		tone: 'caution',
+		locations: locationsForAll('pFaq', 'FAQ'),
 	}),
 	pCuratedIndex: defineLocations({
 		message: 'This document is used to render the curated picks page',

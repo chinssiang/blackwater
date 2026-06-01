@@ -3,6 +3,7 @@ import {
 	EnvelopeIcon,
 	UnknownIcon,
 	DocumentsIcon,
+	HelpCircleIcon,
 } from '@sanity/icons';
 import { apiVersion } from '@/sanity/env';
 
@@ -45,6 +46,19 @@ const pageContact = (S) => {
 		.icon(EnvelopeIcon);
 };
 
+const pageFaq = (S) => {
+	return S.listItem()
+		.title('FAQ Page')
+		.child(
+			S.editor()
+				.id('pFaq')
+				.title('FAQ Page')
+				.schemaType('pFaq')
+				.documentId('pFaq')
+		)
+		.icon(HelpCircleIcon);
+};
+
 export const pagesMenu = (S) => {
 	return S.listItem()
 		.title('Primary Pages')
@@ -53,7 +67,7 @@ export const pagesMenu = (S) => {
 		.child(
 			S.list()
 				.title('Primary Pages')
-				.items([pageHome(S), pageError(S), pageContact(S)])
+				.items([pageHome(S), pageError(S), pageContact(S), pageFaq(S)])
 		);
 };
 
