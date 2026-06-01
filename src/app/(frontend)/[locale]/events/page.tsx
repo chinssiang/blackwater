@@ -7,14 +7,24 @@ import { pEventsQuery } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
+import { buildEventName } from '@/lib/buildEventName';
 import JsonLd from '@/components/JsonLd';
-import { type Locale } from '@/lib/i18n';
+import { type Locale, htmlLangFor } from '@/lib/i18n';
 import { PageEvents } from './_components/PageEvents';
 
 const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 
+type EventListItem = {
+	title?: string;
+	subtitle?: string;
+	slug?: string;
+	location?: string;
+	locationRef?: { name?: string | null } | null;
+	eventDatetime?: string;
+};
+
 function defineEventsItemListJsonLd(
-	eventList: Array<{ title?: string; slug?: string }>,
+	eventList: Array<EventListItem>,
 	locale: Locale
 ): Record<string, unknown> | null {
 	const itemListElement = (eventList || [])
@@ -24,7 +34,15 @@ function defineEventsItemListJsonLd(
 			return {
 				'@type': 'ListItem',
 				position: i + 1,
-				name: event.title,
+				name: buildEventName(
+					{
+						title: event.title,
+						subtitle: event.subtitle,
+						location: event.locationRef?.name || event.location,
+						eventDatetime: event.eventDatetime,
+					},
+					locale
+				),
 				url: formatUrl(`${siteUrl}${href}`),
 			};
 		})
@@ -34,6 +52,7 @@ function defineEventsItemListJsonLd(
 	return {
 		'@context': 'https://schema.org',
 		'@type': 'ItemList',
+		inLanguage: htmlLangFor(locale),
 		itemListElement,
 	};
 }

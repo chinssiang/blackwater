@@ -1,7 +1,8 @@
 import { imageBuilder } from '@/sanity/lib/image';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
-import { type Locale, htmlLangFor } from '@/lib/i18n';
+import { buildEventName } from '@/lib/buildEventName';
+import { type Locale, htmlLangFor, DEFAULT_LOCALE } from '@/lib/i18n';
 
 const EVENT_STATUS_MAP: Record<string, string> = {
 	confirmed: 'https://schema.org/EventScheduled',
@@ -98,10 +99,22 @@ export default function defineEventJsonLd({
 		: [];
 	if (data?.eventType) keywords.push(data.eventType);
 
+	const locationName = isMultiLocation
+		? data?.startEndLocation?.name
+		: ref?.name || data?.location;
+
 	return {
 		'@context': 'https://schema.org',
 		'@type': 'Event',
-		name: data?.title ?? '',
+		name: buildEventName(
+			{
+				title: data?.title,
+				subtitle: data?.subtitle,
+				location: locationName,
+				eventDatetime: data?.eventDatetime,
+			},
+			locale ?? DEFAULT_LOCALE
+		),
 		...(description && { description }),
 		...(data?.eventDatetime && { startDate: data.eventDatetime }),
 		...(data?.endDatetime && { endDate: data.endDatetime }),
