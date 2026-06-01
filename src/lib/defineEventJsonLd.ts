@@ -105,7 +105,7 @@ export default function defineEventJsonLd({
 
 	return {
 		'@context': 'https://schema.org',
-		'@type': 'Event',
+		'@type': 'SportsEvent',
 		name: buildEventName(
 			{
 				title: data?.title,

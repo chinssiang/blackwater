@@ -84,9 +84,9 @@ export default function defineSiteJsonLd({
 	const address = buildPostalAddress(sharing?.address ?? null);
 
 	const organization = {
-		// SportsClub is the specific signal ("a running club"); Organization is
-		// retained for broad compatibility.
-		'@type': ['Organization', 'SportsClub'],
+		// SportsOrganization carries the `sport` signal ("a running club");
+		// Organization is retained for broad compatibility.
+		'@type': ['Organization', 'SportsOrganization'],
 		'@id': orgId,
 		name: siteTitle,
 		...(alternateName && { alternateName }),
