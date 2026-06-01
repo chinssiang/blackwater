@@ -1,6 +1,5 @@
 import { TagIcon, UsersIcon } from '@sanity/icons';
 import type { StructureResolver } from 'sanity/structure';
-import { colorsMenu } from './deskStructure/colors';
 import { globalMenu } from './deskStructure/global';
 import { menusMenu } from './deskStructure/menus';
 import { pageBlog } from './deskStructure/p-blog';
@@ -31,7 +30,6 @@ export const structure: StructureResolver = (S) =>
 				.icon(TagIcon),
 			S.divider(),
 			menusMenu(S),
-			colorsMenu(S),
 			S.divider(),
 			settingsMenu(S),
 		]);

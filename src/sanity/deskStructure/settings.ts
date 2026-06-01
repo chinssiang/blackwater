@@ -6,6 +6,7 @@ import {
 	EnterRightIcon,
 } from '@sanity/icons';
 import type { StructureBuilder } from 'sanity/structure';
+import { colorsMenu } from './colors';
 
 export const settingsMenu = (S: StructureBuilder) => {
 	return S.listItem()
@@ -23,6 +24,7 @@ export const settingsMenu = (S: StructureBuilder) => {
 								.documentId('settingsGeneral')
 						)
 						.icon(EarthGlobeIcon),
+					colorsMenu(S),
 					S.listItem()
 						.title('Integrations')
 						.child(
