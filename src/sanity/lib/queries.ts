@@ -39,6 +39,10 @@ const baseFields = `
 	"slug": slug.current,
 	"sharing":{
 		...sharing,
+		"shareGraphic": coalesce(
+			sharing.shareGraphic,
+			*[_type == "settingsGeneral"][0].shareGraphic
+		),
 		"siteTitle": coalesce(
 			*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,
 			*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value

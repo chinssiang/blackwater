@@ -81,7 +81,8 @@ export const settingsGeneral = defineType({
 			name: 'shareGraphic',
 			type: 'image',
 			title: 'Share Graphic',
-			description: '1200 x 630px in PNG, JPG, or GIF',
+			description:
+				'Default social share image (1200 x 630px in PNG, JPG, or GIF). Used as the fallback whenever a page has no Share Graphic of its own.',
 			group: 'sharing',
 			options: { accept: '.jpg,.png,.gif' },
 		}),
