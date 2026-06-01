@@ -12,6 +12,7 @@ import {
 import { Autocomplete, Card, Flex, Stack, Switch, Text } from '@sanity/ui';
 import { isValidUrl, validateEmail } from '@/lib/utils';
 import { resolveHref } from '@/lib/routes';
+import { LOCALE_SHORT_LABELS, isLocale, type Locale } from '@/lib/i18n';
 import { set, unset, type ObjectInputProps } from 'sanity';
 
 type LinkType = 'internal' | 'external';
@@ -32,6 +33,7 @@ type OptionPayload = {
 	_type?: string;
 	slug?: string;
 	route?: string;
+	language?: Locale;
 	isInternal: boolean;
 	isFile: boolean;
 	fileSize?: number;
@@ -62,6 +64,7 @@ const pageDocumentOrder = [
 	'pContact',
 	'pBlogIndex',
 	'pBlog',
+	'pFaq',
 ];
 
 type PageFetch = {
@@ -69,6 +72,7 @@ type PageFetch = {
 	_type: string;
 	_id: string;
 	slug?: string;
+	language?: string;
 };
 
 type FileFetch = {
@@ -84,6 +88,7 @@ const fetchOptions = async (): Promise<LinkOption[]> => {
       title,
       _type,
       _id,
+      language,
       "slug": slug.current,
     },
     "files": * [_type == "sanity.fileAsset" && mimeType == "application/pdf"] {
@@ -119,18 +124,22 @@ const fetchOptions = async (): Promise<LinkOption[]> => {
 	}));
 
 	const pageOptions: LinkOption[] = (data.pages || [])
-		.map(({ _type, slug, _id, title }) => ({
-			value: _id,
-			payload: {
-				pageTitle: getPageTitle(_type, title),
-				_id,
-				_type,
-				slug,
-				route: resolveHref({ documentType: _type, slug }),
-				isInternal: true,
-				isFile: false,
-			},
-		}))
+		.map(({ _type, slug, _id, title, language }) => {
+			const locale = isLocale(language) ? language : undefined;
+			return {
+				value: _id,
+				payload: {
+					pageTitle: getPageTitle(_type, title),
+					_id,
+					_type,
+					slug,
+					language: locale,
+					route: resolveHref({ documentType: _type, slug, locale }),
+					isInternal: true,
+					isFile: false,
+				},
+			};
+		})
 		.sort((a, b) => {
 			const rankA = sortOrderMap.has(a.payload._type!)
 				? sortOrderMap.get(a.payload._type!)!
@@ -138,7 +147,11 @@ const fetchOptions = async (): Promise<LinkOption[]> => {
 			const rankB = sortOrderMap.has(b.payload._type!)
 				? sortOrderMap.get(b.payload._type!)!
 				: DEFAULT_RANK;
-			return rankA - rankB;
+			if (rankA !== rankB) return rankA - rankB;
+			// Within the same page type, list the default (en) variant first.
+			const langRankA = a.payload.language === 'en' ? 0 : 1;
+			const langRankB = b.payload.language === 'en' ? 0 : 1;
+			return langRankA - langRankB;
 		});
 
 	return [...pageOptions, ...fileOptions];
@@ -148,7 +161,8 @@ const optionIconStyle = { fontSize: 36 };
 
 const renderOption = (option: LinkOption) => {
 	const { isNew, payload } = option;
-	const { pageTitle, route, isFile, fileSize } = payload;
+	const { pageTitle, route, isFile, fileSize, language } = payload;
+	const languageLabel = language ? LOCALE_SHORT_LABELS[language] : undefined;
 
 	const formatFileSize = (bytes?: number): string => {
 		if (!bytes) return '';
@@ -167,9 +181,16 @@ const renderOption = (option: LinkOption) => {
 					<MasterDetailIcon style={optionIconStyle} />
 				)}
 				<Stack space={2} flex={1} paddingLeft={1}>
-					<Text size={[1, 1, 2]} textOverflow="ellipsis">
-						{pageTitle}
-					</Text>
+					<Flex align="center" gap={2}>
+						<Text size={[1, 1, 2]} textOverflow="ellipsis">
+							{pageTitle}
+						</Text>
+						{languageLabel && (
+							<Text size={1} muted>
+								{languageLabel}
+							</Text>
+						)}
+					</Flex>
 					<Text size={1} muted>
 						{isFile && fileSize
 							? `${route} • ${formatFileSize(fileSize)}`
@@ -238,11 +259,16 @@ export const LinkObject = (props: ObjectInputProps<LinkValue>) => {
 			const q = query ?? '';
 			const filteredOptions = pageItemData.filter(({ payload }) => {
 				const queryLower = q.toLowerCase();
+				const languageLabel = payload.language
+					? LOCALE_SHORT_LABELS[payload.language]
+					: undefined;
 
 				return (
 					payload.route?.toLowerCase().includes(queryLower) ||
 					payload.pageTitle?.toLowerCase().includes(queryLower) ||
-					payload._id?.toLowerCase().includes(queryLower)
+					payload._id?.toLowerCase().includes(queryLower) ||
+					payload.language?.toLowerCase().includes(queryLower) ||
+					languageLabel?.toLowerCase().includes(queryLower)
 				);
 			});
 
@@ -330,9 +356,12 @@ export const LinkObject = (props: ObjectInputProps<LinkValue>) => {
 				const referencedPage = pageItemData.find(
 					(page) => page.value === currentValue.internalLink?._ref
 				);
-				return referencedPage
-					? referencedPage.payload.pageTitle
-					: currentValue.internalLink._ref;
+				if (!referencedPage) return currentValue.internalLink._ref;
+				const { pageTitle, language } = referencedPage.payload;
+				const languageLabel = language
+					? LOCALE_SHORT_LABELS[language]
+					: undefined;
+				return languageLabel ? `${pageTitle} (${languageLabel})` : pageTitle;
 			}
 
 			const externalHref = currentValue.href || currentValue.externalUrl;
@@ -374,7 +403,11 @@ export const LinkObject = (props: ObjectInputProps<LinkValue>) => {
 					if (!option) {
 						return getDisplayTitle(value);
 					}
-					return option.payload.pageTitle;
+					const { pageTitle, language } = option.payload;
+					const languageLabel = language
+						? LOCALE_SHORT_LABELS[language]
+						: undefined;
+					return languageLabel ? `${pageTitle} (${languageLabel})` : pageTitle;
 				}}
 			/>
 			{!hideNewTab && (

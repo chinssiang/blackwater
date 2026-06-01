@@ -1,8 +1,14 @@
 import { cn, getSpacingClass } from '@/lib/utils';
 import { buildRgbaCssString } from '@/lib/image-utils';
 import CustomPortableText from '@/components/CustomPortableText';
+import {
+	Accordion,
+	AccordionItem,
+	AccordionTrigger,
+	AccordionContent,
+} from '@/components/ui/Accordion';
 
-type MaxWidthType = 'none' | 'xl' | 'l' | 'm' | 's' | 'xs';
+type MaxWidthType = 'none' | 'xl' | 'lg' | 'md' | 's' | 'xs';
 
 export type FaqItem = {
 	_id?: string;
@@ -21,7 +27,6 @@ type FaqListProps = {
 };
 
 export default function FaqList({ data, className }: FaqListProps) {
-	console.log('🚀 ~ FaqList ~ data:', data);
 	const { heading, items, sectionAppearance } = data || {};
 
 	const visible = (items ?? []).filter(
@@ -33,7 +38,7 @@ export default function FaqList({ data, className }: FaqListProps) {
 		backgroundColor,
 		textColor,
 		textAlign = 'text-left',
-		maxWidth = 'm',
+		maxWidth = 'md',
 		spacingTop,
 		spacingBottom,
 		spacingTopDesktop,
@@ -62,18 +67,18 @@ export default function FaqList({ data, className }: FaqListProps) {
 		(
 			{
 				none: 'w-full',
-				xl: 'max-w-7xl',
-				l: 'max-w-5xl',
-				m: 'max-w-3xl',
-				s: 'max-w-xl',
-				xs: 'max-w-xs',
+				xl: 'p-x-xl',
+				lg: 'p-x-lg',
+				md: 'p-x-md',
+				s: 'p-x-s',
+				xs: 'p-x-xs',
 			} as const
-		)[maxWidth] || 'max-w-3xl';
+		)[maxWidth] || 'p-x-md';
 
 	return (
 		<section
 			className={cn(
-				'wysiwyg px-contain mx-auto',
+				'wysiwyg mx-auto',
 				textAlign,
 				maxWidthClasses,
 				...spacingClasses,
@@ -85,18 +90,19 @@ export default function FaqList({ data, className }: FaqListProps) {
 			}}
 		>
 			{heading && <h2>{heading}</h2>}
-			<dl>
-				{visible.map((item, i) => (
-					<div key={item._id ?? i}>
-						<dt>
-							<h3>{item.question}</h3>
-						</dt>
-						<dd>
-							<CustomPortableText blocks={item.answer} />
-						</dd>
-					</div>
-				))}
-			</dl>
+			<Accordion type="single" collapsible>
+				{visible.map((item, i) => {
+					const value = item._id ?? `faq-${i}`;
+					return (
+						<AccordionItem key={value} value={value}>
+							<AccordionTrigger>{item.question}</AccordionTrigger>
+							<AccordionContent className="[&_p]:leading-[125%]">
+								<CustomPortableText blocks={item.answer} />
+							</AccordionContent>
+						</AccordionItem>
+					);
+				})}
+			</Accordion>
 		</section>
 	);
 }
