@@ -126,13 +126,18 @@ export default async function RootLayout({
 	const { data } = await getCachedSiteData(locale);
 	const cleanData = stegaClean(data) || ({} as typeof data);
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
-	const siteJsonLd = defineSiteJsonLd({ sharing: cleanData?.sharing, siteUrl, locale });
+	const siteJsonLd = defineSiteJsonLd({
+		sharing: cleanData?.sharing,
+		siteUrl,
+		locale,
+	});
 
 	return (
 		<ReactQueryProvider>
 			<html
 				lang={htmlLangFor(locale)}
 				className={`${fontABCDisplay.variable} ${baselTypewriter.variable} dark bg-background`}
+				data-scroll-behavior="smooth"
 			>
 				<head>
 					<meta
