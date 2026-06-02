@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
+import { stripLocaleFromPath } from '@/lib/i18n';
 import * as gtag from '@/lib/gtag';
 import AdaSkip from './AdaSkip';
 import { Footer } from './Footer';
@@ -19,7 +20,9 @@ export function Layout({ children, siteData }: LayoutProps) {
 	const { header, footer, newsletter, sharing } = siteData || {};
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaID;
-	const isCuratedSubpage = pathname.startsWith('/curated/');
+	const { path: strippedPath } = stripLocaleFromPath(pathname);
+	const isCuratedSection =
+		strippedPath === '/curated' || strippedPath.startsWith('/curated/');
 	const isEventsCrew = pathname === '/events-crew';
 
 	useEffect(() => {
@@ -41,7 +44,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 	return (
 		<LazyMotion features={domAnimation}>
 			<AdaSkip />
-			<Header data={headerData} isLightHeader={isCuratedSubpage} />
+			<Header data={headerData} isLightHeader={isCuratedSection} />
 			<Main>
 				{children}
 				{!isEventsCrew && (

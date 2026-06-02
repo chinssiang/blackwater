@@ -35,10 +35,7 @@ export function Header({
 		<header
 			className={cn(
 				'p-x-max h-header sticky top-0 z-10 grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none transition-colors',
-				isLightHeader && 'theme-light',
-				isLightHeader && isScrolled
-					? 'bg-background/80 backdrop-blur-md'
-					: 'bg-background'
+				isLightHeader && 'theme-light bg-background'
 			)}
 		>
 			{menu && (

@@ -636,6 +636,9 @@ export const pageCuratedIndexQuery = defineQuery(`
 			title,
 			description,
 			"slug": slug.current,
+			coverImage {
+				${imageBlockMetaFields}
+			},
 			"products": products[0...6]->{
 				${curatedProductCardFields}
 			}

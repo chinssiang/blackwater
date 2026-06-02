@@ -34,7 +34,7 @@ export default function LanguageSwitcher({
 						) : (
 							<Link
 								href={localizePath(strippedPath, locale)}
-								className="text-muted transition-colors hover:text-foreground"
+								className="text-muted-foreground transition-colors hover:text-foreground"
 							>
 								{LOCALE_SHORT_LABELS[locale]}
 							</Link>

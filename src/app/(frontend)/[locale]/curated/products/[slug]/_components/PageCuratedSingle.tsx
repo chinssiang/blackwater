@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import CustomPortableText from '@/components/CustomPortableText';
@@ -9,11 +8,16 @@ import { motion } from 'motion/react';
 import type { PageCuratedSingleQueryResult } from 'sanity.types';
 import { hasArrayValue } from '@/lib/utils';
 import CuratedProductCard from '../../../_components/CuratedProductCard';
-import CuratedCategoriesGrid from '../../../_components/CuratedCategoriesGrid';
 
 type Props = {
 	data: NonNullable<PageCuratedSingleQueryResult>;
 };
+
+const reveal = {
+	initial: 'hide',
+	animate: 'show',
+	variants: fadeAnim,
+} as const;
 
 export default function PageCuratedSingle({ data }: Props) {
 	const {
@@ -46,63 +50,86 @@ export default function PageCuratedSingle({ data }: Props) {
 				.join(', ')
 		: null;
 
-	const firstCategoryTitle = hasArrayValue(categories)
-		? (categories[0] as any).title
+	const firstCategory = hasArrayValue(categories)
+		? (categories[0] as any)
 		: null;
+	// Keep the eyebrow concise: lead with the brand (the key identifier) and
+	// let the breadcrumb carry the category. Products can be tagged with many
+	// categories, so listing them all here reads as noise.
+	const eyebrow = brandLabel || categoryLabel;
 
 	return (
-		<div className="theme-light bg-background text-foreground min-h-[inherit]">
-			<div className="px-contain mx-auto py-10 lg:py-17.5">
+		<div className="theme-light bg-[oklch(0.99_0_0)] text-foreground min-h-[inherit]">
+			<div className="px-contain mx-auto py-8 lg:py-12">
+				{/* Breadcrumb */}
+				<motion.nav
+					aria-label="Breadcrumb"
+					className="t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+					{...reveal}
+					transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
+				>
+					<Link href="/curated" className="transition-colors hover:text-foreground">
+						Curated
+					</Link>
+					{firstCategory?.slug && (
+						<>
+							<span aria-hidden className="text-foreground/30">
+								/
+							</span>
+							<Link
+								href={`/curated/categories/${firstCategory.slug}`}
+								className="transition-colors hover:text-foreground"
+							>
+								{firstCategory.title}
+							</Link>
+						</>
+					)}
+					<span aria-hidden className="text-foreground/30">
+						/
+					</span>
+					<span className="text-foreground/90">{title}</span>
+				</motion.nav>
+
 				{/* Product hero */}
-				<div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 mb-16 lg:mb-24">
+				<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
 					{/* Image */}
 					<motion.div
-						className="relative aspect-4/3 overflow-hidden"
-						initial="hide"
-						animate="show"
-						variants={fadeAnim}
-						transition={{
-							duration: 0.8,
-							delay: 0.05,
-							ease: [0, 0.5, 0.5, 1],
-						}}
+						className="relative aspect-4/3 overflow-hidden bg-foreground/[0.03] p-6 lg:col-span-7 lg:p-10"
+						{...reveal}
+						transition={{ duration: 0.8, delay: 0.05, ease: [0, 0.5, 0.5, 1] }}
 					>
 						{mainImage ? (
 							<ImageBlock
 								fill="contain"
 								imageObj={mainImage as any}
 								alt={title ?? ''}
+								sizes="(max-width: 1024px) 100vw, 58vw"
 								priority
 							/>
 						) : (
-							<div className="w-full h-full bg-foreground" />
+							<div className="absolute inset-0 bg-foreground/10" />
 						)}
 					</motion.div>
 
 					{/* Details */}
-					<div className="flex flex-col gap-4 justify-center">
-						{/* Category → Brand */}
-						{(categoryLabel || brandLabel) && (
+					<div className="flex flex-col lg:col-span-5 lg:pt-2">
+						{eyebrow && (
 							<motion.p
-								className="t-b-1 uppercase text-muted"
-								initial="hide"
-								animate="show"
-								variants={fadeAnim}
+								className="t-b-2 uppercase tracking-[0.04em] text-foreground/65"
+								{...reveal}
 								transition={{
 									duration: 0.6,
 									delay: 0.1,
 									ease: [0, 0.71, 0.2, 1.01],
 								}}
 							>
-								{[categoryLabel, brandLabel].filter(Boolean).join(' \u2014 ')}
+								{eyebrow}
 							</motion.p>
 						)}
 
 						<motion.h1
-							className="t-h-2 uppercase"
-							initial="hide"
-							animate="show"
-							variants={fadeAnim}
+							className="uppercase tracking-[-0.02em] leading-[1.05] text-[clamp(1.5rem,2.6vw,2.125rem)] mt-3"
+							{...reveal}
 							transition={{
 								duration: 0.8,
 								delay: 0.15,
@@ -114,10 +141,8 @@ export default function PageCuratedSingle({ data }: Props) {
 
 						{price && (
 							<motion.p
-								className="t-h-3 uppercase"
-								initial="hide"
-								animate="show"
-								variants={fadeAnim}
+								className="t-h-3 uppercase text-foreground/85 mt-4"
+								{...reveal}
 								transition={{
 									duration: 0.6,
 									delay: 0.2,
@@ -130,9 +155,8 @@ export default function PageCuratedSingle({ data }: Props) {
 
 						{purchaseLink && (
 							<motion.div
-								initial="hide"
-								animate="show"
-								variants={fadeAnim}
+								className="mt-6"
+								{...reveal}
 								transition={{
 									duration: 0.6,
 									delay: 0.25,
@@ -143,7 +167,7 @@ export default function PageCuratedSingle({ data }: Props) {
 									href={purchaseLink}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="inline-flex items-center justify-center w-full bg-foreground text-background t-b-1 uppercase py-3.5 hover:bg-foreground/80 transition-colors"
+									className="inline-flex w-full items-center justify-center bg-foreground text-background t-b-1 uppercase px-10 py-4 transition-colors hover:bg-foreground/85 sm:w-auto"
 								>
 									Buy Now
 								</a>
@@ -153,10 +177,8 @@ export default function PageCuratedSingle({ data }: Props) {
 						{/* Content (Information / What We Like) */}
 						{content && content.length > 0 && (
 							<motion.div
-								className="mt-4"
-								initial="hide"
-								animate="show"
-								variants={fadeAnim}
+								className="mt-10 max-w-[60ch] border-t border-foreground/10 pt-8 text-[0.9375rem] leading-relaxed text-foreground/80 [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-medium [&_h2]:uppercase [&_h2]:tracking-[-0.02em] [&_h2]:text-foreground [&_h2:first-child]:mt-0 [&_h3]:mt-6 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:uppercase [&_h3]:text-foreground [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5"
+								{...reveal}
 								transition={{
 									duration: 0.8,
 									delay: 0.3,
@@ -166,46 +188,26 @@ export default function PageCuratedSingle({ data }: Props) {
 								<CustomPortableText blocks={content as any} />
 							</motion.div>
 						)}
-
-						{/* Back link */}
-						<motion.div
-							initial="hide"
-							animate="show"
-							variants={fadeAnim}
-							transition={{
-								duration: 0.6,
-								delay: 0.35,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
-						>
-							<Link
-								href="/curated"
-								className="t-b-1 uppercase text-muted hover:text-foreground transition-colors inline-flex items-center gap-1"
-							>
-								← Back
-							</Link>
-						</motion.div>
 					</div>
 				</div>
 
 				{/* Related products */}
 				{displayRelated && displayRelated.length > 0 && (
-					<div className="mb-16 lg:mb-24">
-						<div className="flex items-baseline justify-between mb-6">
-							<p className="t-h-3 uppercase text-muted">
-								{firstCategoryTitle
-									? `More ${firstCategoryTitle}`
-									: 'More Picks'}
-							</p>
-							{displayRelated.some(
-								(p: any) => p.badge === "Founder's Pick"
-							) && (
-								<p className="t-b-1 uppercase text-muted">
-									Founder&apos;s Picks
-								</p>
-							)}
+					<section className="border-t border-foreground/10 pt-12 lg:pt-16">
+						<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
+							<h2 className="t-l-2 uppercase text-foreground/70">
+								{firstCategory?.title
+									? `More ${firstCategory.title}`
+									: 'More picks'}
+							</h2>
+							<Link
+								href="/curated/products"
+								className="t-l-2 uppercase text-foreground/75 transition-colors hover:text-foreground"
+							>
+								All products →
+							</Link>
 						</div>
-						<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+						<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
 							{displayRelated.map((product, index) => (
 								<CuratedProductCard
 									key={product._id}
@@ -214,22 +216,8 @@ export default function PageCuratedSingle({ data }: Props) {
 								/>
 							))}
 						</div>
-						<div className="flex justify-center">
-							<Link
-								href="/curated/products"
-								className="inline-flex items-center justify-center bg-foreground text-background t-b-1 uppercase px-12 py-3 hover:bg-foreground/80 transition-colors"
-							>
-								View All
-							</Link>
-						</div>
-					</div>
+					</section>
 				)}
-
-				{/* Categories section */}
-				<CuratedCategoriesGrid
-					categories={(data as any).categories ?? null}
-					showViewAll
-				/>
 			</div>
 		</div>
 	);

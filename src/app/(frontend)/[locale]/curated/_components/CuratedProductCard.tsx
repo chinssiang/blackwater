@@ -49,7 +49,9 @@ export default function CuratedProductCard({
 			>
 				{/* Badge */}
 				{product.badge && (
-					<p className="t-b-1 uppercase text-muted mb-2">{product.badge}</p>
+					<p className="t-b-1 uppercase text-foreground/70 mb-2">
+						{product.badge}
+					</p>
 				)}
 
 				{/* Image */}
@@ -81,11 +83,15 @@ export default function CuratedProductCard({
 
 					{/* Excerpt */}
 					{product.excerpt && (
-						<p className="t-b-2 text-muted line-clamp-2">{product.excerpt}</p>
+						<p className="t-b-2 text-foreground/65 line-clamp-2">
+							{product.excerpt}
+						</p>
 					)}
 
 					{/* Price */}
-					{product.price && <p className="t-b-2 text-muted">{product.price}</p>}
+					{product.price && (
+						<p className="t-b-2 text-foreground/65">{product.price}</p>
+					)}
 				</div>
 			</Link>
 		</motion.div>

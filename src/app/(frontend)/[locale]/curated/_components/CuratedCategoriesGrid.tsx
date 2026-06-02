@@ -2,8 +2,6 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { fadeAnim } from '@/lib/animate';
-import { Button } from '@/components/ui/Button';
-import CustomLink from '@/components/CustomLink';
 
 type Category = {
 	_id: string;
@@ -19,6 +17,51 @@ type CuratedCategoriesGridProps = {
 	priority?: boolean;
 };
 
+function countLabel(count?: number | null) {
+	if (count == null) return null;
+	return `${count} ${count === 1 ? 'product' : 'products'}`;
+}
+
+function CategoryTile({
+	category,
+	priority = false,
+}: {
+	category: Category;
+	priority?: boolean;
+}) {
+	const label = countLabel(category.count);
+	const hasImage = !!category.coverImage?.image;
+
+	return (
+		<Link
+			href={`/curated/categories/${category.slug}`}
+			className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+		>
+			{hasImage && (
+				<div className="relative mb-3 aspect-[4/5] overflow-hidden bg-foreground/10">
+					<ImageBlock
+						className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+						imageObj={category.coverImage}
+						alt={category.title ?? ''}
+						sizes="(max-width: 768px) 50vw, 30vw"
+						priority={priority}
+					/>
+				</div>
+			)}
+			<div className="flex items-baseline justify-between gap-3 border-t border-foreground/15 pt-3">
+				<span className="t-h-3 uppercase transition-opacity duration-200 group-hover:opacity-55">
+					{category.title}
+				</span>
+				{label && (
+					<span className="t-l-2 uppercase whitespace-nowrap text-foreground/65">
+						{label}
+					</span>
+				)}
+			</div>
+		</Link>
+	);
+}
+
 export default function CuratedCategoriesGrid({
 	categories,
 	showViewAll = false,
@@ -27,51 +70,33 @@ export default function CuratedCategoriesGrid({
 	if (!categories || categories.length === 0) return null;
 
 	return (
-		<motion.div
+		<motion.section
 			initial="hide"
 			animate="show"
 			variants={fadeAnim}
 			transition={{ duration: 0.8, ease: [0, 0.5, 0.5, 1] }}
 		>
-			<h2 className="t-h-3 uppercase mb-6">Categories</h2>
-
-			<div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-				{categories.map((cat, index) => (
+			<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
+				<h2 className="t-l-2 uppercase text-foreground/70">Categories</h2>
+				{showViewAll && (
 					<Link
-						key={cat._id}
-						href={`/curated/categories/${cat.slug}`}
-						className="group relative aspect-4/3 overflow-hidden bg-foreground/5"
+						href="/curated/categories"
+						className="t-l-2 uppercase text-foreground/75 transition-colors hover:text-foreground"
 					>
-						{cat.coverImage && (
-							<ImageBlock
-								className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-								imageObj={cat.coverImage}
-								alt={cat.title ?? ''}
-								priority={priority && index === 0}
-							/>
-						)}
-						{/* Dark overlay */}
-						<div className="absolute inset-0 bg-black/30" />
-						{/* Title + count */}
-						<div className="absolute inset-x-0 bottom-0 p-4 flex items-end justify-between">
-							<span className="t-b-1 uppercase text-white">{cat.title}</span>
-							{cat.count != null && (
-								<span className="t-b-1 text-white/70">{cat.count}</span>
-							)}
-						</div>
+						All categories →
 					</Link>
-				))}
+				)}
 			</div>
 
-			{showViewAll && (
-				<div className="flex justify-center mt-8">
-					<Button asChild size="xl">
-						<CustomLink link={{ href: '/curated/categories' }}>
-							View All
-						</CustomLink>
-					</Button>
-				</div>
-			)}
-		</motion.div>
+			<div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:gap-x-10">
+				{categories.map((cat, index) => (
+					<CategoryTile
+						key={cat._id}
+						category={cat}
+						priority={priority && index === 0}
+					/>
+				))}
+			</div>
+		</motion.section>
 	);
 }
