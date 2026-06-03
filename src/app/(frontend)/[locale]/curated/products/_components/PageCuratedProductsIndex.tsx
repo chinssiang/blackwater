@@ -14,7 +14,7 @@ export function PageCuratedProductsIndex({ data }: Props) {
 	const { products, categories } = data || {};
 
 	return (
-		<div className="theme-light bg-background text-foreground p-x-max mx-auto min-h-main py-10 lg:py-17.5">
+		<div className="p-x-max mx-auto min-h-main py-10 lg:py-17.5">
 			<motion.div
 				className="mb-10 lg:mb-17.5"
 				initial="hide"
@@ -22,11 +22,11 @@ export function PageCuratedProductsIndex({ data }: Props) {
 				variants={fadeAnim}
 				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
 			>
-				<h1 className="t-h-2 uppercase">All Products</h1>
+				<h1 className="t-h-2 uppercase text-foreground">All Products</h1>
 			</motion.div>
 
 			{products && products.length > 0 ? (
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-16 lg:mb-24">
+				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 mb-16 lg:mb-24">
 					{products.map((product, index) => (
 						<CuratedProductCard
 							key={product._id}

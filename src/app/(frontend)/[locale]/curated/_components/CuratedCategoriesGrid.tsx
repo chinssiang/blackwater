@@ -49,7 +49,7 @@ function CategoryTile({
 				</div>
 			)}
 			<div className="flex items-baseline justify-between gap-3 border-t border-foreground/15 pt-3">
-				<span className="t-h-3 uppercase transition-opacity duration-200 group-hover:opacity-55">
+				<span className="t-h-3 uppercase text-foreground/65 transition-opacity duration-200 group-hover:opacity-55">
 					{category.title}
 				</span>
 				{label && (

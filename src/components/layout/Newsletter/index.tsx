@@ -122,7 +122,7 @@ export function Newsletter({
 	};
 
 	return (
-		<div ref={sectionRef} className={cn('', className)}>
+		<div ref={sectionRef} className={cn('text-foreground', className)}>
 			{heading && (
 				<p className="t-h-1 text-balance font-medium mb-3 md:mb-0">{heading}</p>
 			)}

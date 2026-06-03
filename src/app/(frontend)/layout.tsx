@@ -1,4 +1,5 @@
 import { Analytics } from '@vercel/analytics/next';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import type { Metadata } from 'next';
 import { stegaClean } from '@sanity/client/stega';
 import { VisualEditing } from 'next-sanity/visual-editing';
@@ -136,8 +137,9 @@ export default async function RootLayout({
 		<ReactQueryProvider>
 			<html
 				lang={htmlLangFor(locale)}
-				className={`${fontABCDisplay.variable} ${baselTypewriter.variable} dark bg-background`}
+				className={`${fontABCDisplay.variable} ${baselTypewriter.variable} bg-background`}
 				data-scroll-behavior="smooth"
+				suppressHydrationWarning
 			>
 				<head>
 					<meta
@@ -152,23 +154,25 @@ export default async function RootLayout({
 				</head>
 
 				<body className="antialiased">
-					{children}
-					<Toaster />
-					{isDraftModeEnabled && (
-						<>
-							{/* Live Content API: only subscribe in draft mode. For
+					<ThemeProvider>
+						{children}
+						<Toaster />
+						{isDraftModeEnabled && (
+							<>
+								{/* Live Content API: only subscribe in draft mode. For
 							    published traffic, content stays fresh via the
 							    /api/revalidate-tag webhook. Rendering <SanityLive>
 							    for anonymous visitors on Next.js 16 + next-sanity 12
 							    triggers a prefetch/revalidate cascade (4–10x request
 							    overage). See https://www.sanity.io/docs/help/nextjs-16-sanitylive-status */}
-							<SanityLive refreshOnFocus />
-							<DraftModeToast />
-							<VisualEditing />
-						</>
-					)}
-					<Analytics />
-					<SpeedInsights />
+								<SanityLive refreshOnFocus />
+								<DraftModeToast />
+								<VisualEditing />
+							</>
+						)}
+						<Analytics />
+						<SpeedInsights />
+					</ThemeProvider>
 				</body>
 			</html>
 		</ReactQueryProvider>

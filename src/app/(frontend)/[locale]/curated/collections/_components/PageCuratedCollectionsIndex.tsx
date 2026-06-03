@@ -14,7 +14,7 @@ export function PageCuratedCollectionsIndex({ data }: Props) {
 	const { collections } = data || {};
 
 	return (
-		<div className="theme-light bg-background text-foreground p-x-max mx-auto min-h-main py-10 lg:py-17.5">
+		<div className="p-x-max mx-auto min-h-main py-10 lg:py-17.5">
 			<motion.div
 				className="mb-10 lg:mb-17.5"
 				initial="hide"
@@ -22,7 +22,7 @@ export function PageCuratedCollectionsIndex({ data }: Props) {
 				variants={fadeAnim}
 				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
 			>
-				<h1 className="t-h-2 uppercase">Collections</h1>
+				<h1 className="t-h-2 uppercase text-foreground">Collections</h1>
 			</motion.div>
 
 			{collections && collections.length > 0 ? (

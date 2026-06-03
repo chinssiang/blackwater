@@ -35,7 +35,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 				<div className={scrim} />
 				<div className="absolute inset-x-0 bottom-0 flex flex-wrap items-end justify-between gap-4 p-6 lg:p-8">
 					<div className="max-w-[55ch]">
-						<h2 className="t-h-2 uppercase text-[oklch(0.98_0_0)]">
+						<h2 className="t-h-2 uppercase text-foreground">
 							{collection.title}
 						</h2>
 						{collection.description && (
@@ -47,7 +47,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 					{collection.slug && (
 						<Link
 							href={`/curated/collections/${collection.slug}`}
-							className="t-l-2 uppercase whitespace-nowrap text-[oklch(0.98_0_0/0.85)] transition-colors hover:text-[oklch(0.98_0_0)]"
+							className="t-l-2 uppercase whitespace-nowrap text-[oklch(0.98_0_0/0.85)] transition-colors hover:text-foreground"
 						>
 							{allLabel}
 						</Link>
@@ -60,9 +60,11 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 	return (
 		<div className="flex flex-wrap items-end justify-between gap-4">
 			<div className="max-w-[55ch]">
-				<h2 className="t-h-2 uppercase">{collection.title}</h2>
+				<h2 className="t-h-2 uppercase text-foreground">{collection.title}</h2>
 				{collection.description && (
-					<p className="t-b-1 mt-2 text-foreground/80">{collection.description}</p>
+					<p className="t-b-1 mt-2 text-foreground/80">
+						{collection.description}
+					</p>
 				)}
 			</div>
 			{collection.slug && (
@@ -81,9 +83,9 @@ export function PageCuratedIndex({ data }: Props) {
 	const { title, subtitle, description, collections, categories } = data || {};
 
 	return (
-		<section className="theme-light bg-[oklch(0.99_0_0)] text-foreground p-x-max">
-			<motion.header
-				className="pt-24 pb-12 lg:pt-32 lg:pb-20"
+		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+			<motion.section
+				className="mb-12 lg:mb-20"
 				initial="hide"
 				animate="show"
 				variants={fadeAnim}
@@ -95,7 +97,7 @@ export function PageCuratedIndex({ data }: Props) {
 					</p>
 				)}
 				{title && (
-					<h1 className="uppercase tracking-[-0.02em] leading-[1.1] text-balance text-[clamp(1.375rem,2.4vw,2rem)] max-w-[34ch]">
+					<h1 className="uppercase text-foreground tracking-[-0.02em] leading-[1.1] text-balance text-[clamp(1.375rem,2.4vw,2rem)] max-w-[34ch]">
 						{title}
 					</h1>
 				)}
@@ -104,10 +106,14 @@ export function PageCuratedIndex({ data }: Props) {
 						{description}
 					</p>
 				)}
-			</motion.header>
+			</motion.section>
 
 			<div className="pb-4">
-				<CuratedCategoriesGrid categories={categories ?? null} showViewAll priority />
+				<CuratedCategoriesGrid
+					categories={categories ?? null}
+					showViewAll
+					priority
+				/>
 			</div>
 
 			{collections?.map((collection, index) => {
@@ -141,8 +147,6 @@ export function PageCuratedIndex({ data }: Props) {
 					</motion.section>
 				);
 			})}
-
-			<div className="pb-20 lg:pb-32" />
-		</section>
+		</div>
 	);
 }

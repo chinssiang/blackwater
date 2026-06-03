@@ -77,3 +77,4 @@ yarn.lock
 
 # Secrets
 .env*
+.gstack/

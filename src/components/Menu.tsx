@@ -49,9 +49,9 @@ export default function Menu({ data, className }: MenuProps) {
 					<li
 						key={`li-${index}`}
 						className={cn(
-							't-b-2 text-foreground hover:text-muted transition-colors',
+							't-b-2 text-foreground hover:text-foreground/80 transition-colors',
 							{
-								'text-foreground hover:text-foreground/60': isActive,
+								'text-foreground hover:text-foreground/60 underline': isActive,
 							}
 						)}
 					>

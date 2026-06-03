@@ -92,7 +92,9 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 			)}
 			<section className="p-x-max pt-16 pb-8 lg:pt-24 lg:pb-12">
 				<div className="max-w-3xl">
-					<h1 className="t-h-2 uppercase text-balance mb-2">{title}</h1>
+					<h1 className="t-h-2 uppercase text-foreground text-balance mb-2">
+						{title}
+					</h1>
 					{subtitle && (
 						<p className="t-b-1 text-muted-foreground text-balance mb-6">
 							{subtitle}

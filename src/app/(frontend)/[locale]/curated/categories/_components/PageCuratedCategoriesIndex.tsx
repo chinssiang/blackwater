@@ -13,7 +13,7 @@ export function PageCuratedCategoriesIndex({ data }: Props) {
 	const { categories } = data || {};
 
 	return (
-		<div className="theme-light bg-background text-foreground p-x-max mx-auto min-h-main py-10 lg:py-17.5">
+		<div className="p-x-max mx-auto min-h-main py-10 lg:py-17.5">
 			<motion.div
 				className="mb-10 lg:mb-17.5"
 				initial="hide"
@@ -21,7 +21,7 @@ export function PageCuratedCategoriesIndex({ data }: Props) {
 				variants={fadeAnim}
 				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
 			>
-				<h1 className="t-h-2 uppercase">Categories</h1>
+				<h1 className="t-h-2 uppercase text-foreground">Categories</h1>
 			</motion.div>
 
 			<CuratedCategoriesGrid categories={categories ?? null} priority />

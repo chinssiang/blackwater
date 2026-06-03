@@ -4,7 +4,12 @@
  * adding/changing a route only requires editing this file.
  */
 
-import { DEFAULT_LOCALE, localizePath, type Locale } from '@/lib/i18n';
+import {
+	DEFAULT_LOCALE,
+	localizePath,
+	stripLocaleFromPath,
+	type Locale,
+} from '@/lib/i18n';
 
 export const DOCUMENT_ROUTES = [
 	{ type: 'pHome', path: '/', slug: false },
@@ -84,7 +89,7 @@ export const resolvedHrefGroq = `select(
 
 /**
  * Checks if a link should be considered active based on the current path and target URL.
- * @param args - Object containing the current pathName, target url, and an optional flag for child links.
+ * @param args - Object containing the current pathName, target url, and an optional flag for exact (child) matching.
  * @returns True if the link is active, otherwise false.
  */
 export const checkIfLinkIsActive = ({
@@ -96,10 +101,26 @@ export const checkIfLinkIsActive = ({
 	url: string;
 	isChild?: boolean;
 }): boolean => {
-	if (isChild) {
-		// Compares the first segment of the pathName and url (e.g., /blog/post vs /blog)
-		return (pathName.split('/')[1] || '') === (url.split('/')[1] || '');
-	} else {
-		return pathName === url;
-	}
+	if (!pathName || !url) return false;
+
+	// Strip the locale prefix and any trailing slash so comparisons are
+	// consistent regardless of locale or how the href was authored
+	// (e.g. "/events/" from GROQ vs "/events" from usePathname).
+	const normalize = (value: string): string => {
+		const { path } = stripLocaleFromPath(value);
+		const trimmed = path.replace(/\/+$/, '');
+		return trimmed === '' ? '/' : trimmed;
+	};
+
+	const current = normalize(pathName);
+	const target = normalize(url);
+
+	// The home link is only active on the home page itself; otherwise every
+	// route would match it as a descendant.
+	if (target === '/') return current === '/';
+
+	// Child links match their own page exactly; section/parent links also stay
+	// active on descendant routes (e.g. /curated/products/foo keeps /curated active).
+	if (isChild) return current === target;
+	return current === target || current.startsWith(`${target}/`);
 };
