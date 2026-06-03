@@ -96,7 +96,7 @@ export default function PageCuratedSingle({ data }: Props) {
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
 				{/* Image */}
 				<motion.div
-					className="relative aspect-4/3 overflow-hidden bg-foreground/[0.03] p-6 lg:col-span-7 lg:p-10"
+					className="relative aspect-4/3 overflow-hidden p-6 lg:col-span-7 lg:p-10"
 					{...reveal}
 					transition={{ duration: 0.8, delay: 0.05, ease: [0, 0.5, 0.5, 1] }}
 				>

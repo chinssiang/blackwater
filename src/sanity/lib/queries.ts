@@ -671,8 +671,7 @@ export const pageCuratedSingleQuery = defineQuery(`
 			&& _id != ^._id
 		] | order(_createdAt desc) [0...3] {
 			${curatedProductCardFields}
-		},
-		${curatedCategoriesFields}
+		}
 	}
 `);
 
