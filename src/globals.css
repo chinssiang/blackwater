@@ -65,6 +65,13 @@
 	--color-negative: var(--negative);
 	--color-neutral: var(--neutral);
 
+	/* Curation mark: the single committed accent for the curated section.
+	   Signals human judgment only (editor picks, primary purchase action,
+	   active affordances). Never decorative fill. */
+	--color-mark: var(--mark);
+	--color-mark-foreground: var(--mark-foreground);
+	--color-mark-ink: var(--mark-ink);
+
 	/* Semantic Colors */
 	--color-subtle: color-mix(in srgb, var(--color-gray) 20%, rgba(0, 0, 0, 0));
 	--color-placeholder: color-mix(
@@ -159,6 +166,7 @@
 			var(--font-basel-typewriter), 'Arial', 'Helvetica Neue', 'sans-serif';
 
 		--background: oklch(1 0 0);
+		/* --background: oklch(0.9612 0 0); */
 		--foreground: oklch(0.145 0 0);
 		--card: oklch(1 0 0);
 		--card-foreground: oklch(0.145 0 0);
@@ -194,6 +202,13 @@
 		--positive: oklch(0.68 0.15 145);
 		--negative: oklch(0.58 0.18 25);
 		--neutral: oklch(0.85 0.03 260);
+
+		/* Curation mark (ochre signal). --mark is the fill, --mark-foreground
+		   the ink that sits on it, --mark-ink the darker cut for mark-colored
+		   text/lines on light surfaces (carries AA on white). */
+		--mark: oklch(0.78 0.15 75);
+		--mark-foreground: oklch(0.27 0.04 70);
+		--mark-ink: oklch(0.52 0.12 62);
 
 		--s-contain: max(3vw, 15px);
 		--s-contain-dynamic: max(
@@ -527,6 +542,17 @@
 		font-size: 10px;
 		line-height: 1;
 		letter-spacing: 0.0625em;
+	}
+
+	/* Spec voice: the typewriter face used for curated metadata (prices,
+	   index numerals, brand/category data). Reads as a counter-voice against
+	   the display caps. */
+	.t-spec {
+		font-family: var(--font-feature);
+		font-weight: 500;
+		font-size: 11px;
+		line-height: 1;
+		letter-spacing: 0.04em;
 	}
 }
 

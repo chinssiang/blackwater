@@ -1,9 +1,8 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { fadeAnim } from '@/lib/animate';
 import CuratedProductCard from '../../_components/CuratedProductCard';
 import CuratedCategoriesGrid from '../../_components/CuratedCategoriesGrid';
+import CuratedPageHeader from '../../_components/CuratedPageHeader';
 import type { PageCuratedProductsIndexQueryResult } from 'sanity.types';
 
 type Props = {
@@ -14,19 +13,15 @@ export function PageCuratedProductsIndex({ data }: Props) {
 	const { products, categories } = data || {};
 
 	return (
-		<div className="p-x-max mx-auto min-h-main py-10 lg:py-17.5">
-			<motion.div
-				className="mb-10 lg:mb-17.5"
-				initial="hide"
-				animate="show"
-				variants={fadeAnim}
-				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
-			>
-				<h1 className="t-h-2 uppercase text-foreground">All Products</h1>
-			</motion.div>
+		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+			<CuratedPageHeader
+				title="Products"
+				count={products?.length}
+				unit="product"
+			/>
 
 			{products && products.length > 0 ? (
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-6 mb-16 lg:mb-24">
+				<div className="mb-20 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4">
 					{products.map((product, index) => (
 						<CuratedProductCard
 							key={product._id}
@@ -36,10 +31,16 @@ export function PageCuratedProductsIndex({ data }: Props) {
 					))}
 				</div>
 			) : (
-				<p className="t-b-2 text-muted">No products yet.</p>
+				<p className="t-b-1 max-w-[40ch] text-foreground/60">
+					Nothing here yet. Picks are added as the club vets new gear.
+				</p>
 			)}
 
-			<CuratedCategoriesGrid categories={categories ?? null} />
+			{categories && categories.length > 0 && (
+				<div className="border-t border-foreground/10 pt-12 lg:pt-16">
+					<CuratedCategoriesGrid categories={categories} />
+				</div>
+			)}
 		</div>
 	);
 }

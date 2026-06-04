@@ -3,25 +3,21 @@
 import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import CustomPortableText from '@/components/CustomPortableText';
-import { fadeAnim } from '@/lib/animate';
 import { motion } from 'motion/react';
 import type { PageCuratedSingleQueryResult } from 'sanity.types';
 import { hasArrayValue } from '@/lib/utils';
+import { useReveal } from '@/hooks/useReveal';
 import CuratedProductCard from '../../../_components/CuratedProductCard';
 
 type Props = {
 	data: NonNullable<PageCuratedSingleQueryResult>;
 };
 
-const reveal = {
-	initial: 'hide',
-	animate: 'show',
-	variants: fadeAnim,
-} as const;
-
 export default function PageCuratedSingle({ data }: Props) {
+	const reveal = useReveal();
 	const {
 		title,
+		badge,
 		categories,
 		brands,
 		mainImage,
@@ -69,7 +65,7 @@ export default function PageCuratedSingle({ data }: Props) {
 			>
 				<Link
 					href="/curated"
-					className="transition-colors hover:text-foreground"
+					className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
 				>
 					Curated
 				</Link>
@@ -80,7 +76,7 @@ export default function PageCuratedSingle({ data }: Props) {
 						</span>
 						<Link
 							href={`/curated/categories/${firstCategory.slug}`}
-							className="transition-colors hover:text-foreground"
+							className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
 						>
 							{firstCategory.title}
 						</Link>
@@ -89,7 +85,9 @@ export default function PageCuratedSingle({ data }: Props) {
 				<span aria-hidden className="text-foreground/30">
 					/
 				</span>
-				<span className="text-foreground/90">{title}</span>
+				<span aria-current="page" className="text-foreground/90">
+					{title}
+				</span>
 			</motion.nav>
 
 			{/* Product hero */}
@@ -115,9 +113,30 @@ export default function PageCuratedSingle({ data }: Props) {
 
 				{/* Details */}
 				<div className="flex flex-col lg:col-span-5 lg:pt-2">
+					{badge && badge.length > 0 && (
+						<motion.div
+							className="mb-4 flex flex-wrap gap-1.5"
+							{...reveal}
+							transition={{
+								duration: 0.6,
+								delay: 0.08,
+								ease: [0, 0.71, 0.2, 1.01],
+							}}
+						>
+							{badge.map((b: string) => (
+								<span
+									key={b}
+									className="t-l-2 inline-flex w-fit bg-mark px-3 py-1.5 uppercase text-mark-foreground"
+								>
+									{b}
+								</span>
+							))}
+						</motion.div>
+					)}
+
 					{eyebrow && (
 						<motion.p
-							className="t-b-2 uppercase tracking-[0.04em] text-foreground/65"
+							className="t-l-2 uppercase text-foreground/65"
 							{...reveal}
 							transition={{
 								duration: 0.6,
@@ -130,7 +149,7 @@ export default function PageCuratedSingle({ data }: Props) {
 					)}
 
 					<motion.h1
-						className="uppercase tracking-[-0.02em] leading-[1.05] text-[clamp(1.5rem,2.6vw,2.125rem)] mt-3"
+						className="mt-3 text-balance text-[clamp(1.75rem,3.2vw,2.75rem)] uppercase leading-[1] tracking-[-0.02em]"
 						{...reveal}
 						transition={{
 							duration: 0.8,
@@ -143,7 +162,7 @@ export default function PageCuratedSingle({ data }: Props) {
 
 					{price && (
 						<motion.p
-							className="t-h-3 uppercase text-foreground/85 mt-4"
+							className="t-spec mt-5 text-foreground/75"
 							{...reveal}
 							transition={{
 								duration: 0.6,
@@ -169,17 +188,24 @@ export default function PageCuratedSingle({ data }: Props) {
 								href={purchaseLink}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex w-full items-center justify-center bg-foreground text-background t-b-1 uppercase px-10 py-4 transition-colors hover:bg-foreground/85 sm:w-auto"
+								aria-label={`Buy ${title ?? 'this product'} (opens in a new tab)`}
+								className="t-b-1 group inline-flex w-full items-center justify-center gap-2 bg-mark px-10 py-4 uppercase text-mark-foreground transition-[background-color,filter] hover:brightness-[0.97] sm:w-auto"
 							>
-								Buy Now
+								Buy it
+								<span
+									aria-hidden
+									className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+								>
+									↗
+								</span>
 							</a>
 						</motion.div>
 					)}
 
-					{/* Content (Information / What We Like) */}
+					{/* Why we chose it */}
 					{content && content.length > 0 && (
 						<motion.div
-							className="mt-10 max-w-[60ch] border-t border-foreground/10 pt-8 text-[0.9375rem] leading-relaxed text-foreground/80 [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-medium [&_h2]:uppercase [&_h2]:tracking-[-0.02em] [&_h2]:text-foreground [&_h2:first-child]:mt-0 [&_h3]:mt-6 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:uppercase [&_h3]:text-foreground [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5"
+							className="mt-10 max-w-[60ch] border-t border-foreground/10 pt-8"
 							{...reveal}
 							transition={{
 								duration: 0.8,
@@ -187,7 +213,12 @@ export default function PageCuratedSingle({ data }: Props) {
 								ease: [0, 0.5, 0.5, 1],
 							}}
 						>
-							<CustomPortableText blocks={content as any} />
+							<p className="t-l-2 mb-5 uppercase text-foreground/65">
+								Why we chose it
+							</p>
+							<div className="text-[0.9375rem] leading-relaxed text-foreground/80 [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-medium [&_h2]:uppercase [&_h2]:tracking-[-0.02em] [&_h2]:text-foreground [&_h2:first-child]:mt-0 [&_h3]:mt-6 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:uppercase [&_h3]:text-foreground [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
+								<CustomPortableText blocks={content as any} />
+							</div>
 						</motion.div>
 					)}
 				</div>
@@ -204,7 +235,7 @@ export default function PageCuratedSingle({ data }: Props) {
 						</h2>
 						<Link
 							href="/curated/products"
-							className="t-l-2 uppercase text-foreground/75 transition-colors hover:text-foreground"
+							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
 						>
 							All products →
 						</Link>

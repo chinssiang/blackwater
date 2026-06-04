@@ -3,7 +3,8 @@
 import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
-import { fadeAnim } from '@/lib/animate';
+import { useReveal } from '@/hooks/useReveal';
+import CuratedPageHeader from '../../_components/CuratedPageHeader';
 import type { PageCuratedCollectionsIndexQueryResult } from 'sanity.types';
 
 type Props = {
@@ -12,65 +13,75 @@ type Props = {
 
 export function PageCuratedCollectionsIndex({ data }: Props) {
 	const { collections } = data || {};
+	const reveal = useReveal();
 
 	return (
-		<div className="p-x-max mx-auto min-h-main py-10 lg:py-17.5">
-			<motion.div
-				className="mb-10 lg:mb-17.5"
-				initial="hide"
-				animate="show"
-				variants={fadeAnim}
-				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
-			>
-				<h1 className="t-h-2 uppercase text-foreground">Collections</h1>
-			</motion.div>
+		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+			<CuratedPageHeader
+				title="Collections"
+				count={collections?.length}
+				unit="collection"
+			/>
 
 			{collections && collections.length > 0 ? (
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-					{collections.map((collection, index) => (
-						<motion.article
-							key={collection._id}
-							initial="hide"
-							animate="show"
-							variants={fadeAnim}
-							transition={{
-								duration: 0.8,
-								delay: index * 0.06,
-								ease: [0, 0.5, 0.5, 1],
-							}}
-						>
-							<Link
-								href={`/curated/collections/${collection.slug}`}
-								className="group flex flex-col h-full"
+				<div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16">
+					{collections.map((collection, index) => {
+						const num = String(index + 1).padStart(2, '0');
+						return (
+							<motion.article
+								key={collection._id}
+								{...reveal}
+								transition={{
+									duration: 0.8,
+									delay: index * 0.06,
+									ease: [0, 0.5, 0.5, 1],
+								}}
 							>
-								<div className="relative aspect-4/3 overflow-hidden bg-foreground/5 mb-3">
-									{collection.coverImage ? (
-										<ImageBlock
-											className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-											imageObj={collection.coverImage}
-											alt={collection.title ?? ''}
-										/>
-									) : (
-										<div className="w-full h-full bg-foreground/5" />
+								<Link
+									href={`/curated/collections/${collection.slug}`}
+									className="group flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+								>
+									<div className="relative mb-3 aspect-4/3 overflow-hidden bg-foreground/[0.06]">
+										{collection.coverImage ? (
+											<ImageBlock
+												className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+												imageObj={collection.coverImage}
+												alt={collection.title ?? ''}
+											/>
+										) : (
+											<div className="h-full w-full bg-foreground/[0.06]" />
+										)}
+									</div>
+									<div className="flex items-baseline justify-between gap-3 border-t border-foreground/15 pt-3">
+										<span className="flex items-baseline gap-2">
+											<span className="t-l-2 text-foreground/40 transition-colors duration-200 group-hover:text-mark-ink">
+												{num}
+											</span>
+											<span className="t-h-3 uppercase transition-opacity duration-200 group-hover:opacity-60">
+												{collection.title}
+											</span>
+										</span>
+										{collection.count != null && (
+											<span className="t-l-2 whitespace-nowrap uppercase text-foreground/65">
+												{collection.count}{' '}
+												{collection.count === 1 ? 'product' : 'products'}
+											</span>
+										)}
+									</div>
+									{collection.description && (
+										<p className="t-b-2 mt-2 line-clamp-2 max-w-[42ch] text-foreground/60">
+											{collection.description}
+										</p>
 									)}
-								</div>
-								<div className="flex items-baseline justify-between">
-									<h2 className="t-h-3 uppercase">{collection.title}</h2>
-									{collection.count != null && (
-										<span className="t-b-1 text-muted">{collection.count}</span>
-									)}
-								</div>
-								{collection.description && (
-									<p className="t-b-2 text-muted mt-1 line-clamp-2">
-										{collection.description}
-									</p>
-								)}
-							</Link>
-						</motion.article>
-					))}
+								</Link>
+							</motion.article>
+						);
+					})}
 				</div>
 			) : (
-				<p className="t-b-2 text-muted">No collections yet.</p>
+				<p className="t-b-1 max-w-[40ch] text-foreground/60">
+					No collections yet. They group picks around a theme or season.
+				</p>
 			)}
 		</div>
 	);

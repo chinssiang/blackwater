@@ -1,8 +1,7 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { fadeAnim } from '@/lib/animate';
 import CuratedProductCard from '../../../_components/CuratedProductCard';
+import CuratedPageHeader from '../../../_components/CuratedPageHeader';
 import type { PageCuratedCategorySingleQueryResult } from 'sanity.types';
 
 type Props = {
@@ -13,19 +12,16 @@ export default function PageCuratedCategory({ data }: Props) {
 	const { title, products } = data || {};
 
 	return (
-		<div className="p-x-max mx-auto min-h-main py-10 lg:py-17.5">
-			<motion.div
-				className="mb-10 lg:mb-17.5"
-				initial="hide"
-				animate="show"
-				variants={fadeAnim}
-				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
-			>
-				<h1 className="t-h-2 uppercase text-foreground">{title}</h1>
-			</motion.div>
+		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+			<CuratedPageHeader
+				kicker="Category"
+				title={title}
+				count={products?.length}
+				unit="product"
+			/>
 
 			{products && products.length > 0 ? (
-				<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+				<div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16">
 					{products.map((product, index) => (
 						<CuratedProductCard
 							key={product._id}
@@ -35,7 +31,9 @@ export default function PageCuratedCategory({ data }: Props) {
 					))}
 				</div>
 			) : (
-				<p className="t-b-2 text-muted">No products in this category yet.</p>
+				<p className="t-b-1 max-w-[40ch] text-foreground/60">
+					No picks in this category yet. Check back as the shelf grows.
+				</p>
 			)}
 		</div>
 	);

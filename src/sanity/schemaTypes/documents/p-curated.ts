@@ -45,6 +45,7 @@ export const pCurated = defineType({
 			name: 'price',
 			type: 'string',
 			description: 'e.g. $1,299 or From $49/mo',
+			validation: (Rule) => [Rule.required()],
 		}),
 		defineField({
 			name: 'purchaseLink',
@@ -54,7 +55,8 @@ export const pCurated = defineType({
 		defineField({
 			name: 'badge',
 			title: 'Badge',
-			type: 'string',
+			type: 'array',
+			of: [defineArrayMember({ type: 'string' })],
 			options: {
 				list: [
 					{ title: "Founder's Pick", value: "Founder's Pick" },

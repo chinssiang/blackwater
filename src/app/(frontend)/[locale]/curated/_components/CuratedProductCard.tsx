@@ -1,99 +1,172 @@
+'use client';
+
+import { Fragment } from 'react';
 import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
-import { fadeAnim } from '@/lib/animate';
-import { Button } from '@/components/ui/Button';
+import { useReveal } from '@/hooks/useReveal';
+
+type Category = { _id: string; title?: string | null; slug?: string | null };
 
 type CuratedProductCardProps = {
 	product: {
 		_id: string;
 		slug?: string | null;
 		title?: string | null;
-		badge?: string | null;
+		badge?: string[] | null;
 		excerpt?: string | null;
 		price?: string | null;
-		categories?: Array<{ _id: string; title?: string | null }> | null;
+		categories?: Array<Category> | null;
 		brands?: Array<{ _id: string; title?: string | null }> | null;
 		mainImage?: any;
 	};
 	index?: number;
 };
 
+// Renders each category title as its own link to its category page, separated
+// by ", ". Sits above the card's stretched overlay link (relative z-10) so the
+// individual links stay clickable. Categories without a slug fall back to text.
+function CategoryLinks({
+	categories,
+	className,
+}: {
+	categories: Category[];
+	className?: string;
+}) {
+	return (
+		<p className={className}>
+			{categories.map((c, i) => (
+				<Fragment key={c._id}>
+					{i > 0 && ', '}
+					{c.slug ? (
+						<Link
+							href={`/curated/categories/${c.slug}`}
+							className="relative z-10 underline-offset-4 duration-200 hover:text-mark-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
+						>
+							{c.title}
+						</Link>
+					) : (
+						c.title
+					)}
+				</Fragment>
+			))}
+		</p>
+	);
+}
+
 export default function CuratedProductCard({
 	product,
 	index = 0,
 }: CuratedProductCardProps) {
-	const categoryLabel = product.categories
-		?.map((c) => c.title)
-		.filter(Boolean)
-		.join(', ');
+	const reveal = useReveal();
+	const categories = product.categories?.filter((c) => Boolean(c.title)) ?? [];
+	const hasCategories = categories.length > 0;
 	const brandLabel = product.brands
 		?.map((b) => b.title)
 		.filter(Boolean)
 		.join(', ');
+	// Brand leads the meta. When there's no brand, the categories step up as the
+	// kicker so the top line is never empty; otherwise categories are demoted
+	// below the title (the tag slot).
+	const showCategoryTag = Boolean(brandLabel && hasCategories);
 
 	return (
-		<motion.div
-			initial="hide"
-			animate="show"
-			variants={fadeAnim}
+		<motion.article
+			{...reveal}
 			transition={{
 				duration: 0.8,
 				delay: index * 0.06,
 				ease: [0, 0.5, 0.5, 1],
 			}}
+			className="group relative flex h-full flex-col"
 		>
-			<Link
-				href={`/curated/products/${product.slug}`}
-				className="group flex flex-col h-full"
-			>
-				{/* Badge */}
-				{product.badge && (
-					<p className="t-b-1 uppercase text-foreground/70 mb-2">
-						{product.badge}
-					</p>
+			{/* Image + curation mark */}
+			<div className="relative aspect-square overflow-hidden">
+				{product.mainImage ? (
+					<ImageBlock
+						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+						imageObj={product.mainImage}
+						alt={product.title ?? ''}
+					/>
+				) : (
+					<div className="h-full w-full" />
 				)}
 
-				{/* Image */}
-				<div className="relative aspect-square overflow-hidden bg-foreground/5 mb-0">
-					{product.mainImage ? (
-						<ImageBlock
-							className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
-							imageObj={product.mainImage}
-							alt={product.title ?? ''}
-						/>
+				{/* Curation seals: the ochre human-judgment marks. The selected
+				   badges are the committed accent on the card. */}
+				{product.badge && product.badge.length > 0 && (
+					<div className="absolute top-4 left-0 flex flex-col items-start gap-1.5">
+						{product.badge.map((b) => (
+							<span
+								key={b}
+								className="t-l-2 bg-mark px-3 py-1.5 uppercase text-mark-foreground"
+							>
+								{b}
+							</span>
+						))}
+					</div>
+				)}
+			</div>
+
+			{/* Info */}
+			<div className="mt-4  flex-1 space-y-2">
+				<div className="flex gap-2 justify-between">
+					{brandLabel ? (
+						<p className="t-spec flex-1 uppercase text-foreground">
+							{brandLabel}
+						</p>
 					) : (
-						<div className="w-full h-full bg-foreground/5" />
+						hasCategories && (
+							<CategoryLinks
+								categories={categories}
+								className="t-spec flex-1 uppercase text-foreground"
+							/>
+						)
+					)}
+					{showCategoryTag && (
+						<CategoryLinks
+							categories={categories}
+							className="t-l-2 uppercase text-foreground/50"
+						/>
 					)}
 				</div>
+				{product.title && (
+					<h3 className="t-h-3 line-clamp-2 text-balance uppercase">
+						{product.title}
+					</h3>
+				)}
 
-				{/* Details button */}
-				<Button asChild size="xl" className="uppercase">
-					<div>Details</div>
-				</Button>
+				{/* Always reserves two lines so cards in the same row keep an
+				   equal height and their footers align. */}
+				<p className="t-b-2  line-clamp-2 min-h-[2lh] max-w-[42ch] leading-snug text-foreground/60">
+					{product.excerpt}
+				</p>
 
-				{/* Info */}
-				<div className="flex flex-col gap-1 mt-3">
-					{/* Category → Brand */}
-					{(categoryLabel || brandLabel) && (
-						<p className="t-b-1 uppercase">
-							{[brandLabel, categoryLabel].filter(Boolean).join(' → ')}
-						</p>
-					)}
-
-					{/* Excerpt */}
-					{product.excerpt && (
-						<p className="t-b-2 text-foreground/65 line-clamp-2">
-							{product.excerpt}
-						</p>
-					)}
-
-					{/* Price */}
-					{product.price && (
-						<p className="t-b-2 text-foreground/65">{product.price}</p>
-					)}
+				<div className="mt-auto flex items-baseline justify-between gap-3 border-t border-foreground/10 pt-3">
+					<span className="t-spec text-foreground/75">
+						{product.price ?? ''}
+					</span>
+					<span
+						aria-hidden
+						className="t-l-2 inline-flex items-center gap-1 uppercase text-foreground/65 transition-colors duration-200 group-hover:text-mark-ink"
+					>
+						View
+						<span className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
+							→
+						</span>
+					</span>
 				</div>
+			</div>
+
+			{/* Stretched overlay link: covers the whole card so any neutral area
+			   navigates to the product, while the category links above (z-10)
+			   stay individually clickable. Avoids nesting <a> inside <a>. */}
+			<Link
+				href={`/curated/products/${product.slug}`}
+				className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+			>
+				<span className="sr-only">{product.title}</span>
 			</Link>
-		</motion.div>
+		</motion.article>
 	);
 }

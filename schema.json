@@ -6219,25 +6219,10 @@
       "badge": {
         "type": "objectAttribute",
         "value": {
-          "type": "union",
-          "of": [
-            {
-              "type": "string",
-              "value": "Founder's Pick"
-            },
-            {
-              "type": "string",
-              "value": "Most Popular"
-            },
-            {
-              "type": "string",
-              "value": "New"
-            },
-            {
-              "type": "string",
-              "value": "Editor's Choice"
-            }
-          ]
+          "type": "array",
+          "of": {
+            "type": "string"
+          }
         },
         "optional": true
       },

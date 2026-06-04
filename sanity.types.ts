@@ -1164,7 +1164,7 @@ export type PCurated = {
 	};
 	price?: string;
 	purchaseLink?: string;
-	badge?: "Founder's Pick" | 'Most Popular' | 'New' | "Editor's Choice";
+	badge?: Array<string>;
 	excerpt?: string;
 	content?: PortableText;
 	relatedProducts?: Array<
@@ -4102,12 +4102,7 @@ export type PageCuratedIndexQueryResult = {
 						siteTitle: string | null;
 				  };
 			excerpt: string | null;
-			badge:
-				| "Editor's Choice"
-				| "Founder's Pick"
-				| 'Most Popular'
-				| 'New'
-				| null;
+			badge: Array<string> | null;
 			price: string | null;
 			purchaseLink: string | null;
 			categories: Array<{
@@ -4222,7 +4217,7 @@ export type PageCuratedSingleQueryResult = {
 				siteTitle: string | null;
 		  };
 	excerpt: string | null;
-	badge: "Editor's Choice" | "Founder's Pick" | 'Most Popular' | 'New' | null;
+	badge: Array<string> | null;
 	price: string | null;
 	purchaseLink: string | null;
 	categories: Array<{
@@ -4382,7 +4377,7 @@ export type PageCuratedSingleQueryResult = {
 					siteTitle: string | null;
 			  };
 		excerpt: string | null;
-		badge: "Editor's Choice" | "Founder's Pick" | 'Most Popular' | 'New' | null;
+		badge: Array<string> | null;
 		price: string | null;
 		purchaseLink: string | null;
 		categories: Array<{
@@ -4458,7 +4453,7 @@ export type PageCuratedSingleQueryResult = {
 					siteTitle: string | null;
 			  };
 		excerpt: string | null;
-		badge: "Editor's Choice" | "Founder's Pick" | 'Most Popular' | 'New' | null;
+		badge: Array<string> | null;
 		price: string | null;
 		purchaseLink: string | null;
 		categories: Array<{
@@ -4577,7 +4572,7 @@ export type PageCuratedCollectionSingleQueryResult = {
 					siteTitle: string | null;
 			  };
 		excerpt: string | null;
-		badge: "Editor's Choice" | "Founder's Pick" | 'Most Popular' | 'New' | null;
+		badge: Array<string> | null;
 		price: string | null;
 		purchaseLink: string | null;
 		categories: Array<{
@@ -4759,7 +4754,7 @@ export type PageCuratedCategorySingleQueryResult = {
 					siteTitle: string | null;
 			  };
 		excerpt: string | null;
-		badge: "Editor's Choice" | "Founder's Pick" | 'Most Popular' | 'New' | null;
+		badge: Array<string> | null;
 		price: string | null;
 		purchaseLink: string | null;
 		categories: Array<{
@@ -4886,7 +4881,7 @@ export type PageCuratedProductsIndexQueryResult = {
 					siteTitle: string | null;
 			  };
 		excerpt: string | null;
-		badge: "Editor's Choice" | "Founder's Pick" | 'Most Popular' | 'New' | null;
+		badge: Array<string> | null;
 		price: string | null;
 		purchaseLink: string | null;
 		categories: Array<{

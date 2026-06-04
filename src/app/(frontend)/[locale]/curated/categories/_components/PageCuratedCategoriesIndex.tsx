@@ -1,8 +1,7 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { fadeAnim } from '@/lib/animate';
 import CuratedCategoriesGrid from '../../_components/CuratedCategoriesGrid';
+import CuratedPageHeader from '../../_components/CuratedPageHeader';
 import type { PageCuratedCategoriesIndexQueryResult } from 'sanity.types';
 
 type Props = {
@@ -13,18 +12,18 @@ export function PageCuratedCategoriesIndex({ data }: Props) {
 	const { categories } = data || {};
 
 	return (
-		<div className="p-x-max mx-auto min-h-main py-10 lg:py-17.5">
-			<motion.div
-				className="mb-10 lg:mb-17.5"
-				initial="hide"
-				animate="show"
-				variants={fadeAnim}
-				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
-			>
-				<h1 className="t-h-2 uppercase text-foreground">Categories</h1>
-			</motion.div>
+		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+			<CuratedPageHeader
+				title="Categories"
+				count={categories?.length}
+				unit="category"
+			/>
 
-			<CuratedCategoriesGrid categories={categories ?? null} priority />
+			<CuratedCategoriesGrid
+				categories={categories ?? null}
+				heading={null}
+				priority
+			/>
 		</div>
 	);
 }
