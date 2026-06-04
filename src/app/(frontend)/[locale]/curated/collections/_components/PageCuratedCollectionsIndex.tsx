@@ -24,7 +24,7 @@ export function PageCuratedCollectionsIndex({ data }: Props) {
 			/>
 
 			{collections && collections.length > 0 ? (
-				<div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16">
+				<div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
 					{collections.map((collection, index) => {
 						const num = String(index + 1).padStart(2, '0');
 						return (

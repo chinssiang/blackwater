@@ -80,8 +80,7 @@ export default function CuratedProductCard({
 			}}
 			className="group relative flex h-full flex-col"
 		>
-			{/* Image + curation mark */}
-			<div className="relative aspect-square overflow-hidden bg-white">
+			<div className="relative aspect-square overflow-hidden bg-white rounded">
 				{product.mainImage ? (
 					<ImageBlock
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
@@ -92,8 +91,6 @@ export default function CuratedProductCard({
 					<div className="h-full w-full" />
 				)}
 
-				{/* Curation seals: the ochre human-judgment marks. The selected
-				   badges are the committed accent on the card. */}
 				{product.badge && product.badge.length > 0 && (
 					<div className="absolute top-4 left-0 flex flex-col items-start gap-1.5">
 						{product.badge.map((b) => (

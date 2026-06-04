@@ -110,7 +110,7 @@ export default function CuratedCategoriesGrid({
 				</div>
 			)}
 
-			<div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:gap-x-10">
+			<div className="grid grid-cols-2 gap-x-6 gap-y-8 sm:grid-cols-3 lg:gap-x-10 2xl:grid-cols-4">
 				{categories.map((cat, index) => (
 					<CategoryTile
 						key={cat._id}
