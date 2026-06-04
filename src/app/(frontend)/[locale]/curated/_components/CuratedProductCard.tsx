@@ -81,7 +81,7 @@ export default function CuratedProductCard({
 			className="group relative flex h-full flex-col"
 		>
 			{/* Image + curation mark */}
-			<div className="relative aspect-square overflow-hidden">
+			<div className="relative aspect-square overflow-hidden bg-white">
 				{product.mainImage ? (
 					<ImageBlock
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
