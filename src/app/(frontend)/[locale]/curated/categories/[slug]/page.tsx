@@ -8,6 +8,10 @@ import {
 	pageCuratedCategorySlugsQuery,
 } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
+import { resolveHref } from '@/lib/routes';
+import { getDictionary } from '@/lib/dictionary.server';
+import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
 import PageCuratedCategory from './_components/PageCuratedCategory';
 
@@ -49,5 +53,18 @@ export default async function Page({ params }: Props) {
 
 	if (!data) return notFound();
 
-	return <PageCuratedCategory data={data} />;
+	const cleanData = stegaClean(data);
+	const dict = await getDictionary(locale as Locale);
+	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
+		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: locale as Locale }) },
+		{ name: dict.breadcrumb.curated, path: resolveHref({ documentType: 'pCuratedIndex', locale: locale as Locale }) },
+		{ name: cleanData?.title, path: resolveHref({ documentType: 'pCuratedCategory', slug, locale: locale as Locale }) },
+	]);
+
+	return (
+		<>
+			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
+			<PageCuratedCategory data={data} />
+		</>
+	);
 }
