@@ -82,6 +82,10 @@ export const pageEventGroupByDate = (S) => {
 									})
 									.defaultOrdering([
 										{
+											field: 'language',
+											direction: 'asc',
+										},
+										{
 											field: 'eventDatetime',
 											direction: 'asc',
 										},
@@ -107,7 +111,14 @@ export const pageEventItems = (S) => {
 			.icon(BookIcon),
 		S.listItem()
 			.title('Events')
-			.child(S.documentTypeList('pEvent').title('Events'))
+			.child(
+				S.documentTypeList('pEvent')
+					.title('Events')
+					.defaultOrdering([
+						{ field: 'language', direction: 'asc' },
+						{ field: 'eventDatetime', direction: 'desc' },
+					])
+			)
 			.icon(BookIcon),
 		S.listItem()
 			.title('Locations')
@@ -124,7 +135,11 @@ export const pageEventItems = (S) => {
 							.title('Events')
 							.apiVersion(apiVersion)
 							.filter('_type == "pEvent" && $categoryId in category[]._ref')
-							.params({ categoryId });
+							.params({ categoryId })
+							.defaultOrdering([
+								{ field: 'language', direction: 'asc' },
+								{ field: 'eventDatetime', direction: 'desc' },
+							]);
 					})
 			),
 		S.listItem()
@@ -138,6 +153,10 @@ export const pageEventItems = (S) => {
 							.apiVersion(apiVersion)
 							.filter('_type == "pEvent" && $statusId in status[]._ref')
 							.params({ statusId })
+							.defaultOrdering([
+								{ field: 'language', direction: 'asc' },
+								{ field: 'eventDatetime', direction: 'desc' },
+							])
 					)
 			),
 		pageEventStatus(S),

@@ -2,7 +2,7 @@ import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { language } from '@/sanity/schemaTypes/objects/language';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
-import { pickLocalizedValue } from '@/lib/i18n';
+import { pickLocalizedValue, LOCALE_SHORT_LABELS, isLocale } from '@/lib/i18n';
 import { BookIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
 import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
@@ -339,6 +339,7 @@ export const pEvent = defineType({
 			locationRefName: 'locationRef.name.0.value',
 			eventDatetime: 'eventDatetime',
 			categories: 'categories.0.title',
+			language: 'language',
 		},
 		prepare({
 			title = 'Untitled',
@@ -346,13 +347,15 @@ export const pEvent = defineType({
 			locationRefName,
 			eventDatetime,
 			categories,
+			language,
 		}) {
 			const categoryTitle = categories ?? '';
 			const locationName = location || locationRefName || '';
 			const subtitle = `${locationName} - ${categoryTitle ? `[${categoryTitle}]` : ''}`;
+			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
 
 			return {
-				title: `${title} - ${new Date(eventDatetime).toLocaleDateString('en-US')}`,
+				title: `${tag ? `[${tag}] ` : ''}${title} - ${new Date(eventDatetime).toLocaleDateString('en-US')}`,
 				subtitle: subtitle,
 				media: BookIcon,
 			};
