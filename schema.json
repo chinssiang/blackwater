@@ -3807,10 +3807,6 @@
               },
               {
                 "type": "inline",
-                "name": "pCuratedCategory.reference"
-              },
-              {
-                "type": "inline",
                 "name": "pCuratedCollection.reference"
               },
               {
@@ -7787,7 +7783,8 @@
       "title": {
         "type": "objectAttribute",
         "value": {
-          "type": "string"
+          "type": "inline",
+          "name": "internationalizedArrayString"
         },
         "optional": true
       },
@@ -7796,13 +7793,6 @@
         "value": {
           "type": "inline",
           "name": "slug"
-        },
-        "optional": true
-      },
-      "language": {
-        "type": "objectAttribute",
-        "value": {
-          "type": "string"
         },
         "optional": true
       },

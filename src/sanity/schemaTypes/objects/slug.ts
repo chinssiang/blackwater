@@ -1,3 +1,4 @@
+import { pickLocalizedValue } from '@/lib/i18n';
 import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
 import { defineField, SlugValidationContext } from 'sanity';
 
@@ -42,7 +43,10 @@ export function slug({ initialValue, readOnly, group }: SlugFieldOptions = {}) {
 			field: ViewPageField,
 		},
 		options: {
-			source: 'title',
+			// Resolve the slug source through pickLocalizedValue so it works for
+			// both plain-string titles and internationalizedArray titles (returns
+			// plain strings unchanged).
+			source: (doc) => pickLocalizedValue((doc as { title?: unknown }).title) ?? '',
 			maxLength: 200,
 			isUnique: isUniqueOtherThanLanguage,
 			slugify: (input) => {

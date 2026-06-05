@@ -3,7 +3,7 @@
  * see https://www.sanity.io/docs/presentation-resolver-api for more information.
  */
 import { resolveHref } from '@/lib/routes';
-import { LOCALES, type Locale } from '@/lib/i18n';
+import { LOCALES, type Locale, pickLocalizedValue } from '@/lib/i18n';
 import { defineDocuments, defineLocations } from 'sanity/presentation';
 
 type RouteEntry = { route: string; filter: string };
@@ -116,15 +116,17 @@ export const locations = {
 		}),
 	}),
 	pCuratedCategory: defineLocations({
-		select: { title: 'title', slug: 'slug.current', language: 'language' },
+		// title is an internationalizedArrayString. Select it under a NON-reserved
+		// key so Sanity's preview.select validator (which only checks reserved keys
+		// title/subtitle/media) doesn't flag the raw array; unwrap it in resolve.
+		select: { titleI18n: 'title', slug: 'slug.current' },
 		resolve: (doc) => ({
 			locations: [
 				{
-					title: doc?.title || 'Untitled',
+					title: pickLocalizedValue(doc?.titleI18n) || 'Untitled',
 					href: resolveHref({
 						documentType: 'pCuratedCategory',
 						slug: doc?.slug,
-						locale: (doc?.language as Locale) ?? undefined,
 					}) || '',
 				},
 			],

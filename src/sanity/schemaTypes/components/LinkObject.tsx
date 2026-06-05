@@ -85,7 +85,7 @@ type FileFetch = {
 const fetchOptions = async (): Promise<LinkOption[]> => {
 	const groqQuery = `{
     "pages": * [_type in ${JSON.stringify(pageDocumentOrder)}] {
-      title,
+      "title": coalesce(title[0].value, title),
       _type,
       _id,
       language,

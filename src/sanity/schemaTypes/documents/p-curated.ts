@@ -1,3 +1,4 @@
+import { pickLocalizedValue } from '@/lib/i18n';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { language } from '@/sanity/schemaTypes/objects/language';
@@ -107,7 +108,7 @@ export const pCurated = defineType({
 		}: Record<string, any>) {
 			return {
 				title,
-				subtitle: `[${categoryTitle ?? '(no category)'}] — /curated/products/${slug?.current ?? '(no slug)'}`,
+				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — /curated/products/${slug?.current ?? '(no slug)'}`,
 				media: mainImage?.image.asset || ImageIcon,
 			};
 		},

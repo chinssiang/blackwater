@@ -9,7 +9,6 @@ export const TRANSLATABLE_TYPES = [
 	'pBlogIndex',
 	'pBlogCategory',
 	'pCurated',
-	'pCuratedCategory',
 	'pCuratedCollection',
 	'pEvent',
 	'pEvents',

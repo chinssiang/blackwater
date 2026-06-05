@@ -1,5 +1,5 @@
+import { pickLocalizedValue } from '@/lib/i18n';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { TagsIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
@@ -12,11 +12,10 @@ export const pCuratedCategory = defineType({
 	fields: [
 		defineField({
 			name: 'title',
-			type: 'string',
-			validation: (Rule) => [Rule.required()],
+			title: 'Title',
+			type: 'internationalizedArrayString',
 		}),
 		slug(),
-		language(),
 		customImage({
 			title: 'Cover Image',
 			name: 'coverImage',
@@ -26,6 +25,8 @@ export const pCuratedCategory = defineType({
 	],
 	preview: {
 		select: { title: 'title' },
-		prepare: ({ title }) => ({ title }),
+		prepare: ({ title }) => {
+			return { title: pickLocalizedValue(title) || 'Untitled' };
+		},
 	},
 });

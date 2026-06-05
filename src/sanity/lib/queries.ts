@@ -73,6 +73,8 @@ const menuFields = `
 				title[language == "en"][0].value,
 				link.label[language == $locale][0].value,
 				link.label[language == "en"][0].value,
+				link.internalLink->title[language == $locale][0].value,
+				link.internalLink->title[language == "en"][0].value,
 				link.internalLink->title,
 				link.href
 			)
@@ -87,6 +89,8 @@ const menuFields = `
 				title[language == "en"][0].value,
 				link.label[language == $locale][0].value,
 				link.label[language == "en"][0].value,
+				link.internalLink->title[language == $locale][0].value,
+				link.internalLink->title[language == "en"][0].value,
 				link.internalLink->title,
 				link.href
 			),
@@ -598,7 +602,11 @@ const curatedProductCardFields = `
 	badge,
 	price,
 	purchaseLink,
-	categories[]->{ _id, title, "slug": slug.current },
+	categories[]->{
+		_id,
+		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+		"slug": slug.current
+	},
 	brands[]->{ _id, title, "slug": slug.current },
 	mainImage {
 		${imageBlockMetaFields}
@@ -613,9 +621,9 @@ const curatedProductBaseFields = `
 `;
 
 const curatedCategoriesFields = `
-	"categories": *[_type == "pCuratedCategory"] | order(title asc) {
+	"categories": *[_type == "pCuratedCategory"] | order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc) {
 		_id,
-		title,
+		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
 		"slug": slug.current,
 		coverImage {
 			${imageBlockMetaFields}
@@ -644,7 +652,7 @@ export const pageCuratedIndexQuery = defineQuery(`
 			}
 		},
 		categories[]->{_id,
-			title,
+			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
 			"slug": slug.current,
 			coverImage {
 				${imageBlockMetaFields}
@@ -704,9 +712,10 @@ export const pageCuratedCategorySlugsQuery = defineQuery(`
 `);
 
 export const pageCuratedCategorySingleQuery = defineQuery(`
-	*[_type == "pCuratedCategory" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
+	*[_type == "pCuratedCategory" && slug.current == $slug][0]{
 		${baseFields},
-		${availableLocalesField},
+		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+		"availableLocales": ["en", "zh_tw"],
 		coverImage {
 			${imageBlockMetaFields}
 		},
