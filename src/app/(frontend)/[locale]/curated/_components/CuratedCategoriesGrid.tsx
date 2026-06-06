@@ -29,16 +29,13 @@ function countLabel(count?: number | null) {
 
 function CategoryTile({
 	category,
-	index,
 	priority = false,
 }: {
 	category: Category;
-	index: number;
 	priority?: boolean;
 }) {
 	const label = countLabel(category.count);
 	const hasImage = !!category.coverImage?.image;
-	const num = String(index + 1).padStart(2, '0');
 
 	return (
 		<Link
@@ -57,13 +54,8 @@ function CategoryTile({
 				</div>
 			)}
 			<div className="flex items-baseline justify-between gap-3 border-t border-foreground/15 pt-3">
-				<span className="flex items-baseline gap-2">
-					<span className="t-l-2 text-foreground/40 transition-colors duration-200 group-hover:text-mark-ink">
-						{num}
-					</span>
-					<span className="t-h-3 uppercase transition-opacity duration-200 group-hover:opacity-60">
-						{category.title}
-					</span>
+				<span className="t-h-3 uppercase transition-opacity duration-200 group-hover:opacity-60">
+					{category.title}
 				</span>
 				{label && (
 					<span className="t-l-2 whitespace-nowrap uppercase text-foreground/65">
@@ -115,7 +107,6 @@ export default function CuratedCategoriesGrid({
 					<CategoryTile
 						key={cat._id}
 						category={cat}
-						index={index}
 						priority={priority && index === 0}
 					/>
 				))}

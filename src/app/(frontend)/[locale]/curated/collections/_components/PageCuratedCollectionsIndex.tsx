@@ -26,7 +26,6 @@ export function PageCuratedCollectionsIndex({ data }: Props) {
 			{collections && collections.length > 0 ? (
 				<div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
 					{collections.map((collection, index) => {
-						const num = String(index + 1).padStart(2, '0');
 						return (
 							<motion.article
 								key={collection._id}
@@ -53,13 +52,8 @@ export function PageCuratedCollectionsIndex({ data }: Props) {
 										)}
 									</div>
 									<div className="flex items-baseline justify-between gap-3 border-t border-foreground/15 pt-3">
-										<span className="flex items-baseline gap-2">
-											<span className="t-l-2 text-foreground/40 transition-colors duration-200 group-hover:text-mark-ink">
-												{num}
-											</span>
-											<span className="t-h-3 uppercase transition-opacity duration-200 group-hover:opacity-60">
-												{collection.title}
-											</span>
+										<span className="t-h-3 uppercase transition-opacity duration-200 group-hover:opacity-60">
+											{collection.title}
 										</span>
 										{collection.count != null && (
 											<span className="t-l-2 whitespace-nowrap uppercase text-foreground/65">

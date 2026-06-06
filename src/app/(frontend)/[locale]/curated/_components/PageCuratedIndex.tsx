@@ -16,13 +16,7 @@ type Collection = NonNullable<
 	NonNullable<PageCuratedIndexQueryResult>['collections']
 >[number];
 
-function CollectionMasthead({
-	collection,
-	num,
-}: {
-	collection: Collection;
-	num: string;
-}) {
+function CollectionMasthead({ collection }: { collection: Collection }) {
 	const cover = collection.coverImage;
 	const href = collection.slug
 		? `/curated/collections/${collection.slug}`
@@ -58,11 +52,8 @@ function CollectionMasthead({
 				))}
 
 			<div className="mt-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t border-foreground/15 pt-4">
-				<h2 className="flex items-baseline gap-3">
-					<span className="t-l-2 text-foreground/40">{num}</span>
-					<span className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none tracking-[-0.02em] text-balance">
-						{collection.title}
-					</span>
+				<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none tracking-[-0.02em] text-balance">
+					{collection.title}
 				</h2>
 				{href && (
 					<Link
@@ -130,10 +121,7 @@ export function PageCuratedIndex({ data }: Props) {
 							ease: [0, 0.5, 0.5, 1],
 						}}
 					>
-						<CollectionMasthead
-							collection={collection}
-							num={String(index + 1).padStart(2, '0')}
-						/>
+						<CollectionMasthead collection={collection} />
 
 						{products && products.length > 0 && (
 							<div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10  2xl:grid-cols-4">
