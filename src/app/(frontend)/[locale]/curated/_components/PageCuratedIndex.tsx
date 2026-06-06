@@ -99,7 +99,9 @@ export function PageCuratedIndex({ data }: Props) {
 						{subtitle}
 					</p>
 				)}
-				{title && <h1 className="text-balance t-h-1 uppercase">{title}</h1>}
+				{title && (
+					<h1 className="text-balance t-h-1 uppercase max-w-sm">{title}</h1>
+				)}
 				{description && (
 					<p className="t-b-1 mt-7 max-w-[60ch] leading-relaxed text-foreground/70 lg:mt-9">
 						{description}
