@@ -5,6 +5,7 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
+import { Badge } from '@/components/ui/Badge';
 
 type Category = { _id: string; title?: string | null; slug?: string | null };
 
@@ -80,10 +81,10 @@ export default function CuratedProductCard({
 			}}
 			className="group relative flex h-full flex-col"
 		>
-			<div className="relative aspect-square overflow-hidden bg-white rounded">
+			<div className="relative aspect-square overflow-hidden bg-background rounded">
 				{product.mainImage ? (
 					<ImageBlock
-						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:-translate-y-2 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
 						imageObj={product.mainImage}
 						alt={product.title ?? ''}
 					/>
@@ -94,24 +95,17 @@ export default function CuratedProductCard({
 				{product.badge && product.badge.length > 0 && (
 					<div className="absolute top-4 left-0 flex flex-col items-start gap-1.5">
 						{product.badge.map((b) => (
-							<span
-								key={b}
-								className="t-l-2 bg-mark px-3 py-1.5 uppercase text-mark-foreground"
-							>
-								{b}
-							</span>
+							<Badge key={b}>{b}</Badge>
 						))}
 					</div>
 				)}
 			</div>
 
 			{/* Info */}
-			<div className="mt-4  flex-1 space-y-2">
-				<div className="flex gap-2 justify-between">
+			<div className="mt-4 flex-1 space-y-3">
+				<div className="flex gap-2 justify-between items-center">
 					{brandLabel ? (
-						<p className="t-spec flex-1 uppercase text-foreground">
-							{brandLabel}
-						</p>
+						<p className="t-l-1 flex-1 text-foreground">{brandLabel}</p>
 					) : (
 						hasCategories && (
 							<CategoryLinks
@@ -123,7 +117,7 @@ export default function CuratedProductCard({
 					{showCategoryTag && (
 						<CategoryLinks
 							categories={categories}
-							className="t-l-2 uppercase text-foreground/50"
+							className="t-spec uppercase text-foreground/50"
 						/>
 					)}
 				</div>
@@ -140,7 +134,7 @@ export default function CuratedProductCard({
 				</p>
 
 				<div className="mt-auto flex items-baseline justify-between gap-3 border-t border-foreground/10 pt-3">
-					<span className="t-spec text-foreground/75">
+					<span className="t-spec text-foreground font-semibold">
 						{product.price ?? ''}
 					</span>
 					<span

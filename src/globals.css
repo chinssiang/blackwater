@@ -537,11 +537,11 @@
 	}
 
 	.t-l-2 {
-		font-family: var(--font-feature);
+		font-family: var(--font-default);
 		font-weight: 500;
 		font-size: 10px;
 		line-height: 1;
-		letter-spacing: 0.0625em;
+		letter-spacing: -0.012em;
 	}
 
 	/* Spec voice: the typewriter face used for curated metadata (prices,

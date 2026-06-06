@@ -8,6 +8,8 @@ import type { PageCuratedSingleQueryResult } from 'sanity.types';
 import { hasArrayValue } from '@/lib/utils';
 import { useReveal } from '@/hooks/useReveal';
 import CuratedProductCard from '../../../_components/CuratedProductCard';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
 
 type Props = {
 	data: NonNullable<PageCuratedSingleQueryResult>;
@@ -69,19 +71,6 @@ export default function PageCuratedSingle({ data }: Props) {
 				>
 					Curated
 				</Link>
-				{firstCategory?.slug && (
-					<>
-						<span aria-hidden className="text-foreground/30">
-							/
-						</span>
-						<Link
-							href={`/curated/categories/${firstCategory.slug}`}
-							className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
-						>
-							{firstCategory.title}
-						</Link>
-					</>
-				)}
 				<span aria-hidden className="text-foreground/30">
 					/
 				</span>
@@ -124,19 +113,14 @@ export default function PageCuratedSingle({ data }: Props) {
 							}}
 						>
 							{badge.map((b: string) => (
-								<span
-									key={b}
-									className="t-l-2 inline-flex w-fit bg-mark px-3 py-1.5 uppercase text-mark-foreground"
-								>
-									{b}
-								</span>
+								<Badge key={b}>{b}</Badge>
 							))}
 						</motion.div>
 					)}
 
 					{eyebrow && (
 						<motion.p
-							className="t-l-2 uppercase text-foreground/65"
+							className="t-l-1 text-foreground"
 							{...reveal}
 							transition={{
 								duration: 0.6,
@@ -149,7 +133,7 @@ export default function PageCuratedSingle({ data }: Props) {
 					)}
 
 					<motion.h1
-						className="mt-3 text-balance text-[clamp(1.75rem,3.2vw,2.75rem)] uppercase leading-[1] tracking-[-0.02em]"
+						className="mt-3 text-balance text-[clamp(1.75rem,3.2vw,2.75rem)] uppercase tracking-[-0.02em]"
 						{...reveal}
 						transition={{
 							duration: 0.8,
@@ -162,7 +146,7 @@ export default function PageCuratedSingle({ data }: Props) {
 
 					{price && (
 						<motion.p
-							className="t-spec mt-5 text-foreground/75"
+							className="t-spec font-semibold mt-5 text-foreground/75"
 							{...reveal}
 							transition={{
 								duration: 0.6,
@@ -184,21 +168,23 @@ export default function PageCuratedSingle({ data }: Props) {
 								ease: [0, 0.71, 0.2, 1.01],
 							}}
 						>
-							<a
-								href={purchaseLink}
-								target="_blank"
-								rel="noopener noreferrer"
-								aria-label={`Buy ${title ?? 'this product'} (opens in a new tab)`}
-								className="t-b-1 group inline-flex w-full items-center justify-center gap-2 bg-mark px-10 py-4 uppercase text-mark-foreground transition-[background-color,filter] hover:brightness-[0.97] sm:w-auto"
-							>
-								Buy it
-								<span
-									aria-hidden
-									className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+							<Button asChild>
+								<a
+									href={purchaseLink}
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label={`Buy ${title ?? 'this product'} (opens in a new tab)`}
+									className="group min-w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase"
 								>
-									↗
-								</span>
-							</a>
+									Buy it
+									<span
+										aria-hidden
+										className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+									>
+										↗
+									</span>
+								</a>
+							</Button>
 						</motion.div>
 					)}
 
