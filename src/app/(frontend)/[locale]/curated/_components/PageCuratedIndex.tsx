@@ -1,5 +1,6 @@
 'use client';
 
+import { cn, hasArrayValue } from '@/lib/utils';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
@@ -24,7 +25,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 	const allLabel = `All in ${collection.title ?? 'collection'} →`;
 
 	return (
-		<div>
+		<div className="mt-5 border-t border-foreground/15 pt-4">
 			{cover?.image &&
 				(href ? (
 					<Link
@@ -51,7 +52,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 					</div>
 				))}
 
-			<div className="mt-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t border-foreground/15 pt-4">
+			<div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
 				<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none tracking-[-0.02em] text-balance">
 					{collection.title}
 				</h2>
@@ -110,10 +111,13 @@ export function PageCuratedIndex({ data }: Props) {
 
 			{collections?.map((collection, index) => {
 				const products = collection.products;
+				if (!hasArrayValue(products)) {
+					return null;
+				}
 				return (
 					<motion.section
 						key={collection._id}
-						className="mt-14 border-t border-foreground/10 pt-12 lg:mt-24 lg:pt-20"
+						className="mt-14 lg:mt-24"
 						{...reveal}
 						transition={{
 							duration: 0.8,
