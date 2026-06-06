@@ -223,6 +223,14 @@ const formField = `
 const byLocale = (type: string) =>
 	`*[_type == "${type}" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)`;
 
+// Helper GROQ filter clause for locale-aware *listings*: include a doc if it's in
+// the current locale, OR it's the English/undefined fallback AND no current-locale
+// version with the same slug exists. Translated curated docs share their slug, so
+// this deduplicates a list to one entry per product/collection (locale preferred,
+// English fallback) — the list equivalent of byLocale's single-doc resolution.
+const curatedLocaleFilter = (type: string) =>
+	`(language == $locale || ((language == "en" || !defined(language)) && !(slug.current in *[_type == "${type}" && language == $locale].slug.current)))`;
+
 // Inline projection field: lists which locale codes have a translated document.
 // Uses GROQ implication — if the parent doc has a slug, narrow to that slug;
 // for slug-less singletons the condition is vacuously true and only type is matched.
@@ -628,7 +636,7 @@ const curatedCategoriesFields = `
 		coverImage {
 			${imageBlockMetaFields}
 		},
-		"count": count(*[_type == "pCurated" && references(^._id)])
+		"count": count(*[_type == "pCurated" && references(^._id) && ${curatedLocaleFilter('pCurated')}])
 	}
 `;
 
@@ -657,7 +665,7 @@ export const pageCuratedIndexQuery = defineQuery(`
 			coverImage {
 				${imageBlockMetaFields}
 			},
-			"count": count(*[_type == "pCurated" && references(^._id)])
+			"count": count(*[_type == "pCurated" && references(^._id) && ${curatedLocaleFilter('pCurated')}])
 		}
 	}
 `);
@@ -702,7 +710,7 @@ export const pageCuratedCollectionSingleQuery = defineQuery(`
 
 export const pageCuratedCategoriesIndexQuery = defineQuery(`
 	{
-		"productCount": count(*[_type == "pCurated"]),
+		"productCount": count(*[_type == "pCurated" && ${curatedLocaleFilter('pCurated')}]),
 		${curatedCategoriesFields}
 	}
 `);
@@ -720,7 +728,7 @@ export const pageCuratedCategorySingleQuery = defineQuery(`
 		coverImage {
 			${imageBlockMetaFields}
 		},
-		"products": *[_type == "pCurated" && references(^._id)] | order(title asc) {
+		"products": *[_type == "pCurated" && references(^._id) && ${curatedLocaleFilter('pCurated')}] | order(title asc) {
 			${curatedProductCardFields}
 		}
 	}
@@ -728,7 +736,7 @@ export const pageCuratedCategorySingleQuery = defineQuery(`
 
 export const pageCuratedCollectionsIndexQuery = defineQuery(`
 	{
-		"collections": *[_type == "pCuratedCollection"] | order(title asc) {
+		"collections": *[_type == "pCuratedCollection" && ${curatedLocaleFilter('pCuratedCollection')}] | order(title asc) {
 			_id,
 			title,
 			description,
@@ -743,7 +751,7 @@ export const pageCuratedCollectionsIndexQuery = defineQuery(`
 
 export const pageCuratedProductsIndexQuery = defineQuery(`
 	{
-		"products": *[_type == "pCurated"] | order(title asc) {
+		"products": *[_type == "pCurated" && ${curatedLocaleFilter('pCurated')}] | order(title asc) {
 			${curatedProductCardFields}
 		},
 		${curatedCategoriesFields}
