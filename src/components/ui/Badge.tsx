@@ -16,7 +16,7 @@ function Badge({
 		<Comp
 			data-slot="badge"
 			className={cn(
-				't-l-2 inline-flex w-fit items-center px-3 py-1.5 uppercase bg-primary/20 text-primary',
+				't-l-2 inline-flex w-fit items-center py-2 px-3 uppercase bg-primary/25 text-primary rounded',
 				className
 			)}
 			{...props}
