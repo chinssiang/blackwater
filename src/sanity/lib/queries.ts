@@ -702,6 +702,7 @@ export const pageCuratedCollectionSingleQuery = defineQuery(`
 
 export const pageCuratedCategoriesIndexQuery = defineQuery(`
 	{
+		"productCount": count(*[_type == "pCurated"]),
 		${curatedCategoriesFields}
 	}
 `);

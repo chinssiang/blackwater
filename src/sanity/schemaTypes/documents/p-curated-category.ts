@@ -15,6 +15,11 @@ export const pCuratedCategory = defineType({
 			title: 'Title',
 			type: 'internationalizedArrayString',
 		}),
+		defineField({
+			name: 'description',
+			title: 'Description',
+			type: 'internationalizedArrayText',
+		}),
 		slug(),
 		customImage({
 			title: 'Cover Image',
@@ -24,9 +29,12 @@ export const pCuratedCategory = defineType({
 		}),
 	],
 	preview: {
-		select: { title: 'title' },
-		prepare: ({ title }) => {
-			return { title: pickLocalizedValue(title) || 'Untitled' };
+		select: { title: 'title', description: 'description' },
+		prepare: ({ title, description }) => {
+			return {
+				title: pickLocalizedValue(title) || 'Untitled',
+				subtitle: pickLocalizedValue(description),
+			};
 		},
 	},
 });

@@ -19,8 +19,7 @@ export function PageCuratedCollectionsIndex({ data }: Props) {
 		<div className="p-x-max min-h-main py-10 lg:py-17.5">
 			<CuratedPageHeader
 				title="Collections"
-				count={collections?.length}
-				unit="collection"
+				counts={[{ count: collections?.length, unit: 'collection' }]}
 			/>
 
 			{collections && collections.length > 0 ? (

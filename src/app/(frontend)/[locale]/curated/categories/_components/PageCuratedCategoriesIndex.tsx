@@ -9,14 +9,16 @@ type Props = {
 };
 
 export function PageCuratedCategoriesIndex({ data }: Props) {
-	const { categories } = data || {};
+	const { categories, productCount } = data || {};
 
 	return (
 		<div className="p-x-max min-h-main py-10 lg:py-17.5">
 			<CuratedPageHeader
 				title="Categories"
-				count={categories?.length}
-				unit="category"
+				counts={[
+					{ count: productCount, unit: 'product' },
+					{ count: categories?.length, unit: 'category' },
+				]}
 			/>
 
 			<CuratedCategoriesGrid

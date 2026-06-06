@@ -41,8 +41,7 @@ export default function PageCuratedCategory({ data }: Props) {
 			<CuratedPageHeader
 				kicker="Category"
 				title={title}
-				count={products?.length}
-				unit="product"
+				counts={[{ count: products?.length, unit: 'product' }]}
 			/>
 
 			{products && products.length > 0 ? (

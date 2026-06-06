@@ -42,8 +42,7 @@ export default function PageCuratedCollection({ data }: Props) {
 			<CuratedPageHeader
 				kicker="Collection"
 				title={title}
-				count={products?.length}
-				unit="product"
+				counts={[{ count: products?.length, unit: 'product' }]}
 				lede={description}
 			/>
 

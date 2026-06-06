@@ -7,10 +7,10 @@ type Props = {
 	/** Wayfinding label shown only where it carries real context (single pages). */
 	kicker?: string | null;
 	title?: string | null;
-	count?: number | null;
-	/** Singular unit for the count, e.g. "product" / "category". Pluralized
-	   automatically against the count. */
-	unit?: string;
+	/** Count segments shown in the header, e.g. [{count: 48, unit: 'product'}].
+	   Each unit is pluralized automatically against its count; null/undefined
+	   counts are skipped. Pages control which counts show by what they pass. */
+	counts?: Array<{ count: number | null | undefined; unit: string }>;
 	lede?: string | null;
 };
 
@@ -22,11 +22,14 @@ function pluralize(count: number, unit: string) {
 export default function CuratedPageHeader({
 	kicker,
 	title,
-	count,
-	unit,
+	counts,
 	lede,
 }: Props) {
 	const reveal = useReveal();
+
+	const segments = (counts ?? [])
+		.filter((c): c is { count: number; unit: string } => c.count != null)
+		.map(({ count, unit }) => `${count} ${pluralize(count, unit)}`);
 
 	return (
 		<motion.header
@@ -44,9 +47,9 @@ export default function CuratedPageHeader({
 						{title}
 					</h1>
 				)}
-				{count != null && unit && (
+				{segments.length > 0 && (
 					<p className="t-spec pb-1 whitespace-nowrap text-foreground/65">
-						{count} {pluralize(count, unit)}
+						{segments.join(' | ')}
 					</p>
 				)}
 			</div>

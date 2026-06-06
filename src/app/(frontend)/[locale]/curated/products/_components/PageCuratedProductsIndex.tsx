@@ -16,8 +16,7 @@ export function PageCuratedProductsIndex({ data }: Props) {
 		<div className="p-x-max min-h-main py-10 lg:py-17.5">
 			<CuratedPageHeader
 				title="Products"
-				count={products?.length}
-				unit="product"
+				counts={[{ count: products?.length, unit: 'product' }]}
 			/>
 
 			{products && products.length > 0 ? (
