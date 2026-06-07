@@ -133,7 +133,7 @@ export default function CuratedProductCard({
 					{product.excerpt}
 				</p>
 
-				<div className="mt-auto flex items-baseline justify-between gap-3 border-t border-foreground/10 pt-3">
+				<div className="mt-auto flex items-baseline justify-between gap-3">
 					<span className="t-spec text-foreground font-semibold">
 						{product.price ?? ''}
 					</span>

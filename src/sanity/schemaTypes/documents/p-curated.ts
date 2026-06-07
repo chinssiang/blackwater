@@ -1,4 +1,5 @@
-import { pickLocalizedValue } from '@/lib/i18n';
+import { pickLocalizedValue, type Locale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { language } from '@/sanity/schemaTypes/objects/language';
@@ -97,18 +98,27 @@ export const pCurated = defineType({
 		select: {
 			title: 'title',
 			slug: 'slug',
+			language: 'language',
 			categoryTitle: 'categories.0.title',
 			mainImage: 'mainImage',
 		},
 		prepare({
 			title = 'Untitled',
 			slug = {},
+			language,
 			categoryTitle,
 			mainImage,
 		}: Record<string, any>) {
+			const href = slug?.current
+				? resolveHref({
+						documentType: 'pCurated',
+						slug: slug.current,
+						locale: language as Locale,
+					})
+				: null;
 			return {
 				title,
-				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — /curated/products/${slug?.current ?? '(no slug)'}`,
+				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — ${href ?? '/curated/products/(no slug)'}`,
 				media: mainImage?.image.asset || ImageIcon,
 			};
 		},

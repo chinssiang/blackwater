@@ -33,6 +33,20 @@ export const pCuratedCollection = defineType({
 				defineArrayMember({
 					type: 'reference',
 					to: [{ type: 'pCurated' }],
+					options: {
+						filter: ({ document }) => {
+							const lang = (document?.language as string) || 'en';
+							return lang === 'en'
+								? {
+										filter: 'language == $lang || !defined(language)',
+										params: { lang },
+									}
+								: {
+										filter: 'language == $lang',
+										params: { lang },
+									};
+						},
+					},
 				}),
 			],
 			validation: (Rule) => Rule.unique(),

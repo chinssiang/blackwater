@@ -37,10 +37,26 @@ export const gLocation = defineType({
 				'Optional postal address. Emitted as a PostalAddress on Event structured data — improves event rich results and local discovery.',
 			options: { collapsible: true, collapsed: true },
 			fields: [
-				defineField({ name: 'streetAddress', type: 'string', title: 'Street Address' }),
-				defineField({ name: 'addressLocality', type: 'string', title: 'City / Locality' }),
-				defineField({ name: 'addressRegion', type: 'string', title: 'Region / State' }),
-				defineField({ name: 'postalCode', type: 'string', title: 'Postal Code' }),
+				defineField({
+					name: 'streetAddress',
+					type: 'string',
+					title: 'Street Address',
+				}),
+				defineField({
+					name: 'addressLocality',
+					type: 'string',
+					title: 'City / Locality',
+				}),
+				defineField({
+					name: 'addressRegion',
+					type: 'string',
+					title: 'Region / State',
+				}),
+				defineField({
+					name: 'postalCode',
+					type: 'string',
+					title: 'Postal Code',
+				}),
 				defineField({
 					name: 'addressCountry',
 					type: 'string',
@@ -65,12 +81,14 @@ export const gLocation = defineType({
 	preview: {
 		select: {
 			name: 'name',
-			mapLink: 'mapLink',
 		},
-		prepare({ name, mapLink }) {
+		prepare({ name }) {
+			const zhName = Array.isArray(name)
+				? name.find((entry) => entry?.language === 'zh_tw')?.value
+				: undefined;
 			return {
 				title: pickLocalizedValue(name) || 'Untitled',
-				subtitle: mapLink || undefined,
+				subtitle: zhName || undefined,
 				media: PinIcon,
 			};
 		},
