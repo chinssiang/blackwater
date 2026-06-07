@@ -7,7 +7,7 @@
   "breadcrumb": {
     "home": "首頁",
     "events": "活動",
-    "curated": "嚴選",
+    "products": "嚴選",
     "faq": "常見問題"
   },
   "locationCurrentTime": {
@@ -37,7 +37,7 @@
     "dateFormat": "yyyy/MM/dd (iii) HH:mm",
     "monthYearFormat": "yyyy年M月"
   },
-  "curated": {
+  "products": {
     "categoriesTitle": "分類",
     "categoriesDescription": "瀏覽我們嚴選的商品分類。"
   }

@@ -32,10 +32,10 @@ export const mainDocuments = defineDocuments([
 	...withLocales('/blog/:slug', `_type == "pBlog" && slug.current == $slug`),
 	...withLocales('/contact', `_type == "pContact"`),
 	...withLocales('/faq', `_type == "pFaq"`),
-	...withLocales('/curated', `_type == "pCuratedIndex"`),
-	...withLocales('/curated/products/:slug', `_type == "pCurated" && slug.current == $slug`),
-	...withLocales('/curated/categories/:slug', `_type == "pCuratedCategory" && slug.current == $slug`),
-	...withLocales('/curated/collections/:slug', `_type == "pCuratedCollection" && slug.current == $slug`),
+	...withLocales('/products', `_type == "pProductIndex"`),
+	...withLocales('/products/:slug', `_type == "pProduct" && slug.current == $slug`),
+	...withLocales('/products/categories/:slug', `_type == "pProductCategory" && slug.current == $slug`),
+	...withLocales('/products/collections/:slug', `_type == "pProductCollection" && slug.current == $slug`),
 ]);
 
 function locationsForAll(documentType: string, title: string, slug?: string | null) {
@@ -95,19 +95,19 @@ export const locations = {
 		tone: 'caution',
 		locations: locationsForAll('pFaq', 'FAQ'),
 	}),
-	pCuratedIndex: defineLocations({
-		message: 'This document is used to render the curated picks page',
+	pProductIndex: defineLocations({
+		message: 'This document is used to render the products page',
 		tone: 'positive',
-		locations: locationsForAll('pCuratedIndex', 'Curated'),
+		locations: locationsForAll('pProductIndex', 'Products'),
 	}),
-	pCurated: defineLocations({
+	pProduct: defineLocations({
 		select: { title: 'title', slug: 'slug.current', language: 'language' },
 		resolve: (doc) => ({
 			locations: [
 				{
 					title: doc?.title || 'Untitled',
 					href: resolveHref({
-						documentType: 'pCurated',
+						documentType: 'pProduct',
 						slug: doc?.slug,
 						locale: (doc?.language as Locale) ?? undefined,
 					}) || '',
@@ -115,7 +115,7 @@ export const locations = {
 			],
 		}),
 	}),
-	pCuratedCategory: defineLocations({
+	pProductCategory: defineLocations({
 		// title is an internationalizedArrayString. Select it under a NON-reserved
 		// key so Sanity's preview.select validator (which only checks reserved keys
 		// title/subtitle/media) doesn't flag the raw array; unwrap it in resolve.
@@ -125,21 +125,21 @@ export const locations = {
 				{
 					title: pickLocalizedValue(doc?.titleI18n) || 'Untitled',
 					href: resolveHref({
-						documentType: 'pCuratedCategory',
+						documentType: 'pProductCategory',
 						slug: doc?.slug,
 					}) || '',
 				},
 			],
 		}),
 	}),
-	pCuratedCollection: defineLocations({
+	pProductCollection: defineLocations({
 		select: { title: 'title', slug: 'slug.current', language: 'language' },
 		resolve: (doc) => ({
 			locations: [
 				{
 					title: doc?.title || 'Untitled',
 					href: resolveHref({
-						documentType: 'pCuratedCollection',
+						documentType: 'pProductCollection',
 						slug: doc?.slug,
 						locale: (doc?.language as Locale) ?? undefined,
 					}) || '',

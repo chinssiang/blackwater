@@ -3,7 +3,7 @@ import { client } from '@/sanity/lib/client';
 import {
 	SITEMAP_PAGES_QUERY,
 	SITEMAP_EVENTS_QUERY,
-	SITEMAP_CURATED_QUERY,
+	SITEMAP_PRODUCTS_QUERY,
 } from '@/sanity/lib/queries';
 import { resolveHref } from '@/lib/routes';
 import {
@@ -23,11 +23,11 @@ type SitemapDoc = {
 const QUERIES: Record<string, string> = {
 	pages: SITEMAP_PAGES_QUERY,
 	events: SITEMAP_EVENTS_QUERY,
-	curated: SITEMAP_CURATED_QUERY,
+	products: SITEMAP_PRODUCTS_QUERY,
 };
 
 export async function generateSitemaps() {
-	return [{ id: 'pages' }, { id: 'events' }, { id: 'curated' }];
+	return [{ id: 'pages' }, { id: 'events' }, { id: 'products' }];
 }
 
 export default async function sitemap({

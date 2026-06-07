@@ -21,8 +21,8 @@ export function Layout({ children, siteData }: LayoutProps) {
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaID;
 	const { path: strippedPath } = stripLocaleFromPath(pathname);
-	const isCuratedSection =
-		strippedPath === '/curated' || strippedPath.startsWith('/curated/');
+	const isProductsSection =
+		strippedPath === '/products' || strippedPath.startsWith('/products/');
 	const isEventsCrew = pathname === '/events-crew';
 
 	useEffect(() => {
@@ -44,7 +44,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 	return (
 		<LazyMotion features={domAnimation}>
 			<AdaSkip />
-			<Header data={headerData} isLightHeader={isCuratedSection} />
+			<Header data={headerData} isLightHeader={isProductsSection} />
 			<Main>
 				{children}
 				{!isEventsCrew && (

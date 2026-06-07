@@ -14,13 +14,13 @@ import {
 export const DOCUMENT_ROUTES = [
 	{ type: 'pHome', path: '/', slug: false },
 	{ type: 'pGeneral', path: '/', slug: true },
-	{ type: 'pCuratedIndex', path: '/curated', slug: false },
-	{ type: 'pCurated', path: '/curated/products/', slug: true },
+	{ type: 'pProductIndex', path: '/products', slug: false },
+	{ type: 'pProduct', path: '/products/', slug: true },
 	// Synthetic route (no backing document) — lets the categories index page
 	// reuse resolveHref/defineMetadata for canonical + hreflang.
-	{ type: 'pCuratedCategoriesIndex', path: '/curated/categories', slug: false },
-	{ type: 'pCuratedCategory', path: '/curated/categories/', slug: true },
-	{ type: 'pCuratedCollection', path: '/curated/collections/', slug: true },
+	{ type: 'pProductCategoriesIndex', path: '/products/categories', slug: false },
+	{ type: 'pProductCategory', path: '/products/categories/', slug: true },
+	{ type: 'pProductCollection', path: '/products/collections/', slug: true },
 	{ type: 'pEvents', path: '/events/', slug: false },
 	{ type: 'pEvent', path: '/events/', slug: true },
 	{ type: 'pContact', path: '/contact', slug: false },
@@ -74,10 +74,10 @@ export const resolvedHrefGroq = `select(
 				_type == "pHome" => select($locale == "en" => "/", "/" + $locale),
 				select($locale == "en" => "", "/" + $locale) + select(
 					_type == "pGeneral" => "/" + slug.current,
-					_type == "pCuratedIndex" => "/curated",
-					_type == "pCurated" => "/curated/products/" + slug.current,
-					_type == "pCuratedCategory" => "/curated/categories/" + slug.current,
-					_type == "pCuratedCollection" => "/curated/collections/" + slug.current,
+					_type == "pProductIndex" => "/products",
+					_type == "pProduct" => "/products/" + slug.current,
+					_type == "pProductCategory" => "/products/categories/" + slug.current,
+					_type == "pProductCollection" => "/products/collections/" + slug.current,
 					_type == "pEvents" => "/events/",
 					_type == "pEvent" => "/events/" + slug.current,
 					_type == "pContact" => "/contact",
@@ -123,7 +123,7 @@ export const checkIfLinkIsActive = ({
 	if (target === '/') return current === '/';
 
 	// Child links match their own page exactly; section/parent links also stay
-	// active on descendant routes (e.g. /curated/products/foo keeps /curated active).
+	// active on descendant routes (e.g. /products/foo keeps /products active).
 	if (isChild) return current === target;
 	return current === target || current.startsWith(`${target}/`);
 };

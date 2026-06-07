@@ -91,7 +91,7 @@
   },
   {
     "type": "type",
-    "name": "pCuratedIndex.reference",
+    "name": "pProductIndex.reference",
     "value": {
       "type": "object",
       "attributes": {
@@ -116,12 +116,12 @@
           "optional": true
         }
       },
-      "dereferencesTo": "pCuratedIndex"
+      "dereferencesTo": "pProductIndex"
     }
   },
   {
     "type": "type",
-    "name": "pCurated.reference",
+    "name": "pProduct.reference",
     "value": {
       "type": "object",
       "attributes": {
@@ -146,12 +146,12 @@
           "optional": true
         }
       },
-      "dereferencesTo": "pCurated"
+      "dereferencesTo": "pProduct"
     }
   },
   {
     "type": "type",
-    "name": "pCuratedCategory.reference",
+    "name": "pProductCategory.reference",
     "value": {
       "type": "object",
       "attributes": {
@@ -176,12 +176,12 @@
           "optional": true
         }
       },
-      "dereferencesTo": "pCuratedCategory"
+      "dereferencesTo": "pProductCategory"
     }
   },
   {
     "type": "type",
-    "name": "pCuratedCollection.reference",
+    "name": "pProductCollection.reference",
     "value": {
       "type": "object",
       "attributes": {
@@ -206,7 +206,7 @@
           "optional": true
         }
       },
-      "dereferencesTo": "pCuratedCollection"
+      "dereferencesTo": "pProductCollection"
     }
   },
   {
@@ -301,19 +301,19 @@
               },
               {
                 "type": "inline",
-                "name": "pCuratedIndex.reference"
+                "name": "pProductIndex.reference"
               },
               {
                 "type": "inline",
-                "name": "pCurated.reference"
+                "name": "pProduct.reference"
               },
               {
                 "type": "inline",
-                "name": "pCuratedCategory.reference"
+                "name": "pProductCategory.reference"
               },
               {
                 "type": "inline",
-                "name": "pCuratedCollection.reference"
+                "name": "pProductCollection.reference"
               },
               {
                 "type": "inline",
@@ -1354,19 +1354,19 @@
                         },
                         {
                           "type": "inline",
-                          "name": "pCuratedIndex.reference"
+                          "name": "pProductIndex.reference"
                         },
                         {
                           "type": "inline",
-                          "name": "pCurated.reference"
+                          "name": "pProduct.reference"
                         },
                         {
                           "type": "inline",
-                          "name": "pCuratedCategory.reference"
+                          "name": "pProductCategory.reference"
                         },
                         {
                           "type": "inline",
-                          "name": "pCuratedCollection.reference"
+                          "name": "pProductCollection.reference"
                         },
                         {
                           "type": "inline",
@@ -1636,19 +1636,19 @@
                                 },
                                 {
                                   "type": "inline",
-                                  "name": "pCuratedIndex.reference"
+                                  "name": "pProductIndex.reference"
                                 },
                                 {
                                   "type": "inline",
-                                  "name": "pCurated.reference"
+                                  "name": "pProduct.reference"
                                 },
                                 {
                                   "type": "inline",
-                                  "name": "pCuratedCategory.reference"
+                                  "name": "pProductCategory.reference"
                                 },
                                 {
                                   "type": "inline",
-                                  "name": "pCuratedCollection.reference"
+                                  "name": "pProductCollection.reference"
                                 },
                                 {
                                   "type": "inline",
@@ -1735,19 +1735,19 @@
                                 },
                                 {
                                   "type": "inline",
-                                  "name": "pCuratedIndex.reference"
+                                  "name": "pProductIndex.reference"
                                 },
                                 {
                                   "type": "inline",
-                                  "name": "pCurated.reference"
+                                  "name": "pProduct.reference"
                                 },
                                 {
                                   "type": "inline",
-                                  "name": "pCuratedCategory.reference"
+                                  "name": "pProductCategory.reference"
                                 },
                                 {
                                   "type": "inline",
-                                  "name": "pCuratedCollection.reference"
+                                  "name": "pProductCollection.reference"
                                 },
                                 {
                                   "type": "inline",
@@ -2050,19 +2050,19 @@
               },
               {
                 "type": "inline",
-                "name": "pCuratedIndex.reference"
+                "name": "pProductIndex.reference"
               },
               {
                 "type": "inline",
-                "name": "pCurated.reference"
+                "name": "pProduct.reference"
               },
               {
                 "type": "inline",
-                "name": "pCuratedCategory.reference"
+                "name": "pProductCategory.reference"
               },
               {
                 "type": "inline",
-                "name": "pCuratedCollection.reference"
+                "name": "pProductCollection.reference"
               },
               {
                 "type": "inline",
@@ -3783,7 +3783,7 @@
               },
               {
                 "type": "inline",
-                "name": "pCuratedIndex.reference"
+                "name": "pProductIndex.reference"
               },
               {
                 "type": "inline",
@@ -3803,11 +3803,11 @@
               },
               {
                 "type": "inline",
-                "name": "pCurated.reference"
+                "name": "pProduct.reference"
               },
               {
                 "type": "inline",
-                "name": "pCuratedCollection.reference"
+                "name": "pProductCollection.reference"
               },
               {
                 "type": "inline",
@@ -5988,7 +5988,7 @@
     }
   },
   {
-    "name": "pCurated",
+    "name": "pProduct",
     "type": "document",
     "attributes": {
       "_id": {
@@ -6001,7 +6001,7 @@
         "type": "objectAttribute",
         "value": {
           "type": "string",
-          "value": "pCurated"
+          "value": "pProduct"
         }
       },
       "_createdAt": {
@@ -6060,7 +6060,7 @@
             },
             "rest": {
               "type": "inline",
-              "name": "pCuratedCategory.reference"
+              "name": "pProductCategory.reference"
             }
           }
         },
@@ -6253,7 +6253,7 @@
             },
             "rest": {
               "type": "inline",
-              "name": "pCurated.reference"
+              "name": "pProduct.reference"
             }
           }
         },
@@ -7471,7 +7471,7 @@
     }
   },
   {
-    "name": "pCuratedCollection",
+    "name": "pProductCollection",
     "type": "document",
     "attributes": {
       "_id": {
@@ -7484,7 +7484,7 @@
         "type": "objectAttribute",
         "value": {
           "type": "string",
-          "value": "pCuratedCollection"
+          "value": "pProductCollection"
         }
       },
       "_createdAt": {
@@ -7660,7 +7660,7 @@
             },
             "rest": {
               "type": "inline",
-              "name": "pCurated.reference"
+              "name": "pProduct.reference"
             }
           }
         },
@@ -7746,7 +7746,7 @@
     }
   },
   {
-    "name": "pCuratedCategory",
+    "name": "pProductCategory",
     "type": "document",
     "attributes": {
       "_id": {
@@ -7759,7 +7759,7 @@
         "type": "objectAttribute",
         "value": {
           "type": "string",
-          "value": "pCuratedCategory"
+          "value": "pProductCategory"
         }
       },
       "_createdAt": {
@@ -7933,7 +7933,7 @@
     }
   },
   {
-    "name": "pCuratedIndex",
+    "name": "pProductIndex",
     "type": "document",
     "attributes": {
       "_id": {
@@ -7946,7 +7946,7 @@
         "type": "objectAttribute",
         "value": {
           "type": "string",
-          "value": "pCuratedIndex"
+          "value": "pProductIndex"
         }
       },
       "_createdAt": {
@@ -8019,7 +8019,7 @@
             },
             "rest": {
               "type": "inline",
-              "name": "pCuratedCategory.reference"
+              "name": "pProductCategory.reference"
             }
           }
         },
@@ -8041,7 +8041,7 @@
             },
             "rest": {
               "type": "inline",
-              "name": "pCuratedCollection.reference"
+              "name": "pProductCollection.reference"
             }
           }
         },

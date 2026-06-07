@@ -7,7 +7,7 @@
 	"breadcrumb": {
 		"home": "Home",
 		"events": "Events",
-		"curated": "Curated",
+		"products": "Products",
 		"faq": "FAQ"
 	},
 	"locationCurrentTime": {
@@ -37,8 +37,8 @@
 		"dateFormat": "iii, MM.dd.yy, h:mm aaa",
 		"monthYearFormat": "MMMM yyyy"
 	},
-	"curated": {
+	"products": {
 		"categoriesTitle": "Categories",
-		"categoriesDescription": "Browse our curated product categories."
+		"categoriesDescription": "Browse our product categories."
 	}
 }

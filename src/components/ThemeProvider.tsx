@@ -11,7 +11,7 @@ function ThemeProvider({
 }: React.ComponentProps<typeof NextThemesProvider>) {
 	const pathname = usePathname();
 	const { path } = stripLocaleFromPath(pathname);
-	const isLight = path === '/curated' || path.startsWith('/curated/');
+	const isLight = path === '/products' || path.startsWith('/products/');
 
 	return (
 		<NextThemesProvider

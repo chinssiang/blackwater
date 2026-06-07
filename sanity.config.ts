@@ -12,7 +12,7 @@ import { gHeader } from '@/sanity/schemaTypes/singletons/g-header';
 import { p404 } from '@/sanity/schemaTypes/singletons/p-404';
 import { pContact } from '@/sanity/schemaTypes/singletons/p-contact';
 import { pFaq } from '@/sanity/schemaTypes/singletons/p-faq';
-import { pCuratedIndex } from '@/sanity/schemaTypes/singletons/p-curated-index';
+import { pProductIndex } from '@/sanity/schemaTypes/singletons/p-product-index';
 import { pHome } from '@/sanity/schemaTypes/singletons/p-home';
 import { settingsGeneral } from '@/sanity/schemaTypes/singletons/settings-general';
 import { settingsIntegration } from '@/sanity/schemaTypes/singletons/settings-integrations';
@@ -67,7 +67,7 @@ const singletonDocuments = [
 	p404.name,
 	pContact.name,
 	pFaq.name,
-	pCuratedIndex.name,
+	pProductIndex.name,
 	gAnnouncement.name,
 	gNewsletter.name,
 ];

@@ -22,8 +22,8 @@ export const SITEMAP_EVENTS_QUERY = defineQuery(`
 	}
 `);
 
-export const SITEMAP_CURATED_QUERY = defineQuery(`
-	*[_type in ["pCuratedIndex", "pCurated", "pCuratedCategory", "pCuratedCollection"]
+export const SITEMAP_PRODUCTS_QUERY = defineQuery(`
+	*[_type in ["pProductIndex", "pProduct", "pProductCategory", "pProductCollection"]
 		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
 		_type,
 		"slug": slug.current,
@@ -228,7 +228,7 @@ const byLocale = (type: string) =>
 // version with the same slug exists. Translated curated docs share their slug, so
 // this deduplicates a list to one entry per product/collection (locale preferred,
 // English fallback) — the list equivalent of byLocale's single-doc resolution.
-const curatedLocaleFilter = (type: string) =>
+const productLocaleFilter = (type: string) =>
 	`(language == $locale || ((language == "en" || !defined(language)) && !(slug.current in *[_type == "${type}" && language == $locale].slug.current)))`;
 
 // Inline projection field: lists which locale codes have a translated document.
@@ -604,7 +604,7 @@ export const pageBlogSingleQuery = defineQuery(`
 	}
 `);
 
-const curatedProductCardFields = `
+const productCardFields = `
 	${baseFields},
 	excerpt,
 	badge,
@@ -621,30 +621,30 @@ const curatedProductCardFields = `
 	}
 `;
 
-const curatedProductBaseFields = `
-	${curatedProductCardFields},
+const productBaseFields = `
+	${productCardFields},
 	content[]{
 		${portableTextContentFields}
 	}
 `;
 
-const curatedCategoriesFields = `
-	"categories": *[_type == "pCuratedCategory"] | order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc) {
+const productCategoriesFields = `
+	"categories": *[_type == "pProductCategory"] | order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc) {
 		_id,
 		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
 		"slug": slug.current,
 		coverImage {
 			${imageBlockMetaFields}
 		},
-		"count": count(*[_type == "pCurated" && references(^._id) && ${curatedLocaleFilter('pCurated')}])
+		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
 	}
 `;
 
-export const pageCuratedIndexQuery = defineQuery(`
-	${byLocale('pCuratedIndex')}[0]{
+export const pageProductIndexQuery = defineQuery(`
+	${byLocale('pProductIndex')}[0]{
 		${baseFields},
 		${availableLocalesField},
-		"slug": "curated",
+		"slug": "products",
 		subtitle,
 		description,
 		"collections": collections[]->{
@@ -656,7 +656,7 @@ export const pageCuratedIndexQuery = defineQuery(`
 				${imageBlockMetaFields}
 			},
 			"products": products[0...6]->{
-				${curatedProductCardFields}
+				${productCardFields}
 			}
 		},
 		categories[]->{_id,
@@ -665,53 +665,53 @@ export const pageCuratedIndexQuery = defineQuery(`
 			coverImage {
 				${imageBlockMetaFields}
 			},
-			"count": count(*[_type == "pCurated" && references(^._id) && ${curatedLocaleFilter('pCurated')}])
+			"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
 		}
 	}
 `);
 
-export const pageCuratedSlugsQuery = defineQuery(`
-	*[_type == "pCurated" && defined(slug.current)]
+export const pageProductSlugsQuery = defineQuery(`
+	*[_type == "pProduct" && defined(slug.current)]
 	{"slug": slug.current}
 `);
 
-export const pageCuratedSingleQuery = defineQuery(`
-	*[_type == "pCurated" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
-		${curatedProductBaseFields},
+export const pageProductSingleQuery = defineQuery(`
+	*[_type == "pProduct" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
+		${productBaseFields},
 		${availableLocalesField},
 		"relatedProducts": relatedProducts[]->{
-			${curatedProductCardFields}
+			${productCardFields}
 		},
-		"defaultRelatedProducts": *[_type == "pCurated"
+		"defaultRelatedProducts": *[_type == "pProduct"
 			&& count(categories[@._ref in ^.^.categories[]._ref]) > 0
 			&& _id != ^._id
 		] | order(_createdAt desc) [0...3] {
-			${curatedProductCardFields}
+			${productCardFields}
 		}
 	}
 `);
 
-export const pageCuratedCollectionSlugsQuery = defineQuery(`
-	*[_type == "pCuratedCollection" && defined(slug.current)]
+export const pageProductCollectionSlugsQuery = defineQuery(`
+	*[_type == "pProductCollection" && defined(slug.current)]
 	{"slug": slug.current}
 `);
 
-export const pageCuratedCollectionSingleQuery = defineQuery(`
-	*[_type == "pCuratedCollection" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
+export const pageProductCollectionSingleQuery = defineQuery(`
+	*[_type == "pProductCollection" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
 		${availableLocalesField},
 		description,
 		"products": products[]->{
-			${curatedProductCardFields}
+			${productCardFields}
 		},
-		${curatedCategoriesFields}
+		${productCategoriesFields}
 	}
 `);
 
-export const pageCuratedCategoriesIndexQuery = defineQuery(`
+export const pageProductCategoriesIndexQuery = defineQuery(`
 	{
-		"productCount": count(*[_type == "pCurated" && ${curatedLocaleFilter('pCurated')}]),
-		${curatedCategoriesFields},
+		"productCount": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')}]),
+		${productCategoriesFields},
 		"sharing": {
 			"shareGraphic": *[_type == "settingsGeneral"][0].shareGraphic,
 			"siteTitle": coalesce(
@@ -722,13 +722,13 @@ export const pageCuratedCategoriesIndexQuery = defineQuery(`
 	}
 `);
 
-export const pageCuratedCategorySlugsQuery = defineQuery(`
-	*[_type == "pCuratedCategory" && defined(slug.current)]
+export const pageProductCategorySlugsQuery = defineQuery(`
+	*[_type == "pProductCategory" && defined(slug.current)]
 	{"slug": slug.current}
 `);
 
-export const pageCuratedCategorySingleQuery = defineQuery(`
-	*[_type == "pCuratedCategory" && slug.current == $slug][0]{
+export const pageProductCategorySingleQuery = defineQuery(`
+	*[_type == "pProductCategory" && slug.current == $slug][0]{
 		_id,
 		_type,
 		"slug": slug.current,
@@ -755,15 +755,15 @@ export const pageCuratedCategorySingleQuery = defineQuery(`
 		coverImage {
 			${imageBlockMetaFields}
 		},
-		"products": *[_type == "pCurated" && references(^._id) && ${curatedLocaleFilter('pCurated')}] | order(title asc) {
-			${curatedProductCardFields}
+		"products": *[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}] | order(title asc) {
+			${productCardFields}
 		}
 	}
 `);
 
-export const pageCuratedCollectionsIndexQuery = defineQuery(`
+export const pageProductCollectionsIndexQuery = defineQuery(`
 	{
-		"collections": *[_type == "pCuratedCollection" && ${curatedLocaleFilter('pCuratedCollection')}] | order(title asc) {
+		"collections": *[_type == "pProductCollection" && ${productLocaleFilter('pProductCollection')}] | order(title asc) {
 			_id,
 			title,
 			description,
@@ -776,12 +776,12 @@ export const pageCuratedCollectionsIndexQuery = defineQuery(`
 	}
 `);
 
-export const pageCuratedProductsIndexQuery = defineQuery(`
+export const pageProductsAllQuery = defineQuery(`
 	{
-		"products": *[_type == "pCurated" && ${curatedLocaleFilter('pCurated')}] | order(title asc) {
-			${curatedProductCardFields}
+		"products": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}] | order(title asc) {
+			${productCardFields}
 		},
-		${curatedCategoriesFields}
+		${productCategoriesFields}
 	}
 `);
 

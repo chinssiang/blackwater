@@ -1,9 +1,9 @@
 import { type SchemaTypeDefinition } from 'sanity';
 // Documents
 import { pBlog } from './documents/p-blog';
-import { pCurated } from './documents/p-curated';
-import { pCuratedCategory } from './documents/p-curated-category';
-import { pCuratedCollection } from './documents/p-curated-collection';
+import { pProduct } from './documents/p-product';
+import { pProductCategory } from './documents/p-product-category';
+import { pProductCollection } from './documents/p-product-collection';
 import { pBlogCategory } from './documents/p-blog-category';
 import { pBlogIndex } from './documents/p-blog-index';
 import { gTeamMember } from './documents/g-team-member';
@@ -35,7 +35,7 @@ import { gFooter } from './singletons/g-footer';
 import { gHeader } from './singletons/g-header';
 import { p404 } from './singletons/p-404';
 import { pContact } from './singletons/p-contact';
-import { pCuratedIndex } from './singletons/p-curated-index';
+import { pProductIndex } from './singletons/p-product-index';
 import { pFaq } from './singletons/p-faq';
 import { pHome } from './singletons/p-home';
 // Singletons
@@ -72,10 +72,10 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	pEventStatus,
 	pContact,
 	pFaq,
-	pCuratedIndex,
-	pCurated,
-	pCuratedCategory,
-	pCuratedCollection,
+	pProductIndex,
+	pProduct,
+	pProductCategory,
+	pProductCollection,
 	pBrand,
 	eventStation,
 	freeform,

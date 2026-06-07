@@ -1,4 +1,4 @@
-const SITEMAPS = ['pages', 'events', 'curated'] as const;
+const SITEMAPS = ['pages', 'events', 'products'] as const;
 
 export function GET() {
 	const base = process.env.SITE_URL!;
