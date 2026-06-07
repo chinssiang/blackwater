@@ -19,7 +19,7 @@ function ThemeProvider({
 			defaultTheme="system"
 			enableSystem
 			disableTransitionOnChange
-			forcedTheme={isLight ? 'light' : undefined}
+			forcedTheme={isLight ? 'light' : 'dark'}
 			{...props}
 		>
 			<ThemeHotkey />
