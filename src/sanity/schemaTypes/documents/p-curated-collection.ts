@@ -2,6 +2,7 @@ import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { language } from '@/sanity/schemaTypes/objects/language';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
+import { LOCALE_SHORT_LABELS, isLocale } from '@/lib/i18n';
 import { StackIcon } from '@sanity/icons';
 import { defineArrayMember, defineField, defineType } from 'sanity';
 
@@ -56,10 +57,17 @@ export const pCuratedCollection = defineType({
 	preview: {
 		select: {
 			title: 'title',
+			slug: 'slug.current',
+			language: 'language',
 			media: 'coverImage.image.asset',
 		},
-		prepare({ title = 'Untitled', media }) {
-			return { title, media: media || StackIcon };
+		prepare({ title = 'Untitled', slug, language, media }) {
+			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
+			return {
+				title: tag ? `[${tag}] ${title}` : title,
+				subtitle: slug ? `/${slug}` : '(no slug)',
+				media: media || StackIcon,
+			};
 		},
 	},
 });
