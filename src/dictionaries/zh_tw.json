@@ -36,5 +36,9 @@
     "emptyMonth": "本月暫無活動",
     "dateFormat": "yyyy/MM/dd (iii) HH:mm",
     "monthYearFormat": "yyyy年M月"
+  },
+  "curated": {
+    "categoriesTitle": "分類",
+    "categoriesDescription": "瀏覽我們嚴選的商品分類。"
   }
 }

@@ -7,12 +7,12 @@ import {
 	pageCuratedCategorySingleQuery,
 	pageCuratedCategorySlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineMetadata from '@/lib/defineMetadata';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
 import JsonLd from '@/components/JsonLd';
-import { type Locale } from '@/lib/i18n';
+import { type Locale, LOCALES } from '@/lib/i18n';
 import PageCuratedCategory from './_components/PageCuratedCategory';
 
 type Props = {
@@ -43,7 +43,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	return defineMetadata({
 		data: cleanData,
 		locale: locale as Locale,
-		availableLocales: normalizeLocales(cleanData?.availableLocales),
+		// Inline-i18n category lives in one document available in every locale.
+		availableLocales: [...LOCALES],
 	});
 }
 

@@ -711,7 +711,14 @@ export const pageCuratedCollectionSingleQuery = defineQuery(`
 export const pageCuratedCategoriesIndexQuery = defineQuery(`
 	{
 		"productCount": count(*[_type == "pCurated" && ${curatedLocaleFilter('pCurated')}]),
-		${curatedCategoriesFields}
+		${curatedCategoriesFields},
+		"sharing": {
+			"shareGraphic": *[_type == "settingsGeneral"][0].shareGraphic,
+			"siteTitle": coalesce(
+				*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,
+				*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value
+			)
+		}
 	}
 `);
 
@@ -722,9 +729,29 @@ export const pageCuratedCategorySlugsQuery = defineQuery(`
 
 export const pageCuratedCategorySingleQuery = defineQuery(`
 	*[_type == "pCuratedCategory" && slug.current == $slug][0]{
-		${baseFields},
+		_id,
+		_type,
+		"slug": slug.current,
 		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-		"availableLocales": ["en", "zh_tw"],
+		"sharing": {
+			"disableIndex": disableIndex,
+			"metaTitle": coalesce(seoTitle[language == $locale][0].value, seoTitle[language == "en"][0].value),
+			"metaDesc": coalesce(
+				seoDescription[language == $locale][0].value,
+				seoDescription[language == "en"][0].value,
+				description[language == $locale][0].value,
+				description[language == "en"][0].value
+			),
+			"shareGraphic": coalesce(
+				shareGraphic,
+				coverImage.image,
+				*[_type == "settingsGeneral"][0].shareGraphic
+			),
+			"siteTitle": coalesce(
+				*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,
+				*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value
+			)
+		},
 		coverImage {
 			${imageBlockMetaFields}
 		},

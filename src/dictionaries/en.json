@@ -36,5 +36,9 @@
 		"emptyMonth": "No events for this month",
 		"dateFormat": "iii, MM.dd.yy, h:mm aaa",
 		"monthYearFormat": "MMMM yyyy"
+	},
+	"curated": {
+		"categoriesTitle": "Categories",
+		"categoriesDescription": "Browse our curated product categories."
 	}
 }

@@ -16,6 +16,9 @@ export const DOCUMENT_ROUTES = [
 	{ type: 'pGeneral', path: '/', slug: true },
 	{ type: 'pCuratedIndex', path: '/curated', slug: false },
 	{ type: 'pCurated', path: '/curated/products/', slug: true },
+	// Synthetic route (no backing document) — lets the categories index page
+	// reuse resolveHref/defineMetadata for canonical + hreflang.
+	{ type: 'pCuratedCategoriesIndex', path: '/curated/categories', slug: false },
 	{ type: 'pCuratedCategory', path: '/curated/categories/', slug: true },
 	{ type: 'pCuratedCollection', path: '/curated/collections/', slug: true },
 	{ type: 'pEvents', path: '/events/', slug: false },
