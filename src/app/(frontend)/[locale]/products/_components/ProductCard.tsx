@@ -5,6 +5,8 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
+import { useLocale } from '@/components/LocaleProvider';
+import { resolveHref } from '@/lib/routes';
 import { Badge } from '@/components/ui/Badge';
 
 type Category = { _id: string; title?: string | null; slug?: string | null };
@@ -34,6 +36,7 @@ function CategoryLinks({
 	categories: Category[];
 	className?: string;
 }) {
+	const locale = useLocale();
 	return (
 		<p className={className}>
 			{categories.map((c, i) => (
@@ -41,7 +44,11 @@ function CategoryLinks({
 					{i > 0 && ', '}
 					{c.slug ? (
 						<Link
-							href={`/products/categories/${c.slug}`}
+							href={resolveHref({
+								documentType: 'pProductCategory',
+								slug: c.slug,
+								locale,
+							})!}
 							className="relative z-10 underline-offset-4 duration-200 hover:text-mark-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
 						>
 							{c.title}
@@ -60,6 +67,7 @@ export default function ProductCard({
 	index = 0,
 }: ProductCardProps) {
 	const reveal = useReveal();
+	const locale = useLocale();
 	const categories = product.categories?.filter((c) => Boolean(c.title)) ?? [];
 	const hasCategories = categories.length > 0;
 	const brandLabel = product.brands
@@ -153,7 +161,11 @@ export default function ProductCard({
 			   navigates to the product, while the category links above (z-10)
 			   stay individually clickable. Avoids nesting <a> inside <a>. */}
 			<Link
-				href={`/products/${product.slug}`}
+				href={resolveHref({
+					documentType: 'pProduct',
+					slug: product.slug,
+					locale,
+				})!}
 				className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 			>
 				<span className="sr-only">{product.title}</span>

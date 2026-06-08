@@ -225,7 +225,7 @@ const byLocale = (type: string) =>
 
 // Helper GROQ filter clause for locale-aware *listings*: include a doc if it's in
 // the current locale, OR it's the English/undefined fallback AND no current-locale
-// version with the same slug exists. Translated curated docs share their slug, so
+// version with the same slug exists. Translated product docs share their slug, so
 // this deduplicates a list to one entry per product/collection (locale preferred,
 // English fallback) — the list equivalent of byLocale's single-doc resolution.
 const productLocaleFilter = (type: string) =>

@@ -4,6 +4,8 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
+import { useLocale } from '@/components/LocaleProvider';
+import { resolveHref } from '@/lib/routes';
 import ProductPageHeader from '../../_components/ProductPageHeader';
 import type { PageProductCollectionsIndexQueryResult } from 'sanity.types';
 
@@ -14,6 +16,7 @@ type Props = {
 export function PageProductCollectionsIndex({ data }: Props) {
 	const { collections } = data || {};
 	const reveal = useReveal();
+	const locale = useLocale();
 
 	return (
 		<div className="p-x-max min-h-main py-10 lg:py-17.5">
@@ -36,7 +39,11 @@ export function PageProductCollectionsIndex({ data }: Props) {
 								}}
 							>
 								<Link
-									href={`/products/collections/${collection.slug}`}
+									href={resolveHref({
+										documentType: 'pProductCollection',
+										slug: collection.slug,
+										locale,
+									})!}
 									className="group flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 								>
 									<div className="relative mb-3 aspect-4/3 overflow-hidden bg-foreground/[0.06]">

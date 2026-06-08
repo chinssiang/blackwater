@@ -7,6 +7,9 @@ import { motion } from 'motion/react';
 import type { PageProductSingleQueryResult } from 'sanity.types';
 import { hasArrayValue } from '@/lib/utils';
 import { useReveal } from '@/hooks/useReveal';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { resolveHref } from '@/lib/routes';
+import { localizePath } from '@/lib/i18n';
 import ProductCard from '../../_components/ProductCard';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
@@ -17,6 +20,8 @@ type Props = {
 
 export default function PageProductSingle({ data }: Props) {
 	const reveal = useReveal();
+	const locale = useLocale();
+	const breadcrumb = useTranslations('breadcrumb');
 	const {
 		title,
 		badge,
@@ -66,10 +71,10 @@ export default function PageProductSingle({ data }: Props) {
 				transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
 			>
 				<Link
-					href="/products"
+					href={resolveHref({ documentType: 'pProductIndex', locale })!}
 					className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
 				>
-					Products
+					{breadcrumb.products}
 				</Link>
 				<span aria-hidden className="text-foreground/30">
 					/
@@ -220,7 +225,7 @@ export default function PageProductSingle({ data }: Props) {
 								: 'More picks'}
 						</h2>
 						<Link
-							href="/products/all"
+							href={localizePath('/products/all', locale)}
 							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
 						>
 							All products →

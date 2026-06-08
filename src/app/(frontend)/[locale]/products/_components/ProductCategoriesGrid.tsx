@@ -4,6 +4,8 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
+import { useLocale } from '@/components/LocaleProvider';
+import { resolveHref } from '@/lib/routes';
 
 type Category = {
 	_id: string;
@@ -34,12 +36,17 @@ function CategoryTile({
 	category: Category;
 	priority?: boolean;
 }) {
+	const locale = useLocale();
 	const label = countLabel(category.count);
 	const hasImage = !!category.coverImage?.image;
 
 	return (
 		<Link
-			href={`/products/categories/${category.slug}`}
+			href={resolveHref({
+				documentType: 'pProductCategory',
+				slug: category.slug,
+				locale,
+			})!}
 			className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 		>
 			{hasImage && (
@@ -74,6 +81,7 @@ export default function ProductCategoriesGrid({
 	heading = 'Categories',
 }: ProductCategoriesGridProps) {
 	const reveal = useReveal();
+	const locale = useLocale();
 
 	if (!categories || categories.length === 0) return null;
 
@@ -93,7 +101,10 @@ export default function ProductCategoriesGrid({
 					)}
 					{showViewAll && (
 						<Link
-							href="/products/categories"
+							href={resolveHref({
+								documentType: 'pProductCategoriesIndex',
+								locale,
+							})!}
 							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
 						>
 							All categories →

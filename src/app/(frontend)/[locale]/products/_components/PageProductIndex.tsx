@@ -4,6 +4,8 @@ import { cn, hasArrayValue } from '@/lib/utils';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
+import { useLocale } from '@/components/LocaleProvider';
+import { resolveHref } from '@/lib/routes';
 import ImageBlock from '@/components/ImageBlock';
 import ProductCard from './ProductCard';
 import ProductCategoriesGrid from './ProductCategoriesGrid';
@@ -18,9 +20,14 @@ type Collection = NonNullable<
 >[number];
 
 function CollectionMasthead({ collection }: { collection: Collection }) {
+	const locale = useLocale();
 	const cover = collection.coverImage;
 	const href = collection.slug
-		? `/products/collections/${collection.slug}`
+		? resolveHref({
+				documentType: 'pProductCollection',
+				slug: collection.slug,
+				locale,
+			})
 		: null;
 	const allLabel = `All in ${collection.title ?? 'collection'} →`;
 

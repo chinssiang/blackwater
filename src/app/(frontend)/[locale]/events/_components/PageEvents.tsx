@@ -14,7 +14,7 @@ import { buildRgbaCssString } from '@/lib/image-utils';
 import { cn, hasArrayValue } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
-import type { Locale } from '@/lib/i18n';
+import { localizePath, type Locale } from '@/lib/i18n';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
 const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
@@ -315,7 +315,10 @@ export function PageEvents({ data }: PageEventsProps) {
 											})
 										: dateStatus || t.status.tba}
 								</Td>
-								<Link className="p-fill" href={`/events/${slug}`} />
+								<Link
+									className="p-fill"
+									href={localizePath(`/events/${slug}`, locale)}
+								/>
 								<Td
 									className={cn(
 										't-b-1 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line break-words min-w-0 group/location',

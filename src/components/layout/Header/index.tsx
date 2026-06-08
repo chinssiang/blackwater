@@ -8,6 +8,8 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { LocationCurrentTime } from '@/components/LocationCurrentTime';
 import { cn } from '@/lib/utils';
 import { useWindowScroll } from '@/hooks/useWindowScroll';
+import { useLocale } from '@/components/LocaleProvider';
+import { resolveHref } from '@/lib/routes';
 
 // matches --height-header in globals.css
 const HEADER_HEIGHT = 52;
@@ -25,6 +27,7 @@ export function Header({
 	isLightHeader?: boolean;
 }) {
 	const { siteTitle, menu } = data || {};
+	const locale = useLocale();
 	const [{ y }] = useWindowScroll() as [
 		{ x: number | null; y: number | null },
 		(...args: unknown[]) => void,
@@ -46,7 +49,7 @@ export function Header({
 			)}
 
 			<Link
-				href="/"
+				href={resolveHref({ documentType: 'pHome', locale })!}
 				aria-label={siteTitle}
 				className="w-24 text-foreground mr-auto lg:mx-auto h-full flex items-center hover:opacity-90 transition-opacity"
 			>

@@ -6,6 +6,8 @@ import ProductCard from '../../../_components/ProductCard';
 import ProductCategoriesGrid from '../../../_components/ProductCategoriesGrid';
 import ProductPageHeader from '../../../_components/ProductPageHeader';
 import { useReveal } from '@/hooks/useReveal';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { resolveHref } from '@/lib/routes';
 import type { PageProductCollectionSingleQueryResult } from 'sanity.types';
 
 type Props = {
@@ -14,6 +16,8 @@ type Props = {
 
 export default function PageProductCollection({ data }: Props) {
 	const reveal = useReveal();
+	const locale = useLocale();
+	const breadcrumb = useTranslations('breadcrumb');
 	const { title, description, products, categories } = data || {};
 
 	return (
@@ -26,10 +30,10 @@ export default function PageProductCollection({ data }: Props) {
 				transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
 			>
 				<Link
-					href="/products"
+					href={resolveHref({ documentType: 'pProductIndex', locale })!}
 					className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
 				>
-					Products
+					{breadcrumb.products}
 				</Link>
 				<span aria-hidden className="text-foreground/30">
 					/
