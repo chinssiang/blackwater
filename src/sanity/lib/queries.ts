@@ -714,6 +714,7 @@ export const pageProductSingleQuery = defineQuery(`
 		"defaultRelatedProducts": *[_type == "pProduct"
 			&& count(categories[@._ref in ^.^.categories[]._ref]) > 0
 			&& _id != ^._id
+			&& ${productLocaleFilter('pProduct')}
 		] | order(_createdAt desc) [0...3] {
 			${productCardFields}
 		}
