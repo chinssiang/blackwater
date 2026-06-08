@@ -83,7 +83,7 @@
 	--color-success: var(--color-green-600);
 
 	--height-announcement: var(--h-announcement, 0px);
-	--height-header: 52px;
+	--height-header: var(--h-header);
 	--height-footer: var(--h-footer, 90px);
 	--height-main: var(--h-main);
 	--height-newsletter: var(--h-newsletter);
@@ -215,6 +215,7 @@
 			var(--s-contain),
 			calc((100vw - var(--s-max)) / 2)
 		);
+		--h-header: 42px;
 		--s-section: 80px;
 
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
@@ -283,6 +284,7 @@
 
 	@variant lg {
 		:root {
+			--h-header: 52px;
 			--s-section: 96px;
 			--h-main: calc(
 				var(--s-vp-height) - var(--height-announcement, 0px) -

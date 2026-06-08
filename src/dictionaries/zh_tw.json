@@ -53,7 +53,13 @@
     "moreCategory": "更多{category}",
     "allProducts": "所有商品 →",
     "kickerCollection": "系列",
-    "kickerCategory": "分類"
+    "kickerCategory": "分類",
+    "badges": {
+      "founders-pick": "創辦人精選",
+      "most-popular": "最受歡迎",
+      "editors-choice": "編輯精選",
+      "new": "新品"
+    }
   },
   "nav": {
     "menu": "選單",

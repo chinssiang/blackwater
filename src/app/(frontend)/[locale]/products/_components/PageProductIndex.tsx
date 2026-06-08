@@ -4,12 +4,14 @@ import { cn, hasArrayValue } from '@/lib/utils';
 import Link from 'next/link';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
-import { useLocale } from '@/components/LocaleProvider';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
+import { localizePath } from '@/lib/i18n';
 import ImageBlock from '@/components/ImageBlock';
 import ProductCard from './ProductCard';
 import ProductCategoriesGrid from './ProductCategoriesGrid';
 import type { PageProductIndexQueryResult } from 'sanity.types';
+import { Button } from '@/components/ui/Button';
 
 type Props = {
 	data: NonNullable<PageProductIndexQueryResult>;
@@ -60,7 +62,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 				))}
 
 			<div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-				<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none tracking-[-0.02em] text-balance">
+				<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
 					{collection.title}
 				</h2>
 				{href && (
@@ -93,6 +95,9 @@ export function PageProductIndex({ data }: Props) {
 		allProductsList,
 	} = data || {};
 	const reveal = useReveal();
+	const locale = useLocale();
+	const t = useTranslations('products');
+	const allProductsHref = localizePath('/products/all', locale);
 
 	return (
 		<div className="p-x-max min-h-main py-10 lg:py-17.5">
@@ -162,11 +167,19 @@ export function PageProductIndex({ data }: Props) {
 					transition={{ duration: 0.8, ease: [0, 0.5, 0.5, 1] }}
 				>
 					<div className="border-t border-foreground/15 pt-4">
-						{allProducts?.title && (
-							<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
-								{allProducts.title}
-							</h2>
-						)}
+						<div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+							{allProducts?.title && (
+								<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
+									{allProducts.title}
+								</h2>
+							)}
+							<Link
+								href={allProductsHref}
+								className="t-l-2 ml-auto inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
+							>
+								{t.allProducts}
+							</Link>
+						</div>
 						{allProducts?.description && (
 							<p className="t-b-1 mt-3 max-w-[60ch] leading-relaxed text-foreground/70">
 								{allProducts.description}
@@ -182,6 +195,16 @@ export function PageProductIndex({ data }: Props) {
 								index={productIndex}
 							/>
 						))}
+					</div>
+
+					<div className="mt-20 flex justify-center lg:mt-30">
+						<Button
+							asChild
+							size="lg"
+							className="t-l-1 whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11 px-6"
+						>
+							<Link href={allProductsHref}>{t.allProducts}</Link>
+						</Button>
 					</div>
 				</motion.section>
 			)}

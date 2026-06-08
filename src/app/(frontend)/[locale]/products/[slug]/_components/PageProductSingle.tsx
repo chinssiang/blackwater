@@ -162,7 +162,11 @@ export default function PageProductSingle({ data }: Props) {
 							}}
 						>
 							{badge.map((b: string) => (
-								<Badge key={b}>{b}</Badge>
+								<Badge key={b}>
+									{(productText.badges as Record<string, string>)[
+										b
+									] ?? b}
+								</Badge>
 							))}
 						</motion.div>
 					)}

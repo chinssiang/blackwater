@@ -104,7 +104,9 @@ export default function ProductCard({
 				{product.badge && product.badge.length > 0 && (
 					<div className="absolute top-4 left-0 flex flex-col items-start gap-1.5">
 						{product.badge.map((b) => (
-							<Badge key={b}>{b}</Badge>
+							<Badge key={b}>
+								{(t.badges as Record<string, string>)[b] ?? b}
+							</Badge>
 						))}
 					</div>
 				)}

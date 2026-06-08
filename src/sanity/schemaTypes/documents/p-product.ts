@@ -61,9 +61,10 @@ export const pProduct = defineType({
 			of: [defineArrayMember({ type: 'string' })],
 			options: {
 				list: [
-					{ title: "Founder's Pick", value: "Founder's Pick" },
-					{ title: 'Most Popular', value: 'Most Popular' },
-					{ title: 'New', value: 'New' },
+					{ title: "Founder's Pick", value: 'founders-pick' },
+					{ title: 'Most Popular', value: 'most-popular' },
+					{ title: "Editor's Choice", value: 'editors-choice' },
+					{ title: 'New', value: 'new' },
 				],
 			},
 		}),

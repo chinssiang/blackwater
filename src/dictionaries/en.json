@@ -53,7 +53,13 @@
 		"moreCategory": "More {category}",
 		"allProducts": "All products →",
 		"kickerCollection": "Collection",
-		"kickerCategory": "Category"
+		"kickerCategory": "Category",
+		"badges": {
+			"founders-pick": "Founder's Pick",
+			"most-popular": "Most Popular",
+			"editors-choice": "Editor's Choice",
+			"new": "New"
+		}
 	},
 	"nav": {
 		"menu": "Menu",
