@@ -32,6 +32,7 @@ export default function PageProductSingle({ data }: Props) {
 	const reveal = useReveal();
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
+	const productText = useTranslations('products');
 	const {
 		title,
 		slug,
@@ -42,10 +43,41 @@ export default function PageProductSingle({ data }: Props) {
 		price,
 		purchaseLink,
 		content,
+		whyUseIt,
+		whoIsItFor,
+		whenReachForIt,
 		metadata,
 		relatedProducts,
 		defaultRelatedProducts,
 	} = data || {};
+
+	// `whenReachForIt` is a GROQ conditional-projection union (richText OR list
+	// variant); contentType isn't a true discriminant, so read it via `any`.
+	const when = whenReachForIt as any;
+
+	const staticSections = [
+		hasArrayValue(whyUseIt) && {
+			value: 'whyUseIt',
+			title: productText.whyUseIt,
+			contentType: 'richText',
+			richText: whyUseIt,
+		},
+		hasArrayValue(whoIsItFor) && {
+			value: 'whoIsItFor',
+			title: productText.whoIsItFor,
+			contentType: 'richText',
+			richText: whoIsItFor,
+		},
+		when &&
+			((when.contentType === 'richText' && hasArrayValue(when.richText)) ||
+				(when.contentType === 'list' && hasArrayValue(when.list))) && {
+				value: 'whenReachForIt',
+				title: productText.whenReachForIt,
+				contentType: when.contentType,
+				richText: when.richText,
+				list: when.list,
+			},
+	].filter(Boolean) as any[];
 
 	const displayRelated =
 		relatedProducts && relatedProducts.length > 0
@@ -150,7 +182,7 @@ export default function PageProductSingle({ data }: Props) {
 					)}
 
 					<motion.h1
-						className="mt-3 text-balance text-[clamp(1.75rem,3.2vw,2.75rem)] uppercase tracking-[-0.02em]"
+						className="mt-3 text-balance t-h-1 uppercase"
 						{...reveal}
 						transition={{
 							duration: 0.8,
@@ -220,12 +252,49 @@ export default function PageProductSingle({ data }: Props) {
 								ease: [0, 0.5, 0.5, 1],
 							}}
 						>
-							<p className="t-l-2 mb-5 uppercase text-foreground/65">
+							<p className="t-l-1 mb-5 uppercase text-foreground/65">
 								Why we chose it
 							</p>
-							<div className="text-[0.9375rem] leading-relaxed text-foreground/80 [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-medium [&_h2]:uppercase [&_h2]:tracking-[-0.02em] [&_h2]:text-foreground [&_h2:first-child]:mt-0 [&_h3]:mt-6 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:uppercase [&_h3]:text-foreground [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
+							<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4]">
 								<CustomPortableText blocks={content as any} />
 							</div>
+						</motion.div>
+					)}
+
+					{staticSections.length > 0 && (
+						<motion.div
+							className="mt-8 max-w-[60ch] border-t border-foreground/10"
+							{...reveal}
+							transition={{
+								duration: 0.8,
+								delay: 0.35,
+								ease: [0, 0.5, 0.5, 1],
+							}}
+						>
+							{staticSections.map((item: any) => (
+								<div
+									key={item.value}
+									className="border-b border-foreground/10 py-4"
+								>
+									<p className="t-l-1 uppercase text-foreground/65">
+										{item.title}
+									</p>
+									{item.contentType === 'richText' && item.richText && (
+										<div className="t-b-1 mt-3 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4]">
+											<CustomPortableText blocks={item.richText} />
+										</div>
+									)}
+									{item.contentType === 'list' && item.list && (
+										<div className="mt-3 flex flex-wrap gap-1.5">
+											{item.list.map((li: any, idx: number) => (
+												<Badge key={li._key ?? idx}>
+													{li._type === 'reference' ? li.tag?.title : li.text}
+												</Badge>
+											))}
+										</div>
+									)}
+								</div>
+							))}
 						</motion.div>
 					)}
 
@@ -235,7 +304,7 @@ export default function PageProductSingle({ data }: Props) {
 							{...reveal}
 							transition={{
 								duration: 0.8,
-								delay: 0.35,
+								delay: 0.4,
 								ease: [0, 0.5, 0.5, 1],
 							}}
 						>

@@ -77,7 +77,68 @@ export const pProduct = defineType({
 		}),
 		defineField({
 			name: 'content',
-			type: 'portableText',
+			type: 'portableTextSimple',
+		}),
+		defineField({
+			name: 'whyUseIt',
+			title: 'Why do we use it?',
+			type: 'portableTextSimple',
+		}),
+		defineField({
+			name: 'whoIsItFor',
+			title: 'Who is it for?',
+			type: 'portableTextSimple',
+		}),
+		defineField({
+			name: 'whenReachForIt',
+			title: 'When do we reach for it?',
+			type: 'object',
+			fields: [
+				defineField({
+					name: 'contentType',
+					title: 'Content Type',
+					type: 'string',
+					options: {
+						list: [
+							{ title: 'Rich Text', value: 'richText' },
+							{ title: 'Tags / Text List', value: 'list' },
+						],
+						layout: 'radio',
+					},
+					initialValue: 'richText',
+				}),
+				defineField({
+					name: 'richText',
+					title: 'Rich Text',
+					type: 'portableTextSimple',
+					hidden: ({ parent }) => parent?.contentType !== 'richText',
+				}),
+				defineField({
+					name: 'list',
+					title: 'Tags / Text List',
+					type: 'array',
+					of: [
+						defineArrayMember({
+							type: 'reference',
+							to: [{ type: 'gTag' }],
+						}),
+						defineArrayMember({
+							type: 'object',
+							name: 'textItem',
+							title: 'Text',
+							fields: [
+								defineField({
+									name: 'text',
+									type: 'string',
+									validation: (Rule) => Rule.required(),
+								}),
+							],
+							preview: { select: { title: 'text' } },
+						}),
+					],
+					hidden: ({ parent }) => parent?.contentType !== 'list',
+				}),
+			],
 		}),
 		defineField({
 			name: 'metadata',
@@ -145,8 +206,7 @@ export const pProduct = defineType({
 						prepare({ title, contentType }) {
 							return {
 								title: title || 'Untitled',
-								subtitle:
-									contentType === 'list' ? 'Tags / Text' : 'Rich text',
+								subtitle: contentType === 'list' ? 'Tags / Text' : 'Rich text',
 							};
 						},
 					},

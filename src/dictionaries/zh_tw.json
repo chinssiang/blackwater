@@ -40,7 +40,10 @@
   "products": {
     "categoriesTitle": "分類",
     "categoriesDescription": "瀏覽我們嚴選的商品分類。",
-    "allCategories": "所有分類 →"
+    "allCategories": "所有分類 →",
+    "whyUseIt": "我們為什麼使用它？",
+    "whoIsItFor": "它適合誰？",
+    "whenReachForIt": "我們何時會選用它？"
   },
   "nav": {
     "menu": "選單",
