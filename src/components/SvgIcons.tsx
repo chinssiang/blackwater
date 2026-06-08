@@ -19,3 +19,42 @@ export function ArrowUpRight({ className }: SvgIconsProps) {
 		</svg>
 	);
 }
+
+// Mobile-menu trigger icon — 3×3 grid of squares (Figma node 1108:2016).
+export function MenuIcon({ className }: SvgIconsProps) {
+	return (
+		<svg
+			className={cn(className)}
+			viewBox="0 0 15 15"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+			aria-hidden="true"
+		>
+			<path
+				d="M2.75 12.25V14.75H0.25V12.25H2.75ZM8.75 12.25V14.75H6.25V12.25H8.75ZM14.75 12.25V14.75H12.25V12.25H14.75ZM2.75 6.25V8.75H0.25V6.25H2.75ZM8.75 6.25V8.75H6.25V6.25H8.75ZM14.75 6.25V8.75H12.25V6.25H14.75ZM2.75 0.25V2.75H0.25V0.25H2.75ZM8.75 0.25V2.75H6.25V0.25H8.75ZM14.75 0.25V2.75H12.25V0.25H14.75Z"
+				fill="currentColor"
+				stroke="currentColor"
+				strokeWidth="0.5"
+			/>
+		</svg>
+	);
+}
+
+// Close ("X") icon — the grid's diagonal squares (4 corners + centre).
+export function CloseIcon({ className }: SvgIconsProps) {
+	return (
+		<svg
+			className={cn(className)}
+			viewBox="0 0 15 15"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+			aria-hidden="true"
+		>
+			<rect x="0.25" y="0.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
+			<rect x="12.25" y="0.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
+			<rect x="6.25" y="6.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
+			<rect x="0.25" y="12.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
+			<rect x="12.25" y="12.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
+		</svg>
+	);
+}

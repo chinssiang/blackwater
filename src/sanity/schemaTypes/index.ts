@@ -33,6 +33,7 @@ import { faqList } from './objects/faq';
 import { gAuthor } from './singletons/g-author';
 import { gFooter } from './singletons/g-footer';
 import { gHeader } from './singletons/g-header';
+import { gMobileMenu } from './singletons/g-mobile-menu';
 import { p404 } from './singletons/p-404';
 import { pContact } from './singletons/p-contact';
 import { pProductIndex } from './singletons/p-product-index';
@@ -55,6 +56,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	gAnnouncement,
 	gHeader,
 	gFooter,
+	gMobileMenu,
 	pGeneral,
 	p404,
 	pHome,

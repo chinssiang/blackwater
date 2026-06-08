@@ -219,6 +219,41 @@ export function formatUrl(url: string): string {
 	return `${protocol}://${normalizedRest}`;
 }
 
+/** Source label that identifies our site in a destination's analytics. */
+export const REFERRAL_SOURCE = 'blackwaterrc.com';
+
+type ReferralParams = {
+	source: string;
+	medium: string;
+	campaign: string;
+	content?: string;
+};
+
+/**
+ * Appends UTM campaign params to an outbound URL so the destination's analytics
+ * can attribute the visit to us. Preserves existing query/hash and never clobbers
+ * params already present on the URL. Returns the input unchanged if it can't be parsed.
+ */
+export function appendReferralParams(url: string, params: ReferralParams): string {
+	try {
+		const parsed = new URL(url);
+		const utm: Record<string, string | undefined> = {
+			utm_source: params.source,
+			utm_medium: params.medium,
+			utm_campaign: params.campaign,
+			utm_content: params.content,
+		};
+		for (const [key, value] of Object.entries(utm)) {
+			if (value && !parsed.searchParams.has(key)) {
+				parsed.searchParams.set(key, value);
+			}
+		}
+		return parsed.toString();
+	} catch {
+		return url;
+	}
+}
+
 // --- UTILITIES / VALIDATION ---
 
 /**

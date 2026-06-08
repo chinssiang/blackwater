@@ -1,9 +1,10 @@
 'use client';
 
-import { GHeader, SettingsMenu } from 'sanity.types';
+import { GHeader, SettingsMenu, SiteDataQueryResult } from 'sanity.types';
 import Link from 'next/link';
 import { LogoSvg } from '@/components/LogoSvg';
 import Menu from '@/components/Menu';
+import MobileMenu from '@/components/MobileMenu';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { LocationCurrentTime } from '@/components/LocationCurrentTime';
 import { cn } from '@/lib/utils';
@@ -17,6 +18,7 @@ const HEADER_HEIGHT = 52;
 type HeaderProps = GHeader & {
 	siteTitle?: string;
 	menu?: SettingsMenu;
+	mobileMenu?: SiteDataQueryResult['mobileMenu'];
 };
 
 export function Header({
@@ -26,7 +28,7 @@ export function Header({
 	data: HeaderProps;
 	isLightHeader?: boolean;
 }) {
-	const { siteTitle, menu } = data || {};
+	const { siteTitle, menu, mobileMenu } = data || {};
 	const locale = useLocale();
 	const [{ y }] = useWindowScroll() as [
 		{ x: number | null; y: number | null },
@@ -57,11 +59,14 @@ export function Header({
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
 			<div className="ml-auto flex text-foreground gap-3">
-				<LanguageSwitcher />
-				<div className="t-b-2 flex items-center gap-1 uppercase">
-					<LocationCurrentTime />
-					<span>(TPE)</span>
+				<div className="hidden items-center gap-3 lg:flex">
+					<LanguageSwitcher />
+					<div className="t-b-2 flex items-center gap-1 uppercase">
+						<LocationCurrentTime />
+						<span>(TPE)</span>
+					</div>
 				</div>
+				<MobileMenu data={mobileMenu} siteTitle={siteTitle} />
 			</div>
 		</header>
 	);

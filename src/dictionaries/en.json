@@ -39,6 +39,13 @@
 	},
 	"products": {
 		"categoriesTitle": "Categories",
-		"categoriesDescription": "Browse our product categories."
+		"categoriesDescription": "Browse our product categories.",
+		"allCategories": "All categories →"
+	},
+	"nav": {
+		"menu": "Menu",
+		"close": "Close",
+		"openMenu": "Open menu",
+		"closeMenu": "Close menu"
 	}
 }

@@ -302,6 +302,10 @@
 	}
 
 	html::selection {
+		@apply bg-foreground text-background [text-shadow:none];
+	}
+
+	html.dark::selection {
 		@apply bg-accent text-foreground [text-shadow:none];
 	}
 

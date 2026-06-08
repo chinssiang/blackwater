@@ -4,7 +4,7 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
-import { useLocale } from '@/components/LocaleProvider';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 
 type Category = {
@@ -19,8 +19,6 @@ type ProductCategoriesGridProps = {
 	categories: Category[] | null;
 	showViewAll?: boolean;
 	priority?: boolean;
-	/** Section label. Pass null to hide it (e.g. on the categories index,
-	   where the page masthead already carries the title). */
 	heading?: string | null;
 };
 
@@ -42,11 +40,13 @@ function CategoryTile({
 
 	return (
 		<Link
-			href={resolveHref({
-				documentType: 'pProductCategory',
-				slug: category.slug,
-				locale,
-			})!}
+			href={
+				resolveHref({
+					documentType: 'pProductCategory',
+					slug: category.slug,
+					locale,
+				})!
+			}
 			className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 		>
 			{hasImage && (
@@ -78,14 +78,17 @@ export default function ProductCategoriesGrid({
 	categories,
 	showViewAll = false,
 	priority = false,
-	heading = 'Categories',
+	heading,
 }: ProductCategoriesGridProps) {
 	const reveal = useReveal();
 	const locale = useLocale();
+	const t = useTranslations('products');
 
 	if (!categories || categories.length === 0) return null;
 
-	const showHeader = heading != null || showViewAll;
+	// `undefined` (prop omitted) falls back to the localized label; `null` hides it.
+	const resolvedHeading = heading === undefined ? t.categoriesTitle : heading;
+	const showHeader = resolvedHeading != null || showViewAll;
 
 	return (
 		<motion.section
@@ -94,20 +97,24 @@ export default function ProductCategoriesGrid({
 		>
 			{showHeader && (
 				<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
-					{heading != null ? (
-						<h2 className="t-l-2 uppercase text-foreground/70">{heading}</h2>
+					{resolvedHeading != null ? (
+						<h2 className="t-l-2 uppercase text-foreground/70">
+							{resolvedHeading}
+						</h2>
 					) : (
 						<span />
 					)}
 					{showViewAll && (
 						<Link
-							href={resolveHref({
-								documentType: 'pProductCategoriesIndex',
-								locale,
-							})!}
+							href={
+								resolveHref({
+									documentType: 'pProductCategoriesIndex',
+									locale,
+								})!
+							}
 							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
 						>
-							All categories →
+							{t.allCategories}
 						</Link>
 					)}
 				</div>

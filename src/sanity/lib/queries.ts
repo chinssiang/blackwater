@@ -101,6 +101,24 @@ const menuFields = `
 	}
 `;
 
+// Projection for a single mobile-menu navItem (flat list, no dropdowns).
+// Mirrors the navItem branch of `menuFields` and reuses `linkFields`.
+const mobileMenuItemFields = `
+	"title": coalesce(
+		title[language == $locale][0].value,
+		title[language == "en"][0].value,
+		link.label[language == $locale][0].value,
+		link.label[language == "en"][0].value,
+		link.internalLink->title[language == $locale][0].value,
+		link.internalLink->title[language == "en"][0].value,
+		link.internalLink->title,
+		link.href
+	),
+	link {
+		${linkFields}
+	}
+`;
+
 export const imageMetaFields = `
 	...,
   asset,
@@ -269,6 +287,17 @@ export const siteDataQuery = defineQuery(`{
 				${menuFields}
 			},
 			note,
+		},
+		"mobileMenu": ${byLocale('gMobileMenu')}[0]{
+			primaryMenu[]{
+				${mobileMenuItemFields}
+			},
+			secondaryMenu[]{
+				${mobileMenuItemFields}
+			},
+			cta{
+				${callToActionFields}
+			}
 		},
 		"newsletter": ${byLocale('gNewsletter')}[0]{
 			klaviyoListID,

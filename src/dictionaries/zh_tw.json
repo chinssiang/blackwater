@@ -39,6 +39,13 @@
   },
   "products": {
     "categoriesTitle": "分類",
-    "categoriesDescription": "瀏覽我們嚴選的商品分類。"
+    "categoriesDescription": "瀏覽我們嚴選的商品分類。",
+    "allCategories": "所有分類 →"
+  },
+  "nav": {
+    "menu": "選單",
+    "close": "關閉",
+    "openMenu": "開啟選單",
+    "closeMenu": "關閉選單"
   }
 }

@@ -9,6 +9,7 @@ import { gAnnouncement } from '@/sanity/schemaTypes/singletons/g-announcement';
 import { gNewsletter } from '@/sanity/schemaTypes/singletons/g-newsletter';
 import { gFooter } from '@/sanity/schemaTypes/singletons/g-footer';
 import { gHeader } from '@/sanity/schemaTypes/singletons/g-header';
+import { gMobileMenu } from '@/sanity/schemaTypes/singletons/g-mobile-menu';
 import { p404 } from '@/sanity/schemaTypes/singletons/p-404';
 import { pContact } from '@/sanity/schemaTypes/singletons/p-contact';
 import { pFaq } from '@/sanity/schemaTypes/singletons/p-faq';
@@ -61,6 +62,7 @@ const commonPlugins = [
 const singletonDocuments = [
 	gFooter.name,
 	gHeader.name,
+	gMobileMenu.name,
 	pHome.name,
 	settingsIntegration.name,
 	settingsGeneral.name,

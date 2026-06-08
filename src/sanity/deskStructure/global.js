@@ -1,4 +1,9 @@
-import { ComponentIcon, EnvelopeIcon, HelpCircleIcon } from '@sanity/icons';
+import {
+	ComponentIcon,
+	EnvelopeIcon,
+	HelpCircleIcon,
+	MenuIcon,
+} from '@sanity/icons';
 import { apiVersion } from '@/sanity/env';
 
 export const globalMenu = (S) => {
@@ -35,6 +40,15 @@ export const globalMenu = (S) => {
 								.documentId('gFooter')
 						)
 						.icon(ComponentIcon),
+					S.listItem()
+						.title('Mobile Menu')
+						.child(
+							S.editor()
+								.id('gMobileMenu')
+								.schemaType('gMobileMenu')
+								.documentId('gMobileMenu')
+						)
+						.icon(MenuIcon),
 					S.listItem()
 						.title('FAQ')
 						.child(

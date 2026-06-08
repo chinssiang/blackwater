@@ -5,7 +5,7 @@ import ImageBlock from '@/components/ImageBlock';
 import CustomPortableText from '@/components/CustomPortableText';
 import { motion } from 'motion/react';
 import type { PageProductSingleQueryResult } from 'sanity.types';
-import { hasArrayValue } from '@/lib/utils';
+import { hasArrayValue, appendReferralParams, REFERRAL_SOURCE } from '@/lib/utils';
 import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
@@ -24,6 +24,7 @@ export default function PageProductSingle({ data }: Props) {
 	const breadcrumb = useTranslations('breadcrumb');
 	const {
 		title,
+		slug,
 		badge,
 		categories,
 		brands,
@@ -175,9 +176,14 @@ export default function PageProductSingle({ data }: Props) {
 						>
 							<Button asChild>
 								<a
-									href={purchaseLink}
+									href={appendReferralParams(purchaseLink, {
+										source: REFERRAL_SOURCE,
+										medium: 'referral',
+										campaign: 'curated-products',
+										content: slug ?? undefined,
+									})}
 									target="_blank"
-									rel="noopener noreferrer"
+									rel="noopener"
 									aria-label={`Buy ${title ?? 'this product'} (opens in a new tab)`}
 									className="group min-w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase"
 								>

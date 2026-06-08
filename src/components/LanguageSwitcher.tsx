@@ -13,8 +13,10 @@ import { cn } from '@/lib/utils';
 
 export default function LanguageSwitcher({
 	className,
+	onSelect,
 }: {
 	className?: string;
+	onSelect?: () => void;
 }) {
 	const pathname = usePathname();
 	const { locale: currentLocale, path: strippedPath } =
@@ -34,6 +36,7 @@ export default function LanguageSwitcher({
 						) : (
 							<Link
 								href={localizePath(strippedPath, locale)}
+								onClick={onSelect}
 								className="text-muted-foreground transition-colors hover:text-foreground"
 							>
 								{LOCALE_SHORT_LABELS[locale]}

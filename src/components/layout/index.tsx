@@ -17,7 +17,7 @@ type LayoutProps = {
 	siteData: any;
 };
 export function Layout({ children, siteData }: LayoutProps) {
-	const { header, footer, newsletter, sharing } = siteData || {};
+	const { header, footer, newsletter, sharing, mobileMenu } = siteData || {};
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaID;
 	const { path: strippedPath } = stripLocaleFromPath(pathname);
@@ -32,8 +32,8 @@ export function Layout({ children, siteData }: LayoutProps) {
 	}, [gaID, pathname]);
 
 	const headerData = useMemo(
-		() => ({ ...header, siteTitle: sharing?.siteTitle }),
-		[header, sharing?.siteTitle]
+		() => ({ ...header, siteTitle: sharing?.siteTitle, mobileMenu }),
+		[header, sharing?.siteTitle, mobileMenu]
 	);
 
 	const footerData = useMemo(
