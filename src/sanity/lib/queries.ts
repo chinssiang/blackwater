@@ -650,11 +650,37 @@ const productCardFields = `
 	}
 `;
 
+const productMetadataFields = `
+	metadata[]{
+		_key,
+		title,
+		contentType,
+		contentType == "richText" => {
+			"richText": richText[]{ ${portableTextContentFields} }
+		},
+		contentType == "list" => {
+			"list": list[]{
+				_key,
+				_type,
+				_type == "reference" => {
+					"tag": @->{
+						_id,
+						"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+						"slug": slug.current
+					}
+				},
+				_type == "textItem" => { text }
+			}
+		}
+	}
+`;
+
 const productBaseFields = `
 	${productCardFields},
 	content[]{
 		${portableTextContentFields}
-	}
+	},
+	${productMetadataFields}
 `;
 
 const productCategoriesFields = `

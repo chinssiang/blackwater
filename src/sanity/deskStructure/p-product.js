@@ -23,6 +23,13 @@ const pageBrand = (S) => {
 		.icon(TagsIcon);
 };
 
+const pageTag = (S) => {
+	return S.listItem()
+		.title('Tags')
+		.child(S.documentTypeList('gTag').title('Tags'))
+		.icon(TagsIcon);
+};
+
 export const pageProduct = (S) => {
 	return S.listItem()
 		.title('Products')
@@ -48,6 +55,7 @@ export const pageProduct = (S) => {
 					S.divider(),
 					pageProductCategory(S),
 					pageBrand(S),
+					pageTag(S),
 				])
 		)
 		.icon(StarIcon);

@@ -5,7 +5,11 @@ import ImageBlock from '@/components/ImageBlock';
 import CustomPortableText from '@/components/CustomPortableText';
 import { motion } from 'motion/react';
 import type { PageProductSingleQueryResult } from 'sanity.types';
-import { hasArrayValue, appendReferralParams, REFERRAL_SOURCE } from '@/lib/utils';
+import {
+	hasArrayValue,
+	appendReferralParams,
+	REFERRAL_SOURCE,
+} from '@/lib/utils';
 import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
@@ -13,6 +17,12 @@ import { localizePath } from '@/lib/i18n';
 import ProductCard from '../../_components/ProductCard';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
+import {
+	Accordion,
+	AccordionItem,
+	AccordionTrigger,
+	AccordionContent,
+} from '@/components/ui/Accordion';
 
 type Props = {
 	data: NonNullable<PageProductSingleQueryResult>;
@@ -32,6 +42,7 @@ export default function PageProductSingle({ data }: Props) {
 		price,
 		purchaseLink,
 		content,
+		metadata,
 		relatedProducts,
 		defaultRelatedProducts,
 	} = data || {};
@@ -199,7 +210,6 @@ export default function PageProductSingle({ data }: Props) {
 						</motion.div>
 					)}
 
-					{/* Why we chose it */}
 					{content && content.length > 0 && (
 						<motion.div
 							className="mt-10 max-w-[60ch] border-t border-foreground/10 pt-8"
@@ -216,6 +226,53 @@ export default function PageProductSingle({ data }: Props) {
 							<div className="text-[0.9375rem] leading-relaxed text-foreground/80 [&_h2]:mt-8 [&_h2]:mb-2 [&_h2]:text-base [&_h2]:font-medium [&_h2]:uppercase [&_h2]:tracking-[-0.02em] [&_h2]:text-foreground [&_h2:first-child]:mt-0 [&_h3]:mt-6 [&_h3]:mb-1 [&_h3]:text-sm [&_h3]:font-medium [&_h3]:uppercase [&_h3]:text-foreground [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
 								<CustomPortableText blocks={content as any} />
 							</div>
+						</motion.div>
+					)}
+
+					{metadata && metadata.length > 0 && (
+						<motion.div
+							className="mt-8 max-w-[60ch] border-t border-foreground/10 pt-4"
+							{...reveal}
+							transition={{
+								duration: 0.8,
+								delay: 0.35,
+								ease: [0, 0.5, 0.5, 1],
+							}}
+						>
+							<Accordion type="multiple">
+								{metadata.map((item: any, i: number) => {
+									const value = item._key ?? `meta-${i}`;
+									return (
+										<AccordionItem
+											key={value}
+											value={value}
+											className="border-foreground/10 "
+										>
+											<AccordionTrigger className="t-l-2 uppercase text-foreground/65">
+												{item.title}
+											</AccordionTrigger>
+											<AccordionContent>
+												{item.contentType === 'richText' && item.richText && (
+													<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
+														<CustomPortableText blocks={item.richText} />
+													</div>
+												)}
+												{item.contentType === 'list' && item.list && (
+													<div className="flex flex-wrap gap-1.5">
+														{item.list.map((li: any, idx: number) => (
+															<Badge key={li._key ?? idx}>
+																{li._type === 'reference'
+																	? li.tag?.title
+																	: li.text}
+															</Badge>
+														))}
+													</div>
+												)}
+											</AccordionContent>
+										</AccordionItem>
+									);
+								})}
+							</Accordion>
 						</motion.div>
 					)}
 				</div>
@@ -239,11 +296,7 @@ export default function PageProductSingle({ data }: Props) {
 					</div>
 					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-10">
 						{displayRelated.map((product, index) => (
-							<ProductCard
-								key={product._id}
-								product={product}
-								index={index}
-							/>
+							<ProductCard key={product._id} product={product} index={index} />
 						))}
 					</div>
 				</section>

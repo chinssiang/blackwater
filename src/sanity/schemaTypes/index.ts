@@ -9,6 +9,7 @@ import { pBlogIndex } from './documents/p-blog-index';
 import { gTeamMember } from './documents/g-team-member';
 import { gLocation } from './documents/g-location';
 import { gFaq } from './documents/g-faq';
+import { gTag } from './documents/g-tag';
 import { pEvent } from './documents/p-event';
 import { pEventCategory } from './documents/p-event-category';
 import { pEventRole } from './documents/p-event-role';
@@ -79,6 +80,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	pProductCategory,
 	pProductCollection,
 	pBrand,
+	gTag,
 	eventStation,
 	freeform,
 	faqList,

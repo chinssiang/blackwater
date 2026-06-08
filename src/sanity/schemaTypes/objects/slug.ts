@@ -32,16 +32,17 @@ type SlugFieldOptions = {
 	initialValue?: {_type: 'slug'; current: string};
 	readOnly?: boolean;
 	group?: string | string[];
+	// Hide the "View page" link (ViewPageField) for document types that have no
+	// front-end route — e.g. gTag — where the link would resolve to nothing.
+	hideViewPage?: boolean;
 };
 
-export function slug({ initialValue, readOnly, group }: SlugFieldOptions = {}) {
+export function slug({ initialValue, readOnly, group, hideViewPage }: SlugFieldOptions = {}) {
 	return defineField({
 		title: 'Slug (Page URL)',
 		name: 'slug',
 		type: 'slug',
-		components: {
-			field: ViewPageField,
-		},
+		...(hideViewPage ? {} : { components: { field: ViewPageField } }),
 		options: {
 			// Resolve the slug source through pickLocalizedValue so it works for
 			// both plain-string titles and internationalizedArray titles (returns
