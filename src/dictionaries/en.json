@@ -43,7 +43,17 @@
 		"allCategories": "All categories →",
 		"whyUseIt": "Why do we use it?",
 		"whoIsItFor": "Who is it for?",
-		"whenReachForIt": "When do we reach for it?"
+		"whenReachForIt": "When do we reach for it?",
+		"whyWeChoseIt": "Why we chose it",
+		"buyIt": "Buy it",
+		"buyAriaLabel": "Buy {product} (opens in a new tab)",
+		"thisProduct": "this product",
+		"view": "View",
+		"morePicks": "More picks",
+		"moreCategory": "More {category}",
+		"allProducts": "All products →",
+		"kickerCollection": "Collection",
+		"kickerCategory": "Category"
 	},
 	"nav": {
 		"menu": "Menu",

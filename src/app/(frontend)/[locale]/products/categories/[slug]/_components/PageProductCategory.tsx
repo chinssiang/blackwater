@@ -17,6 +17,7 @@ export default function PageProductCategory({ data }: Props) {
 	const reveal = useReveal();
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
+	const t = useTranslations('products');
 	const { title, products } = data || {};
 
 	return (
@@ -43,7 +44,7 @@ export default function PageProductCategory({ data }: Props) {
 			</motion.nav>
 
 			<ProductPageHeader
-				kicker="Category"
+				kicker={t.kickerCategory}
 				title={title}
 				counts={[{ count: products?.length, unit: 'product' }]}
 			/>

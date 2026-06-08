@@ -32,14 +32,14 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 	const allLabel = `All in ${collection.title ?? 'collection'} →`;
 
 	return (
-		<div className="mt-5 border-t border-foreground/15 pt-4">
+		<div className="border-t border-foreground/15 pt-4">
 			{cover?.image &&
 				(href ? (
 					<Link
 						href={href}
 						className="group block overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 					>
-						<div className="relative aspect-[4/3] overflow-hidden bg-foreground/[0.06] sm:aspect-[16/7] lg:aspect-[12/4]">
+						<div className="relative aspect-4/3] overflow-hidden bg-foreground/6 sm:aspect-16/7 lg:aspect-12/4">
 							<ImageBlock
 								className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
 								imageObj={cover}
@@ -49,7 +49,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 						</div>
 					</Link>
 				) : (
-					<div className="relative aspect-[4/3] overflow-hidden bg-foreground/[0.06] sm:aspect-[16/7] lg:aspect-[12/4]">
+					<div className="relative aspect-4/3 overflow-hidden bg-foreground/6 sm:aspect-16/7 lg:aspect-12/4">
 						<ImageBlock
 							className="h-full w-full object-cover"
 							imageObj={cover}
@@ -83,7 +83,15 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 }
 
 export function PageProductIndex({ data }: Props) {
-	const { title, subtitle, description, collections, categories } = data || {};
+	const {
+		title,
+		subtitle,
+		description,
+		collections,
+		categories,
+		allProducts,
+		allProductsList,
+	} = data || {};
 	const reveal = useReveal();
 
 	return (
@@ -108,13 +116,11 @@ export function PageProductIndex({ data }: Props) {
 				)}
 			</motion.section>
 
-			<div className="pb-4">
-				<ProductCategoriesGrid
-					categories={categories ?? null}
-					showViewAll
-					priority
-				/>
-			</div>
+			<ProductCategoriesGrid
+				categories={categories ?? null}
+				showViewAll
+				priority
+			/>
 
 			{collections?.map((collection, index) => {
 				const products = collection.products;
@@ -135,7 +141,7 @@ export function PageProductIndex({ data }: Props) {
 						<CollectionMasthead collection={collection} />
 
 						{products && products.length > 0 && (
-							<div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10  2xl:grid-cols-4">
+							<div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
 								{products.map((product, productIndex) => (
 									<ProductCard
 										key={product._id}
@@ -148,6 +154,37 @@ export function PageProductIndex({ data }: Props) {
 					</motion.section>
 				);
 			})}
+
+			{hasArrayValue(allProductsList) && (
+				<motion.section
+					className="mt-14 lg:mt-24"
+					{...reveal}
+					transition={{ duration: 0.8, ease: [0, 0.5, 0.5, 1] }}
+				>
+					<div className="border-t border-foreground/15 pt-4">
+						{allProducts?.title && (
+							<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
+								{allProducts.title}
+							</h2>
+						)}
+						{allProducts?.description && (
+							<p className="t-b-1 mt-3 max-w-[60ch] leading-relaxed text-foreground/70">
+								{allProducts.description}
+							</p>
+						)}
+					</div>
+
+					<div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
+						{allProductsList.map((product, productIndex) => (
+							<ProductCard
+								key={product._id}
+								product={product}
+								index={productIndex}
+							/>
+						))}
+					</div>
+				</motion.section>
+			)}
 		</div>
 	);
 }

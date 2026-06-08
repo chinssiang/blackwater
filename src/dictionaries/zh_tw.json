@@ -43,7 +43,17 @@
     "allCategories": "所有分類 →",
     "whyUseIt": "我們為什麼使用它？",
     "whoIsItFor": "它適合誰？",
-    "whenReachForIt": "我們何時會選用它？"
+    "whenReachForIt": "我們何時會選用它？",
+    "whyWeChoseIt": "我們為什麼選擇它",
+    "buyIt": "購買",
+    "buyAriaLabel": "購買 {product}（在新分頁開啟）",
+    "thisProduct": "此商品",
+    "view": "查看",
+    "morePicks": "更多精選",
+    "moreCategory": "更多{category}",
+    "allProducts": "所有商品 →",
+    "kickerCollection": "系列",
+    "kickerCategory": "分類"
   },
   "nav": {
     "menu": "選單",

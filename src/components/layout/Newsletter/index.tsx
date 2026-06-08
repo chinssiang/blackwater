@@ -196,6 +196,7 @@ export function Newsletter({
 									type="submit"
 									disabled={formState === 'submitting'}
 									variant="outline"
+									className="bg-black text-white"
 								>
 									{formState === 'submitting'
 										? 'Subscribing…'

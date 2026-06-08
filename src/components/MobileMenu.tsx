@@ -118,7 +118,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 	return (
 		<Dialog.Root open={open} onOpenChange={setOpen}>
 			<Dialog.Trigger
-				className="t-b-2 flex cursor-pointer items-center gap-1.5 uppercase lg:hidden"
+				className="t-b-2 flex cursor-pointer items-center gap-1.5 uppercase lg:hidden w-14 justify-between"
 				aria-label={open ? t.closeMenu : t.openMenu}
 			>
 				<AnimatedMenuIcon open={open} reduce={reduce} />
@@ -130,7 +130,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 					{open && (
 						<Dialog.Content asChild forceMount key="mobile-menu">
 							<motion.div
-								className="text-foreground bg-background fixed inset-0 z-[99] flex flex-col"
+								className="text-foreground bg-background fixed inset-0 z-popover flex flex-col"
 								variants={mobileMenuPanel}
 								initial="hide"
 								animate="show"
@@ -154,7 +154,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 										<span className="sr-only">{siteTitle}</span>
 									</Link>
 									<Dialog.Close
-										className="t-b-2 ml-auto flex cursor-pointer items-center gap-2 uppercase"
+										className="t-b-2 ml-auto flex cursor-pointer items-center gap-1.5 uppercase w-14 justify-between"
 										aria-label={t.closeMenu}
 									>
 										<AnimatedMenuIcon open={open} reduce={reduce} />

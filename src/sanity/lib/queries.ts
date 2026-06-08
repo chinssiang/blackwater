@@ -728,6 +728,14 @@ export const pageProductIndexQuery = defineQuery(`
 		"slug": "products",
 		subtitle,
 		description,
+		allProducts{
+			title,
+			description
+		},
+		"allProductsList": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}]
+			| order(_createdAt desc)[0...24]{
+			${productCardFields}
+		},
 		"collections": collections[]->{
 			_id,
 			title,
@@ -736,7 +744,7 @@ export const pageProductIndexQuery = defineQuery(`
 			coverImage {
 				${imageBlockMetaFields}
 			},
-			"products": products[0...6]->{
+			"products": products[0...8]->{
 				${productCardFields}
 			}
 		},

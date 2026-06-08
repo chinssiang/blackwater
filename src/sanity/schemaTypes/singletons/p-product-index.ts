@@ -58,6 +58,24 @@ export const pProductIndex = defineType({
 			],
 			validation: (Rule) => Rule.unique(),
 		}),
+		defineField({
+			name: 'allProducts',
+			title: 'All Products Section',
+			type: 'object',
+			description:
+				'Heading shown above the auto-generated grid of the 24 most recent products',
+			fields: [
+				defineField({
+					name: 'title',
+					type: 'string',
+				}),
+				defineField({
+					name: 'description',
+					type: 'text',
+					rows: 3,
+				}),
+			],
+		}),
 		sharing(),
 	],
 	preview: {

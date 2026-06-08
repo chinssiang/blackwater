@@ -64,7 +64,6 @@ export const pProduct = defineType({
 					{ title: "Founder's Pick", value: "Founder's Pick" },
 					{ title: 'Most Popular', value: 'Most Popular' },
 					{ title: 'New', value: 'New' },
-					{ title: "Editor's Choice", value: "Editor's Choice" },
 				],
 			},
 		}),

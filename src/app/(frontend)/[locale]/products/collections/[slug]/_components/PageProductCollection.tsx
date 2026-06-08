@@ -18,6 +18,7 @@ export default function PageProductCollection({ data }: Props) {
 	const reveal = useReveal();
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
+	const t = useTranslations('products');
 	const { title, description, products, categories } = data || {};
 
 	return (
@@ -44,7 +45,7 @@ export default function PageProductCollection({ data }: Props) {
 			</motion.nav>
 
 			<ProductPageHeader
-				kicker="Collection"
+				kicker={t.kickerCollection}
 				title={title}
 				counts={[{ count: products?.length, unit: 'product' }]}
 				lede={description}

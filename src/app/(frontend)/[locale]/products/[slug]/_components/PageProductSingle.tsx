@@ -12,6 +12,7 @@ import {
 } from '@/lib/utils';
 import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { interpolate } from '@/lib/dictionary';
 import { resolveHref } from '@/lib/routes';
 import { localizePath } from '@/lib/i18n';
 import ProductCard from '../../_components/ProductCard';
@@ -128,7 +129,6 @@ export default function PageProductSingle({ data }: Props) {
 				</span>
 			</motion.nav>
 
-			{/* Product hero */}
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
 				{/* Image */}
 				<motion.div
@@ -227,10 +227,12 @@ export default function PageProductSingle({ data }: Props) {
 									})}
 									target="_blank"
 									rel="noopener"
-									aria-label={`Buy ${title ?? 'this product'} (opens in a new tab)`}
-									className="group min-w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase"
+									aria-label={interpolate(productText.buyAriaLabel, {
+										product: title ?? productText.thisProduct,
+									})}
+									className="group lg:w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase w-full"
 								>
-									Buy it
+									{productText.buyIt}
 									<span
 										aria-hidden
 										className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
@@ -244,7 +246,7 @@ export default function PageProductSingle({ data }: Props) {
 
 					{content && content.length > 0 && (
 						<motion.div
-							className="mt-10 max-w-[60ch] border-t border-foreground/10 pt-8"
+							className="mt-10 lg:max-w-[60ch] border-t border-foreground/10 pt-8"
 							{...reveal}
 							transition={{
 								duration: 0.8,
@@ -253,7 +255,7 @@ export default function PageProductSingle({ data }: Props) {
 							}}
 						>
 							<p className="t-l-1 mb-5 uppercase text-foreground/65">
-								Why we chose it
+								{productText.whyWeChoseIt}
 							</p>
 							<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4]">
 								<CustomPortableText blocks={content as any} />
@@ -263,7 +265,7 @@ export default function PageProductSingle({ data }: Props) {
 
 					{staticSections.length > 0 && (
 						<motion.div
-							className="mt-8 max-w-[60ch] border-t border-foreground/10"
+							className="mt-8 lg:max-w-[60ch] border-t border-foreground/10"
 							{...reveal}
 							transition={{
 								duration: 0.8,
@@ -353,14 +355,16 @@ export default function PageProductSingle({ data }: Props) {
 					<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
 						<h2 className="t-l-2 uppercase text-foreground/70">
 							{firstCategory?.title
-								? `More ${firstCategory.title}`
-								: 'More picks'}
+								? interpolate(productText.moreCategory, {
+										category: firstCategory.title,
+									})
+								: productText.morePicks}
 						</h2>
 						<Link
 							href={localizePath('/products/all', locale)}
 							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
 						>
-							All products →
+							{productText.allProducts}
 						</Link>
 					</div>
 					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-10">

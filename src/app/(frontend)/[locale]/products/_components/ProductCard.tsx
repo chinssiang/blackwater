@@ -5,7 +5,7 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
-import { useLocale } from '@/components/LocaleProvider';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { Badge } from '@/components/ui/Badge';
 
@@ -68,6 +68,7 @@ export default function ProductCard({
 }: ProductCardProps) {
 	const reveal = useReveal();
 	const locale = useLocale();
+	const t = useTranslations('products');
 	const categories = product.categories?.filter((c) => Boolean(c.title)) ?? [];
 	const hasCategories = categories.length > 0;
 	const brandLabel = product.brands
@@ -149,7 +150,7 @@ export default function ProductCard({
 						aria-hidden
 						className="t-l-2 inline-flex items-center gap-1 uppercase text-foreground/65 transition-colors duration-200 group-hover:text-mark-ink"
 					>
-						View
+						{t.view}
 						<span className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
 							→
 						</span>
