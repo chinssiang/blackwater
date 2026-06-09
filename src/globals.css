@@ -244,7 +244,8 @@
 
 		--h-main: calc(
 			var(--s-vp-height) - var(--height-announcement, 0px) -
-				var(--height-header) - var(--height-g-toolbar)
+				var(--height-header) - var(--height-g-toolbar) -
+				(var(--height-newsletter) * 0.6)
 		);
 	}
 
@@ -288,7 +289,7 @@
 			--s-section: 96px;
 			--h-main: calc(
 				var(--s-vp-height) - var(--height-announcement, 0px) -
-					var(--height-header) - var(--height-footer)
+					var(--height-header) - var(--height-newsletter)
 			);
 			--animate-field-hint: field-hint 12s linear infinite;
 		}

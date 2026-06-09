@@ -170,7 +170,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		: '';
 
 	return (
-		<div className="min-h-main p-x-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
+		<div className="min-h-screen p-x-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
 			<h1 className="sr-only">{title}</h1>
 			<div className="flex items-center justify-between sticky top-header bg-background/95 z-10 font-bold">
 				<motion.p
