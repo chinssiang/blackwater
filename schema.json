@@ -4312,19 +4312,25 @@
         },
         "optional": true
       },
-      "menu": {
+      "menus": {
         "type": "objectAttribute",
         "value": {
-          "type": "inline",
-          "name": "settingsMenu.reference"
-        },
-        "optional": true
-      },
-      "menuLegal": {
-        "type": "objectAttribute",
-        "value": {
-          "type": "inline",
-          "name": "settingsMenu.reference"
+          "type": "array",
+          "of": {
+            "type": "object",
+            "attributes": {
+              "_key": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "string"
+                }
+              }
+            },
+            "rest": {
+              "type": "inline",
+              "name": "settingsMenu.reference"
+            }
+          }
         },
         "optional": true
       },
@@ -4336,7 +4342,7 @@
         },
         "optional": true
       },
-      "note": {
+      "copyright": {
         "type": "objectAttribute",
         "value": {
           "type": "string"

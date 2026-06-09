@@ -1,16 +1,18 @@
 import { useLayoutEffect, useRef } from 'react';
 import { pageTransitionFade } from '@/lib/animate';
-import Menu from '@/components/Menu';
+import CustomLink from '@/components/CustomLink';
 import { motion } from 'motion/react';
 import type { GFooter, SettingsMenu } from 'sanity.types';
+import { WordmarkSvg } from '@/components/WordmarkSvg';
 
-type FooterProps = GFooter & {
+type FooterProps = Omit<GFooter, 'menus'> & {
 	siteTitle?: string;
-	menu?: SettingsMenu;
+	menus?: SettingsMenu[];
 };
 
 export function Footer({ data }: { data: FooterProps }) {
-	const { menu, note } = data || {};
+	const { menus, copyright } = data || {};
+	const hasMenus = !!menus && menus.length > 0;
 	const footerRef = useRef<HTMLElement | null>(null);
 
 	useLayoutEffect(() => {
@@ -26,34 +28,53 @@ export function Footer({ data }: { data: FooterProps }) {
 			initial="initial"
 			animate="animate"
 			variants={pageTransitionFade}
-			className="bg-background text-foreground px-contain py-6 lg:py-10 lg:mb-0 empty:hidden border-t border-t-foreground/30"
+			className="bg-background text-foreground pt-section lg:pb-14 p-x-max empty:hidden pb-g-toolbar"
 		>
-			{menu && (
-				<Menu
-					data={menu}
-					className="mb-10 md:hidden flex items-center t-b-2 gap-2.5 select-none uppercase justify-between"
-				/>
-			)}
-			{note && (
-				<motion.p
-					key="landing-title"
-					variants={{
-						hidden: { opacity: 0 },
-						show: {
-							opacity: 1,
-						},
-					}}
-					transition={{
-						duration: 0.3,
-						delay: 1.5,
-					}}
-					initial="hidden"
-					animate="show"
-					className="t-l-2 uppercase text-right"
+			{hasMenus && (
+				<nav
+					aria-label="Footer"
+					className="grid grid-cols-2 gap-12 md:grid-cols-3 w-full lg:w-3/5"
 				>
-					{note}
-				</motion.p>
+					{menus!.map((menu, col) => (
+						<ul key={menu?._id ?? col} className="flex flex-col gap-2 md:gap-3">
+							{menu?.items?.map((item: any, i: number) => (
+								<li key={item?._key ?? i} className="t-l-1 uppercase">
+									<CustomLink
+										link={item?.link}
+										className="flex gap-3 text-foreground transition-colors hover:text-foreground/80 md:gap-10"
+									>
+										<span
+											aria-hidden
+											className="min-w-4 shrink-0 text-foreground/60 tabular-nums"
+										>
+											{col + 1}.{i + 1}
+										</span>
+										<span>{item?.title}</span>
+									</CustomLink>
+								</li>
+							))}
+						</ul>
+					))}
+				</nav>
 			)}
-			</motion.footer>
+			<div className="flex justify-between mt-20 lg:mt-62 flex-col gap-4 items-start md:flex-row">
+				<WordmarkSvg className="h-3 w-auto" />
+				{copyright && (
+					<motion.small
+						variants={{
+							hidden: { opacity: 0 },
+							show: { opacity: 1 },
+						}}
+						transition={{ duration: 0.3, delay: 1.5 }}
+						initial="hidden"
+						animate="show"
+						className="t-l-2 lg:t-l-1 flex gap-2 uppercase text-foreground/60"
+					>
+						<span className="shrink-0">© {new Date().getFullYear()}</span>
+						<span className="whitespace-pre-line">{copyright}</span>
+					</motion.small>
+				)}
+			</div>
+		</motion.footer>
 	);
 }

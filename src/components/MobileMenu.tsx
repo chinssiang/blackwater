@@ -8,7 +8,7 @@ import type { SiteDataQueryResult } from 'sanity.types';
 import CustomLink from '@/components/CustomLink';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { LocationCurrentTime } from '@/components/LocationCurrentTime';
-import { LogoSvg } from '@/components/LogoSvg';
+import { WordmarkSvg } from '@/components/WordmarkSvg';
 import { CloseIcon, MenuIcon } from '@/components/SvgIcons';
 import { buttonVariants } from '@/components/ui/Button';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
@@ -150,7 +150,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 										onClick={() => setOpen(false)}
 										className="text-foreground flex h-full w-24 items-center transition-opacity hover:opacity-90"
 									>
-										<LogoSvg className="h-full" />
+										<WordmarkSvg className="h-full" />
 										<span className="sr-only">{siteTitle}</span>
 									</Link>
 									<Dialog.Close

@@ -122,7 +122,7 @@ Each page route follows this pattern:
 - `<BlogCard>` — Card component for blog post listings.
 - `<Caption>` — Shared caption for image/media blocks.
 - `<LocationCurrentTime>` — Displays location name with live local time.
-- `<LogoSvg>` — SVG logo component.
+- `<WordmarkSvg>` — SVG logo component.
 - `<SvgIcons>` — SVG icon set.
 - `<TextReveal>` / `<Typewriter>` — Motion-based text animation components.
 - `<Menu>` / `<MenuDropdown>` / `<MobileMenu>` — Navigation components.

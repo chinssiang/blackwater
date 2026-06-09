@@ -8,15 +8,12 @@ export const gFooter = defineType({
 	fields: [
 		language(),
 		{
-			name: 'menu',
-			type: 'reference',
-			to: [{ type: 'settingsMenu' }],
-		},
-		{
-			title: 'Legal menu',
-			name: 'menuLegal',
-			type: 'reference',
-			to: [{ type: 'settingsMenu' }],
+			title: 'Footer Menus',
+			name: 'menus',
+			description: 'Each menu becomes a footer column. Manage entries in Global → Menus.',
+			type: 'array',
+			of: [{ type: 'reference', to: [{ type: 'settingsMenu' }] }],
+			validation: (Rule) => Rule.max(6),
 		},
 		{
 			title: 'Toolbar Menu (Mobile)',
@@ -25,9 +22,12 @@ export const gFooter = defineType({
 			to: [{ type: 'settingsMenu' }],
 		},
 		{
-			title: 'Note',
-			name: 'note',
-			type: 'string',
+			title: 'Copyright',
+			name: 'copyright',
+			description:
+				'Shown in the footer bottom row after the auto-generated “© {year}”. Line breaks are preserved.',
+			type: 'text',
+			rows: 2,
 		},
 	],
 	preview: {

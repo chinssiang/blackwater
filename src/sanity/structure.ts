@@ -3,7 +3,7 @@ import type { StructureResolver } from 'sanity/structure';
 import { globalMenu } from './deskStructure/global';
 import { menusMenu } from './deskStructure/menus';
 import { pageBlog } from './deskStructure/p-blog';
-import { pageProduct } from './deskStructure/p-product';
+import { pageProductItems } from './deskStructure/p-product';
 import { pageEventItems } from './deskStructure/p-event';
 import { otherPagesMenu, pagesMenu } from './deskStructure/pages';
 import { settingsMenu } from './deskStructure/settings';
@@ -18,7 +18,7 @@ export const structure: StructureResolver = (S) =>
 			S.divider(),
 			...pageEventItems(S),
 			S.divider(),
-			pageProduct(S),
+			...pageProductItems(S),
 			S.divider(),
 			S.listItem()
 				.title('Team Members')

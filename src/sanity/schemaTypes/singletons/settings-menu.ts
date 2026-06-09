@@ -24,7 +24,7 @@ export const settingsMenu = defineType({
 		prepare({ title = 'Untitled', items = [] }) {
 			return {
 				title,
-				subtitle: `${items.length} link(s)`,
+				subtitle: `${items?.length ?? 0} link(s)`,
 				media: MenuIcon,
 			};
 		},

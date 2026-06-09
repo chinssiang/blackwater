@@ -111,53 +111,82 @@ export const pageEventItems = (S) => {
 			.icon(BookIcon),
 		S.listItem()
 			.title('Events')
+			.icon(BookIcon)
 			.child(
 				S.documentTypeList('pEvent')
 					.title('Events')
+					.apiVersion(apiVersion)
+					.filter('_type == "pEvent" && language == "en"')
 					.defaultOrdering([
-						{ field: 'language', direction: 'asc' },
 						{ field: 'eventDatetime', direction: 'desc' },
 					])
-			)
-			.icon(BookIcon),
-		S.listItem()
-			.title('Locations')
-			.child(S.documentTypeList('gLocation').title('Locations'))
-			.icon(PinIcon),
-		pageEventGroupByDate(S),
-		S.listItem()
-			.title('Events by Category')
-			.child(
-				S.documentTypeList('pEventCategory')
-					.title('Events by Category')
-					.child((categoryId) => {
-						return S.documentList()
-							.title('Events')
-							.apiVersion(apiVersion)
-							.filter('_type == "pEvent" && $categoryId in category[]._ref')
-							.params({ categoryId })
-							.defaultOrdering([
-								{ field: 'language', direction: 'asc' },
-								{ field: 'eventDatetime', direction: 'desc' },
-							]);
-					})
-			),
-		S.listItem()
-			.title('Events by Status')
-			.child(
-				S.documentTypeList('pEventStatus')
-					.title('Events by Status')
-					.child((statusId) =>
+					.child((docId) =>
 						S.documentList()
-							.title('Events')
+							.title('Translations')
 							.apiVersion(apiVersion)
-							.filter('_type == "pEvent" && $statusId in status[]._ref')
-							.params({ statusId })
+							.filter(
+								'_type == "pEvent" && _id in *[_type == "translation.metadata" && references($docId)][0].translations[].value._ref'
+							)
+							.params({ docId })
 							.defaultOrdering([
 								{ field: 'language', direction: 'asc' },
-								{ field: 'eventDatetime', direction: 'desc' },
 							])
 					)
+			),
+		pageEventGroupByDate(S),
+		S.listItem()
+			.id('eventTaxonomy')
+			.title('Taxonomy')
+			.icon(TagsIcon)
+			.child(
+				S.list()
+					.title('Taxonomy')
+					.items([
+						S.listItem()
+							.title('Locations')
+							.child(
+								S.documentTypeList('gLocation').title('Locations')
+							)
+							.icon(PinIcon),
+						S.listItem()
+							.title('Events by Category')
+							.child(
+								S.documentTypeList('pEventCategory')
+									.title('Events by Category')
+									.child((categoryId) => {
+										return S.documentList()
+											.title('Events')
+											.apiVersion(apiVersion)
+											.filter(
+												'_type == "pEvent" && $categoryId in category[]._ref'
+											)
+											.params({ categoryId })
+											.defaultOrdering([
+												{ field: 'language', direction: 'asc' },
+												{ field: 'eventDatetime', direction: 'desc' },
+											]);
+									})
+							),
+						S.listItem()
+							.title('Events by Status')
+							.child(
+								S.documentTypeList('pEventStatus')
+									.title('Events by Status')
+									.child((statusId) =>
+										S.documentList()
+											.title('Events')
+											.apiVersion(apiVersion)
+											.filter(
+												'_type == "pEvent" && $statusId in status[]._ref'
+											)
+											.params({ statusId })
+											.defaultOrdering([
+												{ field: 'language', direction: 'asc' },
+												{ field: 'eventDatetime', direction: 'desc' },
+											])
+									)
+							),
+					])
 			),
 		pageEventStatus(S),
 		pageEventCategory(S),

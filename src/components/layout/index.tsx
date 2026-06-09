@@ -48,7 +48,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 			<Main>
 				{children}
 				{!isEventsCrew && (
-					<div className="border-t border-t-foreground/36">
+					<div className="border-t border-foreground/36">
 						<Newsletter
 							data={newsletter}
 							className="p-x-max flex flex-wrap md:grid-cols-2 md:gap-6 py-6 w-full justify-between"

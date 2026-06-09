@@ -277,16 +277,13 @@ export const siteDataQuery = defineQuery(`{
 			}
 		},
 		"footer": ${byLocale('gFooter')}[0]{
-			menu->{
-				${menuFields}
-			},
-			"menuLegal": menuLegal->{
+			"menus": menus[]->{
 				${menuFields}
 			},
 			"toolbarMenu": toolbarMenu->{
 				${menuFields}
 			},
-			note,
+			copyright,
 		},
 		"mobileMenu": ${byLocale('gMobileMenu')}[0]{
 			primaryMenu[]{

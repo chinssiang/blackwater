@@ -1,4 +1,9 @@
-import { pickLocalizedValue, type Locale } from '@/lib/i18n';
+import {
+	pickLocalizedValue,
+	isLocale,
+	LOCALE_SHORT_LABELS,
+	type Locale,
+} from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
@@ -250,8 +255,9 @@ export const pProduct = defineType({
 						locale: language as Locale,
 					})
 				: null;
+			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
 			return {
-				title,
+				title: tag ? `[${tag}] ${title}` : title,
 				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — ${href ?? '/products/(no slug)'}`,
 				media: mainImage?.image.asset || ImageIcon,
 			};

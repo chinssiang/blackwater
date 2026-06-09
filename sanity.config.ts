@@ -21,7 +21,7 @@ import { structure } from '@/sanity/structure';
 import { colorInput } from '@sanity/color-input';
 import { documentInternationalization } from '@sanity/document-internationalization';
 import { visionTool } from '@sanity/vision';
-import { LogoSvg } from '@/components/LogoSvg';
+import { WordmarkSvg } from '@/components/WordmarkSvg';
 import { SANITY_LANGUAGES } from '@/lib/i18n';
 import { defineConfig, isDev } from 'sanity';
 import { media } from 'sanity-plugin-media';
@@ -77,7 +77,7 @@ const singletonDocuments = [
 export default defineConfig({
 	basePath: '/sanity',
 	title: 'Blackwater RC',
-	icon: LogoSvg,
+	icon: WordmarkSvg,
 	projectId,
 	dataset,
 	plugins: commonPlugins,

@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
-type LogoSvgProps = {
+type WordmarkSvgProps = {
 	className?: string;
 };
-export function LogoSvg({ className }: LogoSvgProps) {
+export function WordmarkSvg({ className }: WordmarkSvgProps) {
 	return (
 		<svg
 			viewBox="0 0 303 40"

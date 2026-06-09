@@ -2,7 +2,7 @@
 
 import { GHeader, SettingsMenu, SiteDataQueryResult } from 'sanity.types';
 import Link from 'next/link';
-import { LogoSvg } from '@/components/LogoSvg';
+import { WordmarkSvg } from '@/components/WordmarkSvg';
 import Menu from '@/components/Menu';
 import MobileMenu from '@/components/MobileMenu';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -55,7 +55,7 @@ export function Header({
 				aria-label={siteTitle}
 				className="w-24 text-foreground mr-auto lg:mx-auto h-full flex items-center hover:opacity-90 transition-opacity"
 			>
-				<LogoSvg className="h-full" />
+				<WordmarkSvg className="h-full" />
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
 			<div className="ml-auto flex text-foreground gap-3">

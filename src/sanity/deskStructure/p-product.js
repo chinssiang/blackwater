@@ -1,13 +1,39 @@
+import { apiVersion } from '@/sanity/env';
 import { StarIcon, TagsIcon, StackIcon } from '@sanity/icons';
 
-const pageProductCollection = (S) => {
-	return S.listItem()
+const pageProductCollection = (S) => [
+	S.listItem()
 		.title('Collections')
+		.icon(StackIcon)
 		.child(
-			S.documentTypeList('pProductCollection').title('Collections')
-		)
-		.icon(StackIcon);
-};
+			S.documentTypeList('pProductCollection')
+				.title('Collections')
+				.apiVersion(apiVersion)
+				.filter('_type == "pProductCollection" && language == "en"')
+				.defaultOrdering([{ field: 'title', direction: 'asc' }])
+				.child((docId) =>
+					S.documentList()
+						.title('Translations')
+						.apiVersion(apiVersion)
+						.filter(
+							'_type == "pProductCollection" && _id in *[_type == "translation.metadata" && references($docId)][0].translations[].value._ref'
+						)
+						.params({ docId })
+						.defaultOrdering([{ field: 'language', direction: 'asc' }])
+				)
+		),
+	// S.listItem()
+	// 	.title('Collections · 中文 (no English pair)')
+	// 	.icon(StackIcon)
+	// 	.child(
+	// 		S.documentList()
+	// 			.title('中文 — missing English version')
+	// 			.apiVersion(apiVersion)
+	// 			.filter(
+	// 				'_type == "pProductCollection" && language != "en" && count(*[_type == "translation.metadata" && references(^._id)][0].translations[value->language == "en"]) == 0'
+	// 			)
+	// 	),
+];
 
 const pageProductCategory = (S) => {
 	return S.listItem()
@@ -30,33 +56,67 @@ const pageTag = (S) => {
 		.icon(TagsIcon);
 };
 
-export const pageProduct = (S) => {
-	return S.listItem()
-		.title('Products')
-		.child(
-			S.list()
-				.title('Products')
-				.items([
-					S.listItem()
-						.title('Products Index Page')
-						.child(
-							S.editor()
-								.id('pProductIndex')
-								.title('Products Index Page')
-								.schemaType('pProductIndex')
-								.documentId('pProductIndex')
-						)
-						.icon(StarIcon),
-					S.listItem()
-						.title('All Products')
-						.child(S.documentTypeList('pProduct').title('Products'))
-						.icon(StarIcon),
-					pageProductCollection(S),
-					S.divider(),
-					pageProductCategory(S),
-					pageBrand(S),
-					pageTag(S),
-				])
-		)
-		.icon(StarIcon);
+export const pageProductItems = (S) => {
+	return [
+		S.listItem()
+			.title('Products Index Page')
+			.child(
+				S.editor()
+					.id('pProductIndex')
+					.title('Products Index Page')
+					.schemaType('pProductIndex')
+					.documentId('pProductIndex')
+			)
+			.icon(StarIcon),
+		S.listItem()
+			.title('All Products')
+			.icon(StarIcon)
+			.child(
+				S.documentTypeList('pProduct')
+					.title('Products')
+					.apiVersion(apiVersion)
+					.filter('_type == "pProduct" && language == "en"')
+					.defaultOrdering([{ field: 'title', direction: 'asc' }])
+					.child((docId) =>
+						S.documentList()
+							.title('Translations')
+							.apiVersion(apiVersion)
+							.filter(
+								'_type == "pProduct" && _id in *[_type == "translation.metadata" && references($docId)][0].translations[].value._ref'
+							)
+							.params({ docId })
+							.defaultOrdering([
+								{
+									field: 'language',
+									direction: 'asc',
+								},
+							])
+					)
+			),
+		// S.listItem()
+		// 	.title('中文 (no English pair)')
+		// 	.icon(StarIcon)
+		// 	.child(
+		// 		S.documentList()
+		// 			.title('中文 — missing English version')
+		// 			.apiVersion(apiVersion)
+		// 			.filter(
+		// 				'_type == "pProduct" && language != "en" && count(*[_type == "translation.metadata" && references(^._id)][0].translations[value->language == "en"]) == 0'
+		// 			)
+		// 	),
+		...pageProductCollection(S),
+		S.listItem()
+			.id('productTaxonomy')
+			.title('Taxonomy')
+			.icon(TagsIcon)
+			.child(
+				S.list()
+					.title('Taxonomy')
+					.items([
+						pageProductCategory(S),
+						pageBrand(S),
+						pageTag(S),
+					])
+			),
+	];
 };
