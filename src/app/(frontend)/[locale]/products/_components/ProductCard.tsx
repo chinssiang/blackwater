@@ -44,12 +44,14 @@ function CategoryLinks({
 					{i > 0 && ', '}
 					{c.slug ? (
 						<Link
-							href={resolveHref({
-								documentType: 'pProductCategory',
-								slug: c.slug,
-								locale,
-							})!}
-							className="relative z-10 underline-offset-4 duration-200 hover:text-mark-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
+							href={
+								resolveHref({
+									documentType: 'pProductCategory',
+									slug: c.slug,
+									locale,
+								})!
+							}
+							className="relative z-10 underline-offset-4 duration-200 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
 						>
 							{c.title}
 						</Link>
@@ -62,10 +64,7 @@ function CategoryLinks({
 	);
 }
 
-export default function ProductCard({
-	product,
-	index = 0,
-}: ProductCardProps) {
+export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 	const reveal = useReveal();
 	const locale = useLocale();
 	const t = useTranslations('products');
@@ -150,7 +149,7 @@ export default function ProductCard({
 					</span>
 					<span
 						aria-hidden
-						className="t-l-2 inline-flex items-center gap-1 uppercase text-foreground/65 transition-colors duration-200 group-hover:text-mark-ink"
+						className="t-l-2 inline-flex items-center gap-1 uppercase text-foreground/65 transition-colors duration-200 group-hover:text-accent-foreground"
 					>
 						{t.view}
 						<span className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
@@ -164,12 +163,14 @@ export default function ProductCard({
 			   navigates to the product, while the category links above (z-10)
 			   stay individually clickable. Avoids nesting <a> inside <a>. */}
 			<Link
-				href={resolveHref({
-					documentType: 'pProduct',
-					slug: product.slug,
-					locale,
-				})!}
-				className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+				href={
+					resolveHref({
+						documentType: 'pProduct',
+						slug: product.slug,
+						locale,
+					})!
+				}
+				className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 			>
 				<span className="sr-only">{product.title}</span>
 			</Link>

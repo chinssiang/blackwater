@@ -52,7 +52,7 @@ function CategoryTile({
 					locale,
 				})!
 			}
-			className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+			className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 		>
 			{hasImage && (
 				<div className="relative mb-3 aspect-[4/5] overflow-hidden bg-foreground/6">
@@ -117,7 +117,7 @@ export default function ProductCategoriesGrid({
 									locale,
 								})!
 							}
-							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
+							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
 						>
 							{t.allCategories}
 						</Link>

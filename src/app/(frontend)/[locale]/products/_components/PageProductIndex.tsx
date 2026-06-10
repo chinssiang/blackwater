@@ -39,7 +39,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 				(href ? (
 					<Link
 						href={href}
-						className="group block overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+						className="group block overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 					>
 						<div className="relative aspect-4/3] overflow-hidden bg-foreground/6 sm:aspect-16/7 lg:aspect-12/4">
 							<ImageBlock
@@ -68,7 +68,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 				{href && (
 					<Link
 						href={href}
-						className="t-l-2 inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
+						className="t-l-2 inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
 					>
 						{allLabel}
 					</Link>
@@ -175,7 +175,7 @@ export function PageProductIndex({ data }: Props) {
 							)}
 							<Link
 								href={allProductsHref}
-								className="t-l-2 ml-auto inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
+								className="t-l-2 ml-auto inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
 							>
 								{t.allProducts}
 							</Link>
@@ -203,7 +203,7 @@ export function PageProductIndex({ data }: Props) {
 							size="lg"
 							className="t-l-1 whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11 px-6"
 						>
-							<Link href={allProductsHref}>{t.allProducts}</Link>
+							<Link href={allProductsHref}>{t.moreProducts}</Link>
 						</Button>
 					</div>
 				</motion.section>

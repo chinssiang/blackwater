@@ -163,9 +163,7 @@ export default function PageProductSingle({ data }: Props) {
 						>
 							{badge.map((b: string) => (
 								<Badge key={b}>
-									{(productText.badges as Record<string, string>)[
-										b
-									] ?? b}
+									{(productText.badges as Record<string, string>)[b] ?? b}
 								</Badge>
 							))}
 						</motion.div>
@@ -366,7 +364,7 @@ export default function PageProductSingle({ data }: Props) {
 						</h2>
 						<Link
 							href={localizePath('/products/all', locale)}
-							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-mark-ink pointer-coarse:min-h-11"
+							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
 						>
 							{productText.allProducts}
 						</Link>

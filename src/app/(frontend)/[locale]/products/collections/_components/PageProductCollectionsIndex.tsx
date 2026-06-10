@@ -48,7 +48,7 @@ export function PageProductCollectionsIndex({ data }: Props) {
 											locale,
 										})!
 									}
-									className="group flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+									className="group flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 								>
 									<div className="relative mb-3 aspect-4/3 overflow-hidden bg-foreground/6">
 										{collection.coverImage ? (

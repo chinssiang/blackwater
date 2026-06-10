@@ -57,7 +57,7 @@ export function Footer({ data }: { data: FooterProps }) {
 					))}
 				</nav>
 			)}
-			<div className="flex justify-between mt-20 lg:mt-62 flex-col gap-4 items-start md:flex-row">
+			<div className="flex justify-between mt-20 lg:mt-62 flex-col gap-4 md:flex-row">
 				<WordmarkSvg className="h-3 w-auto" />
 				{copyright && (
 					<motion.small
@@ -71,7 +71,7 @@ export function Footer({ data }: { data: FooterProps }) {
 						className="t-l-2 lg:t-l-1 flex gap-2 uppercase text-foreground/60"
 					>
 						<span className="shrink-0">© {new Date().getFullYear()}</span>
-						<span className="whitespace-pre-line">{copyright}</span>
+						<span className="max-sm:whitespace-pre-line">{copyright}</span>
 					</motion.small>
 				)}
 			</div>

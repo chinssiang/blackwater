@@ -1,73 +1,74 @@
 {
-  "common": {
-    "previous": "上一頁",
-    "next": "下一頁",
-    "lastUpdated": "最後更新"
-  },
-  "breadcrumb": {
-    "home": "首頁",
-    "events": "活動",
-    "products": "嚴選",
-    "faq": "常見問題"
-  },
-  "locationCurrentTime": {
-    "dateFormat": "iii, p"
-  },
-  "events": {
-    "headers": {
-      "codex": "活動",
-      "time": "時間",
-      "location": "地點",
-      "status": "狀態"
-    },
-    "aria": {
-      "previousMonth": "上一個月",
-      "nextMonth": "下一個月"
-    },
-    "status": {
-      "today": "今天",
-      "ended": "已結束",
-      "tba": "待定"
-    },
-    "daysUntil": {
-      "one": "{count} 天後",
-      "other": "{count} 天後"
-    },
-    "emptyMonth": "本月暫無活動",
-    "dateFormat": "yyyy/MM/dd (iii) HH:mm",
-    "monthYearFormat": "yyyy年M月"
-  },
-  "products": {
-    "categoriesTitle": "分類",
-    "categoriesDescription": "瀏覽我們嚴選的商品分類。",
-    "allCategories": "所有分類 →",
-    "whyUseIt": "我們為什麼使用它？",
-    "whoIsItFor": "它適合誰？",
-    "whenReachForIt": "我們何時會選用它？",
-    "whyWeChoseIt": "我們為什麼選擇它",
-    "buyIt": "購買",
-    "buyAriaLabel": "購買 {product}（在新分頁開啟）",
-    "thisProduct": "此商品",
-    "view": "查看",
-    "morePicks": "更多精選",
-    "moreCategory": "更多{category}",
-    "allProducts": "所有商品 →",
-    "kickerCollection": "系列",
-    "kickerCategory": "分類",
-    "productCount": { "one": "{count} 件商品", "other": "{count} 件商品" },
-    "categoryCount": { "one": "{count} 個分類", "other": "{count} 個分類" },
-    "collectionCount": { "one": "{count} 個系列", "other": "{count} 個系列" },
-    "badges": {
-      "founders-pick": "創辦人精選",
-      "most-popular": "最受歡迎",
-      "editors-choice": "編輯精選",
-      "new": "新品"
-    }
-  },
-  "nav": {
-    "menu": "選單",
-    "close": "關閉",
-    "openMenu": "開啟選單",
-    "closeMenu": "關閉選單"
-  }
+	"common": {
+		"previous": "上一頁",
+		"next": "下一頁",
+		"lastUpdated": "最後更新"
+	},
+	"breadcrumb": {
+		"home": "首頁",
+		"events": "活動",
+		"products": "嚴選",
+		"faq": "常見問題"
+	},
+	"locationCurrentTime": {
+		"dateFormat": "iii, p"
+	},
+	"events": {
+		"headers": {
+			"codex": "活動",
+			"time": "時間",
+			"location": "地點",
+			"status": "狀態"
+		},
+		"aria": {
+			"previousMonth": "上一個月",
+			"nextMonth": "下一個月"
+		},
+		"status": {
+			"today": "今天",
+			"ended": "已結束",
+			"tba": "待定"
+		},
+		"daysUntil": {
+			"one": "{count} 天後",
+			"other": "{count} 天後"
+		},
+		"emptyMonth": "本月暫無活動",
+		"dateFormat": "yyyy/MM/dd (iii) HH:mm",
+		"monthYearFormat": "yyyy年M月"
+	},
+	"products": {
+		"categoriesTitle": "分類",
+		"categoriesDescription": "瀏覽我們嚴選的商品分類。",
+		"allCategories": "所有分類 →",
+		"whyUseIt": "我們為什麼使用它？",
+		"whoIsItFor": "它適合誰？",
+		"whenReachForIt": "我們何時會選用它？",
+		"whyWeChoseIt": "我們為什麼選擇它",
+		"buyIt": "購買",
+		"buyAriaLabel": "購買 {product}（在新分頁開啟）",
+		"thisProduct": "此商品",
+		"view": "查看",
+		"morePicks": "更多精選",
+		"moreCategory": "更多{category}",
+		"allProducts": "所有商品",
+		"moreProducts": "更多商品",
+		"kickerCollection": "系列",
+		"kickerCategory": "分類",
+		"productCount": { "one": "{count} 件商品", "other": "{count} 件商品" },
+		"categoryCount": { "one": "{count} 個分類", "other": "{count} 個分類" },
+		"collectionCount": { "one": "{count} 個系列", "other": "{count} 個系列" },
+		"badges": {
+			"founders-pick": "創辦人精選",
+			"most-popular": "最受歡迎",
+			"editors-choice": "編輯精選",
+			"new": "新品"
+		}
+	},
+	"nav": {
+		"menu": "選單",
+		"close": "關閉",
+		"openMenu": "開啟選單",
+		"closeMenu": "關閉選單"
+	}
 }
