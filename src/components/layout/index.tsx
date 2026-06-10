@@ -39,7 +39,9 @@ export function Layout({ children, siteData }: LayoutProps) {
 		} else {
 			root.style.removeProperty('--height-g-toolbar');
 		}
-		return () => root.style.removeProperty('--height-g-toolbar');
+		return () => {
+			root.style.removeProperty('--height-g-toolbar');
+		};
 	}, [toolbar?.hideToolbar]);
 
 	const headerData = useMemo(
