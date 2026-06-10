@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Controller, useForm, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus } from '@/components/SvgIcons';
+import { Plus, Check } from '@/components/SvgIcons';
 import { stegaClean } from '@sanity/client/stega';
 import { useTranslations } from '@/components/LocaleProvider';
 import { cn, isValidUrl } from '@/lib/utils';
@@ -102,8 +103,10 @@ export function ProductSubmission({
 }) {
 	const t = useTranslations('productSubmission');
 	const pathname = usePathname();
+	const reduce = useReducedMotion() ?? false;
 	const [open, setOpen] = useState(false);
 	const [formState, setFormState] = useState<FormState>('idle');
+	const showSuccess = formState === 'success';
 
 	// Mounted outside the pathname-keyed <Main>, so it survives client
 	// navigation — close the popover when the route changes.
@@ -173,9 +176,43 @@ export function ProductSubmission({
 				<Button
 					size="icon-lg"
 					aria-label={t.triggerLabel}
-					className="fixed right-contain bottom-[calc(var(--height-g-toolbar)+1rem)] z-g-toolbar size-12 rounded-xl shadow-default lg:bottom-6 bg-primary/90 backdrop-blur-lg border-0 hover:bg-primary"
+					className={cn(
+						'fixed right-contain bottom-[calc(var(--height-g-toolbar)+1rem)] z-g-toolbar size-12 shadow-default lg:bottom-6 border-0 backdrop-blur-lg rounded-xl',
+						reduce ? 'duration-0' : 'duration-300 ease-out',
+						showSuccess
+							? 'bg-success text-white hover:bg-success'
+							: 'bg-primary/90 hover:bg-primary'
+					)}
 				>
-					<Plus className="size-5" />
+					<AnimatePresence mode="wait" initial={false}>
+						{showSuccess ? (
+							<motion.span
+								key="check"
+								className="inline-flex"
+								initial={reduce ? false : { scale: 0, opacity: 0 }}
+								animate={reduce ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+								exit={reduce ? { opacity: 0 } : { scale: 0, opacity: 0 }}
+								transition={
+									reduce
+										? { duration: 0 }
+										: { type: 'spring', stiffness: 500, damping: 22 }
+								}
+							>
+								<Check className="size-5" />
+							</motion.span>
+						) : (
+							<motion.span
+								key="plus"
+								className="inline-flex"
+								initial={false}
+								animate={reduce ? { opacity: 1 } : { scale: 1, opacity: 1 }}
+								exit={reduce ? { opacity: 0 } : { scale: 0, opacity: 0 }}
+								transition={reduce ? { duration: 0 } : { duration: 0.15 }}
+							>
+								<Plus className="size-5" />
+							</motion.span>
+						)}
+					</AnimatePresence>
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
