@@ -120,8 +120,24 @@ export const pageEventItems = (S) => {
 					.defaultOrdering([
 						{ field: 'eventDatetime', direction: 'desc' },
 					])
-					.child((docId) =>
-						S.documentList()
+					.child(async (docId) => {
+						// Count how many language versions are linked to this event
+						const translationCount = await client.fetch(
+							'count(*[_type == "translation.metadata" && references($docId)][0].translations)',
+							{ docId }
+						);
+
+						// Single language (no metadata, or only one
+						// translation) → open the document directly
+						if (!translationCount || translationCount <= 1) {
+							return S.editor()
+								.id(docId)
+								.schemaType('pEvent')
+								.documentId(docId);
+						}
+
+						// Multiple languages → show the translation variants list
+						return S.documentList()
 							.title('Translations')
 							.apiVersion(apiVersion)
 							.filter(
@@ -130,8 +146,8 @@ export const pageEventItems = (S) => {
 							.params({ docId })
 							.defaultOrdering([
 								{ field: 'language', direction: 'asc' },
-							])
-					)
+							]);
+					})
 			),
 		pageEventGroupByDate(S),
 		S.listItem()

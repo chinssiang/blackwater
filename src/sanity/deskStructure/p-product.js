@@ -1,5 +1,6 @@
 import { apiVersion } from '@/sanity/env';
 import { StarIcon, TagsIcon, StackIcon } from '@sanity/icons';
+import { client } from '@/sanity/lib/client';
 
 const pageProductCollection = (S) => [
 	S.listItem()
@@ -11,16 +12,32 @@ const pageProductCollection = (S) => [
 				.apiVersion(apiVersion)
 				.filter('_type == "pProductCollection" && language == "en"')
 				.defaultOrdering([{ field: 'title', direction: 'asc' }])
-				.child((docId) =>
-					S.documentList()
+				.child(async (docId) => {
+					// Count how many language versions are linked to this collection
+					const translationCount = await client.fetch(
+						'count(*[_type == "translation.metadata" && references($docId)][0].translations)',
+						{ docId }
+					);
+
+					// Single language (no metadata, or only one
+					// translation) → open the document directly
+					if (!translationCount || translationCount <= 1) {
+						return S.editor()
+							.id(docId)
+							.schemaType('pProductCollection')
+							.documentId(docId);
+					}
+
+					// Multiple languages → show the translation variants list
+					return S.documentList()
 						.title('Translations')
 						.apiVersion(apiVersion)
 						.filter(
 							'_type == "pProductCollection" && _id in *[_type == "translation.metadata" && references($docId)][0].translations[].value._ref'
 						)
 						.params({ docId })
-						.defaultOrdering([{ field: 'language', direction: 'asc' }])
-				)
+						.defaultOrdering([{ field: 'language', direction: 'asc' }]);
+				})
 		),
 	// S.listItem()
 	// 	.title('Collections · 中文 (no English pair)')
@@ -77,8 +94,24 @@ export const pageProductItems = (S) => {
 					.apiVersion(apiVersion)
 					.filter('_type == "pProduct" && language == "en"')
 					.defaultOrdering([{ field: 'title', direction: 'asc' }])
-					.child((docId) =>
-						S.documentList()
+					.child(async (docId) => {
+						// Count how many language versions are linked to this product
+						const translationCount = await client.fetch(
+							'count(*[_type == "translation.metadata" && references($docId)][0].translations)',
+							{ docId }
+						);
+
+						// Single language (no metadata, or only one
+						// translation) → open the document directly
+						if (!translationCount || translationCount <= 1) {
+							return S.editor()
+								.id(docId)
+								.schemaType('pProduct')
+								.documentId(docId);
+						}
+
+						// Multiple languages → show the translation variants list
+						return S.documentList()
 							.title('Translations')
 							.apiVersion(apiVersion)
 							.filter(
@@ -90,8 +123,8 @@ export const pageProductItems = (S) => {
 									field: 'language',
 									direction: 'asc',
 								},
-							])
-					)
+							]);
+					})
 			),
 		// S.listItem()
 		// 	.title('中文 (no English pair)')
