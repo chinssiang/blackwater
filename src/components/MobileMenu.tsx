@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import * as Dialog from '@radix-ui/react-dialog';
+import { Dialog } from 'radix-ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { SiteDataQueryResult } from 'sanity.types';
 import CustomLink from '@/components/CustomLink';

@@ -3,6 +3,7 @@
 import ProductCard from '../../_components/ProductCard';
 import ProductCategoriesGrid from '../../_components/ProductCategoriesGrid';
 import ProductPageHeader from '../../_components/ProductPageHeader';
+import { useTranslations } from '@/components/LocaleProvider';
 import type { PageProductsAllQueryResult } from 'sanity.types';
 
 type Props = {
@@ -10,13 +11,14 @@ type Props = {
 };
 
 export function PageProductsAll({ data }: Props) {
+	const t = useTranslations('products');
 	const { products, categories } = data || {};
 
 	return (
 		<div className="p-x-max min-h-main py-10 lg:py-17.5">
 			<ProductPageHeader
 				title="Products"
-				counts={[{ count: products?.length, unit: 'product' }]}
+				counts={[{ count: products?.length, forms: t.productCount }]}
 			/>
 
 			{products && products.length > 0 ? (

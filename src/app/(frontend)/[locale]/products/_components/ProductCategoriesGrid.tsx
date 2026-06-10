@@ -6,6 +6,7 @@ import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
+import { pickPlural, interpolate } from '@/lib/dictionary';
 
 type Category = {
 	_id: string;
@@ -22,9 +23,12 @@ type ProductCategoriesGridProps = {
 	heading?: string | null;
 };
 
-function countLabel(count?: number | null) {
+function countLabel(
+	forms: { one: string; other: string },
+	count?: number | null
+) {
 	if (count == null) return null;
-	return `${count} ${count === 1 ? 'product' : 'products'}`;
+	return interpolate(pickPlural(forms, count), { count });
 }
 
 function CategoryTile({
@@ -35,7 +39,8 @@ function CategoryTile({
 	priority?: boolean;
 }) {
 	const locale = useLocale();
-	const label = countLabel(category.count);
+	const t = useTranslations('products');
+	const label = countLabel(t.productCount, category.count);
 	const hasImage = !!category.coverImage?.image;
 
 	return (
@@ -50,7 +55,7 @@ function CategoryTile({
 			className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 		>
 			{hasImage && (
-				<div className="relative mb-3 aspect-[4/5] overflow-hidden bg-foreground/[0.06]">
+				<div className="relative mb-3 aspect-[4/5] overflow-hidden bg-foreground/6">
 					<ImageBlock
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
 						imageObj={category.coverImage}

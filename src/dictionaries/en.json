@@ -54,6 +54,9 @@
 		"allProducts": "All products →",
 		"kickerCollection": "Collection",
 		"kickerCategory": "Category",
+		"productCount": { "one": "{count} product", "other": "{count} products" },
+		"categoryCount": { "one": "{count} category", "other": "{count} categories" },
+		"collectionCount": { "one": "{count} collection", "other": "{count} collections" },
 		"badges": {
 			"founders-pick": "Founder's Pick",
 			"most-popular": "Most Popular",

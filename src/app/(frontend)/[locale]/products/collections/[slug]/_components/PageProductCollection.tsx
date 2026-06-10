@@ -47,7 +47,7 @@ export default function PageProductCollection({ data }: Props) {
 			<ProductPageHeader
 				kicker={t.kickerCollection}
 				title={title}
-				counts={[{ count: products?.length, unit: 'product' }]}
+				counts={[{ count: products?.length, forms: t.productCount }]}
 				lede={description}
 			/>
 

@@ -4,8 +4,9 @@ import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
-import { useLocale } from '@/components/LocaleProvider';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
+import { pickPlural, interpolate } from '@/lib/dictionary';
 import ProductPageHeader from '../../_components/ProductPageHeader';
 import type { PageProductCollectionsIndexQueryResult } from 'sanity.types';
 
@@ -17,12 +18,13 @@ export function PageProductCollectionsIndex({ data }: Props) {
 	const { collections } = data || {};
 	const reveal = useReveal();
 	const locale = useLocale();
+	const t = useTranslations('products');
 
 	return (
 		<div className="p-x-max min-h-main py-10 lg:py-17.5">
 			<ProductPageHeader
 				title="Collections"
-				counts={[{ count: collections?.length, unit: 'collection' }]}
+				counts={[{ count: collections?.length, forms: t.collectionCount }]}
 			/>
 
 			{collections && collections.length > 0 ? (
@@ -39,14 +41,16 @@ export function PageProductCollectionsIndex({ data }: Props) {
 								}}
 							>
 								<Link
-									href={resolveHref({
-										documentType: 'pProductCollection',
-										slug: collection.slug,
-										locale,
-									})!}
+									href={
+										resolveHref({
+											documentType: 'pProductCollection',
+											slug: collection.slug,
+											locale,
+										})!
+									}
 									className="group flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-mark-ink focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 								>
-									<div className="relative mb-3 aspect-4/3 overflow-hidden bg-foreground/[0.06]">
+									<div className="relative mb-3 aspect-4/3 overflow-hidden bg-foreground/6">
 										{collection.coverImage ? (
 											<ImageBlock
 												className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
@@ -54,7 +58,7 @@ export function PageProductCollectionsIndex({ data }: Props) {
 												alt={collection.title ?? ''}
 											/>
 										) : (
-											<div className="h-full w-full bg-foreground/[0.06]" />
+											<div className="h-full w-full bg-foreground/6" />
 										)}
 									</div>
 									<div className="flex items-baseline justify-between gap-3 border-t border-foreground/15 pt-3">
@@ -63,8 +67,10 @@ export function PageProductCollectionsIndex({ data }: Props) {
 										</span>
 										{collection.count != null && (
 											<span className="t-l-2 whitespace-nowrap uppercase text-foreground/65">
-												{collection.count}{' '}
-												{collection.count === 1 ? 'product' : 'products'}
+												{interpolate(
+													pickPlural(t.productCount, collection.count),
+													{ count: collection.count }
+												)}
 											</span>
 										)}
 									</div>
