@@ -288,6 +288,7 @@ export const siteDataQuery = defineQuery(`{
 				${menuFields}
 			}
 		},
+		"productSubmissionEmail": ${byLocale('pProductIndex')}[defined(submissionEmail)][0].submissionEmail,
 		"mobileMenu": ${byLocale('gMobileMenu')}[0]{
 			primaryMenu[]{
 				${mobileMenuItemFields}

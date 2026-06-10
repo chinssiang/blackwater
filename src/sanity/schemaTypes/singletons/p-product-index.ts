@@ -76,6 +76,14 @@ export const pProductIndex = defineType({
 				}),
 			],
 		}),
+		defineField({
+			name: 'submissionEmail',
+			title: 'Product Submission Email',
+			type: 'string',
+			description:
+				'Recipient for the floating "submit a product" form on product pages. Leave empty to hide the button. Only needs to be set on the English document — translations fall back to it.',
+			validation: (Rule) => Rule.email(),
+		}),
 		sharing(),
 	],
 	preview: {

@@ -12,6 +12,7 @@ export const SITE_DATA_TAGS = [
 	'settingsGeneral',
 	'settingsIntegration',
 	'settingsBrandColors',
+	'pProductIndex',
 ] as const;
 
 export const getCachedSiteData = cache((locale: string) =>

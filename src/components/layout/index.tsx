@@ -4,6 +4,7 @@ import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { stripLocaleFromPath } from '@/lib/i18n';
 import * as gtag from '@/lib/gtag';
+import { ProductSubmission } from '@/components/ProductSubmission';
 import AdaSkip from './AdaSkip';
 import { Footer } from './Footer';
 import { Header } from './Header';
@@ -17,8 +18,15 @@ type LayoutProps = {
 	siteData: any;
 };
 export function Layout({ children, siteData }: LayoutProps) {
-	const { header, footer, newsletter, sharing, mobileMenu, toolbar } =
-		siteData || {};
+	const {
+		header,
+		footer,
+		newsletter,
+		sharing,
+		mobileMenu,
+		toolbar,
+		productSubmissionEmail,
+	} = siteData || {};
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaID;
 	const { path: strippedPath } = stripLocaleFromPath(pathname);
@@ -71,6 +79,9 @@ export function Layout({ children, siteData }: LayoutProps) {
 			</Main>
 			<Footer data={footerData} />
 			{!toolbar?.hideToolbar && <ToolBar menu={toolbar?.toolbarMenu} />}
+			{isProductsSection && productSubmissionEmail && (
+				<ProductSubmission recipientEmail={productSubmissionEmail} />
+			)}
 		</LazyMotion>
 	);
 }

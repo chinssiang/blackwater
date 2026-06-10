@@ -259,7 +259,7 @@ function FieldStatus({
 				)}
 			</TooltipTrigger>
 			<TooltipContent
-				className="pointer-events-none"
+				className="pointer-events-none z-[calc(var(--z-index-popover)+1)]"
 				align="end"
 				sideOffset={-2}
 			>
@@ -282,7 +282,7 @@ function FieldStatus({
 				)}
 			</TooltipTrigger>
 			<TooltipContent
-				className="pointer-events-none"
+				className="pointer-events-none z-[calc(var(--z-index-popover)+1)]"
 				align="end"
 				sideOffset={-2}
 			>

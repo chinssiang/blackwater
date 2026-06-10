@@ -71,6 +71,27 @@
 			"new": "New"
 		}
 	},
+	"productSubmission": {
+		"triggerLabel": "Submit a product",
+		"title": "Submit a product",
+		"description": "Know a product we should feature? Send it our way.",
+		"fields": {
+			"name": { "label": "Full name", "placeholder": "Your full name" },
+			"email": { "label": "Email", "placeholder": "you@example.com" },
+			"productUrl": { "label": "Product URL", "placeholder": "https://..." }
+		},
+		"submit": "Submit",
+		"submitting": "Submitting...",
+		"success": "Thanks! Your submission has been sent.",
+		"error": "Something went wrong. Please try again later.",
+		"validation": {
+			"nameRequired": "Please enter your name",
+			"emailRequired": "Please enter your email",
+			"emailInvalid": "Please enter a valid email address",
+			"urlRequired": "Please enter a product URL",
+			"urlInvalid": "Please enter a valid URL"
+		}
+	},
 	"nav": {
 		"menu": "Menu",
 		"close": "Close",

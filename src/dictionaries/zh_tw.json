@@ -65,6 +65,27 @@
 			"new": "新品"
 		}
 	},
+	"productSubmission": {
+		"triggerLabel": "推薦商品",
+		"title": "推薦商品",
+		"description": "知道值得推薦的商品嗎？歡迎告訴我們。",
+		"fields": {
+			"name": { "label": "姓名", "placeholder": "請輸入您的姓名" },
+			"email": { "label": "電子郵件", "placeholder": "you@example.com" },
+			"productUrl": { "label": "商品網址", "placeholder": "https://..." }
+		},
+		"submit": "送出",
+		"submitting": "送出中...",
+		"success": "感謝您！您的推薦已成功送出。",
+		"error": "發生錯誤，請稍後再試。",
+		"validation": {
+			"nameRequired": "請輸入姓名",
+			"emailRequired": "請輸入電子郵件",
+			"emailInvalid": "請輸入有效的電子郵件地址",
+			"urlRequired": "請輸入商品網址",
+			"urlInvalid": "請輸入有效的網址"
+		}
+	},
 	"nav": {
 		"menu": "選單",
 		"close": "關閉",

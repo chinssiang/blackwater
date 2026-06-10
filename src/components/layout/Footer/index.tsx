@@ -57,7 +57,7 @@ export function Footer({ data }: { data: FooterProps }) {
 					))}
 				</nav>
 			)}
-			<div className="flex justify-between mt-20 lg:mt-62 flex-col gap-4 md:flex-row">
+			<div className="flex justify-between mt-20 lg:mt-62 flex-col gap-4 md:flex-row items-start">
 				<WordmarkSvg className="h-3 w-auto" />
 				{copyright && (
 					<motion.small

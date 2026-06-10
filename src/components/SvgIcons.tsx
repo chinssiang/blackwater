@@ -50,11 +50,69 @@ export function CloseIcon({ className }: SvgIconsProps) {
 			xmlns="http://www.w3.org/2000/svg"
 			aria-hidden="true"
 		>
-			<rect x="0.25" y="0.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
-			<rect x="12.25" y="0.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
-			<rect x="6.25" y="6.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
-			<rect x="0.25" y="12.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
-			<rect x="12.25" y="12.25" width="2.5" height="2.5" fill="currentColor" stroke="currentColor" strokeWidth="0.5" />
+			<rect
+				x="0.25"
+				y="0.25"
+				width="2.5"
+				height="2.5"
+				fill="currentColor"
+				stroke="currentColor"
+				strokeWidth="0.5"
+			/>
+			<rect
+				x="12.25"
+				y="0.25"
+				width="2.5"
+				height="2.5"
+				fill="currentColor"
+				stroke="currentColor"
+				strokeWidth="0.5"
+			/>
+			<rect
+				x="6.25"
+				y="6.25"
+				width="2.5"
+				height="2.5"
+				fill="currentColor"
+				stroke="currentColor"
+				strokeWidth="0.5"
+			/>
+			<rect
+				x="0.25"
+				y="12.25"
+				width="2.5"
+				height="2.5"
+				fill="currentColor"
+				stroke="currentColor"
+				strokeWidth="0.5"
+			/>
+			<rect
+				x="12.25"
+				y="12.25"
+				width="2.5"
+				height="2.5"
+				fill="currentColor"
+				stroke="currentColor"
+				strokeWidth="0.5"
+			/>
+		</svg>
+	);
+}
+
+export function Plus({ className }: SvgIconsProps) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={cn(className)}
+		>
+			<path d="M5 12h14"></path>
+			<path d="M12 5v14"></path>
 		</svg>
 	);
 }

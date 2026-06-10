@@ -8535,6 +8535,13 @@
         },
         "optional": true
       },
+      "submissionEmail": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
       "sharing": {
         "type": "objectAttribute",
         "value": {
