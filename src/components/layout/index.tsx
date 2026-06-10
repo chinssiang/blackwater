@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { stripLocaleFromPath } from '@/lib/i18n';
 import * as gtag from '@/lib/gtag';
@@ -17,7 +17,8 @@ type LayoutProps = {
 	siteData: any;
 };
 export function Layout({ children, siteData }: LayoutProps) {
-	const { header, footer, newsletter, sharing, mobileMenu } = siteData || {};
+	const { header, footer, newsletter, sharing, mobileMenu, toolbar } =
+		siteData || {};
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaID;
 	const { path: strippedPath } = stripLocaleFromPath(pathname);
@@ -30,6 +31,16 @@ export function Layout({ children, siteData }: LayoutProps) {
 			gtag.pageview(pathname, gaID);
 		}
 	}, [gaID, pathname]);
+
+	useLayoutEffect(() => {
+		const root = document.documentElement;
+		if (toolbar?.hideToolbar) {
+			root.style.setProperty('--height-g-toolbar', '0px');
+		} else {
+			root.style.removeProperty('--height-g-toolbar');
+		}
+		return () => root.style.removeProperty('--height-g-toolbar');
+	}, [toolbar?.hideToolbar]);
 
 	const headerData = useMemo(
 		() => ({ ...header, siteTitle: sharing?.siteTitle, mobileMenu }),
@@ -57,7 +68,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 				)}
 			</Main>
 			<Footer data={footerData} />
-			<ToolBar menu={footerData.toolbarMenu} />
+			{!toolbar?.hideToolbar && <ToolBar menu={toolbar?.toolbarMenu} />}
 		</LazyMotion>
 	);
 }

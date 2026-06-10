@@ -16,12 +16,6 @@ export const gFooter = defineType({
 			validation: (Rule) => Rule.max(6),
 		},
 		{
-			title: 'Toolbar Menu (Mobile)',
-			name: 'toolbarMenu',
-			type: 'reference',
-			to: [{ type: 'settingsMenu' }],
-		},
-		{
 			title: 'Copyright',
 			name: 'copyright',
 			description:

@@ -35,6 +35,7 @@ import { gAuthor } from './singletons/g-author';
 import { gFooter } from './singletons/g-footer';
 import { gHeader } from './singletons/g-header';
 import { gMobileMenu } from './singletons/g-mobile-menu';
+import { gToolbar } from './singletons/g-toolbar';
 import { p404 } from './singletons/p-404';
 import { pContact } from './singletons/p-contact';
 import { pProductIndex } from './singletons/p-product-index';
@@ -58,6 +59,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	gHeader,
 	gFooter,
 	gMobileMenu,
+	gToolbar,
 	pGeneral,
 	p404,
 	pHome,

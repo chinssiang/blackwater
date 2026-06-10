@@ -50,6 +50,15 @@ export const globalMenu = (S) => {
 						)
 						.icon(MenuIcon),
 					S.listItem()
+						.title('Toolbar')
+						.child(
+							S.editor()
+								.id('gToolbar')
+								.schemaType('gToolbar')
+								.documentId('gToolbar')
+						)
+						.icon(ComponentIcon),
+					S.listItem()
 						.title('FAQ')
 						.child(
 							S.documentTypeList('gFaq')

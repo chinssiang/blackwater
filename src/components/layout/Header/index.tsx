@@ -39,7 +39,7 @@ export function Header({
 	return (
 		<header
 			className={cn(
-				'p-x-max h-header sticky top-0 z-10 grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none transition-colors bg-background/95 backdrop-blur-xs',
+				'p-x-max h-header sticky top-0 z-header grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none transition-colors bg-background/95 backdrop-blur-xs',
 				isLightHeader && 'theme-light'
 			)}
 		>

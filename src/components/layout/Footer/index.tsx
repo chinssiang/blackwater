@@ -28,7 +28,7 @@ export function Footer({ data }: { data: FooterProps }) {
 			initial="initial"
 			animate="animate"
 			variants={pageTransitionFade}
-			className="bg-background text-foreground pt-section lg:pb-14 p-x-max empty:hidden pb-g-toolbar"
+			className="bg-background text-foreground pt-section lg:pb-14 p-x-max empty:hidden pb-[max(calc(var(--height-g-toolbar)+3.5rem),3.5rem)]"
 		>
 			{hasMenus && (
 				<nav

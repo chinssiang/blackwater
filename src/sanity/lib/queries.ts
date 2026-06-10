@@ -280,10 +280,13 @@ export const siteDataQuery = defineQuery(`{
 			"menus": menus[]->{
 				${menuFields}
 			},
+			copyright,
+		},
+		"toolbar": *[_type == "gToolbar"][0]{
+			hideToolbar,
 			"toolbarMenu": toolbarMenu->{
 				${menuFields}
-			},
-			copyright,
+			}
 		},
 		"mobileMenu": ${byLocale('gMobileMenu')}[0]{
 			primaryMenu[]{

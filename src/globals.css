@@ -108,7 +108,7 @@
 	--spacing-g-toolbar: var(--height-g-toolbar);
 
 	--shadow-default: 0px 12px 64px rgba(0, 0, 0, 0.12);
-
+	--z-index-header: 90;
 	--z-index-popover: calc(var(--z-index-overlay) - 1);
 	--z-index-overlay: 100;
 	--z-index-dialog: calc(var(--z-index-overlay) + 1);

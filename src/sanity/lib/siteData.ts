@@ -7,6 +7,7 @@ export const SITE_DATA_TAGS = [
 	'gHeader',
 	'gFooter',
 	'gMobileMenu',
+	'gToolbar',
 	'settingsMenu',
 	'settingsGeneral',
 	'settingsIntegration',
