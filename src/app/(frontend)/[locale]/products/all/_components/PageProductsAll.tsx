@@ -8,18 +8,67 @@ import ProductPageHeader from '../../_components/ProductPageHeader';
 import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
+import { localizePath } from '@/lib/i18n';
+import {
+	Pagination,
+	PaginationContent,
+	PaginationEllipsis,
+	PaginationItem,
+	PaginationLink,
+	PaginationNext,
+	PaginationPrevious,
+} from '@/components/ui/Pagination';
 import type { PageProductsAllQueryResult } from 'sanity.types';
 
 type Props = {
 	data: NonNullable<PageProductsAllQueryResult>;
+	currentPage: number;
+	totalPages: number;
+	total: number;
 };
 
-export function PageProductsAll({ data }: Props) {
+/**
+ * Page numbers to show, with 'ellipsis' markers: always first + last page and
+ * a ±1 window around the current page. e.g. [1, 'ellipsis', 4, 5, 6, 'ellipsis', 12].
+ */
+function getPageRange(
+	current: number,
+	total: number
+): Array<number | 'ellipsis'> {
+	if (total <= 7) {
+		return Array.from({ length: total }, (_, i) => i + 1);
+	}
+
+	const pages = new Set<number>([1, total, current - 1, current, current + 1]);
+	const sorted = [...pages]
+		.filter((p) => p >= 1 && p <= total)
+		.sort((a, b) => a - b);
+
+	const range: Array<number | 'ellipsis'> = [];
+	let prev = 0;
+	for (const p of sorted) {
+		if (p - prev > 1) range.push('ellipsis');
+		range.push(p);
+		prev = p;
+	}
+	return range;
+}
+
+export function PageProductsAll({
+	data,
+	currentPage,
+	totalPages,
+	total,
+}: Props) {
 	const reveal = useReveal();
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
 	const t = useTranslations('products');
+	const common = useTranslations('common');
 	const { products, categories } = data || {};
+
+	const hrefFor = (p: number) =>
+		localizePath('/products/all', locale) + (p > 1 ? `?page=${p}` : '');
 
 	return (
 		<>
@@ -46,7 +95,7 @@ export function PageProductsAll({ data }: Props) {
 
 			<ProductPageHeader
 				title={t.allProducts}
-				counts={[{ count: products?.length, forms: t.productCount }]}
+				counts={[{ count: total, forms: t.productCount }]}
 			/>
 
 			{products && products.length > 0 ? (
@@ -59,6 +108,47 @@ export function PageProductsAll({ data }: Props) {
 				<p className="t-b-1 max-w-[40ch] text-foreground/60">
 					Nothing here yet. Picks are added as the club vets new gear.
 				</p>
+			)}
+
+			{totalPages > 1 && (
+				<Pagination className="mb-20">
+					<PaginationContent>
+						{currentPage > 1 && (
+							<PaginationItem>
+								<PaginationPrevious
+									href={hrefFor(currentPage - 1)}
+									text={common.previous}
+								/>
+							</PaginationItem>
+						)}
+
+						{getPageRange(currentPage, totalPages).map((p, i) =>
+							p === 'ellipsis' ? (
+								<PaginationItem key={`ellipsis-${i}`}>
+									<PaginationEllipsis />
+								</PaginationItem>
+							) : (
+								<PaginationItem key={p}>
+									<PaginationLink
+										href={hrefFor(p)}
+										isActive={p === currentPage}
+									>
+										{p}
+									</PaginationLink>
+								</PaginationItem>
+							)
+						)}
+
+						{currentPage < totalPages && (
+							<PaginationItem>
+								<PaginationNext
+									href={hrefFor(currentPage + 1)}
+									text={common.next}
+								/>
+							</PaginationItem>
+						)}
+					</PaginationContent>
+				</Pagination>
 			)}
 
 			{categories && categories.length > 0 && (

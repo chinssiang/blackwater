@@ -881,9 +881,10 @@ export const pageProductCollectionsIndexQuery = defineQuery(`
 
 export const pageProductsAllQuery = defineQuery(`
 	{
-		"products": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}] | order(title asc) {
+		"products": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}] | order(title asc) [$start...$end] {
 			${productCardFields}
 		},
+		"total": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')}]),
 		${productCategoriesFields}
 	}
 `);

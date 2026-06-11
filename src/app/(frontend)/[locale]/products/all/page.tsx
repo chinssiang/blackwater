@@ -10,10 +10,12 @@ import { getDictionary } from '@/lib/dictionary.server';
 import JsonLd from '@/components/JsonLd';
 import { PageProductsAll } from './_components/PageProductsAll';
 
-const getCachedData = cache((locale: Locale) =>
+const PAGE_SIZE = 24;
+
+const getCachedData = cache((locale: Locale, start: number, end: number) =>
 	sanityFetch({
 		query: pageProductsAllQuery,
-		params: { locale },
+		params: { locale, start, end },
 		tags: ['pProduct', 'pProductCategory'],
 	})
 );
@@ -22,11 +24,25 @@ export const metadata: Metadata = {
 	title: 'All Products',
 };
 
-export default async function Page({ params }: { params: Promise<{ locale: Locale }> }) {
+export default async function Page({
+	params,
+	searchParams,
+}: {
+	params: Promise<{ locale: Locale }>;
+	searchParams: Promise<{ page?: string }>;
+}) {
 	const { locale } = await params;
-	const { data } = await getCachedData(locale);
+	const { page: pageParam } = await searchParams;
+	const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
+	const start = (page - 1) * PAGE_SIZE;
+	const end = start + PAGE_SIZE;
+
+	const { data } = await getCachedData(locale, start, end);
 
 	if (!data) return notFound();
+
+	const totalPages = Math.max(1, Math.ceil((data.total ?? 0) / PAGE_SIZE));
+	if (page > totalPages) return notFound();
 
 	const dict = await getDictionary(locale);
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
@@ -38,7 +54,12 @@ export default async function Page({ params }: { params: Promise<{ locale: Local
 	return (
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
-			<PageProductsAll data={data} />
+			<PageProductsAll
+				data={data}
+				currentPage={page}
+				totalPages={totalPages}
+				total={data.total ?? 0}
+			/>
 		</>
 	);
 }
