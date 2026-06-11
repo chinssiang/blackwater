@@ -61,10 +61,17 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 					</div>
 				))}
 
-			<div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-				<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
-					{collection.title}
-				</h2>
+			<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+				<div>
+					<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
+						{collection.title}
+					</h2>
+					{collection.description && (
+						<p className="t-b-1 mt-3 max-w-[60ch] leading-relaxed text-foreground/70">
+							{collection.description}
+						</p>
+					)}
+				</div>
 				{href && (
 					<Link
 						href={href}
@@ -74,12 +81,6 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 					</Link>
 				)}
 			</div>
-
-			{collection.description && (
-				<p className="t-b-1 mt-3 max-w-[60ch] leading-relaxed text-foreground/70">
-					{collection.description}
-				</p>
-			)}
 		</div>
 	);
 }

@@ -195,14 +195,12 @@ export function ProductSubmission() {
 					size="icon-lg"
 					aria-label={t.triggerLabel}
 					className={cn(
-						'pointer-events-auto size-12 shadow-default border-0',
-						// Only radius + colors transition; transition-all would also
-						// animate the blur/shadow region every frame and stutter.
+						'pointer-events-auto size-12 shadow-default border-0 rounded-xl ',
 						'transition-[border-radius,background-color,color]',
 						reduce ? 'duration-0' : 'duration-300 ease-out',
 						showSuccess
-							? 'rounded-full bg-success text-white'
-							: 'rounded-xl bg-primary/90 hover:bg-primary backdrop-blur-lg'
+							? 'bg-success text-white'
+							: 'bg-primary/90 hover:bg-primary backdrop-blur-lg'
 					)}
 				>
 					<span className="grid size-5 place-items-center">
