@@ -36,9 +36,9 @@ function AnimatedMenuIcon({
 }) {
 	if (reduce) {
 		return open ? (
-			<CloseIcon className="size-[15px]" />
+			<CloseIcon className="size-4" />
 		) : (
-			<MenuIcon className="size-[15px]" />
+			<MenuIcon className="size-4" />
 		);
 	}
 
@@ -118,7 +118,10 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 	return (
 		<Dialog.Root open={open} onOpenChange={setOpen}>
 			<Dialog.Trigger
-				className="t-b-2 flex cursor-pointer items-center gap-1.5 uppercase lg:hidden w-14 justify-between"
+				className={cn(
+					't-b-2 flex cursor-pointer items-center gap-1 uppercase lg:hidden justify-between',
+					locale === 'en' ? 'min-w-14' : 'min-w-11'
+				)}
 				aria-label={open ? t.closeMenu : t.openMenu}
 			>
 				<AnimatedMenuIcon open={open} reduce={reduce} />
@@ -154,7 +157,10 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 										<span className="sr-only">{siteTitle}</span>
 									</Link>
 									<Dialog.Close
-										className="t-b-2 ml-auto flex cursor-pointer items-center gap-1.5 uppercase w-14 justify-between"
+										className={cn(
+											't-b-2 ml-auto flex cursor-pointer items-center gap-1 uppercase justify-between',
+											locale === 'en' ? 'min-w-14' : 'min-w-11'
+										)}
 										aria-label={t.closeMenu}
 									>
 										<AnimatedMenuIcon open={open} reduce={reduce} />
@@ -162,7 +168,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 									</Dialog.Close>
 								</div>
 
-								<div className="px-contain flex flex-1 flex-col">
+								<div className="px-contain flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
 									<motion.ul
 										className="t-h-2 flex text-foreground flex-col gap-4 pt-6 my-auto uppercase"
 										variants={mobileMenuList}
