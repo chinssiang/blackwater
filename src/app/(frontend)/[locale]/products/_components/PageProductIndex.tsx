@@ -31,7 +31,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 				locale,
 			})
 		: null;
-	const allLabel = `All in ${collection.title ?? 'collection'} →`;
+	const allLabel = `All ${collection.title ?? 'collection'}`;
 
 	return (
 		<div className="border-t border-foreground/15 pt-4">
@@ -63,7 +63,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 
 			<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 				<div>
-					<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
+					<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance tracking-tight">
 						{collection.title}
 					</h2>
 					{collection.description && (

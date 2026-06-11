@@ -5,11 +5,11 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Controller, useForm, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Plus, Check } from '@/components/SvgIcons';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { cn, isValidUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { Spinner } from '@/components/ui/Spinner';
 import {
 	Field,
 	FieldContent,
@@ -133,8 +133,10 @@ export function ProductSubmission() {
 		defaultValues: { name: '', email: '', productUrl: '' },
 	});
 
-	// Reset is deferred past the popover close animation so the form
-	// re-mount and the FAB revert don't compete in the same frames.
+	// The state revert is deferred past the popover close animation so the
+	// success panel swap and the FAB revert don't compete in the same frames.
+	// Field values are intentionally never reset on close — typed input
+	// survives reopening (onSubmit clears them after a successful send).
 	const resetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 	useEffect(
 		() => () => {
@@ -146,20 +148,18 @@ export function ProductSubmission() {
 	const handleOpenChange = (next: boolean) => {
 		setOpen(next);
 		if (next) {
-			// Reopened before the deferred reset fired — reset now so the
-			// popover shows a fresh form instead of the stale success panel.
+			// Reopened before the deferred revert fired — revert now so the
+			// popover shows the form instead of the stale success panel.
 			if (resetTimeout.current) {
 				clearTimeout(resetTimeout.current);
 				resetTimeout.current = null;
 				setFormState('idle');
-				form.reset();
 			}
 			return;
 		}
 		resetTimeout.current = setTimeout(() => {
 			resetTimeout.current = null;
 			setFormState('idle');
-			form.reset();
 		}, 200);
 	};
 
@@ -195,72 +195,106 @@ export function ProductSubmission() {
 					size="icon-lg"
 					aria-label={t.triggerLabel}
 					className={cn(
-						'pointer-events-auto size-12 shadow-default border-0 rounded-xl ',
-						'transition-[border-radius,background-color,color]',
-						reduce ? 'duration-0' : 'duration-300 ease-out',
-						showSuccess
-							? 'bg-success text-white'
-							: 'bg-primary/90 hover:bg-primary backdrop-blur-lg'
+						'pointer-events-auto relative size-12 border-0 bg-transparent text-white',
+						showSuccess ? 'rounded-full' : 'rounded-xl'
 					)}
 				>
-					<span className="grid size-5 place-items-center">
+					<svg
+						viewBox="0 0 48 48"
+						className="absolute inset-0 size-full"
+						aria-hidden="true"
+					>
+						<motion.rect
+							x="0"
+							y="0"
+							width="48"
+							height="48"
+							initial={false}
+							animate={{ rx: showSuccess ? 24 : 12 }}
+							transition={
+								reduce
+									? { duration: 0 }
+									: { type: 'spring', stiffness: 300, damping: 25 }
+							}
+							className={cn(
+								'transition-[fill]',
+								reduce ? 'duration-0' : 'duration-300',
+								showSuccess
+									? 'fill-success'
+									: 'fill-primary/95 group-hover/button:fill-primary'
+							)}
+						/>
+					</svg>
+					<span className="relative grid size-5 place-items-center">
 						<AnimatePresence initial={false}>
 							{showSuccess ? (
-								<motion.span
+								<motion.svg
 									key="check"
-									className="col-start-1 row-start-1 inline-flex"
-									initial={reduce ? false : { scale: 0, opacity: 0 }}
-									animate={
-										reduce
-											? { opacity: 1 }
-											: {
-													scale: 1,
-													opacity: 1,
-													transition: {
-														type: 'spring',
-														stiffness: 500,
-														damping: 22,
-													},
-												}
-									}
-									exit={
-										reduce
-											? { opacity: 0, transition: { duration: 0 } }
-											: {
-													scale: 0.6,
-													opacity: 0,
-													transition: { duration: 0.15, ease: 'easeOut' },
-												}
-									}
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth={2}
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									className="col-start-1 row-start-1 size-5"
+									exit={{
+										opacity: 0,
+										transition: {
+											duration: reduce ? 0 : 0.15,
+											ease: 'easeOut',
+										},
+									}}
 								>
-									<Check className="size-5" />
-								</motion.span>
+									<motion.path
+										d="M4 12 9 17 20 6"
+										initial={reduce ? false : { pathLength: 0 }}
+										animate={{
+											pathLength: 1,
+											transition: reduce
+												? { duration: 0 }
+												: { duration: 0.36, ease: 'easeInOut', delay: 0.2 },
+										}}
+									/>
+								</motion.svg>
 							) : (
-								<motion.span
+								<motion.svg
 									key="plus"
-									className="col-start-1 row-start-1 inline-flex"
-									initial={reduce ? false : { scale: 0.6, opacity: 0 }}
-									animate={
-										reduce
-											? { opacity: 1 }
-											: {
-													scale: 1,
-													opacity: 1,
-													transition: { duration: 0.18, ease: 'easeOut' },
-												}
-									}
-									exit={
-										reduce
-											? { opacity: 0, transition: { duration: 0 } }
-											: {
-													scale: 0.6,
-													opacity: 0,
-													transition: { duration: 0.15, ease: 'easeOut' },
-												}
-									}
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth={2}
+									strokeLinecap="round"
+									strokeLinejoin="round"
+									className="col-start-1 row-start-1 size-5"
+									exit={{
+										opacity: 0,
+										transition: {
+											duration: reduce ? 0 : 0.15,
+											ease: 'easeOut',
+										},
+									}}
 								>
-									<Plus className="size-5" />
-								</motion.span>
+									<motion.path
+										d="M5 12h14"
+										initial={reduce ? false : { pathLength: 0 }}
+										animate={{
+											pathLength: 1,
+											transition: reduce
+												? { duration: 0 }
+												: { duration: 0.25, ease: 'easeOut', delay: 0.1 },
+										}}
+									/>
+									<motion.path
+										d="M12 5v14"
+										initial={reduce ? false : { pathLength: 0 }}
+										animate={{
+											pathLength: 1,
+											transition: reduce
+												? { duration: 0 }
+												: { duration: 0.25, ease: 'easeOut', delay: 0.3 },
+										}}
+									/>
+								</motion.svg>
 							)}
 						</AnimatePresence>
 					</span>
@@ -306,7 +340,14 @@ export function ProductSubmission() {
 							disabled={formState === 'submitting'}
 							className="mt-3 w-full"
 						>
-							{formState === 'submitting' ? t.submitting : t.submit}
+							{formState === 'submitting' ? (
+								<>
+									<Spinner className="text-accent" />
+									<span className="sr-only">{t.submitting}</span>
+								</>
+							) : (
+								t.submit
+							)}
 						</Button>
 					</form>
 				)}
