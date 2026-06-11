@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Dialog } from 'radix-ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
@@ -14,7 +14,7 @@ import { buttonVariants } from '@/components/ui/Button';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { mobileMenuItem, mobileMenuList, mobileMenuPanel } from '@/lib/animate';
 import { resolveHref } from '@/lib/routes';
-import { cn } from '@/lib/utils';
+import { cn, scrollDisable, scrollEnable } from '@/lib/utils';
 
 type MobileMenuProps = {
 	data?: SiteDataQueryResult['mobileMenu'];
@@ -85,6 +85,14 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 	const t = useTranslations('nav');
 	const locale = useLocale();
 
+	// Lock body/html scroll while the menu is open so only the menu's own
+	// scroll container can scroll; restore it on close (and on unmount).
+	useEffect(() => {
+		if (!open) return;
+		scrollDisable();
+		return () => scrollEnable();
+	}, [open]);
+
 	const primary = data?.primaryMenu ?? [];
 	const secondary = data?.secondaryMenu ?? [];
 	const ctaLink = (data?.cta?.link ?? null) as {
@@ -116,7 +124,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 		) : null;
 
 	return (
-		<Dialog.Root open={open} onOpenChange={setOpen}>
+		<Dialog.Root open={open} onOpenChange={setOpen} modal={true}>
 			<Dialog.Trigger
 				className={cn(
 					't-b-2 flex cursor-pointer items-center gap-1 uppercase lg:hidden justify-between',
