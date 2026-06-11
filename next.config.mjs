@@ -18,20 +18,6 @@ const csp = [
 	"form-action 'self'",
 ].join('; ');
 
-// 301/308 redirects from the former /curated/* section to /products/*.
-// The single-product route is collapsed: /curated/products/:slug -> /products/:slug,
-// while the old all-products listing moves to /products/all.
-// Listed most-specific first. Kept in sync with DOCUMENT_ROUTES in src/lib/routes.ts.
-const productRedirectPaths = [
-	['/curated/products/:slug', '/products/:slug'],
-	['/curated/products', '/products/all'],
-	['/curated/categories/:slug', '/products/categories/:slug'],
-	['/curated/categories', '/products/categories'],
-	['/curated/collections/:slug', '/products/collections/:slug'],
-	['/curated/collections', '/products/collections'],
-	['/curated', '/products'],
-];
-
 // Locale prefixes: '' (default en, unprefixed) and '/zh_tw'. Keep in sync with src/lib/i18n.ts.
 const localePrefixes = ['', '/zh_tw'];
 
@@ -51,6 +37,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+	allowedDevOrigins: ['192.168.0.109'],
 	images: {
 		formats: ['image/avif', 'image/webp'],
 		remotePatterns: [
@@ -61,15 +48,15 @@ const nextConfig = {
 			},
 		],
 	},
-	async redirects() {
-		return localePrefixes.flatMap((prefix) =>
-			productRedirectPaths.map(([source, destination]) => ({
-				source: `${prefix}${source}`,
-				destination: `${prefix}${destination}`,
-				permanent: true,
-			}))
-		);
-	},
+	// async redirects() {
+	// 	return localePrefixes.flatMap((prefix) =>
+	// 		[].map(([source, destination]) => ({
+	// 			source: `${prefix}${source}`,
+	// 			destination: `${prefix}${destination}`,
+	// 			permanent: true,
+	// 		}))
+	// 	);
+	// },
 	async headers() {
 		return [
 			{
