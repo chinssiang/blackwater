@@ -15,7 +15,7 @@ export function PageProductsAll({ data }: Props) {
 	const { products, categories } = data || {};
 
 	return (
-		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+		<>
 			<ProductPageHeader
 				title={t.allProducts}
 				counts={[{ count: products?.length, forms: t.productCount }]}
@@ -38,6 +38,6 @@ export function PageProductsAll({ data }: Props) {
 					<ProductCategoriesGrid categories={categories} />
 				</div>
 			)}
-		</div>
+		</>
 	);
 }

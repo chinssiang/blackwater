@@ -21,7 +21,7 @@ export function PageProductCategoriesIndex({ data }: Props) {
 	const { categories, productCount } = data || {};
 
 	return (
-		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+		<>
 			{/* Breadcrumb */}
 			<motion.nav
 				aria-label="Breadcrumb"
@@ -56,6 +56,6 @@ export function PageProductCategoriesIndex({ data }: Props) {
 				heading={null}
 				priority
 			/>
-		</div>
+		</>
 	);
 }

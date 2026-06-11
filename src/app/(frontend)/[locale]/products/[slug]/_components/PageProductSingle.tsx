@@ -107,7 +107,7 @@ export default function PageProductSingle({ data }: Props) {
 	const eyebrow = brandLabel || categoryLabel;
 
 	return (
-		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+		<>
 			{/* Breadcrumb */}
 			<motion.nav
 				aria-label="Breadcrumb"
@@ -363,10 +363,18 @@ export default function PageProductSingle({ data }: Props) {
 								: productText.morePicks}
 						</h2>
 						<Link
-							href={localizePath('/products/all', locale)}
+							href={
+								firstCategory?.slug
+									? resolveHref({
+											documentType: 'pProductCategory',
+											slug: firstCategory.slug,
+											locale,
+										})!
+									: localizePath('/products/all', locale)
+							}
 							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
 						>
-							{productText.allProducts}
+							{firstCategory?.title ?? productText.allProducts}
 						</Link>
 					</div>
 					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-10">
@@ -376,6 +384,6 @@ export default function PageProductSingle({ data }: Props) {
 					</div>
 				</section>
 			)}
-		</div>
+		</>
 	);
 }

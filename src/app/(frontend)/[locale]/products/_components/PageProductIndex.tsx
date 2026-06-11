@@ -100,7 +100,7 @@ export function PageProductIndex({ data }: Props) {
 	const allProductsHref = localizePath('/products/all', locale);
 
 	return (
-		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+		<>
 			<motion.section
 				className="mb-14 lg:mb-24"
 				{...reveal}
@@ -208,6 +208,6 @@ export function PageProductIndex({ data }: Props) {
 					</div>
 				</motion.section>
 			)}
-		</div>
+		</>
 	);
 }

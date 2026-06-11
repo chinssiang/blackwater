@@ -84,6 +84,53 @@ export const pProductIndex = defineType({
 				'Recipient for the floating "submit a product" form on product pages. Leave empty to hide the button. Only needs to be set on the English document — translations fall back to it.',
 			validation: (Rule) => Rule.email(),
 		}),
+		defineField({
+			name: 'confirmationEmail',
+			title: 'Submission Confirmation Email',
+			type: 'object',
+			description:
+				'Email sent to the visitor after a successful product submission. Any field left empty falls back to the English document, then to built-in defaults.',
+			options: { collapsible: true, collapsed: true },
+			fields: [
+				defineField({
+					name: 'subject',
+					title: 'Subject',
+					type: 'string',
+					description: 'Email subject line. Supports {{name}}.',
+				}),
+				defineField({
+					name: 'heading',
+					title: 'Heading',
+					type: 'string',
+					description:
+						'Large heading inside the email, e.g. "Thanks, {{name}}!". Supports {{name}}.',
+				}),
+				defineField({
+					name: 'message',
+					title: 'Message',
+					type: 'text',
+					rows: 4,
+					description:
+						'Body text shown above the submitted details. Blank lines create new paragraphs. Supports {{name}}.',
+				}),
+				defineField({
+					name: 'footer',
+					title: 'Footer note',
+					type: 'text',
+					rows: 2,
+					description:
+						'Small print at the bottom, e.g. why the recipient got this email.',
+				}),
+				defineField({
+					name: 'logo',
+					title: 'Logo',
+					type: 'image',
+					description:
+						'Shown at the top of the email, about 140px wide. Dark logo on transparent PNG recommended (the email background is light). Falls back to the site wordmark.',
+					options: { accept: '.png,.jpg' },
+				}),
+			],
+		}),
 		sharing(),
 	],
 	preview: {

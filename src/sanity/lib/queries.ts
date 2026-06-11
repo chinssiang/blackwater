@@ -344,6 +344,18 @@ export const siteDataQuery = defineQuery(`{
 	}
 `);
 
+// Server-side config for the product submission API route: owner recipient plus
+// confirmation email template. Each field falls back to the English doc
+// independently (same convention as productSubmissionEmail in siteDataQuery).
+export const productSubmissionConfigQuery = defineQuery(`{
+	"recipient": ${byLocale('pProductIndex')}[defined(submissionEmail)][0].submissionEmail,
+	"subject": ${byLocale('pProductIndex')}[defined(confirmationEmail.subject)][0].confirmationEmail.subject,
+	"heading": ${byLocale('pProductIndex')}[defined(confirmationEmail.heading)][0].confirmationEmail.heading,
+	"message": ${byLocale('pProductIndex')}[defined(confirmationEmail.message)][0].confirmationEmail.message,
+	"footer": ${byLocale('pProductIndex')}[defined(confirmationEmail.footer)][0].confirmationEmail.footer,
+	"logo": ${byLocale('pProductIndex')}[defined(confirmationEmail.logo.asset)][0].confirmationEmail.logo
+}`);
+
 export const pageHomeQuery = defineQuery(`
 	${byLocale('pHome')}[0]{
 		${baseFields},

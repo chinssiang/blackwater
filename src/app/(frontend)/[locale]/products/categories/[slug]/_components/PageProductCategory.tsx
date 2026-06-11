@@ -21,7 +21,7 @@ export default function PageProductCategory({ data }: Props) {
 	const { title, products } = data || {};
 
 	return (
-		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+		<>
 			{/* Breadcrumb */}
 			<motion.nav
 				aria-label="Breadcrumb"
@@ -64,6 +64,6 @@ export default function PageProductCategory({ data }: Props) {
 					No picks in this category yet. Check back as the shelf grows.
 				</p>
 			)}
-		</div>
+		</>
 	);
 }

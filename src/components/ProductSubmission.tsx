@@ -1,14 +1,12 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { Controller, useForm, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Plus, Check } from '@/components/SvgIcons';
-import { stegaClean } from '@sanity/client/stega';
-import { useTranslations } from '@/components/LocaleProvider';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { cn, isValidUrl } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
@@ -28,8 +26,6 @@ import {
 	PopoverTrigger,
 } from '@/components/Popover';
 
-const EMAIL_SUBJECT = 'Product Submission';
-
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
 
 type FormValues = {
@@ -38,21 +34,26 @@ type FormValues = {
 	productUrl: string;
 };
 
+// maxLength mirrors the API route's zod caps (productUrl leaves room for
+// the auto-prepended protocol) so over-long pastes can't pass client
+// validation only to get a generic 400 from the server.
 const FIELDS = [
-	{ name: 'name', type: 'text' },
-	{ name: 'email', type: 'email' },
-	{ name: 'productUrl', type: 'text' },
+	{ name: 'name', type: 'text', maxLength: 200 },
+	{ name: 'email', type: 'email', maxLength: 320 },
+	{ name: 'productUrl', type: 'text', maxLength: 1990 },
 ] as const;
 
 function ProductField({
 	name,
 	type,
+	maxLength,
 	control,
 	label,
 	placeholder,
 }: {
 	name: keyof FormValues;
 	type: 'text' | 'email';
+	maxLength: number;
 	control: Control<FormValues>;
 	label: string;
 	placeholder: string;
@@ -73,6 +74,7 @@ function ProductField({
 								{...field}
 								id={id}
 								type={type}
+								maxLength={maxLength}
 								inputMode={name === 'productUrl' ? 'url' : undefined}
 								placeholder={placeholder}
 								aria-invalid={fieldState.invalid}
@@ -96,36 +98,30 @@ function ProductField({
 	);
 }
 
-export function ProductSubmission({
-	recipientEmail,
-}: {
-	recipientEmail: string;
-}) {
+export function ProductSubmission() {
 	const t = useTranslations('productSubmission');
-	const pathname = usePathname();
+	const locale = useLocale();
 	const reduce = useReducedMotion() ?? false;
 	const [open, setOpen] = useState(false);
 	const [formState, setFormState] = useState<FormState>('idle');
 	const showSuccess = formState === 'success';
 
-	// Mounted outside the pathname-keyed <Main>, so it survives client
-	// navigation — close the popover when the route changes.
-	useEffect(() => setOpen(false), [pathname]);
-
 	const resolver = useMemo(
 		() =>
 			zodResolver(
 				z.object({
-					name: z.string().trim().min(1, t.validation.nameRequired),
+					name: z.string().trim().min(1, t.validation.nameRequired).max(200),
 					email: z
 						.string()
 						.trim()
 						.min(1, t.validation.emailRequired)
-						.email(t.validation.emailInvalid),
+						.email(t.validation.emailInvalid)
+						.max(320),
 					productUrl: z
 						.string()
 						.trim()
 						.min(1, t.validation.urlRequired)
+						.max(2000)
 						.refine(isValidUrl, t.validation.urlInvalid),
 				})
 			),
@@ -137,12 +133,34 @@ export function ProductSubmission({
 		defaultValues: { name: '', email: '', productUrl: '' },
 	});
 
+	// Reset is deferred past the popover close animation so the form
+	// re-mount and the FAB revert don't compete in the same frames.
+	const resetTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(
+		() => () => {
+			if (resetTimeout.current) clearTimeout(resetTimeout.current);
+		},
+		[]
+	);
+
 	const handleOpenChange = (next: boolean) => {
 		setOpen(next);
-		if (!next) {
+		if (next) {
+			// Reopened before the deferred reset fired — reset now so the
+			// popover shows a fresh form instead of the stale success panel.
+			if (resetTimeout.current) {
+				clearTimeout(resetTimeout.current);
+				resetTimeout.current = null;
+				setFormState('idle');
+				form.reset();
+			}
+			return;
+		}
+		resetTimeout.current = setTimeout(() => {
+			resetTimeout.current = null;
 			setFormState('idle');
 			form.reset();
-		}
+		}, 200);
 	};
 
 	const onSubmit = async (values: FormValues) => {
@@ -151,15 +169,15 @@ export function ProductSubmission({
 			const productUrl = /^https?:\/\//i.test(values.productUrl)
 				? values.productUrl
 				: `https://${values.productUrl}`;
-			const response = await fetch('/api/contact-form/submit', {
+			const response = await fetch('/api/product-submission/submit', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
-					sendToEmail: stegaClean(recipientEmail),
-					emailSubject: EMAIL_SUBJECT,
-					// Keys are load-bearing: the API uses formData.email as
-					// reply-to and appends [formData.name] to the subject.
+					// Keys are load-bearing: the API uses formData.email for
+					// reply-to + the confirmation email, formData.name in the
+					// subject, and locale for the confirmation language.
 					formData: { ...values, productUrl },
+					locale,
 				}),
 			});
 			if (!response.ok) throw new Error(await response.text());
@@ -177,42 +195,77 @@ export function ProductSubmission({
 					size="icon-lg"
 					aria-label={t.triggerLabel}
 					className={cn(
-						'fixed right-contain bottom-[calc(var(--height-g-toolbar)+1rem)] z-g-toolbar size-12 shadow-default lg:bottom-6 border-0 backdrop-blur-lg rounded-xl',
+						'pointer-events-auto size-12 shadow-default border-0',
+						// Only radius + colors transition; transition-all would also
+						// animate the blur/shadow region every frame and stutter.
+						'transition-[border-radius,background-color,color]',
 						reduce ? 'duration-0' : 'duration-300 ease-out',
 						showSuccess
-							? 'bg-success text-white hover:bg-success'
-							: 'bg-primary/90 hover:bg-primary'
+							? 'rounded-full bg-success text-white'
+							: 'rounded-xl bg-primary/90 hover:bg-primary backdrop-blur-lg'
 					)}
 				>
-					<AnimatePresence mode="wait" initial={false}>
-						{showSuccess ? (
-							<motion.span
-								key="check"
-								className="inline-flex"
-								initial={reduce ? false : { scale: 0, opacity: 0 }}
-								animate={reduce ? { opacity: 1 } : { scale: 1, opacity: 1 }}
-								exit={reduce ? { opacity: 0 } : { scale: 0, opacity: 0 }}
-								transition={
-									reduce
-										? { duration: 0 }
-										: { type: 'spring', stiffness: 500, damping: 22 }
-								}
-							>
-								<Check className="size-5" />
-							</motion.span>
-						) : (
-							<motion.span
-								key="plus"
-								className="inline-flex"
-								initial={false}
-								animate={reduce ? { opacity: 1 } : { scale: 1, opacity: 1 }}
-								exit={reduce ? { opacity: 0 } : { scale: 0, opacity: 0 }}
-								transition={reduce ? { duration: 0 } : { duration: 0.15 }}
-							>
-								<Plus className="size-5" />
-							</motion.span>
-						)}
-					</AnimatePresence>
+					<span className="grid size-5 place-items-center">
+						<AnimatePresence initial={false}>
+							{showSuccess ? (
+								<motion.span
+									key="check"
+									className="col-start-1 row-start-1 inline-flex"
+									initial={reduce ? false : { scale: 0, opacity: 0 }}
+									animate={
+										reduce
+											? { opacity: 1 }
+											: {
+													scale: 1,
+													opacity: 1,
+													transition: {
+														type: 'spring',
+														stiffness: 500,
+														damping: 22,
+													},
+												}
+									}
+									exit={
+										reduce
+											? { opacity: 0, transition: { duration: 0 } }
+											: {
+													scale: 0.6,
+													opacity: 0,
+													transition: { duration: 0.15, ease: 'easeOut' },
+												}
+									}
+								>
+									<Check className="size-5" />
+								</motion.span>
+							) : (
+								<motion.span
+									key="plus"
+									className="col-start-1 row-start-1 inline-flex"
+									initial={reduce ? false : { scale: 0.6, opacity: 0 }}
+									animate={
+										reduce
+											? { opacity: 1 }
+											: {
+													scale: 1,
+													opacity: 1,
+													transition: { duration: 0.18, ease: 'easeOut' },
+												}
+									}
+									exit={
+										reduce
+											? { opacity: 0, transition: { duration: 0 } }
+											: {
+													scale: 0.6,
+													opacity: 0,
+													transition: { duration: 0.15, ease: 'easeOut' },
+												}
+									}
+								>
+									<Plus className="size-5" />
+								</motion.span>
+							)}
+						</AnimatePresence>
+					</span>
 				</Button>
 			</PopoverTrigger>
 			<PopoverContent
@@ -233,11 +286,12 @@ export function ProductSubmission({
 				) : (
 					<form onSubmit={form.handleSubmit(onSubmit)} noValidate>
 						<FieldGroup className="gap-3">
-							{FIELDS.map(({ name, type }) => (
+							{FIELDS.map(({ name, type, maxLength }) => (
 								<ProductField
 									key={name}
 									name={name}
 									type={type}
+									maxLength={maxLength}
 									control={form.control}
 									label={t.fields[name].label}
 									placeholder={t.fields[name].placeholder}

@@ -21,7 +21,7 @@ export function PageProductCollectionsIndex({ data }: Props) {
 	const t = useTranslations('products');
 
 	return (
-		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+		<>
 			<ProductPageHeader
 				title="Collections"
 				counts={[{ count: collections?.length, forms: t.collectionCount }]}
@@ -89,6 +89,6 @@ export function PageProductCollectionsIndex({ data }: Props) {
 					No collections yet. They group picks around a theme or season.
 				</p>
 			)}
-		</div>
+		</>
 	);
 }

@@ -22,7 +22,7 @@ export default function PageProductCollection({ data }: Props) {
 	const { title, description, products, categories } = data || {};
 
 	return (
-		<div className="p-x-max min-h-main py-10 lg:py-17.5">
+		<>
 			{/* Breadcrumb */}
 			<motion.nav
 				aria-label="Breadcrumb"
@@ -70,6 +70,6 @@ export default function PageProductCollection({ data }: Props) {
 					<ProductCategoriesGrid categories={categories} showViewAll />
 				</div>
 			)}
-		</div>
+		</>
 	);
 }
