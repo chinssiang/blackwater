@@ -8,6 +8,7 @@ import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { localizePath } from '@/lib/i18n';
+import { interpolate } from '@/lib/dictionary';
 import ImageBlock from '@/components/ImageBlock';
 import ProductCard from './ProductCard';
 import ProductCategoriesGrid from './ProductCategoriesGrid';
@@ -19,11 +20,12 @@ type Props = {
 };
 
 type Collection = NonNullable<
-	NonNullable<PageProductIndexQueryResult>['collections']
->[number];
+	NonNullable<NonNullable<PageProductIndexQueryResult>['collections']>[number]
+>;
 
 function CollectionMasthead({ collection }: { collection: Collection }) {
 	const locale = useLocale();
+	const t = useTranslations('products');
 	const cover = collection.coverImage;
 	const href = collection.slug
 		? resolveHref({
@@ -32,7 +34,9 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 				locale,
 			})
 		: null;
-	const allLabel = `All ${collection.title ?? 'collection'}`;
+	const allLabel = interpolate(t.allCollection, {
+		collection: collection.title ?? '',
+	}).trim();
 
 	return (
 		<div className="border-t border-foreground/15 pt-4">
@@ -131,6 +135,9 @@ export function PageProductIndex({ data }: Props) {
 			/>
 
 			{collections?.map((collection, index) => {
+				if (!collection) {
+					return null;
+				}
 				const products = collection.products;
 				if (!hasArrayValue(products)) {
 					return null;

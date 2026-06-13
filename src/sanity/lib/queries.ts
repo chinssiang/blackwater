@@ -753,17 +753,22 @@ export const pageProductIndexQuery = defineQuery(`
 			${productCardFields}
 		},
 		"collections": collections[]->{
-			_id,
-			title,
-			description,
-			"slug": slug.current,
-			coverImage {
-				${imageBlockMetaFields}
-			},
-			"products": products[0...8]->{
-				${productCardFields}
+			"loc": *[_type == "pProductCollection"
+				&& slug.current == ^.slug.current
+				&& (language == $locale || language == "en" || !defined(language))
+			] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
+				_id,
+				title,
+				description,
+				"slug": slug.current,
+				coverImage {
+					${imageBlockMetaFields}
+				},
+				"products": products[0...8]->{
+					${productCardFields}
+				}
 			}
-		},
+		}.loc,
 		categories[]->{_id,
 			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
 			"slug": slug.current,
