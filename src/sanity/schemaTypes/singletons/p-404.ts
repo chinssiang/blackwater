@@ -20,6 +20,22 @@ export const p404 = defineType({
 			name: 'paragraph',
 			type: 'portableTextSimple',
 		},
-		callToAction(),
+		{
+			name: 'callToAction',
+			type: 'object',
+			fields: [
+				{
+					name: 'label',
+					title: 'Label',
+					type: 'string',
+				},
+				{
+					name: 'link',
+					title: 'Link',
+					type: 'link',
+					validation: (Rule) => Rule.required(),
+				},
+			],
+		},
 	],
 });

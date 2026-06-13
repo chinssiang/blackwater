@@ -1,15 +1,32 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { draftMode } from 'next/headers';
+import { stegaClean } from '@sanity/client/stega';
 import { LocaleProvider } from '@/components/LocaleProvider';
-import { LocaleHtmlLangSync } from '@/components/LocaleHtmlLangSync';
-import { Layout } from '@/components/layout';
+import HtmlShell from '@/components/layout/HtmlShell';
 import { getCachedSiteData } from '@/sanity/lib/siteData';
 import { getDictionary } from '@/lib/dictionary.server';
+import { buildBaseMetadata } from '@/lib/defineBaseMetadata';
 import { LOCALES, type Locale, isLocale } from '@/lib/i18n';
 
 export function generateStaticParams() {
 	return LOCALES.map((locale) => ({ locale }));
 }
 
+export async function generateMetadata({
+	params,
+}: {
+	params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+	const { locale } = await params;
+	const resolved = (isLocale(locale) ? locale : LOCALES[0]) as Locale;
+	const { data } = await getCachedSiteData(resolved);
+	const cleanData = stegaClean(data) as { sharing?: unknown } | undefined;
+	return buildBaseMetadata(resolved, cleanData?.sharing as never);
+}
+
+// Root layout for the locale subtree. Renders <html> per locale (HtmlShell) so
+// <html lang> is server-correct. The site chrome lives in (site)/layout.tsx.
 export default async function LocaleLayout({
 	children,
 	params,
@@ -20,15 +37,21 @@ export default async function LocaleLayout({
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
 
+	const { isEnabled: isDraftModeEnabled } = await draftMode();
 	const [{ data }, dictionary] = await Promise.all([
 		getCachedSiteData(locale),
 		getDictionary(locale as Locale),
 	]);
 
 	return (
-		<LocaleProvider locale={locale as Locale} dictionary={dictionary}>
-			<LocaleHtmlLangSync locale={locale as Locale} />
-			<Layout siteData={data}>{children}</Layout>
-		</LocaleProvider>
+		<HtmlShell
+			locale={locale as Locale}
+			siteData={data}
+			isDraftModeEnabled={isDraftModeEnabled}
+		>
+			<LocaleProvider locale={locale as Locale} dictionary={dictionary}>
+				{children}
+			</LocaleProvider>
+		</HtmlShell>
 	);
 }

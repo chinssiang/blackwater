@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import {
 	LOCALES,
 	LOCALE_SHORT_LABELS,
+	isLocaleExemptPath,
 	localizePath,
 	stripLocaleFromPath,
 } from '@/lib/i18n';
@@ -19,6 +20,11 @@ export default function LanguageSwitcher({
 	onSelect?: () => void;
 }) {
 	const pathname = usePathname();
+
+	// Routes like /email-signature and /events-crew exist only at the default
+	// locale, so there is nothing to switch to — hide the toggle entirely.
+	if (isLocaleExemptPath(pathname)) return null;
+
 	const { locale: currentLocale, path: strippedPath } =
 		stripLocaleFromPath(pathname);
 

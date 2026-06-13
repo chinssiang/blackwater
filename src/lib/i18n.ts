@@ -68,3 +68,18 @@ export function stripLocaleFromPath(path: string): {
 	}
 	return { locale: DEFAULT_LOCALE, path };
 }
+
+// Routes that exist only at the default locale (no /[locale] variant). The
+// proxy passes these through without locale rewriting, so they have no
+// translated counterpart. Single source of truth, shared with proxy.ts.
+export const LOCALE_EXEMPT_PREFIXES = [
+	'/email-signature',
+	'/events-crew',
+] as const;
+
+export function isLocaleExemptPath(path: string): boolean {
+	const { path: stripped } = stripLocaleFromPath(path);
+	return LOCALE_EXEMPT_PREFIXES.some(
+		(prefix) => stripped === prefix || stripped.startsWith(`${prefix}/`)
+	);
+}

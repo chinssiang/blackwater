@@ -377,7 +377,10 @@ export const page404Query = defineQuery(`
 			${portableTextContentFields}
 		},
 		callToAction{
-			${callToActionFields}
+			label,
+			link {
+				${linkFields}
+			}
 		}
 	}
 `);

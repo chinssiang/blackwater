@@ -1,8 +1,13 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { DEFAULT_LOCALE, LOCALES, type Locale } from '@/lib/i18n';
+import {
+	DEFAULT_LOCALE,
+	LOCALES,
+	LOCALE_EXEMPT_PREFIXES,
+	type Locale,
+} from '@/lib/i18n';
 
 const NON_DEFAULT_LOCALES = LOCALES.filter((l) => l !== DEFAULT_LOCALE);
-const PASSTHROUGH_PREFIXES = ['/email-signature', '/events-crew'];
+const PASSTHROUGH_PREFIXES = LOCALE_EXEMPT_PREFIXES;
 
 const LOCALE_HEADER = 'x-locale';
 

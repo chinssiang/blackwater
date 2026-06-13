@@ -707,3 +707,11 @@
 	cursor: not-allowed;
 	opacity: 0.3;
 }
+
+/* 404 pages render <NotFoundContent> (which carries [data-not-found]) inline
+   inside the site Layout. Hide the marketing chrome — Newsletter and Footer —
+   so the not-found page stays focused. */
+body:has([data-not-found]) [data-hide-on-404],
+body:has([data-not-found]) footer {
+	display: none;
+}
