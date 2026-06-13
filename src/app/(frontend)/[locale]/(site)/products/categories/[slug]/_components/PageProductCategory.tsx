@@ -38,6 +38,15 @@ export default function PageProductCategory({ data }: Props) {
 				<span aria-hidden className="text-foreground/30">
 					/
 				</span>
+				<Link
+					href={resolveHref({ documentType: 'pProductCategoriesIndex', locale })!}
+					className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
+				>
+					{t.categoriesTitle}
+				</Link>
+				<span aria-hidden className="text-foreground/30">
+					/
+				</span>
 				<span aria-current="page" className="text-foreground/90">
 					{title}
 				</span>

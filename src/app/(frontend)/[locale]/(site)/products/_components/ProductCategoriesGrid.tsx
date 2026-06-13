@@ -7,6 +7,7 @@ import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { pickPlural, interpolate } from '@/lib/dictionary';
+import { ArrowRight } from '@/components/SvgIcons';
 
 type Category = {
 	_id: string;
@@ -55,7 +56,7 @@ function CategoryTile({
 			className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 		>
 			{hasImage && (
-				<div className="relative mb-3 aspect-[4/5] overflow-hidden bg-foreground/6">
+				<div className="relative mb-3 aspect-4/5 overflow-hidden bg-foreground/6">
 					<ImageBlock
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
 						imageObj={category.coverImage}
@@ -117,9 +118,10 @@ export default function ProductCategoriesGrid({
 									locale,
 								})!
 							}
-							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
+							className="t-l-2 inline-flex items-center gap-1 uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
 						>
 							{t.allCategories}
+							<ArrowRight className="size-2.5" />
 						</Link>
 					)}
 				</div>

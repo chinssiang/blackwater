@@ -1,5 +1,7 @@
 'use client';
 
+import { Fragment } from 'react';
+import Link from 'next/link';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
 import { pickPlural, interpolate } from '@/lib/dictionary';
@@ -13,8 +15,13 @@ type Props = {
 	/** Count segments shown in the header, e.g.
 	   [{count: 48, forms: t.productCount}]. `forms` is a localized {one, other}
 	   template (with a {count} placeholder) — callers pass the dictionary entry
-	   for the unit. null/undefined counts are skipped. */
-	counts?: Array<{ count: number | null | undefined; forms: CountForms }>;
+	   for the unit. null/undefined counts are skipped. Pass `href` to render the
+	   segment as a link (e.g. the product count linking to the all-products page). */
+	counts?: Array<{
+		count: number | null | undefined;
+		forms: CountForms;
+		href?: string | null;
+	}>;
 	lede?: string | null;
 };
 
@@ -27,8 +34,14 @@ export default function ProductPageHeader({
 	const reveal = useReveal();
 
 	const segments = (counts ?? [])
-		.filter((c): c is { count: number; forms: CountForms } => c.count != null)
-		.map(({ count, forms }) => interpolate(pickPlural(forms, count), { count }));
+		.filter(
+			(c): c is { count: number; forms: CountForms; href?: string | null } =>
+				c.count != null
+		)
+		.map(({ count, forms, href }) => ({
+			label: interpolate(pickPlural(forms, count), { count }),
+			href: href ?? null,
+		}));
 
 	return (
 		<motion.header
@@ -48,7 +61,25 @@ export default function ProductPageHeader({
 				)}
 				{segments.length > 0 && (
 					<p className="t-spec whitespace-nowrap text-foreground/65">
-						{segments.join(' | ')}
+						{segments.map((seg, i) => (
+							<Fragment key={i}>
+								{i > 0 && (
+									<span aria-hidden className="text-foreground/30">
+										{' | '}
+									</span>
+								)}
+								{seg.href ? (
+									<Link
+										href={seg.href}
+										className="transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
+									>
+										{seg.label}
+									</Link>
+								) : (
+									seg.label
+								)}
+							</Fragment>
+						))}
 					</p>
 				)}
 			</div>

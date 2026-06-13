@@ -27,7 +27,7 @@ export default async function ProductsLayout({
 		<div className="p-x-max min-h-main py-10 lg:py-17.5 flex-col flex">
 			{children}
 			{data?.productSubmissionEmail && (
-				<div className="pointer-events-none sticky bottom-[calc(var(--height-g-toolbar)+1rem)] mt-auto flex justify-end lg:bottom-6 z-11">
+				<div className="pointer-events-none sticky bottom-[calc(var(--height-g-toolbar)+1rem)] mt-auto flex justify-end lg:bottom-6 z-11 pt-section">
 					<ProductSubmission />
 				</div>
 			)}

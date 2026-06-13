@@ -59,6 +59,7 @@ export default async function Page({ params }: Props) {
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
 		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: locale as Locale }) },
 		{ name: dict.breadcrumb.products, path: resolveHref({ documentType: 'pProductIndex', locale: locale as Locale }) },
+		{ name: dict.products.categoriesTitle, path: resolveHref({ documentType: 'pProductCategoriesIndex', locale: locale as Locale }) },
 		{ name: cleanData?.title, path: resolveHref({ documentType: 'pProductCategory', slug, locale: locale as Locale }) },
 	]);
 

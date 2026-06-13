@@ -1,5 +1,6 @@
 'use client';
 
+import { ArrowRight } from '@/components/SvgIcons';
 import { cn, hasArrayValue } from '@/lib/utils';
 import Link from 'next/link';
 import { motion } from 'motion/react';
@@ -75,9 +76,10 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 				{href && (
 					<Link
 						href={href}
-						className="t-l-2 inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
+						className="t-l-2 inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11 gap-1"
 					>
 						{allLabel}
+						<ArrowRight className="size-2.5" />
 					</Link>
 				)}
 			</div>
@@ -168,7 +170,7 @@ export function PageProductIndex({ data }: Props) {
 					transition={{ duration: 0.8, ease: [0, 0.5, 0.5, 1] }}
 				>
 					<div className="border-t border-foreground/15 pt-4">
-						<div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+						<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 							{allProducts?.title && (
 								<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
 									{allProducts.title}
@@ -176,9 +178,10 @@ export function PageProductIndex({ data }: Props) {
 							)}
 							<Link
 								href={allProductsHref}
-								className="t-l-2 ml-auto inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
+								className="t-l-2 ml-auto inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11 gap-1"
 							>
 								{t.allProducts}
+								<ArrowRight className="size-2.5" />
 							</Link>
 						</div>
 						{allProducts?.description && (

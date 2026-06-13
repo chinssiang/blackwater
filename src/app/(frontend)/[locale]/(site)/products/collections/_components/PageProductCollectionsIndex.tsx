@@ -18,12 +18,34 @@ export function PageProductCollectionsIndex({ data }: Props) {
 	const { collections } = data || {};
 	const reveal = useReveal();
 	const locale = useLocale();
+	const breadcrumb = useTranslations('breadcrumb');
 	const t = useTranslations('products');
 
 	return (
 		<>
+			{/* Breadcrumb */}
+			<motion.nav
+				aria-label="Breadcrumb"
+				className="t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+				{...reveal}
+				transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
+			>
+				<Link
+					href={resolveHref({ documentType: 'pProductIndex', locale })!}
+					className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
+				>
+					{breadcrumb.products}
+				</Link>
+				<span aria-hidden className="text-foreground/30">
+					/
+				</span>
+				<span aria-current="page" className="text-foreground/90">
+					{t.collectionsTitle}
+				</span>
+			</motion.nav>
+
 			<ProductPageHeader
-				title="Collections"
+				title={t.collectionsTitle}
 				counts={[{ count: collections?.length, forms: t.collectionCount }]}
 			/>
 
@@ -50,7 +72,7 @@ export function PageProductCollectionsIndex({ data }: Props) {
 									}
 									className="group flex h-full flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 								>
-									<div className="relative mb-3 aspect-4/3 overflow-hidden bg-foreground/6">
+									<div className="relative mb-3 aspect-4/3 overflow-hidden bg-foreground/6 hidden">
 										{collection.coverImage ? (
 											<ImageBlock
 												className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"

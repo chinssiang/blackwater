@@ -20,6 +20,9 @@ export const DOCUMENT_ROUTES = [
 	// reuse resolveHref/defineMetadata for canonical + hreflang.
 	{ type: 'pProductCategoriesIndex', path: '/products/categories', slug: false },
 	{ type: 'pProductCategory', path: '/products/categories/', slug: true },
+	// Synthetic route (no backing document) — lets the collections index page
+	// reuse resolveHref/defineMetadata for canonical + hreflang.
+	{ type: 'pProductCollectionsIndex', path: '/products/collections', slug: false },
 	{ type: 'pProductCollection', path: '/products/collections/', slug: true },
 	{ type: 'pEvents', path: '/events/', slug: false },
 	{ type: 'pEvent', path: '/events/', slug: true },

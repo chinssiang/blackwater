@@ -39,8 +39,9 @@
 	},
 	"products": {
 		"categoriesTitle": "Categories",
+		"collectionsTitle": "Collections",
 		"categoriesDescription": "Browse our product categories.",
-		"allCategories": "All categories →",
+		"allCategories": "All categories",
 		"whyUseIt": "Why do we use it?",
 		"whoIsItFor": "Who is it for?",
 		"whenReachForIt": "When do we reach for it?",

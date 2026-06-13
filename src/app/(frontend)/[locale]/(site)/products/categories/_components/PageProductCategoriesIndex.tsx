@@ -7,6 +7,7 @@ import ProductPageHeader from '../../_components/ProductPageHeader';
 import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
+import { localizePath } from '@/lib/i18n';
 import type { PageProductCategoriesIndexQueryResult } from 'sanity.types';
 
 type Props = {
@@ -46,7 +47,11 @@ export function PageProductCategoriesIndex({ data }: Props) {
 			<ProductPageHeader
 				title={t.categoriesTitle}
 				counts={[
-					{ count: productCount, forms: t.productCount },
+					{
+						count: productCount,
+						forms: t.productCount,
+						href: localizePath('/products/all', locale),
+					},
 					{ count: categories?.length, forms: t.categoryCount },
 				]}
 			/>

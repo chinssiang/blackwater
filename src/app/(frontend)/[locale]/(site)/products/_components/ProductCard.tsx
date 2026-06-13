@@ -8,6 +8,7 @@ import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { Badge } from '@/components/ui/Badge';
+import { ArrowRight } from '@/components/SvgIcons';
 
 type Category = { _id: string; title?: string | null; slug?: string | null };
 
@@ -153,7 +154,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 					>
 						{t.view}
 						<span className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
-							→
+							<ArrowRight className="size-[1.1em]" />
 						</span>
 					</span>
 				</div>

@@ -127,7 +127,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 		<Dialog.Root open={open} onOpenChange={setOpen} modal={true}>
 			<Dialog.Trigger
 				className={cn(
-					't-b-2 flex cursor-pointer items-center gap-1 uppercase lg:hidden justify-between',
+					't-b-2 flex cursor-pointer items-center gap-1 uppercase lg:hidden justify-between focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2',
 					locale === 'en' ? 'min-w-14' : 'min-w-11'
 				)}
 				aria-label={open ? t.closeMenu : t.openMenu}
