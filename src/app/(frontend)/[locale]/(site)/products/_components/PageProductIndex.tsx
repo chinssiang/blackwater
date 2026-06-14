@@ -156,7 +156,7 @@ export function PageProductIndex({ data }: Props) {
 						<CollectionMasthead collection={collection} />
 
 						{products && products.length > 0 && (
-							<div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
+							<div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
 								{products.map((product, productIndex) => (
 									<ProductCard
 										key={product._id}
