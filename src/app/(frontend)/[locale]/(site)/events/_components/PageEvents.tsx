@@ -2,11 +2,15 @@
 import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
-import { format } from 'date-fns';
 import { enUS, zhTW } from 'date-fns/locale';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
-import type { PEvent } from 'sanity.types';
+import type { PEvent, RichDate } from 'sanity.types';
+import {
+	formatRichDate,
+	getRichDateInstant,
+	getRichDateYearMonth,
+} from '@/lib/event-date';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
 import { fadeAnim } from '@/lib/animate';
@@ -28,21 +32,21 @@ const DATE_FNS_LOCALES: Record<
 } as Record<Locale, typeof enUS | typeof zhTW>;
 
 function isEventEnded(
-	eventDatetime: string | null | undefined,
+	eventDatetime: RichDate | null | undefined,
 	currentDate: Date
 ): boolean {
-	if (!eventDatetime) return false;
-	const eventDateEndOfDay = new Date(eventDatetime);
+	const eventDateEndOfDay = getRichDateInstant(eventDatetime);
+	if (!eventDateEndOfDay) return false;
 	eventDateEndOfDay.setHours(23, 59, 59, 999);
 	return eventDateEndOfDay < currentDate;
 }
 
 function getDaysUntilEvent(
-	eventDatetime: string | null | undefined,
+	eventDatetime: RichDate | null | undefined,
 	currentDate: Date
 ): number | null {
-	if (!eventDatetime) return null;
-	const eventDateStartOfDay = new Date(eventDatetime);
+	const eventDateStartOfDay = getRichDateInstant(eventDatetime);
+	if (!eventDateStartOfDay) return null;
 	eventDateStartOfDay.setHours(0, 0, 0, 0);
 
 	const today = new Date(currentDate);
@@ -85,15 +89,16 @@ export function PageEvents({ data }: PageEventsProps) {
 			.map((key) => {
 				const events = groupedEvents[key];
 				const firstEvent = events[0];
-				if (!firstEvent || !firstEvent.eventDatetime) return null;
-
-				const date = new Date(firstEvent.eventDatetime);
+				const yearMonth = getRichDateYearMonth(firstEvent?.eventDatetime);
+				const instant = getRichDateInstant(firstEvent?.eventDatetime);
+				if (!firstEvent || !yearMonth || !instant) return null;
 
 				return {
 					key,
-					month: date.getMonth(),
-					year: date.getFullYear(),
-					date: date,
+					month: yearMonth.month,
+					year: yearMonth.year,
+					date: instant,
+					firstEventDatetime: firstEvent.eventDatetime,
 					events: events as PEvent[],
 				};
 			})
@@ -164,9 +169,11 @@ export function PageEvents({ data }: PageEventsProps) {
 	const hasNext = currentMonthIndex < availableMonths.length - 1;
 
 	const monthYearDisplay = currentMonthData
-		? format(currentMonthData.date, t.monthYearFormat, {
-				locale: dateFnsLocale,
-			})
+		? formatRichDate(
+				currentMonthData.firstEventDatetime,
+				t.monthYearFormat,
+				dateFnsLocale
+			)
 		: '';
 
 	return (
@@ -310,9 +317,7 @@ export function PageEvents({ data }: PageEventsProps) {
 									)}
 								>
 									{(!dateStatus || dateStatus === 'confirmed') && eventDatetime
-										? format(new Date(eventDatetime), t.dateFormat, {
-												locale: dateFnsLocale,
-											})
+										? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
 										: dateStatus || t.status.tba}
 								</Td>
 								<Link

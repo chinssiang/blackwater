@@ -8,8 +8,10 @@ import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
 import { buildEventName } from '@/lib/buildEventName';
+import { formatRichDate } from '@/lib/event-date';
 import JsonLd from '@/components/JsonLd';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
+import type { RichDate } from 'sanity.types';
 import { PageEvents } from './_components/PageEvents';
 
 const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
@@ -20,7 +22,7 @@ type EventListItem = {
 	slug?: string;
 	location?: string;
 	locationRef?: { name?: string | null } | null;
-	eventDatetime?: string;
+	eventDatetime?: RichDate | null;
 };
 
 function defineEventsItemListJsonLd(
@@ -39,7 +41,8 @@ function defineEventsItemListJsonLd(
 						title: event.title,
 						subtitle: event.subtitle,
 						location: event.locationRef?.name || event.location,
-						eventDatetime: event.eventDatetime,
+						eventDatetime: event.eventDatetime?.utc,
+						timezone: event.eventDatetime?.timezone,
 					},
 					locale
 				),
@@ -103,13 +106,9 @@ export default async function Page(props: Props) {
 			acc: Record<string, (typeof eventList)[number][]>,
 			event: (typeof eventList)[number]
 		) => {
-			const date = new Date(event.eventDatetime);
-			const year = date.getFullYear();
-			const month = date
-				.toLocaleString('en-US', { month: 'long' })
-				.toLowerCase();
-
-			const key = `${year}_${month}`;
+			const key =
+				formatRichDate(event.eventDatetime, 'yyyy_MMMM').toLowerCase() ||
+				'unknown';
 
 			if (!acc[key]) {
 				acc[key] = [];

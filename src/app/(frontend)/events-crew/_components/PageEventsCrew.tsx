@@ -5,13 +5,14 @@ import { hasArrayValue } from '@/lib/utils';
 import { buildRgbaCssString } from '@/lib/image-utils';
 import { Button } from '@/components/ui/Button';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
-import { format } from 'date-fns';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import type {
 	EventCrewByMonthQueryResult,
 	EventCrewMembersQueryResult,
+	RichDate,
 } from 'sanity.types';
+import { formatRichDate, getRichDateInstant } from '@/lib/event-date';
 import SanityImage from '@/components/SanityImage';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -27,22 +28,19 @@ const DAY_MAP: Record<string, string> = {
 	Sat: '六',
 };
 
-function formatEventDate(datetime: string) {
-	const date = new Date(datetime);
-	const month = date.getMonth() + 1;
-	const day = date.getDate();
-	const dayOfWeek = format(date, 'EEE');
+function formatEventDate(datetime: RichDate) {
+	const monthDay = formatRichDate(datetime, 'M/dd');
+	const dayOfWeek = formatRichDate(datetime, 'EEE');
 	const zhDay = DAY_MAP[dayOfWeek] || dayOfWeek;
-	const time = format(date, 'HH:mm');
+	const time = formatRichDate(datetime, 'HH:mm');
 	return {
-		display: `${month}/${String(day).padStart(2, '0')}（${zhDay}）${time}`,
-		date,
+		display: `${monthDay}（${zhDay}）${time}`,
 	};
 }
 
-function isEventEnded(eventDatetime: string | null | undefined): boolean {
-	if (!eventDatetime) return false;
-	const eventDateEndOfDay = new Date(eventDatetime);
+function isEventEnded(eventDatetime: RichDate | null | undefined): boolean {
+	const eventDateEndOfDay = getRichDateInstant(eventDatetime);
+	if (!eventDateEndOfDay) return false;
 	eventDateEndOfDay.setHours(23, 59, 59, 999);
 	return eventDateEndOfDay < new Date();
 }

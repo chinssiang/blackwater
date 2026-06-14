@@ -27,9 +27,9 @@ export const pageEventGroupByDate = (S) => {
 		.title('Events by Month/Year')
 		.child(async () => {
 			const events = await client.fetch(`
-				*[_type == "pEvent" && defined(eventDatetime)] {
-					eventDatetime
-				} | order(eventDatetime desc)
+				*[_type == "pEvent" && defined(eventDatetime.utc)] {
+					"eventDatetime": eventDatetime.utc
+				} | order(eventDatetime.utc desc)
 			`);
 
 			// Create unique month/year combinations
@@ -74,7 +74,7 @@ export const pageEventGroupByDate = (S) => {
 									.title(`${label} Events`)
 									.apiVersion(apiVersion)
 									.filter(
-										'_type == "pEvent" && eventDatetime >= $startDate && eventDatetime < $endDate'
+										'_type == "pEvent" && eventDatetime.utc >= $startDate && eventDatetime.utc < $endDate'
 									)
 									.params({
 										startDate: startDate.toISOString(),
@@ -86,7 +86,7 @@ export const pageEventGroupByDate = (S) => {
 											direction: 'asc',
 										},
 										{
-											field: 'eventDatetime',
+											field: 'eventDatetime.utc',
 											direction: 'asc',
 										},
 									])
@@ -118,7 +118,7 @@ export const pageEventItems = (S) => {
 					.apiVersion(apiVersion)
 					.filter('_type == "pEvent" && language == "en"')
 					.defaultOrdering([
-						{ field: 'eventDatetime', direction: 'desc' },
+						{ field: 'eventDatetime.utc', direction: 'desc' },
 					])
 					.child(async (docId) => {
 						// Count how many language versions are linked to this event
@@ -179,7 +179,7 @@ export const pageEventItems = (S) => {
 											.params({ categoryId })
 											.defaultOrdering([
 												{ field: 'language', direction: 'asc' },
-												{ field: 'eventDatetime', direction: 'desc' },
+												{ field: 'eventDatetime.utc', direction: 'desc' },
 											]);
 									})
 							),
@@ -198,7 +198,7 @@ export const pageEventItems = (S) => {
 											.params({ statusId })
 											.defaultOrdering([
 												{ field: 'language', direction: 'asc' },
-												{ field: 'eventDatetime', direction: 'desc' },
+												{ field: 'eventDatetime.utc', direction: 'desc' },
 											])
 									)
 							),

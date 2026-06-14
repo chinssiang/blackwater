@@ -54,7 +54,7 @@ export const pEvent = defineType({
 		}),
 		defineField({
 			name: 'eventDatetime',
-			type: 'datetime',
+			type: 'richDate',
 			options: {
 				dateFormat: 'MM/DD/YY',
 			},
@@ -63,14 +63,10 @@ export const pEvent = defineType({
 		defineField({
 			name: 'endDatetime',
 			title: 'End date & time',
-			type: 'datetime',
+			type: 'richDate',
 			description:
 				'Optional. When the event finishes — used as Event endDate in structured data (required for some rich results).',
 			options: { dateFormat: 'MM/DD/YY' },
-			validation: (Rule) =>
-				Rule.min(Rule.valueOfField('eventDatetime')).warning(
-					'End time should be after the start time.'
-				),
 		}),
 		defineField({
 			name: 'dateStatus',
@@ -337,7 +333,7 @@ export const pEvent = defineType({
 			title: 'title',
 			location: 'location',
 			locationRefName: 'locationRef.name.0.value',
-			eventDatetime: 'eventDatetime',
+			eventDatetime: 'eventDatetime.utc',
 			categories: 'categories.0.title',
 			language: 'language',
 		},
@@ -355,7 +351,7 @@ export const pEvent = defineType({
 			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
 
 			return {
-				title: `${tag ? `[${tag}] ` : ''}${title} - ${new Date(eventDatetime).toLocaleDateString('en-US')}`,
+				title: `${tag ? `[${tag}] ` : ''}${title}${eventDatetime ? ` - ${new Date(eventDatetime).toLocaleDateString('en-US')}` : ''}`,
 				subtitle: subtitle,
 				media: BookIcon,
 			};

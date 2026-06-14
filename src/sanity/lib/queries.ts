@@ -443,7 +443,7 @@ export const pEventsQuery = defineQuery(`
 		${baseFields},
 		${availableLocalesField},
 		"eventList": (
-			*[_type == "pEvent" && language == $locale && eventDatetime >= $cutoff]{
+			*[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff]{
 				${baseFields},
 				subtitle,
 				eventDatetime,
@@ -477,8 +477,8 @@ export const pEventsQuery = defineQuery(`
 			+ *[
 				_type == "pEvent"
 				&& (language == "en" || !defined(language))
-				&& eventDatetime >= $cutoff
-				&& !(slug.current in *[_type == "pEvent" && language == $locale && eventDatetime >= $cutoff].slug.current)
+				&& eventDatetime.utc >= $cutoff
+				&& !(slug.current in *[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff].slug.current)
 			]{
 				${baseFields},
 				subtitle,
@@ -510,12 +510,12 @@ export const pEventsQuery = defineQuery(`
 					}
 				}
 			}
-		) | order(eventDatetime asc),
+		) | order(eventDatetime.utc asc),
 	}
 `);
 
 export const eventCrewMonthsQuery = defineQuery(`
-	*[_type == "pEvent" && defined(teamAssignments) && defined(eventDatetime)] | order(eventDatetime asc) {
+	*[_type == "pEvent" && defined(teamAssignments) && defined(eventDatetime.utc)] | order(eventDatetime.utc asc) {
 		eventDatetime
 	}
 `);
@@ -523,7 +523,7 @@ export const eventCrewMonthsQuery = defineQuery(`
 export const eventCrewMembersQuery = defineQuery(`
 	*[_type == "gTeamMember" && _id in
 		*[_type == "pEvent" && defined(teamAssignments)
-			&& eventDatetime >= $startDate && eventDatetime < $endDate
+			&& eventDatetime.utc >= $startDate && eventDatetime.utc < $endDate
 		].teamAssignments[].members[]._ref
 	] | order(coalesce(nickname, name) asc) {
 		_id,
@@ -536,9 +536,9 @@ export const eventCrewMembersQuery = defineQuery(`
 
 export const eventCrewByMonthQuery = defineQuery(`
 	*[_type == "pEvent" && defined(teamAssignments)
-		&& eventDatetime >= $startDate && eventDatetime < $endDate
+		&& eventDatetime.utc >= $startDate && eventDatetime.utc < $endDate
 		&& ($memberSlug == "" || $memberSlug in teamAssignments[].members[]->slug.current)
-	] | order(eventDatetime asc) {
+	] | order(eventDatetime.utc asc) {
 		_id,
 		title,
 		"sharing":{},

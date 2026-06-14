@@ -1,6 +1,8 @@
-import { format } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 import { enUS, zhTW } from 'date-fns/locale';
 import type { Locale } from '@/lib/i18n';
+
+const FALLBACK_TIMEZONE = 'Asia/Taipei';
 
 const DATE_FNS_LOCALES = { en: enUS, zh_tw: zhTW } as const;
 
@@ -14,7 +16,10 @@ export type EventNameParts = {
 	title?: string | null;
 	subtitle?: string | null;
 	location?: string | null;
+	/** UTC instant of the event (richDate.utc). */
 	eventDatetime?: string | null;
+	/** IANA timezone the event date should be rendered in (richDate.timezone). */
+	timezone?: string | null;
 };
 
 /**
@@ -29,7 +34,7 @@ export type EventNameParts = {
  * locale-dependent formatting here is the date — there is no hardcoded text.
  */
 export function buildEventName(parts: EventNameParts, locale: Locale): string {
-	const { title, subtitle, location, eventDatetime } = parts;
+	const { title, subtitle, location, eventDatetime, timezone } = parts;
 
 	const core = subtitle ? `${title} — ${subtitle}` : title || '';
 	const segments = [core];
@@ -40,9 +45,12 @@ export function buildEventName(parts: EventNameParts, locale: Locale): string {
 		const date = new Date(eventDatetime);
 		if (!Number.isNaN(date.getTime())) {
 			segments.push(
-				format(date, NAME_DATE_FORMAT[locale], {
-					locale: DATE_FNS_LOCALES[locale],
-				})
+				formatInTimeZone(
+					date,
+					timezone || FALLBACK_TIMEZONE,
+					NAME_DATE_FORMAT[locale],
+					{ locale: DATE_FNS_LOCALES[locale] }
+				)
 			);
 		}
 	}

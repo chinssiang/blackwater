@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { format as formatDate } from 'date-fns';
+import { formatRichDate } from '@/lib/event-date';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import CustomPortableText from '@/components/CustomPortableText';
 import ImageBlock from '@/components/ImageBlock';
@@ -12,6 +12,7 @@ import {
 	AccordionTrigger,
 	AccordionContent,
 } from '@/components/ui/Accordion';
+import type { RichDate } from 'sanity.types';
 import EventStationsNav from './EventStationsNav';
 
 type Station = {
@@ -46,7 +47,7 @@ type PageEventSingleProps = {
 		title?: string | null;
 		subtitle?: string | null;
 		slug?: string | null;
-		eventDatetime?: string | null;
+		eventDatetime?: RichDate | null;
 		dateStatus?: string | null;
 		location?: string | null;
 		locationLink?: string | null;
@@ -73,7 +74,7 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 
 	const formattedDate =
 		eventDatetime && (!dateStatus || dateStatus === 'confirmed')
-			? formatDate(new Date(eventDatetime), 'iii, MM.dd.yy, h:mm aaa')
+			? formatRichDate(eventDatetime, 'iii, MM.dd.yy, h:mm aaa')
 			: dateStatus?.toUpperCase() || 'TBA';
 
 	const isMultiLocation =
