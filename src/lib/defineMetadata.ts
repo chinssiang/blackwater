@@ -39,6 +39,11 @@ export default function defineMetadata({
 	const siteTitle = sharing?.siteTitle || '';
 	const metaDesc = sharing?.metaDesc || '';
 	const metaTitle = sharing?.metaTitle || title || `Page not found`;
+
+	// On the homepage, override the base title template (`%s | siteTitle`)
+	// with the explicit SEO/sharing title when one is set; otherwise fall
+	// back to the template default (`siteTitle`).
+	const homepageTitle = sharing?.metaTitle || title || '';
 	const shareGraphic = sharing?.shareGraphic?.asset;
 	const shareGraphicUrl = shareGraphic
 		? imageBuilder.image(shareGraphic).format('webp').width(1200).url()
@@ -76,7 +81,9 @@ export default function defineMetadata({
 	const alternateLocales = availableLocales.filter((l) => l !== locale);
 
 	return {
-		...(isHomepage ? null : { title: metaTitle }),
+		...(isHomepage
+			? homepageTitle && { title: { absolute: homepageTitle } }
+			: { title: metaTitle }),
 		...(metaDesc && { description: metaDesc }),
 		openGraph: {
 			title: metaTitle,
