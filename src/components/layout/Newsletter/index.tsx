@@ -14,6 +14,7 @@ import {
 	FieldDescription,
 } from '@/components/ui/Field';
 import CustomPortableText from '@/components/CustomPortableText';
+import { useTranslations } from '@/components/LocaleProvider';
 import type { PortableTextSimple } from 'sanity.types';
 
 type FormState = 'idle' | 'submitting' | 'success';
@@ -48,6 +49,8 @@ export function Newsletter({
 		errorHeading,
 		errorBody,
 	} = data || {};
+
+	const t = useTranslations('newsletter');
 
 	const [email, setEmail] = useState('');
 	const [formState, setFormState] = useState<FormState>('idle');
@@ -90,7 +93,7 @@ export function Newsletter({
 		e.preventDefault();
 
 		if (!validateEmail(email)) {
-			setValidationError('Please enter a valid email address.');
+			setValidationError(t.invalidEmail);
 			return;
 		}
 
@@ -108,14 +111,14 @@ export function Newsletter({
 				setEmail('');
 				setFormState('success');
 			} else {
-				toast.error(errorHeading || 'Something went wrong', {
-					description: errorBody || 'Please try again.',
+				toast.error(errorHeading || t.errorHeading, {
+					description: errorBody || t.errorBody,
 				});
 				setFormState('idle');
 			}
 		} catch {
-			toast.error(errorHeading || 'Something went wrong', {
-				description: errorBody || 'Please try again.',
+			toast.error(errorHeading || t.errorHeading, {
+				description: errorBody || t.errorBody,
 			});
 			setFormState('idle');
 		}
@@ -161,14 +164,14 @@ export function Newsletter({
 					>
 						<Field data-invalid={!!validationError || undefined}>
 							<FieldLabel htmlFor="newsletter-email" className="sr-only">
-								Email address
+								{t.emailLabel}
 							</FieldLabel>
 							<div className="relative flex flex-1 gap-3">
 								<div className="field-hint-ring relative flex-1">
 									<Input
 										id="newsletter-email"
 										type="email"
-										placeholder="Your email"
+										placeholder={t.emailPlaceholder}
 										value={email}
 										onChange={(e) => {
 											setEmail(e.target.value);
@@ -197,11 +200,11 @@ export function Newsletter({
 									disabled={formState === 'submitting'}
 									variant="outline"
 									size="lg"
-									className="bg-black text-white"
+									className="bg-black text-white min-w-22"
 								>
 									{formState === 'submitting'
-										? 'Subscribing…'
-										: submitButtonText || 'Subscribe'}
+										? t.submitting
+										: submitButtonText || t.submit}
 								</Button>
 							</div>
 						</Field>
