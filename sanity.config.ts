@@ -1,5 +1,6 @@
 'use client';
 
+import { richDate } from '@sanity/rich-date-input';
 import { defaultDocumentNode } from '@/sanity/defaultDocumentNode';
 import { apiVersion, dataset, projectId } from '@/sanity/env';
 import * as presentationResolver from '@/sanity/lib/presentation-resolver';
@@ -59,6 +60,7 @@ const commonPlugins = [
 		},
 	}),
 	visionTool({ defaultApiVersion: apiVersion }),
+	richDate(),
 ];
 const singletonDocuments = [
 	gFooter.name,

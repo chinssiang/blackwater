@@ -86,7 +86,9 @@ export default function defineEventJsonLd({
 								: `Station ${i + 1}`,
 							...(questDesc && { description: questDesc }),
 							location: place,
-							...(data?.eventDatetime && { startDate: data.eventDatetime }),
+							...(data?.eventDatetime?.local && {
+								startDate: data.eventDatetime.local,
+							}),
 						};
 					})
 					.filter(Boolean)
@@ -111,13 +113,14 @@ export default function defineEventJsonLd({
 				title: data?.title,
 				subtitle: data?.subtitle,
 				location: locationName,
-				eventDatetime: data?.eventDatetime,
+				eventDatetime: data?.eventDatetime?.utc,
+				timezone: data?.eventDatetime?.timezone,
 			},
 			locale ?? DEFAULT_LOCALE
 		),
 		...(description && { description }),
-		...(data?.eventDatetime && { startDate: data.eventDatetime }),
-		...(data?.endDatetime && { endDate: data.endDatetime }),
+		...(data?.eventDatetime?.local && { startDate: data.eventDatetime.local }),
+		...(data?.endDatetime?.local && { endDate: data.endDatetime.local }),
 		eventStatus:
 			EVENT_STATUS_MAP[data?.dateStatus as string] ??
 			EVENT_STATUS_MAP.confirmed,

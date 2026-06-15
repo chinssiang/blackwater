@@ -99,5 +99,14 @@
 		"close": "Close",
 		"openMenu": "Open menu",
 		"closeMenu": "Close menu"
+	},
+	"newsletter": {
+		"emailLabel": "Email address",
+		"emailPlaceholder": "Your email",
+		"submit": "Subscribe",
+		"submitting": "Subscribing…",
+		"invalidEmail": "Please enter a valid email address.",
+		"errorHeading": "Something went wrong",
+		"errorBody": "Please try again."
 	}
 }

@@ -93,5 +93,14 @@
 		"close": "關閉",
 		"openMenu": "開啟選單",
 		"closeMenu": "關閉選單"
+	},
+	"newsletter": {
+		"emailLabel": "電子郵件地址",
+		"emailPlaceholder": "您的電子郵件",
+		"submit": "訂閱",
+		"submitting": "訂閱中…",
+		"invalidEmail": "請輸入有效的電子郵件地址。",
+		"errorHeading": "發生錯誤",
+		"errorBody": "請再試一次。"
 	}
 }

@@ -11,7 +11,13 @@ import type {
 	EventCrewMonthsQueryResult,
 	EventCrewMembersQueryResult,
 } from 'sanity.types';
+import { fromZonedTime } from 'date-fns-tz';
+import { getRichDateYearMonth } from '@/lib/event-date';
 import { PageEventCrew } from './_components/PageEventsCrew';
+
+// Crew months are bucketed by their Asia/Taipei local month, so the GROQ range
+// boundaries must be expressed as Taipei wall-clock midnights converted to UTC.
+const CREW_TIMEZONE = 'Asia/Taipei';
 
 export const metadata: Metadata = {
 	title: 'Event Crew',
@@ -29,8 +35,15 @@ function parseMonthParam(param: string | undefined) {
 }
 
 function getMonthDateRange(year: number, month: number) {
-	const startDate = new Date(year, month, 1).toISOString();
-	const endDate = new Date(year, month + 1, 1).toISOString();
+	const pad = (n: number) => String(n).padStart(2, '0');
+	const startDate = fromZonedTime(
+		`${year}-${pad(month + 1)}-01T00:00:00`,
+		CREW_TIMEZONE
+	).toISOString();
+	const endDate = fromZonedTime(
+		`${month === 11 ? year + 1 : year}-${pad(month === 11 ? 1 : month + 2)}-01T00:00:00`,
+		CREW_TIMEZONE
+	).toISOString();
 	return { startDate, endDate };
 }
 
@@ -50,9 +63,9 @@ export default async function Page({
 	const entries: EventCrewMonthsQueryResult = monthEntries ?? [];
 	const availableMonthKeys = [
 		...new Set(
-			entries.map((entry) => {
-				const date = new Date(entry.eventDatetime);
-				return `${date.getFullYear()}_${date.getMonth()}`;
+			entries.flatMap((entry) => {
+				const ym = getRichDateYearMonth(entry.eventDatetime);
+				return ym ? [`${ym.year}_${ym.month}`] : [];
 			})
 		),
 	].sort();
