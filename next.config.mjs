@@ -38,6 +38,9 @@ const securityHeaders = [
 
 const nextConfig = {
 	allowedDevOrigins: ['192.168.0.109'],
+	experimental: {
+		viewTransition: true,
+	},
 	images: {
 		formats: ['image/avif', 'image/webp'],
 		remotePatterns: [
