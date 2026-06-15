@@ -1,6 +1,11 @@
 'use client';
 
-import React, { useEffect, useLayoutEffect, useMemo } from 'react';
+import React, {
+	useEffect,
+	useLayoutEffect,
+	useMemo,
+	ViewTransition,
+} from 'react';
 import { usePathname } from 'next/navigation';
 import { stripLocaleFromPath } from '@/lib/i18n';
 import * as gtag from '@/lib/gtag';
@@ -65,7 +70,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 			<AdaSkip />
 			<Header data={headerData} isLightHeader={isProductsSection} />
 			<Main>
-				{children}
+				<ViewTransition>{children}</ViewTransition>
 				{!isEventsCrew && (
 					<div data-hide-on-404 className="border-t border-foreground/36">
 						<Newsletter

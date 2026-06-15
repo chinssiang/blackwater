@@ -715,3 +715,21 @@ body:has([data-not-found]) [data-hide-on-404],
 body:has([data-not-found]) footer {
 	display: none;
 }
+
+/* Page navigation crossfade. The <ViewTransition> in the Layout wraps the route
+   content; keep the fade subtle and snappy. */
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 0.3s;
+}
+
+/* Honor reduced-motion: swap content instantly (the browser default without
+   animation), avoiding positional/opacity movement for sensitive users. */
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-old(*),
+	::view-transition-new(*),
+	::view-transition-group(*) {
+		animation-duration: 0s !important;
+		animation-delay: 0s !important;
+	}
+}

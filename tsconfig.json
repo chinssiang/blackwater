@@ -30,6 +30,7 @@
 		".next/dev/types/**/*.ts",
 		"**/*.mts",
 		"src/app/sitemap.ts",
+		"src/types/react-experimental.d.ts",
 		"sanity.types.ts"
 	],
 	"exclude": ["node_modules"]

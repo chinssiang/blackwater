@@ -39,7 +39,13 @@ const securityHeaders = [
 const nextConfig = {
 	allowedDevOrigins: ['192.168.0.109'],
 	experimental: {
+		// Enables React 19.2's <ViewTransition> for native page-navigation crossfades.
 		viewTransition: true,
+		// `viewTransition` alone does not switch Next to its experimental React build
+		// (which is where the <ViewTransition> component actually lives in 16.2.x).
+		// `taint` is the most behavior-neutral flag that flips Next to react-experimental
+		// (it only exposes the taint APIs; no runtime/UI change). Required for the import above.
+		taint: true,
 	},
 	images: {
 		formats: ['image/avif', 'image/webp'],
