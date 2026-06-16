@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { usePathname } from 'next/navigation';
 import { stripLocaleFromPath } from '@/lib/i18n';
+import { shouldHideGlobalNewsletter } from '@/lib/routes';
 import * as gtag from '@/lib/gtag';
 import AdaSkip from './AdaSkip';
 import { Footer } from './Footer';
@@ -22,20 +23,14 @@ type LayoutProps = {
 	siteData: any;
 };
 export function Layout({ children, siteData }: LayoutProps) {
-	const {
-		header,
-		footer,
-		newsletter,
-		sharing,
-		mobileMenu,
-		toolbar,
-	} = siteData || {};
+	const { header, footer, newsletter, sharing, mobileMenu, toolbar } =
+		siteData || {};
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaID;
 	const { path: strippedPath } = stripLocaleFromPath(pathname);
 	const isProductsSection =
 		strippedPath === '/products' || strippedPath.startsWith('/products/');
-	const isEventsCrew = pathname === '/events-crew';
+	const hideNewsletter = shouldHideGlobalNewsletter(pathname);
 
 	useEffect(() => {
 		if (gaID) {
@@ -71,10 +66,11 @@ export function Layout({ children, siteData }: LayoutProps) {
 			<Header data={headerData} isLightHeader={isProductsSection} />
 			<Main>
 				<ViewTransition>{children}</ViewTransition>
-				{!isEventsCrew && (
+				{!hideNewsletter && (
 					<div data-hide-on-404 className="border-t border-foreground/36">
 						<Newsletter
 							data={newsletter}
+							setGlobalHeightVar={true}
 							className="p-x-max flex flex-wrap md:grid-cols-2 md:gap-6 py-6 w-full justify-between"
 						/>
 					</div>

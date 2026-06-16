@@ -7,12 +7,7 @@ import { fadeAnim } from '@/lib/animate';
 import { cn, validateEmail } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import {
-	Field,
-	FieldLabel,
-	FieldStatus,
-	FieldDescription,
-} from '@/components/ui/Field';
+import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import CustomPortableText from '@/components/CustomPortableText';
 import { useTranslations } from '@/components/LocaleProvider';
 import type { PortableTextSimple } from 'sanity.types';
@@ -34,9 +29,11 @@ type NewsletterData = {
 export function Newsletter({
 	data,
 	className,
+	setGlobalHeightVar = false,
 }: {
 	data: NewsletterData;
 	className?: string;
+	setGlobalHeightVar?: boolean;
 }) {
 	const {
 		klaviyoListID,
@@ -61,19 +58,21 @@ export function Newsletter({
 	const formRef = useRef<HTMLFormElement>(null);
 
 	useEffect(() => {
+		if (!setGlobalHeightVar) return;
 		const el = sectionRef.current;
 		if (!el) return;
+		const root = document.documentElement;
 		const observer = new ResizeObserver(([entry]) => {
 			const height =
 				entry.borderBoxSize[0]?.blockSize ?? entry.contentRect.height;
-			document.documentElement.style.setProperty(
-				'--h-newsletter',
-				`${height + 2}px`
-			);
+			root.style.setProperty('--h-newsletter', `${height + 2}px`);
 		});
 		observer.observe(el);
-		return () => observer.disconnect();
-	}, []);
+		return () => {
+			observer.disconnect();
+			root.style.removeProperty('--h-newsletter');
+		};
+	}, [setGlobalHeightVar]);
 
 	useEffect(() => {
 		const el = formRef.current;
@@ -127,7 +126,7 @@ export function Newsletter({
 	return (
 		<div ref={sectionRef} className={cn('text-foreground', className)}>
 			{heading && (
-				<p className="t-h-1 text-balance font-medium mb-3 md:mb-0">{heading}</p>
+				<p className="t-h-1 text-balance font-medium mb-3">{heading}</p>
 			)}
 
 			{formState === 'success' ? (

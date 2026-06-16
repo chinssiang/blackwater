@@ -15,6 +15,7 @@ import { gToolbar } from '@/sanity/schemaTypes/singletons/g-toolbar';
 import { p404 } from '@/sanity/schemaTypes/singletons/p-404';
 import { pContact } from '@/sanity/schemaTypes/singletons/p-contact';
 import { pFaq } from '@/sanity/schemaTypes/singletons/p-faq';
+import { pNewsletter } from '@/sanity/schemaTypes/singletons/p-newsletter';
 import { pProductIndex } from '@/sanity/schemaTypes/singletons/p-product-index';
 import { pHome } from '@/sanity/schemaTypes/singletons/p-home';
 import { settingsGeneral } from '@/sanity/schemaTypes/singletons/settings-general';
@@ -73,6 +74,7 @@ const singletonDocuments = [
 	p404.name,
 	pContact.name,
 	pFaq.name,
+	pNewsletter.name,
 	pProductIndex.name,
 	gAnnouncement.name,
 	gNewsletter.name,

@@ -20,6 +20,12 @@ export const settingsIntegration = defineType({
 			type: 'array',
 			of: [{ type: 'string' }],
 		},
+		{
+			title: 'Klaviyo Company ID',
+			description: 'Public site/company ID, e.g. WqYfWd',
+			name: 'klaviyoCompanyId',
+			type: 'string',
+		},
 	],
 	preview: {
 		prepare() {

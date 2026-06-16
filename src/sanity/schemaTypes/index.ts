@@ -40,6 +40,7 @@ import { p404 } from './singletons/p-404';
 import { pContact } from './singletons/p-contact';
 import { pProductIndex } from './singletons/p-product-index';
 import { pFaq } from './singletons/p-faq';
+import { pNewsletter } from './singletons/p-newsletter';
 import { pHome } from './singletons/p-home';
 // Singletons
 import { settingsBrandColors } from './singletons/settings-color';
@@ -77,6 +78,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	pEventStatus,
 	pContact,
 	pFaq,
+	pNewsletter,
 	pProductIndex,
 	pProduct,
 	pProductCategory,

@@ -59,6 +59,19 @@ const pageFaq = (S) => {
 		.icon(HelpCircleIcon);
 };
 
+const pageNewsletter = (S) => {
+	return S.listItem()
+		.title('Newsletter Page')
+		.child(
+			S.editor()
+				.id('pNewsletter')
+				.title('Newsletter Page')
+				.schemaType('pNewsletter')
+				.documentId('pNewsletter')
+		)
+		.icon(EnvelopeIcon);
+};
+
 export const pagesMenu = (S) => {
 	return S.listItem()
 		.title('Primary Pages')
@@ -67,7 +80,13 @@ export const pagesMenu = (S) => {
 		.child(
 			S.list()
 				.title('Primary Pages')
-				.items([pageHome(S), pageError(S), pageContact(S), pageFaq(S)])
+				.items([
+					pageHome(S),
+					pageError(S),
+					pageContact(S),
+					pageFaq(S),
+					pageNewsletter(S),
+				])
 		);
 };
 

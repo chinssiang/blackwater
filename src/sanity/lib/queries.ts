@@ -260,6 +260,22 @@ const availableLocalesField = `
 ].language
 `;
 
+// Reusable projection for the gNewsletter signup form. Shared by siteDataQuery
+// (footer form) and pageNewsletterQuery (dedicated /newsletter page).
+const newsletterFormFields = `
+	klaviyoListID,
+	heading,
+	subheading,
+	submitButtonText,
+	"disclaimer": disclaimer[]{
+		${portableTextContentFields}
+	},
+	successHeading,
+	successBody,
+	errorHeading,
+	errorBody,
+`;
+
 export const siteDataQuery = defineQuery(`{
 		"announcement": ${byLocale('gAnnouncement')}[0]{
 			display,
@@ -301,17 +317,7 @@ export const siteDataQuery = defineQuery(`{
 			}
 		},
 		"newsletter": ${byLocale('gNewsletter')}[0]{
-			klaviyoListID,
-			heading,
-			subheading,
-			submitButtonText,
-			"disclaimer": disclaimer[]{
-				${portableTextContentFields}
-			},
-			successHeading,
-			successBody,
-			errorHeading,
-			errorBody,
+			${newsletterFormFields}
 		},
 		"sharing": *[_type == "settingsGeneral"][0]{
 			"siteTitle": coalesce(siteTitle[language == $locale][0].value, siteTitle[language == "en"][0].value),
@@ -339,7 +345,8 @@ export const siteDataQuery = defineQuery(`{
 		},
 		"integrations": *[_type == "settingsIntegration"][0]{
 			gaIDs,
-			gtmIDs
+			gtmIDs,
+			klaviyoCompanyId
 		},
 	}
 `);
@@ -434,6 +441,17 @@ export const pageFaqQuery = defineQuery(`
 		intro,
 		"items": *[_type == "gFaq" && language == $locale] | order(order asc){
 			${gFaqItemFields}
+		}
+	}
+`);
+
+export const pageNewsletterQuery = defineQuery(`
+	${byLocale('pNewsletter')}[0]{
+		${baseFields},
+		${availableLocalesField},
+		intro,
+		"newsletter": ${byLocale('gNewsletter')}[0]{
+			${newsletterFormFields}
 		}
 	}
 `);

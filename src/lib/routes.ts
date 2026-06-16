@@ -18,19 +18,36 @@ export const DOCUMENT_ROUTES = [
 	{ type: 'pProduct', path: '/products/', slug: true },
 	// Synthetic route (no backing document) — lets the categories index page
 	// reuse resolveHref/defineMetadata for canonical + hreflang.
-	{ type: 'pProductCategoriesIndex', path: '/products/categories', slug: false },
+	{
+		type: 'pProductCategoriesIndex',
+		path: '/products/categories',
+		slug: false,
+	},
 	{ type: 'pProductCategory', path: '/products/categories/', slug: true },
 	// Synthetic route (no backing document) — lets the collections index page
 	// reuse resolveHref/defineMetadata for canonical + hreflang.
-	{ type: 'pProductCollectionsIndex', path: '/products/collections', slug: false },
+	{
+		type: 'pProductCollectionsIndex',
+		path: '/products/collections',
+		slug: false,
+	},
 	{ type: 'pProductCollection', path: '/products/collections/', slug: true },
 	{ type: 'pEvents', path: '/events/', slug: false },
 	{ type: 'pEvent', path: '/events/', slug: true },
 	{ type: 'pContact', path: '/contact', slug: false },
 	{ type: 'pFaq', path: '/faq', slug: false },
+	{ type: 'pNewsletter', path: '/newsletter', slug: false },
 	// { type: 'pBlogIndex', path: '/blog', slug: false },
 	// { type: 'pBlog', path: '/blog/', slug: true },
 ];
+
+const HIDE_GLOBAL_NEWSLETTER_PATHS = ['/events-crew', '/newsletter'];
+
+export function shouldHideGlobalNewsletter(pathname: string): boolean {
+	const { path } = stripLocaleFromPath(pathname);
+	const normalized = path.replace(/\/+$/, '') || '/';
+	return HIDE_GLOBAL_NEWSLETTER_PATHS.includes(normalized);
+}
 
 export function resolveHref({
 	documentType,
@@ -47,8 +64,12 @@ export function resolveHref({
 
 	// Fallback: any unknown type with a slug becomes "/<slug>"
 	const path = !route
-		? (slug ? `/${slug}` : undefined)
-		: route.slug ? `${route.path}${slug}` : route.path;
+		? slug
+			? `/${slug}`
+			: undefined
+		: route.slug
+			? `${route.path}${slug}`
+			: route.path;
 
 	if (!path) return undefined;
 	return localizePath(path, locale ?? DEFAULT_LOCALE);
