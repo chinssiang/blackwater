@@ -14,15 +14,11 @@ export const pNewsletter = defineType({
 	icon: EnvelopeIcon,
 	fields: [
 		{ name: 'title', type: 'string', validation: (Rule) => [Rule.required()] },
-		slug({ initialValue: { _type: 'slug', current: 'newsletter' }, readOnly: true }),
+		slug({
+			initialValue: { _type: 'slug', current: 'newsletter' },
+			readOnly: true,
+		}),
 		language(),
-		{
-			name: 'intro',
-			title: 'Intro',
-			type: 'text',
-			rows: 2,
-			description: 'Optional short intro shown above the signup form.',
-		},
 		sharing(),
 	],
 	preview: {

@@ -449,7 +449,6 @@ export const pageNewsletterQuery = defineQuery(`
 	${byLocale('pNewsletter')}[0]{
 		${baseFields},
 		${availableLocalesField},
-		intro,
 		"newsletter": ${byLocale('gNewsletter')}[0]{
 			${newsletterFormFields}
 		}
