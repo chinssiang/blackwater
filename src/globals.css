@@ -276,7 +276,6 @@
 
 	html {
 		@apply bg-background text-foreground antialiased;
-		scroll-behavior: smooth;
 		scroll-padding-top: calc(
 			var(--height-announcement, 0px) + var(--height-header, 0px) + 20px
 		);
@@ -716,20 +715,26 @@ body:has([data-not-found]) footer {
 	display: none;
 }
 
-/* Page navigation crossfade. The <ViewTransition> in the Layout wraps the route
-   content; keep the fade subtle and snappy. */
-::view-transition-old(root),
-::view-transition-new(root) {
-	animation-duration: 0.3s;
+/* Page navigation fade. The route content in the Layout is keyed by pathname
+   and remounts on navigation, replaying this fade-in. A plain opacity animation
+   on the content (not a View Transition snapshot of the full-height page) avoids
+   the geometry "morph" that read as the page scrolling to the top and back. */
+@keyframes page-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
 }
 
-/* Honor reduced-motion: swap content instantly (the browser default without
-   animation), avoiding positional/opacity movement for sensitive users. */
+.animate-page-in {
+	animation: page-in 0.3s ease-out both;
+}
+
+/* Honor reduced-motion: show content instantly, no fade. */
 @media (prefers-reduced-motion: reduce) {
-	::view-transition-old(*),
-	::view-transition-new(*),
-	::view-transition-group(*) {
-		animation-duration: 0s !important;
-		animation-delay: 0s !important;
+	.animate-page-in {
+		animation: none;
 	}
 }

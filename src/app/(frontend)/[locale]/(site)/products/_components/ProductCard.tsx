@@ -96,6 +96,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:-translate-y-2 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
 						imageObj={product.mainImage}
 						alt={product.title ?? ''}
+						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw"
 					/>
 				) : (
 					<div className="h-full w-full" />
