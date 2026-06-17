@@ -1,10 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
-import ProductCard from '../../_components/ProductCard';
 import ProductCategoriesGrid from '../../_components/ProductCategoriesGrid';
 import ProductPageHeader from '../../_components/ProductPageHeader';
+import ProductBrowser, {
+	type ProductSelection,
+} from '../../_components/ProductBrowser';
 import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
@@ -25,6 +28,8 @@ type Props = {
 	currentPage: number;
 	totalPages: number;
 	total: number;
+	selected: ProductSelection;
+	sort: string;
 };
 
 /**
@@ -59,16 +64,65 @@ export function PageProductsAll({
 	currentPage,
 	totalPages,
 	total,
+	selected,
+	sort,
 }: Props) {
 	const reveal = useReveal();
 	const locale = useLocale();
+	const searchParams = useSearchParams();
+	const pathname = usePathname();
 	const breadcrumb = useTranslations('breadcrumb');
 	const t = useTranslations('products');
 	const common = useTranslations('common');
-	const { products, categories } = data || {};
+	const { products, categories, facetCategories, facetBrands, badgeCounts } =
+		data || {};
 
-	const hrefFor = (p: number) =>
-		localizePath('/products/all', locale) + (p > 1 ? `?page=${p}` : '');
+	// Pagination links keep the current filter/sort params and only swap `page`.
+	const hrefFor = (p: number) => {
+		const params = new URLSearchParams(searchParams.toString());
+		if (p > 1) params.set('page', String(p));
+		else params.delete('page');
+		const qs = params.toString();
+		return pathname + (qs ? `?${qs}` : '');
+	};
+
+	const pagination = totalPages > 1 && (
+		<Pagination className="mb-20">
+			<PaginationContent>
+				{currentPage > 1 && (
+					<PaginationItem>
+						<PaginationPrevious
+							href={hrefFor(currentPage - 1)}
+							text={common.previous}
+						/>
+					</PaginationItem>
+				)}
+
+				{getPageRange(currentPage, totalPages).map((p, i) =>
+					p === 'ellipsis' ? (
+						<PaginationItem key={`ellipsis-${i}`}>
+							<PaginationEllipsis />
+						</PaginationItem>
+					) : (
+						<PaginationItem key={p}>
+							<PaginationLink href={hrefFor(p)} isActive={p === currentPage}>
+								{p}
+							</PaginationLink>
+						</PaginationItem>
+					)
+				)}
+
+				{currentPage < totalPages && (
+					<PaginationItem>
+						<PaginationNext
+							href={hrefFor(currentPage + 1)}
+							text={common.next}
+						/>
+					</PaginationItem>
+				)}
+			</PaginationContent>
+		</Pagination>
+	);
 
 	return (
 		<>
@@ -98,58 +152,15 @@ export function PageProductsAll({
 				counts={[{ count: total, forms: t.productCount }]}
 			/>
 
-			{products && products.length > 0 ? (
-				<div className="mb-20 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
-					{products.map((product, index) => (
-						<ProductCard key={product._id} product={product} index={index} />
-					))}
-				</div>
-			) : (
-				<p className="t-b-1 max-w-[40ch] text-foreground/60">
-					Nothing here yet. Picks are added as the club vets new gear.
-				</p>
-			)}
-
-			{totalPages > 1 && (
-				<Pagination className="mb-20">
-					<PaginationContent>
-						{currentPage > 1 && (
-							<PaginationItem>
-								<PaginationPrevious
-									href={hrefFor(currentPage - 1)}
-									text={common.previous}
-								/>
-							</PaginationItem>
-						)}
-
-						{getPageRange(currentPage, totalPages).map((p, i) =>
-							p === 'ellipsis' ? (
-								<PaginationItem key={`ellipsis-${i}`}>
-									<PaginationEllipsis />
-								</PaginationItem>
-							) : (
-								<PaginationItem key={p}>
-									<PaginationLink
-										href={hrefFor(p)}
-										isActive={p === currentPage}
-									>
-										{p}
-									</PaginationLink>
-								</PaginationItem>
-							)
-						)}
-
-						{currentPage < totalPages && (
-							<PaginationItem>
-								<PaginationNext
-									href={hrefFor(currentPage + 1)}
-									text={common.next}
-								/>
-							</PaginationItem>
-						)}
-					</PaginationContent>
-				</Pagination>
-			)}
+			<ProductBrowser
+				facetCategories={facetCategories ?? []}
+				facetBrands={facetBrands ?? []}
+				badgeCounts={badgeCounts}
+				selected={selected}
+				sort={sort}
+				products={products ?? []}
+				footer={pagination}
+			/>
 
 			{categories && categories.length > 0 && (
 				<div className="border-t border-foreground/10 pt-12 lg:pt-16">

@@ -7,17 +7,31 @@ import { pageProductsAllQuery } from '@/sanity/lib/queries';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
+import {
+	parseProductFilters,
+	type ProductFilterSearchParams,
+	type ProductSortKey,
+} from '@/lib/productFilters';
 import JsonLd from '@/components/JsonLd';
 import { PageProductsAll } from './_components/PageProductsAll';
 
 const PAGE_SIZE = 24;
 
-const getCachedData = cache((locale: Locale, start: number, end: number) =>
-	sanityFetch({
-		query: pageProductsAllQuery,
-		params: { locale, start, end },
-		tags: ['pProduct', 'pProductCategory'],
-	})
+const getCachedData = cache(
+	(
+		locale: Locale,
+		start: number,
+		end: number,
+		categories: string[],
+		brands: string[],
+		badges: string[],
+		sort: ProductSortKey
+	) =>
+		sanityFetch({
+			query: pageProductsAllQuery,
+			params: { locale, start, end, categories, brands, badges, sort },
+			tags: ['pProduct', 'pProductCategory', 'pBrand'],
+		})
 );
 
 export const metadata: Metadata = {
@@ -29,15 +43,25 @@ export default async function Page({
 	searchParams,
 }: {
 	params: Promise<{ locale: Locale }>;
-	searchParams: Promise<{ page?: string }>;
+	searchParams: Promise<{ page?: string } & ProductFilterSearchParams>;
 }) {
 	const { locale } = await params;
-	const { page: pageParam } = await searchParams;
-	const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
+	const sp = await searchParams;
+	const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1);
 	const start = (page - 1) * PAGE_SIZE;
 	const end = start + PAGE_SIZE;
 
-	const { data } = await getCachedData(locale, start, end);
+	const { categories, brands, badges, sort } = parseProductFilters(sp);
+
+	const { data } = await getCachedData(
+		locale,
+		start,
+		end,
+		categories,
+		brands,
+		badges,
+		sort
+	);
 
 	if (!data) return <NotFoundContent locale={locale} />;
 
@@ -59,6 +83,8 @@ export default async function Page({
 				currentPage={page}
 				totalPages={totalPages}
 				total={data.total ?? 0}
+				selected={{ categories, brands, badges }}
+				sort={sort}
 			/>
 		</>
 	);

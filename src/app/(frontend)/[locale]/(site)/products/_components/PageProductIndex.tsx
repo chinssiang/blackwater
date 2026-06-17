@@ -1,8 +1,9 @@
 'use client';
 
 import { ArrowRight } from '@/components/SvgIcons';
-import { cn, hasArrayValue } from '@/lib/utils';
+import { hasArrayValue } from '@/lib/utils';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { motion } from 'motion/react';
 import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
@@ -10,18 +11,35 @@ import { resolveHref } from '@/lib/routes';
 import { localizePath } from '@/lib/i18n';
 import { interpolate } from '@/lib/dictionary';
 import ImageBlock from '@/components/ImageBlock';
-import ProductCard from './ProductCard';
 import ProductCategoriesGrid from './ProductCategoriesGrid';
+import ProductGrid from './ProductGrid';
+import ProductBrowser, { type ProductSelection } from './ProductBrowser';
 import type { PageProductIndexQueryResult } from 'sanity.types';
 import { Button } from '@/components/ui/Button';
 
 type Props = {
 	data: NonNullable<PageProductIndexQueryResult>;
+	selected: ProductSelection;
+	sort: string;
 };
 
 type Collection = NonNullable<
 	NonNullable<NonNullable<PageProductIndexQueryResult>['collections']>[number]
 >;
+
+function MoreProductsButton({ href, label }: { href: string; label: string }) {
+	return (
+		<div className="mt-20 flex justify-center lg:mt-30">
+			<Button
+				asChild
+				size="lg"
+				className="t-l-1 whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11 px-6"
+			>
+				<Link href={href}>{label}</Link>
+			</Button>
+		</div>
+	);
+}
 
 function CollectionMasthead({ collection }: { collection: Collection }) {
 	const locale = useLocale();
@@ -91,7 +109,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 	);
 }
 
-export function PageProductIndex({ data }: Props) {
+export function PageProductIndex({ data, selected, sort }: Props) {
 	const {
 		title,
 		subtitle,
@@ -100,34 +118,24 @@ export function PageProductIndex({ data }: Props) {
 		categories,
 		allProducts,
 		allProductsList,
+		allProductsTotal,
+		facetCategories,
+		facetBrands,
+		badgeCounts,
 	} = data || {};
 	const reveal = useReveal();
 	const locale = useLocale();
 	const t = useTranslations('products');
+	const searchParams = useSearchParams();
 	const allProductsHref = localizePath('/products/all', locale);
 
-	return (
-		<>
-			<motion.section
-				className="mb-14 lg:mb-24"
-				{...reveal}
-				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
-			>
-				{subtitle && (
-					<p className="t-l-2 mb-5 uppercase text-foreground/65 lg:mb-7">
-						{subtitle}
-					</p>
-				)}
-				{title && (
-					<h1 className="text-balance t-h-1 uppercase max-w-sm">{title}</h1>
-				)}
-				{description && (
-					<p className="t-b-1 mt-7 max-w-[60ch] leading-relaxed text-foreground/70 lg:mt-9">
-						{description}
-					</p>
-				)}
-			</motion.section>
+	// Carry the active filters/sort over to the all-products page.
+	const qs = searchParams.toString();
+	const filteredAllHref = allProductsHref + (qs ? `?${qs}` : '');
 
+	// Curated showcase shown when no filter is active.
+	const showcase = (
+		<>
 			<ProductCategoriesGrid
 				categories={categories ?? null}
 				showViewAll
@@ -135,13 +143,9 @@ export function PageProductIndex({ data }: Props) {
 			/>
 
 			{collections?.map((collection, index) => {
-				if (!collection) {
-					return null;
-				}
+				if (!collection) return null;
 				const products = collection.products;
-				if (!hasArrayValue(products)) {
-					return null;
-				}
+				if (!hasArrayValue(products)) return null;
 				return (
 					<motion.section
 						key={collection._id}
@@ -154,17 +158,8 @@ export function PageProductIndex({ data }: Props) {
 						}}
 					>
 						<CollectionMasthead collection={collection} />
-
 						{products && products.length > 0 && (
-							<div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
-								{products.map((product, productIndex) => (
-									<ProductCard
-										key={product._id}
-										product={product}
-										index={productIndex}
-									/>
-								))}
-							</div>
+							<ProductGrid products={products} className="mt-8 lg:mt-12" />
 						)}
 					</motion.section>
 				);
@@ -198,27 +193,59 @@ export function PageProductIndex({ data }: Props) {
 						)}
 					</div>
 
-					<div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
-						{allProductsList.map((product, productIndex) => (
-							<ProductCard
-								key={product._id}
-								product={product}
-								index={productIndex}
-							/>
-						))}
-					</div>
+					<ProductGrid
+						products={allProductsList}
+						className="mt-8 lg:mt-12"
+					/>
 
-					<div className="mt-20 flex justify-center lg:mt-30">
-						<Button
-							asChild
-							size="lg"
-							className="t-l-1 whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11 px-6"
-						>
-							<Link href={allProductsHref}>{t.moreProducts}</Link>
-						</Button>
-					</div>
+					<MoreProductsButton
+						href={allProductsHref}
+						label={t.moreProducts}
+					/>
 				</motion.section>
 			)}
+		</>
+	);
+
+	// When filtering collapses the showcase, offer a jump to the full paginated
+	// list (which carries the same filters) if there are more matches than shown.
+	const hasMore = (allProductsTotal ?? 0) > (allProductsList?.length ?? 0);
+	const filteredFooter = hasMore ? (
+		<MoreProductsButton href={filteredAllHref} label={t.moreProducts} />
+	) : null;
+
+	return (
+		<>
+			<motion.section
+				className="mb-14 lg:mb-24"
+				{...reveal}
+				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
+			>
+				{subtitle && (
+					<p className="t-l-2 mb-5 uppercase text-foreground/65 lg:mb-7">
+						{subtitle}
+					</p>
+				)}
+				{title && (
+					<h1 className="text-balance t-h-1 uppercase max-w-sm">{title}</h1>
+				)}
+				{description && (
+					<p className="t-b-1 mt-7 max-w-[60ch] leading-relaxed text-foreground/70 lg:mt-9">
+						{description}
+					</p>
+				)}
+			</motion.section>
+
+			<ProductBrowser
+				facetCategories={facetCategories ?? []}
+				facetBrands={facetBrands ?? []}
+				badgeCounts={badgeCounts}
+				selected={selected}
+				sort={sort}
+				products={allProductsList ?? []}
+				footer={filteredFooter}
+				showcase={showcase}
+			/>
 		</>
 	);
 }

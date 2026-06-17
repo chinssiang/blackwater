@@ -754,6 +754,46 @@ const productCategoriesFields = `
 	}
 `;
 
+// Shared filter clause for the product listings. Each dimension is a no-op when
+// its param array is empty (count == 0), so an unfiltered request returns the
+// full catalogue. Categories/brands match on slug; badges match on value.
+const productFilterClause = `
+	&& (count($categories) == 0 || count(categories[@->slug.current in $categories]) > 0)
+	&& (count($brands) == 0 || count(brands[@->slug.current in $brands]) > 0)
+	&& (count($badges) == 0 || count(badge[@ in $badges]) > 0)
+`;
+
+// Shared sort clause driven by the $sort param. Each select() is null (a no-op)
+// unless its key is active; the final `title asc` is the default tiebreaker.
+const productSortOrder = `order(
+	select($sort == "newest" => _createdAt) desc,
+	select($sort == "oldest" => _createdAt) asc,
+	select($sort == "za" => title) desc,
+	title asc
+)`;
+
+// Facet data for the filter UI, shared by every page that renders <ProductFilters>.
+// Aliased to value/label/count so the result drops straight into FacetOption[].
+// Counts are catalogue-wide (not re-scoped to other active filters).
+const productFilterFacets = `
+	"facetCategories": *[_type == "pProductCategory"] | order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc) {
+		"value": slug.current,
+		"label": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
+	},
+	"facetBrands": *[_type == "pBrand"] | order(title asc) {
+		"value": slug.current,
+		"label": title,
+		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
+	},
+	"badgeCounts": {
+		"founders-pick": count(*[_type == "pProduct" && "founders-pick" in badge && ${productLocaleFilter('pProduct')}]),
+		"most-popular": count(*[_type == "pProduct" && "most-popular" in badge && ${productLocaleFilter('pProduct')}]),
+		"editors-choice": count(*[_type == "pProduct" && "editors-choice" in badge && ${productLocaleFilter('pProduct')}]),
+		"new": count(*[_type == "pProduct" && "new" in badge && ${productLocaleFilter('pProduct')}])
+	}
+`;
+
 export const pageProductIndexQuery = defineQuery(`
 	${byLocale('pProductIndex')}[0]{
 		${baseFields},
@@ -765,10 +805,12 @@ export const pageProductIndexQuery = defineQuery(`
 			title,
 			description
 		},
-		"allProductsList": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}]
-			| order(_createdAt desc)[0...24]{
+		"allProductsList": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}${productFilterClause}]
+			| ${productSortOrder} [0...24]{
 			${productCardFields}
 		},
+		"allProductsTotal": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')}${productFilterClause}]),
+		${productFilterFacets},
 		"collections": collections[]->{
 			"loc": *[_type == "pProductCollection"
 				&& slug.current == ^.slug.current
@@ -906,11 +948,13 @@ export const pageProductCollectionsIndexQuery = defineQuery(`
 
 export const pageProductsAllQuery = defineQuery(`
 	{
-		"products": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}] | order(title asc) [$start...$end] {
+		"products": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}${productFilterClause}]
+			| ${productSortOrder} [$start...$end] {
 			${productCardFields}
 		},
-		"total": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')}]),
-		${productCategoriesFields}
+		"total": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')}${productFilterClause}]),
+		${productCategoriesFields},
+		${productFilterFacets}
 	}
 `);
 

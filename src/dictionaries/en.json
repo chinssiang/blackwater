@@ -71,6 +71,27 @@
 			"most-popular": "Most Popular",
 			"editors-choice": "Editor's Choice",
 			"new": "New"
+		},
+		"filters": {
+			"title": "Filters",
+			"category": "Category",
+			"brand": "Brand",
+			"badge": "Badge",
+			"sort": "Sort",
+			"sortBy": "Sort by",
+			"sortOptions": {
+				"az": "Name (A–Z)",
+				"za": "Name (Z–A)",
+				"newest": "Newest",
+				"oldest": "Oldest"
+			},
+			"clearAll": "Clear all",
+			"showResults": "Show results",
+			"filterCount": {
+				"one": "{count} filter",
+				"other": "{count} filters"
+			},
+			"noResults": "No products match your filters."
 		}
 	},
 	"productSubmission": {
