@@ -21,7 +21,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 	const { header, footer, newsletter, sharing, mobileMenu, toolbar } =
 		siteData || {};
 	const pathname = usePathname();
-	const gaID = siteData?.integrations?.gaID;
+	const gaID = siteData?.integrations?.gaIDs?.[0];
 	const { path: strippedPath } = stripLocaleFromPath(pathname);
 	const isProductsSection =
 		strippedPath === '/products' || strippedPath.startsWith('/products/');

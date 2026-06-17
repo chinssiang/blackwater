@@ -1,6 +1,7 @@
 import { useLayoutEffect, useRef } from 'react';
 import { pageTransitionFade } from '@/lib/animate';
 import CustomLink from '@/components/CustomLink';
+import ManageCookiesButton from '@/components/consent/ManageCookiesButton';
 import { motion } from 'motion/react';
 import type { GFooter, SettingsMenu } from 'sanity.types';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
@@ -58,7 +59,10 @@ export function Footer({ data }: { data: FooterProps }) {
 				</nav>
 			)}
 			<div className="flex justify-between mt-20 lg:mt-62 flex-col gap-4 md:flex-row items-start">
-				<WordmarkSvg className="h-3 w-auto" />
+				<div className="flex flex-col gap-2">
+					<WordmarkSvg className="h-3 w-auto" />
+					<ManageCookiesButton className="t-l-2 uppercase text-foreground/60 transition-colors hover:text-foreground self-start" />
+				</div>
 				{copyright && (
 					<motion.small
 						variants={{

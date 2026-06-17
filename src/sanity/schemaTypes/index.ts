@@ -44,6 +44,7 @@ import { pNewsletter } from './singletons/p-newsletter';
 import { pHome } from './singletons/p-home';
 // Singletons
 import { settingsBrandColors } from './singletons/settings-color';
+import { settingsConsent } from './singletons/settings-consent';
 import { settingsGeneral } from './singletons/settings-general';
 import { settingsIntegration } from './singletons/settings-integrations';
 import { settingsMenu } from './singletons/settings-menu';
@@ -55,6 +56,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	settingsMenu,
 	settingsRedirect,
 	settingsIntegration,
+	settingsConsent,
 	gNewsletter,
 	gAnnouncement,
 	gHeader,

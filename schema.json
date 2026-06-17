@@ -3011,6 +3011,184 @@
     }
   },
   {
+    "name": "settingsConsent",
+    "type": "document",
+    "attributes": {
+      "_id": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_type": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string",
+          "value": "settingsConsent"
+        }
+      },
+      "_createdAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_updatedAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_rev": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "enabled": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "boolean"
+        },
+        "optional": true
+      },
+      "bannerTitle": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "bannerBody": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayText"
+        },
+        "optional": true
+      },
+      "acceptAllLabel": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "rejectAllLabel": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "preferencesLabel": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "savePreferencesLabel": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "necessaryTitle": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "necessaryDescription": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayText"
+        },
+        "optional": true
+      },
+      "analyticsTitle": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "analyticsDescription": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayText"
+        },
+        "optional": true
+      },
+      "marketingTitle": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "marketingDescription": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayText"
+        },
+        "optional": true
+      },
+      "privacyPolicyLink": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "link"
+        },
+        "optional": true
+      },
+      "cookiePolicyLink": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "link"
+        },
+        "optional": true
+      }
+    }
+  },
+  {
+    "name": "internationalizedArrayText",
+    "type": "type",
+    "value": {
+      "type": "array",
+      "of": {
+        "type": "object",
+        "attributes": {
+          "_key": {
+            "type": "objectAttribute",
+            "value": {
+              "type": "string"
+            }
+          }
+        },
+        "rest": {
+          "type": "inline",
+          "name": "internationalizedArrayTextValue"
+        }
+      }
+    }
+  },
+  {
     "name": "settingsIntegration",
     "type": "document",
     "attributes": {
@@ -3594,28 +3772,6 @@
     "type": "type",
     "value": {
       "type": "string"
-    }
-  },
-  {
-    "name": "internationalizedArrayText",
-    "type": "type",
-    "value": {
-      "type": "array",
-      "of": {
-        "type": "object",
-        "attributes": {
-          "_key": {
-            "type": "objectAttribute",
-            "value": {
-              "type": "string"
-            }
-          }
-        },
-        "rest": {
-          "type": "inline",
-          "name": "internationalizedArrayTextValue"
-        }
-      }
     }
   },
   {

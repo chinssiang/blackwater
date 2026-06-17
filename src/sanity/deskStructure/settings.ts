@@ -4,6 +4,7 @@ import {
 	EnvelopeIcon,
 	PackageIcon,
 	EnterRightIcon,
+	CheckmarkCircleIcon,
 } from '@sanity/icons';
 import type { StructureBuilder } from 'sanity/structure';
 import { colorsMenu } from './colors';
@@ -34,6 +35,15 @@ export const settingsMenu = (S: StructureBuilder) => {
 								.documentId('settingsIntegration')
 						)
 						.icon(PackageIcon),
+					S.listItem()
+						.title('Consent')
+						.child(
+							S.editor()
+								.id('settingsConsent')
+								.schemaType('settingsConsent')
+								.documentId('settingsConsent')
+						)
+						.icon(CheckmarkCircleIcon),
 					S.listItem()
 						.title('Redirects')
 						.child(S.documentTypeList('settingsRedirect').title('Redirects'))
