@@ -139,7 +139,7 @@ export default function ConsentBanner({
 							<p className="t-l-2 text-foreground/70">{t('bannerBody')}</p>
 							<PolicyLinks settings={settings} className="mt-2" />
 						</div>
-						<div className="flex flex-wrap gap-2">
+						<div className="flex flex-wrap gap-2 justify-end">
 							<Button variant="outline" onClick={() => setPrefsOpen(true)}>
 								{t('preferencesLabel')}
 							</Button>
@@ -173,18 +173,14 @@ export default function ConsentBanner({
 							title={t('analyticsTitle')}
 							description={t('analyticsDescription')}
 							checked={draft.analytics}
-							onCheckedChange={(v) =>
-								setDraft((d) => ({ ...d, analytics: v }))
-							}
+							onCheckedChange={(v) => setDraft((d) => ({ ...d, analytics: v }))}
 						/>
 						<Separator />
 						<CategoryRow
 							title={t('marketingTitle')}
 							description={t('marketingDescription')}
 							checked={draft.marketing}
-							onCheckedChange={(v) =>
-								setDraft((d) => ({ ...d, marketing: v }))
-							}
+							onCheckedChange={(v) => setDraft((d) => ({ ...d, marketing: v }))}
 						/>
 					</div>
 
@@ -240,9 +236,10 @@ function PolicyLinks({
 	settings: ConsentSettings;
 	className?: string;
 }) {
-	const links = [settings?.privacyPolicyLink, settings?.cookiePolicyLink].filter(
-		(link): link is ConsentLink => !!link?.href
-	);
+	const links = [
+		settings?.privacyPolicyLink,
+		settings?.cookiePolicyLink,
+	].filter((link): link is ConsentLink => !!link?.href);
 	if (links.length === 0) return null;
 	return (
 		<div className={className}>
