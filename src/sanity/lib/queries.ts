@@ -348,6 +348,23 @@ export const siteDataQuery = defineQuery(`{
 			gtmIDs,
 			klaviyoCompanyId
 		},
+		"consent": *[_type == "settingsConsent"][0]{
+			enabled,
+			"bannerTitle": coalesce(bannerTitle[language == $locale][0].value, bannerTitle[language == "en"][0].value),
+			"bannerBody": coalesce(bannerBody[language == $locale][0].value, bannerBody[language == "en"][0].value),
+			"acceptAllLabel": coalesce(acceptAllLabel[language == $locale][0].value, acceptAllLabel[language == "en"][0].value),
+			"rejectAllLabel": coalesce(rejectAllLabel[language == $locale][0].value, rejectAllLabel[language == "en"][0].value),
+			"preferencesLabel": coalesce(preferencesLabel[language == $locale][0].value, preferencesLabel[language == "en"][0].value),
+			"savePreferencesLabel": coalesce(savePreferencesLabel[language == $locale][0].value, savePreferencesLabel[language == "en"][0].value),
+			"necessaryTitle": coalesce(necessaryTitle[language == $locale][0].value, necessaryTitle[language == "en"][0].value),
+			"necessaryDescription": coalesce(necessaryDescription[language == $locale][0].value, necessaryDescription[language == "en"][0].value),
+			"analyticsTitle": coalesce(analyticsTitle[language == $locale][0].value, analyticsTitle[language == "en"][0].value),
+			"analyticsDescription": coalesce(analyticsDescription[language == $locale][0].value, analyticsDescription[language == "en"][0].value),
+			"marketingTitle": coalesce(marketingTitle[language == $locale][0].value, marketingTitle[language == "en"][0].value),
+			"marketingDescription": coalesce(marketingDescription[language == $locale][0].value, marketingDescription[language == "en"][0].value),
+			"privacyPolicyLink": privacyPolicyLink{ ${linkFields} },
+			"cookiePolicyLink": cookiePolicyLink{ ${linkFields} }
+		},
 	}
 `);
 
