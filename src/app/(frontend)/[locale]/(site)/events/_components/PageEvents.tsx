@@ -4,7 +4,7 @@ import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
 import { enUS, zhTW } from 'date-fns/locale';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, useReducedMotion } from 'motion/react';
 import type { PEvent, RichDate } from 'sanity.types';
 import {
 	formatRichDate,
@@ -14,7 +14,10 @@ import {
 import { ArrowUpRight } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
 import { fadeAnim } from '@/lib/animate';
-import { buildRgbaCssString } from '@/lib/image-utils';
+import {
+	buildRgbaCssString,
+	ensureAccessibleTextColor,
+} from '@/lib/image-utils';
 import { cn, hasArrayValue } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
@@ -22,6 +25,22 @@ import { localizePath, type Locale } from '@/lib/i18n';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
 const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
+// Confident ease-out (expo) for the staggered row entrance.
+const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
+const EVENT_ROW_STAGGER = 0.05;
+
+// Rows rise and fade in as a staggered cascade. Local variant (not the shared
+// fadeAnim) so the slide stays scoped to this list; reduced motion collapses it
+// via the `initial={false}` guard at the call site.
+const eventRowAnim = {
+	hide: { opacity: 0, y: 12 },
+	show: { opacity: 1, y: 0 },
+};
+
+// Shared keyboard-focus treatment for the absolutely-positioned overlay links
+// (full-row, location, status). Inset so the ring draws inside its container.
+const OVERLAY_LINK_FOCUS =
+	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
 
 const DATE_FNS_LOCALES: Record<
 	Locale,
@@ -75,6 +94,7 @@ export function PageEvents({ data }: PageEventsProps) {
 	const t = useTranslations('events');
 	const common = useTranslations('common');
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
+	const prefersReducedMotion = useReducedMotion();
 
 	const currentDate = new Date();
 	const [selectedMonth, setSelectedMonth] = useState<{
@@ -178,11 +198,13 @@ export function PageEvents({ data }: PageEventsProps) {
 
 	return (
 		<div className="min-h-screen p-x-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
-			<h1 className="sr-only">{title}</h1>
+			<h1 id="events-heading" className="sr-only">
+				{title}
+			</h1>
 			<div className="flex items-center justify-between sticky top-header bg-background/95 z-10 font-bold">
 				<motion.p
 					key={monthYearDisplay}
-					initial="hide"
+					initial={prefersReducedMotion ? false : 'hide'}
 					animate="show"
 					variants={fadeAnim}
 					transition={{
@@ -223,10 +245,15 @@ export function PageEvents({ data }: PageEventsProps) {
 				)}
 			</div>
 			{hasArrayValue(displayEvents) ? (
-				<div className="mt-10 lg:mt-17.5">
+				<div
+					className="mt-10 lg:mt-17.5"
+					role="table"
+					aria-labelledby="events-heading"
+				>
 					<div
+						role="row"
 						className={cn(
-							't-b-1 uppercase grid border-y border-b border-white/80 py-2 lg:py-6',
+							't-b-1 uppercase grid border-y border-b border-foreground/80 py-2 lg:py-6',
 							colStyle
 						)}
 					>
@@ -277,20 +304,21 @@ export function PageEvents({ data }: PageEventsProps) {
 						return (
 							<motion.div
 								key={_id}
+								role="row"
 								className={cn(
-									'relative t-b-1 transition-colors hover:bg-foreground/85 grid items-center border-b group py-4 border-white/80 lg:py-2 lg:min-h-15 group/row',
+									'relative t-b-1 transition-colors hover:bg-foreground/85 grid items-center border-b group py-4 border-foreground/80 lg:py-2 lg:min-h-15 group/row',
 									colStyle,
 									{
 										'pointer-events-none': eventHasEnded,
 									}
 								)}
-								initial="hide"
+								initial={prefersReducedMotion ? false : 'hide'}
 								animate="show"
-								variants={fadeAnim}
+								variants={eventRowAnim}
 								transition={{
-									duration: 2,
-									delay: (index + 1) * 0.12,
-									ease: EASE_EVENT_ROW,
+									duration: 1.2,
+									delay: 0.3 + index * EVENT_ROW_STAGGER,
+									ease: EASE_OUT_EXPO,
 								}}
 							>
 								<Td
@@ -310,7 +338,7 @@ export function PageEvents({ data }: PageEventsProps) {
 								</Td>
 								<Td
 									className={cn(
-										't-b-1 uppercase mb-auto text-right lg:text-left lg:mb-0',
+										'static t-b-1 uppercase mb-auto text-right lg:text-left lg:mb-0',
 										{
 											'opacity-30': eventHasEnded,
 										}
@@ -319,14 +347,18 @@ export function PageEvents({ data }: PageEventsProps) {
 									{(!dateStatus || dateStatus === 'confirmed') && eventDatetime
 										? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
 										: dateStatus || t.status.tba}
+
+									<Link
+										className={cn('p-fill', OVERLAY_LINK_FOCUS)}
+										href={localizePath(`/events/${slug}`, locale)}
+										aria-label={interpolate(t.aria.viewEvent, {
+											title: title || '',
+										})}
+									/>
 								</Td>
-								<Link
-									className="p-fill"
-									href={localizePath(`/events/${slug}`, locale)}
-								/>
 								<Td
 									className={cn(
-										't-b-1 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line break-words min-w-0 group/location',
+										't-b-1 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line wrap-break-word min-w-0 group/location',
 										{
 											'opacity-30': eventHasEnded,
 										}
@@ -340,11 +372,15 @@ export function PageEvents({ data }: PageEventsProps) {
 										</span>
 									)}
 									{displayLocationLink && (
-										<Link
-											className="p-fill increase-target-size"
-											href={displayLocationLink}
-											aria-label={displayLocation || ''}
-											target="_blank"
+										<CustomLink
+											className={cn(
+												'p-fill increase-target-size',
+												OVERLAY_LINK_FOCUS
+											)}
+											link={{ href: displayLocationLink, isNewTab: true }}
+											aria-label={interpolate(t.aria.viewLocation, {
+												location: displayLocation || '',
+											})}
 										/>
 									)}
 								</Td>
@@ -407,7 +443,9 @@ function StatusItem({ data, className }: { data: any; className?: string }) {
 				className
 			)}
 			style={{
-				color: buildRgbaCssString(statusTextColor) || 'var(--foreground)',
+				color:
+					ensureAccessibleTextColor(statusTextColor, statusBgColor) ||
+					'var(--foreground)',
 				backgroundColor: buildRgbaCssString(statusBgColor) || 'var(--muted)',
 			}}
 		>
@@ -416,9 +454,9 @@ function StatusItem({ data, className }: { data: any; className?: string }) {
 				<>
 					<ArrowRight className="size-3" />
 					<CustomLink
-						className="p-fill"
+						className={cn('p-fill rounded-4xl', OVERLAY_LINK_FOCUS)}
 						link={link}
-						aria-hidden={true}
+						aria-label={title}
 					></CustomLink>
 				</>
 			)}
@@ -433,10 +471,11 @@ function Th({
 }: React.ComponentProps<typeof motion.div> & {
 	isHideStatusColumn?: boolean;
 }) {
+	const prefersReducedMotion = useReducedMotion();
 	return (
 		<motion.div
 			key={String(isHideStatusColumn)}
-			initial="hide"
+			initial={prefersReducedMotion ? false : 'hide'}
 			animate="show"
 			variants={fadeAnim}
 			transition={{
@@ -445,6 +484,7 @@ function Th({
 				ease: EASE_EVENT_ROW,
 			}}
 			className={cn('font-bold lg:px-2', className)}
+			role="columnheader"
 			{...props}
 		/>
 	);
@@ -456,6 +496,7 @@ function Td({ className, ...props }: React.ComponentProps<'div'>) {
 				'lg:px-2 whitespace-nowrap text-foreground group-hover:text-background transition-colors empty:hidden relative',
 				className
 			)}
+			role="cell"
 			{...props}
 		/>
 	);

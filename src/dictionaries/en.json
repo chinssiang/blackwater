@@ -22,7 +22,9 @@
 		},
 		"aria": {
 			"previousMonth": "Previous",
-			"nextMonth": "Next"
+			"nextMonth": "Next",
+			"viewEvent": "View {title}",
+			"viewLocation": "{location}, opens map in a new tab"
 		},
 		"status": {
 			"today": "today",

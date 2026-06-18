@@ -100,3 +100,50 @@ export function buildRgbaCssString(
 
 	return `rgba(${r}, ${g}, ${b}, ${a})`;
 }
+
+// WCAG relative luminance of an sRGB color (0 = black, 1 = white).
+function relativeLuminance({ r, g, b }: SanityRgb): number {
+	const channel = (v: number) => {
+		const s = v / 255;
+		return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+	};
+	return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+function contrastRatio(lumA: number, lumB: number): number {
+	const lighter = Math.max(lumA, lumB);
+	const darker = Math.min(lumA, lumB);
+	return (lighter + 0.05) / (darker + 0.05);
+}
+
+// Author-chosen status colors carry no contrast guarantee. Keep the author's
+// text color when it clears WCAG AA (4.5:1) against their background; otherwise
+// fall back to a legible neutral so the label stays readable. Returns false only
+// when there is no background to test against and no author text color.
+const LEGIBLE_DARK = 'rgb(23, 23, 23)';
+const LEGIBLE_LIGHT = 'rgb(245, 245, 245)';
+
+export function ensureAccessibleTextColor(
+	textColor: SanityColor | null | undefined,
+	bgColor: SanityColor | null | undefined
+): string | false {
+	if (!bgColor?.rgb) {
+		// No concrete background to measure against; defer to the author's color.
+		return buildRgbaCssString(textColor);
+	}
+
+	const bgLum = relativeLuminance(bgColor.rgb);
+
+	if (textColor?.rgb) {
+		const textLum = relativeLuminance(textColor.rgb);
+		if (contrastRatio(bgLum, textLum) >= 4.5) {
+			return buildRgbaCssString(textColor);
+		}
+	}
+
+	const darkLum = relativeLuminance({ r: 23, g: 23, b: 23, a: 1 });
+	const lightLum = relativeLuminance({ r: 245, g: 245, b: 245, a: 1 });
+	return contrastRatio(bgLum, darkLum) >= contrastRatio(bgLum, lightLum)
+		? LEGIBLE_DARK
+		: LEGIBLE_LIGHT;
+}

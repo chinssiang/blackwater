@@ -22,7 +22,9 @@
 		},
 		"aria": {
 			"previousMonth": "上一個月",
-			"nextMonth": "下一個月"
+			"nextMonth": "下一個月",
+			"viewEvent": "查看 {title}",
+			"viewLocation": "{location}，於新分頁開啟地圖"
 		},
 		"status": {
 			"today": "今天",
