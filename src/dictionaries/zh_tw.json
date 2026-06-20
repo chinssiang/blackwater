@@ -104,5 +104,20 @@
 		"invalidEmail": "請輸入有效的電子郵件地址。",
 		"errorHeading": "發生錯誤",
 		"errorBody": "請再試一次。"
+	},
+	"consent": {
+		"bannerTitle": "我們重視您的隱私",
+		"bannerBody": "我們使用 Cookie 來分析流量並提升您的使用體驗。您可以接受全部、拒絕非必要的 Cookie，或自訂您的偏好設定。",
+		"acceptAllLabel": "接受全部",
+		"rejectAllLabel": "拒絕全部",
+		"preferencesLabel": "管理偏好設定",
+		"savePreferencesLabel": "儲存偏好設定",
+		"necessaryTitle": "嚴格必要",
+		"necessaryDescription": "網站運作所必需，永遠啟用且無法關閉。",
+		"analyticsTitle": "分析",
+		"analyticsDescription": "協助我們了解網站的使用情形（Google Analytics／Tag Manager）。",
+		"marketingTitle": "行銷",
+		"marketingDescription": "用於個人化內容與行銷成效評估（Klaviyo）。",
+		"manageCookiesLabel": "Cookie 設定"
 	}
 }

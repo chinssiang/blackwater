@@ -16,6 +16,7 @@ import ConsentBanner, {
 import JsonLd from '@/components/JsonLd';
 import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
 import type { ConsentState } from '@/lib/consent';
+import type { Dictionary } from '@/lib/dictionary';
 import '@/globals.css';
 
 const fontABCDisplay = localFont({
@@ -46,12 +47,14 @@ export default function HtmlShell({
 	locale,
 	siteData,
 	consent,
+	consentFallback,
 	isDraftModeEnabled,
 	children,
 }: {
 	locale: Locale;
 	siteData: unknown;
 	consent?: ConsentState | null;
+	consentFallback: Dictionary['consent'];
 	isDraftModeEnabled: boolean;
 	children: React.ReactNode;
 }) {
@@ -110,6 +113,7 @@ export default function HtmlShell({
 						<ConsentBanner
 							settings={cleanData?.consent ?? null}
 							initialConsent={consent ?? null}
+							fallback={consentFallback}
 						/>
 					</ThemeProvider>
 				</ReactQueryProvider>

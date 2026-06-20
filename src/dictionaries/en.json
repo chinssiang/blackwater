@@ -110,5 +110,20 @@
 		"invalidEmail": "Please enter a valid email address.",
 		"errorHeading": "Something went wrong",
 		"errorBody": "Please try again."
+	},
+	"consent": {
+		"bannerTitle": "We value your privacy",
+		"bannerBody": "We use cookies to analyze traffic and improve your experience. You can accept all, reject non-essential cookies, or manage your preferences.",
+		"acceptAllLabel": "Accept all",
+		"rejectAllLabel": "Reject all",
+		"preferencesLabel": "Manage preferences",
+		"savePreferencesLabel": "Save preferences",
+		"necessaryTitle": "Strictly necessary",
+		"necessaryDescription": "Required for the site to function. Always active and cannot be turned off.",
+		"analyticsTitle": "Analytics",
+		"analyticsDescription": "Helps us understand how the site is used (Google Analytics / Tag Manager).",
+		"marketingTitle": "Marketing",
+		"marketingDescription": "Used for personalized content and marketing measurement (Klaviyo).",
+		"manageCookiesLabel": "Cookie settings"
 	}
 }
