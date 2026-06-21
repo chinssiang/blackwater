@@ -51,6 +51,7 @@ export default async function LocaleLayout({
 			locale={locale as Locale}
 			siteData={data}
 			consent={consent}
+			consentFallback={dictionary.consent}
 			isDraftModeEnabled={isDraftModeEnabled}
 		>
 			<LocaleProvider locale={locale as Locale} dictionary={dictionary}>

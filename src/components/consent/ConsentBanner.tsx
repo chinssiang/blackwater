@@ -23,6 +23,7 @@ import {
 	type ConsentCategories,
 	type ConsentState,
 } from '@/lib/consent';
+import type { Dictionary } from '@/lib/dictionary';
 
 // Window event other parts of the UI (e.g. a footer "Cookie settings" link)
 // dispatch to re-open the preferences dialog.
@@ -53,35 +54,33 @@ export type ConsentSettings = {
 	cookiePolicyLink?: ConsentLink;
 } | null;
 
-// English fallbacks so consent still works before the Sanity copy is authored.
-const FALLBACK = {
-	bannerTitle: 'We value your privacy',
-	bannerBody:
-		'We use cookies to analyze traffic and improve your experience. You can accept all, reject non-essential cookies, or manage your preferences.',
-	acceptAllLabel: 'Accept all',
-	rejectAllLabel: 'Reject all',
-	preferencesLabel: 'Manage preferences',
-	savePreferencesLabel: 'Save preferences',
-	necessaryTitle: 'Strictly necessary',
-	necessaryDescription:
-		'Required for the site to function. Always active and cannot be turned off.',
-	analyticsTitle: 'Analytics',
-	analyticsDescription:
-		'Helps us understand how the site is used (Google Analytics / Tag Manager).',
-	marketingTitle: 'Marketing',
-	marketingDescription:
-		'Used for personalized content and marketing measurement (Klaviyo).',
-};
+// Keys shared between the Sanity copy and the localized dictionary fallback.
+type ConsentCopyKey =
+	| 'bannerTitle'
+	| 'bannerBody'
+	| 'acceptAllLabel'
+	| 'rejectAllLabel'
+	| 'preferencesLabel'
+	| 'savePreferencesLabel'
+	| 'necessaryTitle'
+	| 'necessaryDescription'
+	| 'analyticsTitle'
+	| 'analyticsDescription'
+	| 'marketingTitle'
+	| 'marketingDescription';
 
 export default function ConsentBanner({
 	settings,
 	initialConsent,
+	fallback,
 }: {
 	settings: ConsentSettings;
 	initialConsent: ConsentState | null;
+	// Locale-aware fallback copy, used before the Sanity copy is authored.
+	fallback: Dictionary['consent'];
 }) {
 	const router = useRouter();
-	const t = (key: keyof typeof FALLBACK) => settings?.[key] || FALLBACK[key];
+	const t = (key: ConsentCopyKey) => settings?.[key] || fallback[key];
 
 	const [decided, setDecided] = useState<boolean>(!!initialConsent);
 	const [prefsOpen, setPrefsOpen] = useState(false);
