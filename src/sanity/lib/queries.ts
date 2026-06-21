@@ -989,3 +989,47 @@ export const pageEventSingleQuery = defineQuery(`
 		}
 	}
 `);
+
+// ---------------------------------------------------------------------------
+// Cursor-based product pagination (NOT currently wired — /products/all and the
+// category/collection detail pages use numbered Pagination). Kept for a future
+// "Load More" implementation; consumed by src/app/actions/loadMoreProducts.ts
+// and src/lib/cursor.ts. See also src/hooks/useLoadMore.ts + src/components/LoadMore.tsx.
+// ---------------------------------------------------------------------------
+
+// Keyset cursor clause for filter-based product pagination (Sanity's
+// recommended alternative to deep [$start...$end] slicing). Ordered by
+// (title asc, _id asc); the _id tiebreaker keeps the order stable when titles
+// collide. First page passes cursorTitle/cursorId = null (the !defined guard).
+const productCursorClause = `(
+	!defined($cursorId)
+	|| title > $cursorTitle
+	|| (title == $cursorTitle && _id > $cursorId)
+)`;
+
+// Subsequent product batches for /products/all (Load More + ?cursor= fallback).
+export const loadMoreProductsAllQuery = defineQuery(`
+	*[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productCursorClause}]
+		| order(title asc, _id asc) [0...$limit] {
+		${productCardFields}
+	}
+`);
+
+// Product batch scoped to a category — used for both the initial render and
+// the Load More action on /products/categories/[slug].
+export const productsByCategoryPageQuery = defineQuery(`
+	*[_type == "pProduct" && references($categoryId) && ${productLocaleFilter('pProduct')} && ${productCursorClause}]
+		| order(title asc, _id asc) [0...$limit] {
+		${productCardFields}
+	}
+`);
+
+// Collection products keep their editorial array order, so they paginate by
+// offset over the document's own (bounded) reference array — cheap, and not the
+// large-dataset slicing the Sanity guide warns against.
+export const productsByCollectionPageQuery = defineQuery(`
+	*[_type == "pProductCollection" && _id == $collectionId][0]
+		.products[$start...$end]->{
+			${productCardFields}
+		}
+`);
