@@ -29,6 +29,7 @@ export default async function EmailSignatureLayout({
 		<HtmlShell
 			locale={DEFAULT_LOCALE}
 			siteData={data}
+			consentFallback={dictionary.consent}
 			isDraftModeEnabled={isDraftModeEnabled}
 		>
 			<LocaleProvider locale={DEFAULT_LOCALE} dictionary={dictionary}>
