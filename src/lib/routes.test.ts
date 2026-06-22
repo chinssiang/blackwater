@@ -150,14 +150,10 @@ describe('resolvedHrefGroq sync with DOCUMENT_ROUTES', () => {
 		'pProductCategoriesIndex',
 		'pProductCollectionsIndex',
 	];
-	// pNewsletter is currently absent from resolvedHrefGroq even though it is a
-	// real route — flagged separately rather than asserted here.
-	const KNOWN_GROQ_GAPS = ['pNewsletter'];
 
 	it.each(
 		DOCUMENT_ROUTES.map((r) => r.type).filter(
-			(type) =>
-				!SYNTHETIC_TYPES.includes(type) && !KNOWN_GROQ_GAPS.includes(type)
+			(type) => !SYNTHETIC_TYPES.includes(type)
 		)
 	)('includes a GROQ case for %s', (type) => {
 		expect(resolvedHrefGroq).toContain(`_type == "${type}"`);
