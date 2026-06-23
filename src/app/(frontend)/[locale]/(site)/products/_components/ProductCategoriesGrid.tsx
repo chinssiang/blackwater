@@ -61,7 +61,7 @@ function CategoryTile({
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
 						imageObj={category.coverImage}
 						alt={category.title ?? ''}
-						sizes="(max-width: 768px) 50vw, 30vw"
+						sizes="(max-width: 640px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw"
 						priority={priority}
 					/>
 				</div>

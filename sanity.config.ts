@@ -18,6 +18,7 @@ import { pFaq } from '@/sanity/schemaTypes/singletons/p-faq';
 import { pNewsletter } from '@/sanity/schemaTypes/singletons/p-newsletter';
 import { pProductIndex } from '@/sanity/schemaTypes/singletons/p-product-index';
 import { pHome } from '@/sanity/schemaTypes/singletons/p-home';
+import { settingsConsent } from '@/sanity/schemaTypes/singletons/settings-consent';
 import { settingsGeneral } from '@/sanity/schemaTypes/singletons/settings-general';
 import { settingsIntegration } from '@/sanity/schemaTypes/singletons/settings-integrations';
 import { structure } from '@/sanity/structure';
@@ -70,6 +71,7 @@ const singletonDocuments = [
 	gToolbar.name,
 	pHome.name,
 	settingsIntegration.name,
+	settingsConsent.name,
 	settingsGeneral.name,
 	p404.name,
 	pContact.name,

@@ -1,8 +1,6 @@
 'use client';
 
 import NextLink from 'next/link';
-import { useRouter } from 'next/navigation';
-import useKey from '@/hooks/useKey';
 import { cn } from '@/lib/utils';
 
 /**
@@ -37,9 +35,6 @@ export default function CustomLink({
 	onLinkClickAction,
 	...props
 }: CustomLinkProps) {
-	const router = useRouter();
-	const { hasPressedKeys } = useKey();
-
 	if (!link) return children;
 
 	const { href } = link;
@@ -49,33 +44,12 @@ export default function CustomLink({
 
 	const isMailTo = href.match('^mailto:');
 
-	const handleClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
-		onLinkClickAction?.(event);
-
-		if (event.defaultPrevented) return;
-
-		const prefersReducedMotion = window.matchMedia(
-			'(prefers-reduced-motion: reduce)'
-		).matches;
-		if (
-			document.startViewTransition &&
-			!isOpenNewTab &&
-			!hasPressedKeys &&
-			!prefersReducedMotion
-		) {
-			event.preventDefault();
-			document.startViewTransition(() => {
-				router.push(href);
-			});
-		}
-	};
-
 	return (
 		<NextLink
 			href={href}
 			target={isMailTo || isOpenNewTab ? '_blank' : undefined}
 			rel={isOpenNewTab ? 'noopener noreferrer' : undefined}
-			onClick={handleClick}
+			onClick={onLinkClickAction}
 			className={cn(className)}
 			{...props}
 		>

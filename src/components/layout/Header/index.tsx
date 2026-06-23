@@ -12,9 +12,6 @@ import { useWindowScroll } from '@/hooks/useWindowScroll';
 import { useLocale } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 
-// matches --height-header in globals.css
-const HEADER_HEIGHT = 52;
-
 type HeaderProps = GHeader & {
 	siteTitle?: string;
 	menu?: SettingsMenu;
@@ -30,11 +27,6 @@ export function Header({
 }) {
 	const { siteTitle, menu, mobileMenu } = data || {};
 	const locale = useLocale();
-	const [{ y }] = useWindowScroll() as [
-		{ x: number | null; y: number | null },
-		(...args: unknown[]) => void,
-	];
-	const isScrolled = (y ?? 0) > HEADER_HEIGHT;
 
 	return (
 		<header

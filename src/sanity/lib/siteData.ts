@@ -12,6 +12,7 @@ export const SITE_DATA_TAGS = [
 	'settingsMenu',
 	'settingsGeneral',
 	'settingsIntegration',
+	'settingsConsent',
 	'settingsBrandColors',
 	'pProductIndex',
 ] as const;

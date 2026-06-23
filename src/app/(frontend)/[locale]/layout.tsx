@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { draftMode } from 'next/headers';
+import { cookies, draftMode } from 'next/headers';
 import { stegaClean } from '@sanity/client/stega';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import HtmlShell from '@/components/layout/HtmlShell';
@@ -8,6 +8,7 @@ import { getCachedSiteData } from '@/sanity/lib/siteData';
 import { getDictionary } from '@/lib/dictionary.server';
 import { buildBaseMetadata } from '@/lib/defineBaseMetadata';
 import { LOCALES, type Locale, isLocale } from '@/lib/i18n';
+import { CONSENT_COOKIE, parseConsentCookie } from '@/lib/consent';
 
 export function generateStaticParams() {
 	return LOCALES.map((locale) => ({ locale }));
@@ -38,15 +39,19 @@ export default async function LocaleLayout({
 	if (!isLocale(locale)) notFound();
 
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
-	const [{ data }, dictionary] = await Promise.all([
+	const [{ data }, dictionary, cookieStore] = await Promise.all([
 		getCachedSiteData(locale),
 		getDictionary(locale as Locale),
+		cookies(),
 	]);
+	const consent = parseConsentCookie(cookieStore.get(CONSENT_COOKIE)?.value);
 
 	return (
 		<HtmlShell
 			locale={locale as Locale}
 			siteData={data}
+			consent={consent}
+			consentFallback={dictionary.consent}
 			isDraftModeEnabled={isDraftModeEnabled}
 		>
 			<LocaleProvider locale={locale as Locale} dictionary={dictionary}>

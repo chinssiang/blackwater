@@ -10,8 +10,13 @@ import { SanityLive } from '@/sanity/lib/live';
 import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
 import DraftModeToast from '@/components/DraftModeToast';
 import HeadTrackingCode from '@/components/layout/HeadTrackingCode';
+import ConsentBanner, {
+	type ConsentSettings,
+} from '@/components/consent/ConsentBanner';
 import JsonLd from '@/components/JsonLd';
 import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
+import type { ConsentState } from '@/lib/consent';
+import type { Dictionary } from '@/lib/dictionary';
 import '@/globals.css';
 
 const fontABCDisplay = localFont({
@@ -41,16 +46,23 @@ const baselTypewriter = localFont({
 export default function HtmlShell({
 	locale,
 	siteData,
+	consent,
+	consentFallback,
 	isDraftModeEnabled,
 	children,
 }: {
 	locale: Locale;
 	siteData: unknown;
+	consent?: ConsentState | null;
+	consentFallback: Dictionary['consent'];
 	isDraftModeEnabled: boolean;
 	children: React.ReactNode;
 }) {
 	const cleanData = stegaClean(siteData) as
-		| { sharing?: Parameters<typeof defineSiteJsonLd>[0]['sharing'] }
+		| {
+				sharing?: Parameters<typeof defineSiteJsonLd>[0]['sharing'];
+				consent?: ConsentSettings;
+		  }
 		| undefined;
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 	const siteJsonLd = defineSiteJsonLd({
@@ -74,7 +86,7 @@ export default function HtmlShell({
 				/>
 				<meta httpEquiv="X-UA-Compatible" content="IE=edge" />
 				<link rel="preconnect" href="https://cdn.sanity.io" />
-				<HeadTrackingCode siteData={siteData as never} />
+				<HeadTrackingCode siteData={siteData as never} consent={consent} />
 				{siteJsonLd && <JsonLd data={siteJsonLd} />}
 			</head>
 
@@ -98,6 +110,11 @@ export default function HtmlShell({
 						)}
 						<Analytics />
 						<SpeedInsights />
+						<ConsentBanner
+							settings={cleanData?.consent ?? null}
+							initialConsent={consent ?? null}
+							fallback={consentFallback}
+						/>
 					</ThemeProvider>
 				</ReactQueryProvider>
 			</body>

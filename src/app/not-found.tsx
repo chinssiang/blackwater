@@ -26,6 +26,7 @@ export default async function NotFound() {
 		<HtmlShell
 			locale={DEFAULT_LOCALE}
 			siteData={siteData}
+			consentFallback={dictionary.consent}
 			isDraftModeEnabled={false}
 		>
 			<LocaleProvider locale={DEFAULT_LOCALE} dictionary={dictionary}>
