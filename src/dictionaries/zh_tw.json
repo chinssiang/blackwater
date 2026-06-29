@@ -83,11 +83,9 @@
 			},
 			"clearAll": "清除全部",
 			"showResults": "顯示結果",
-			"filterCount": {
-				"one": "{count} 項篩選",
-				"other": "{count} 項篩選"
-			},
-			"noResults": "沒有符合篩選條件的商品。"
+			"noResults": "沒有符合篩選條件的商品。",
+			"clearFilters": "清除所有篩選",
+			"emptyCatalogue": "目前尚無商品。俱樂部嚴選新裝備後會陸續加入。"
 		}
 	},
 	"productSubmission": {

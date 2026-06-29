@@ -64,7 +64,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 						href={href}
 						className="group block overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
 					>
-						<div className="relative aspect-4/3] overflow-hidden bg-foreground/6 sm:aspect-16/7 lg:aspect-12/4">
+						<div className="relative aspect-4/3 overflow-hidden bg-foreground/6 sm:aspect-16/7 lg:aspect-12/4">
 							<ImageBlock
 								className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
 								imageObj={cover}
@@ -242,6 +242,7 @@ export function PageProductIndex({ data, selected, sort }: Props) {
 				badgeCounts={badgeCounts}
 				selected={selected}
 				sort={sort}
+				total={allProductsTotal ?? 0}
 				products={allProductsList ?? []}
 				footer={filteredFooter}
 				showcase={showcase}

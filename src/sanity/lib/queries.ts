@@ -771,13 +771,18 @@ const productCategoriesFields = `
 	}
 `;
 
-// Shared filter clause for the product listings. Each dimension is a no-op when
-// its param array is empty (count == 0), so an unfiltered request returns the
-// full catalogue. Categories/brands match on slug; badges match on value.
+// Per-dimension filter predicates. Each is a no-op when its param array is empty
+// (count == 0), so an unfiltered request returns the full catalogue.
+// Categories/brands match on slug; badges match on value.
+const productCategoryPredicate = `(count($categories) == 0 || count(categories[@->slug.current in $categories]) > 0)`;
+const productBrandPredicate = `(count($brands) == 0 || count(brands[@->slug.current in $brands]) > 0)`;
+const productBadgePredicate = `(count($badges) == 0 || count(badge[@ in $badges]) > 0)`;
+
+// Shared filter clause for the product listings: all three dimensions AND-ed.
 const productFilterClause = `
-	&& (count($categories) == 0 || count(categories[@->slug.current in $categories]) > 0)
-	&& (count($brands) == 0 || count(brands[@->slug.current in $brands]) > 0)
-	&& (count($badges) == 0 || count(badge[@ in $badges]) > 0)
+	&& ${productCategoryPredicate}
+	&& ${productBrandPredicate}
+	&& ${productBadgePredicate}
 `;
 
 // Shared sort clause driven by the $sort param. Each select() is null (a no-op)
@@ -790,24 +795,41 @@ const productSortOrder = `order(
 )`;
 
 // Facet data for the filter UI, shared by every page that renders <ProductFilters>.
-// Aliased to value/label/count so the result drops straight into FacetOption[].
-// Counts are catalogue-wide (not re-scoped to other active filters).
+// Each option is listed only if it has >=1 product in this locale. Its `count` is
+// *contextual*: how many products it would yield given the OTHER active dimensions
+// (its own dimension excluded), so the number stays honest as filters combine. A
+// zero contextual count means "selecting this adds nothing right now"; the UI shows
+// it disabled rather than hiding it. Badges carry a separate catalogue-wide
+// `baseCount` because, unlike categories/brands, they aren't document-backed and
+// can't be existence-filtered in the list.
 const productFilterFacets = `
-	"facetCategories": *[_type == "pProductCategory"] | order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc) {
+	"facetCategories": *[_type == "pProductCategory" && count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}]) > 0] | order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc) {
 		"value": slug.current,
 		"label": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
+		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')} && ${productBrandPredicate} && ${productBadgePredicate}])
 	},
-	"facetBrands": *[_type == "pBrand"] | order(title asc) {
+	"facetBrands": *[_type == "pBrand" && count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}]) > 0] | order(title asc) {
 		"value": slug.current,
 		"label": title,
-		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
+		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBadgePredicate}])
 	},
 	"badgeCounts": {
-		"founders-pick": count(*[_type == "pProduct" && "founders-pick" in badge && ${productLocaleFilter('pProduct')}]),
-		"most-popular": count(*[_type == "pProduct" && "most-popular" in badge && ${productLocaleFilter('pProduct')}]),
-		"editors-choice": count(*[_type == "pProduct" && "editors-choice" in badge && ${productLocaleFilter('pProduct')}]),
-		"new": count(*[_type == "pProduct" && "new" in badge && ${productLocaleFilter('pProduct')}])
+		"founders-pick": {
+			"baseCount": count(*[_type == "pProduct" && "founders-pick" in badge && ${productLocaleFilter('pProduct')}]),
+			"count": count(*[_type == "pProduct" && "founders-pick" in badge && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBrandPredicate}])
+		},
+		"most-popular": {
+			"baseCount": count(*[_type == "pProduct" && "most-popular" in badge && ${productLocaleFilter('pProduct')}]),
+			"count": count(*[_type == "pProduct" && "most-popular" in badge && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBrandPredicate}])
+		},
+		"editors-choice": {
+			"baseCount": count(*[_type == "pProduct" && "editors-choice" in badge && ${productLocaleFilter('pProduct')}]),
+			"count": count(*[_type == "pProduct" && "editors-choice" in badge && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBrandPredicate}])
+		},
+		"new": {
+			"baseCount": count(*[_type == "pProduct" && "new" in badge && ${productLocaleFilter('pProduct')}]),
+			"count": count(*[_type == "pProduct" && "new" in badge && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBrandPredicate}])
+		}
 	}
 `;
 

@@ -158,6 +158,7 @@ export function PageProductsAll({
 				badgeCounts={badgeCounts}
 				selected={selected}
 				sort={sort}
+				total={total}
 				products={products ?? []}
 				footer={pagination}
 			/>

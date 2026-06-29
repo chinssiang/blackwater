@@ -89,11 +89,9 @@
 			},
 			"clearAll": "Clear all",
 			"showResults": "Show results",
-			"filterCount": {
-				"one": "{count} filter",
-				"other": "{count} filters"
-			},
-			"noResults": "No products match your filters."
+			"noResults": "No products match your filters.",
+			"clearFilters": "Clear all filters",
+			"emptyCatalogue": "Nothing here yet. Picks are added as the club vets new gear."
 		}
 	},
 	"productSubmission": {
