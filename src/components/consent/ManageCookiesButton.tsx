@@ -15,7 +15,10 @@ export default function ManageCookiesButton({
 		<button
 			type="button"
 			onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))}
-			className={cn('cursor-pointer', className)}
+			className={cn(
+				'cursor-pointer t-l-1 uppercase transition-colors',
+				className
+			)}
 		>
 			{prefix}
 			{t.manageCookiesLabel}

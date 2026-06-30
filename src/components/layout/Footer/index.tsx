@@ -5,6 +5,7 @@ import ManageCookiesButton from '@/components/consent/ManageCookiesButton';
 import { motion } from 'motion/react';
 import type { GFooter, SettingsMenu } from 'sanity.types';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
+import Link from 'next/link';
 
 type FooterProps = Omit<GFooter, 'menus'> & {
 	siteTitle?: string;
@@ -65,7 +66,7 @@ export function Footer({ data }: { data: FooterProps }) {
 							{col === menus!.length - 1 && (
 								<li>
 									<ManageCookiesButton
-										className="t-l-1 uppercase transition-colors hover:text-foreground/80 flex gap-3 text-foreground md:gap-10"
+										className="hover:text-foreground/80 flex gap-3 text-foreground md:gap-10"
 										prefix={
 											<NumberPrefix>
 												{col + 1}.{(menu?.items?.length ?? 0) + 1}
@@ -79,12 +80,12 @@ export function Footer({ data }: { data: FooterProps }) {
 				</nav>
 			)}
 			<div className="flex justify-between mt-20 lg:mt-62 flex-col gap-4 md:flex-row items-start">
-				<div className="flex flex-col gap-2">
+				<Link href="/">
 					<WordmarkSvg className="h-3 w-auto" />
-					{!hasMenus && (
-						<ManageCookiesButton className="t-l-2 uppercase text-foreground/60 transition-colors hover:text-foreground self-start" />
-					)}
-				</div>
+				</Link>
+				{!hasMenus && (
+					<ManageCookiesButton className="t-l-2 text-foreground/60 hover:text-foreground ml-auto" />
+				)}
 				{copyright && (
 					<motion.small
 						variants={{
