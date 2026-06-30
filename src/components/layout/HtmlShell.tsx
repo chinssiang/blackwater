@@ -78,7 +78,7 @@ export default function HtmlShell({
 			data-scroll-behavior="smooth"
 			suppressHydrationWarning
 		>
-			<head>
+			<body className="antialiased">
 				<meta
 					httpEquiv="Content-Type"
 					charSet="UTF-8"
@@ -88,9 +88,6 @@ export default function HtmlShell({
 				<link rel="preconnect" href="https://cdn.sanity.io" />
 				<HeadTrackingCode siteData={siteData as never} consent={consent} />
 				{siteJsonLd && <JsonLd data={siteJsonLd} />}
-			</head>
-
-			<body className="antialiased">
 				<ReactQueryProvider>
 					<ThemeProvider>
 						{children}

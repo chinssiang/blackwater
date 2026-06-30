@@ -11,6 +11,17 @@ type FooterProps = Omit<GFooter, 'menus'> & {
 	menus?: SettingsMenu[];
 };
 
+function NumberPrefix({ children }: { children: React.ReactNode }) {
+	return (
+		<span
+			aria-hidden
+			className="min-w-4 shrink-0 text-foreground/60 tabular-nums"
+		>
+			{children}
+		</span>
+	);
+}
+
 export function Footer({ data }: { data: FooterProps }) {
 	const { menus, copyright } = data || {};
 	const hasMenus = !!menus && menus.length > 0;
@@ -39,21 +50,30 @@ export function Footer({ data }: { data: FooterProps }) {
 					{menus!.map((menu, col) => (
 						<ul key={menu?._id ?? col} className="flex flex-col gap-2 md:gap-3">
 							{menu?.items?.map((item: any, i: number) => (
-								<li key={item?._key ?? i} className="t-l-1 uppercase">
+								<li key={item?._key ?? i}>
 									<CustomLink
 										link={item?.link}
-										className="flex gap-3 text-foreground transition-colors hover:text-foreground/80 md:gap-10"
+										className="flex gap-3 text-foreground transition-colors hover:text-foreground/80 md:gap-10 t-l-1 uppercase"
 									>
-										<span
-											aria-hidden
-											className="min-w-4 shrink-0 text-foreground/60 tabular-nums"
-										>
+										<NumberPrefix>
 											{col + 1}.{i + 1}
-										</span>
+										</NumberPrefix>
 										<span>{item?.title}</span>
 									</CustomLink>
 								</li>
 							))}
+							{col === menus!.length - 1 && (
+								<li>
+									<ManageCookiesButton
+										className="t-l-1 uppercase transition-colors hover:text-foreground/80 flex gap-3 text-foreground md:gap-10"
+										prefix={
+											<NumberPrefix>
+												{col + 1}.{(menu?.items?.length ?? 0) + 1}
+											</NumberPrefix>
+										}
+									/>
+								</li>
+							)}
 						</ul>
 					))}
 				</nav>
@@ -61,7 +81,9 @@ export function Footer({ data }: { data: FooterProps }) {
 			<div className="flex justify-between mt-20 lg:mt-62 flex-col gap-4 md:flex-row items-start">
 				<div className="flex flex-col gap-2">
 					<WordmarkSvg className="h-3 w-auto" />
-					<ManageCookiesButton className="t-l-2 uppercase text-foreground/60 transition-colors hover:text-foreground self-start" />
+					{!hasMenus && (
+						<ManageCookiesButton className="t-l-2 uppercase text-foreground/60 transition-colors hover:text-foreground self-start" />
+					)}
 				</div>
 				{copyright && (
 					<motion.small

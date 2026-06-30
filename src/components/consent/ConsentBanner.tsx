@@ -214,7 +214,7 @@ function CategoryRow({
 }) {
 	return (
 		<div className="flex items-start justify-between gap-4">
-			<div>
+			<div className="space-y-1">
 				<p className="t-b-2 font-medium text-foreground">{title}</p>
 				<p className="t-l-2 text-foreground/60">{description}</p>
 			</div>
