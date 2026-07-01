@@ -108,7 +108,7 @@ export function PageProductCollectionsIndex({ data }: Props) {
 				</div>
 			) : (
 				<p className="t-b-1 max-w-[40ch] text-foreground/60">
-					No collections yet. They group picks around a theme or season.
+					{t.emptyCollections}
 				</p>
 			)}
 		</>

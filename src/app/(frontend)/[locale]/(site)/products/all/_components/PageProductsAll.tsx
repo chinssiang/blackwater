@@ -106,7 +106,7 @@ export function PageProductsAll({
 				</div>
 			) : (
 				<p className="t-b-1 max-w-[40ch] text-foreground/60">
-					Nothing here yet. Picks are added as the club vets new gear.
+					{t.emptyAllProducts}
 				</p>
 			)}
 

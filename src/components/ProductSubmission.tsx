@@ -47,9 +47,9 @@ type FormValues = {
 // the auto-prepended protocol) so over-long pastes can't pass client
 // validation only to get a generic 400 from the server.
 const FIELDS = [
-	{ name: 'name', type: 'text', maxLength: 200 },
-	{ name: 'email', type: 'email', maxLength: 320 },
-	{ name: 'productUrl', type: 'text', maxLength: 1990 },
+	{ name: 'name', type: 'text', maxLength: 200, autoComplete: 'name' },
+	{ name: 'email', type: 'email', maxLength: 320, autoComplete: 'email' },
+	{ name: 'productUrl', type: 'text', maxLength: 1990, autoComplete: 'url' },
 ] as const;
 
 // Animated paper-plane shown inside the success panel: the plane lifts off
@@ -106,6 +106,7 @@ function ProductField({
 	name,
 	type,
 	maxLength,
+	autoComplete,
 	control,
 	label,
 	placeholder,
@@ -113,6 +114,7 @@ function ProductField({
 	name: keyof FormValues;
 	type: 'text' | 'email';
 	maxLength: number;
+	autoComplete: string;
 	control: Control<FormValues>;
 	label: string;
 	placeholder: string;
@@ -134,6 +136,8 @@ function ProductField({
 								id={id}
 								type={type}
 								maxLength={maxLength}
+								autoComplete={autoComplete}
+								spellCheck={type === 'email' || name === 'productUrl' ? false : undefined}
 								inputMode={name === 'productUrl' ? 'url' : undefined}
 								placeholder={placeholder}
 								aria-invalid={fieldState.invalid}
@@ -369,12 +373,13 @@ export function ProductSubmission() {
 		</Button>
 	);
 
-	const fields = FIELDS.map(({ name, type, maxLength }) => (
+	const fields = FIELDS.map(({ name, type, maxLength, autoComplete }) => (
 		<ProductField
 			key={name}
 			name={name}
 			type={type}
 			maxLength={maxLength}
+			autoComplete={autoComplete}
 			control={form.control}
 			label={t.fields[name].label}
 			placeholder={t.fields[name].placeholder}

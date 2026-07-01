@@ -70,7 +70,7 @@ export default function PageProductCategory({ data }: Props) {
 				</div>
 			) : (
 				<p className="t-b-1 max-w-[40ch] text-foreground/60">
-					No picks in this category yet. Check back as the shelf grows.
+					{t.emptyCategory}
 				</p>
 			)}
 		</>
