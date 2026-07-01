@@ -106,6 +106,7 @@ export const resolvedHrefGroq = `select(
 					_type == "pEvent" => "/events/" + slug.current,
 					_type == "pContact" => "/contact",
 					_type == "pFaq" => "/faq",
+					_type == "pNewsletter" => "/newsletter",
 					defined(slug.current) => "/" + slug.current,
 					null
 				)
