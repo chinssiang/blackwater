@@ -5,13 +5,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm run dev          # Start development server (runs typegen first via predev hook)
+npm run dev          # Start development server on port 3001 with Turbopack (runs typegen first via predev hook)
 npm run build        # Build for production
 npm run typegen      # Extract Sanity schema and generate TypeScript types
 npm run lint         # Run ESLint
 ```
 
-Sanity Studio is embedded at `/sanity` and runs alongside the Next.js app on the same port.
+Sanity Studio is embedded at `/sanity` and runs alongside the Next.js app on the same port (3001 in dev).
 
 To regenerate Sanity TypeScript types after schema changes:
 
@@ -26,9 +26,9 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 
 ### Directory Structure
 
-- `src/app/(frontend)/` — All public-facing routes using Next.js route groups
+- `src/app/(frontend)/` — All public-facing routes. Localized site routes live under the nested `[locale]/(site)/` segment (e.g. `src/app/(frontend)/[locale]/(site)/products/page.tsx`); only `email-signature/` and `events-crew/` sit directly under `(frontend)/`
 - `src/app/sanity/` — Embedded Sanity Studio at `/sanity`
-- `src/app/api/` — API routes (draft mode, revalidation, email, page views)
+- `src/app/api/` — API routes (draft mode, revalidation, email, page views, newsletter, product submission)
 - `src/app/fonts/` — Web font files
 - `src/sanity/` — All Sanity configuration and schema
 - `src/sanity/schemaTypes/` — Schema split into `singletons/`, `documents/`, `objects/`, `components/`
@@ -44,20 +44,21 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 
 **Schema naming conventions:**
 
-- `g-*` = global singletons (header, footer, announcement, author, team-member)
+- `g-*` = global content types — some are singletons (header, footer, announcement, mobile menu, toolbar, newsletter), others are multi-instance documents (team-member, location, faq, tag)
 - `p-*` = page singletons or document types
-- `settings-*` = settings singletons (general, color, menus, integrations, redirect)
+- `settings-*` = settings singletons (general, brand colors, menus, integrations, redirect, consent)
 
-**Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `gAuthor`, `pHome`, `pContact`, `pFaq`, `p404`, `pCuratedIndex`, `settingsGeneral`, `settingsColor`, `settingsMenu`, `settingsIntegrations`, `settingsRedirect`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
+**Singleton documents** (non-duplicatable, single-instance — the `singletonDocuments` array in `sanity.config.ts`): `gHeader`, `gFooter`, `gMobileMenu`, `gToolbar`, `gAnnouncement`, `gNewsletter`, `pHome`, `pContact`, `pFaq`, `p404`, `pNewsletter`, `pProductIndex`, `settingsGeneral`, `settingsIntegration`, `settingsConsent`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions. (The `gAuthor`, `settingsBrandColors`, `settingsMenu`, and `settingsRedirect` schemas exist but are not in the singleton list.)
 
 **Document types** (multi-instance, slug-based):
 
 - `pGeneral` — Generic pages at `/<slug>`
 - `pBlog` / `pBlogIndex` / `pBlogCategory` — Blog system (routes currently disabled)
-- `pCurated` / `pCuratedCategory` / `pCuratedCollection` — Curated/product system
+- `pProduct` / `pProductCategory` / `pProductCollection` — Product system
 - `pEvent` / `pEvents` / `pEventCategory` / `pEventRole` / `pEventStatus` — Event system
 - `pBrand` — Brand entries
 - `gTeamMember` — Team member profiles
+- `gTag` — Tag entries
 - `gLocation` — Event venues (referenced by `pEvent`; carries `address` + `geo` for structured data)
 - `gFaq` — Global FAQ entries (document-level i18n via `documentInternationalization`; referenced by the `faqList` module and listed on the FAQ page)
 
@@ -77,21 +78,23 @@ const { data } = await sanityFetch({ query: someQuery, tags: ['docType'] });
 
 Each page route follows this pattern:
 
-1. Server component in `src/app/(frontend)/[route]/page.tsx` — fetches data via `sanityFetch`
+1. Server component in `src/app/(frontend)/[locale]/(site)/[route]/page.tsx` — fetches data via `sanityFetch`
 2. `generateMetadata()` — fetches data with `stega: false` for clean metadata
 3. `generateStaticParams()` — for dynamic slug routes, fetches all slugs at build time
 4. Render delegates to a `_components/Page*.tsx` client or server component
 
-**Active frontend routes:**
+**Active frontend routes** (all under `[locale]/(site)/` unless noted; the default locale `en` has no URL prefix, other locales are prefixed, e.g. `/zh_tw/products`):
 
 - `/` — Home (`pHome`)
 - `/[slug]` — Generic pages (`pGeneral`)
+- `/[...rest]` — Catch-all that renders the localized 404 content for unmatched paths
 - `/contact` — Contact page
 - `/faq` — FAQ page (`pFaq`; renders the full set of locale-matched `gFaq` entries)
-- `/curated` — Curated index; `/curated/products/[slug]`, `/curated/categories/[slug]`, `/curated/collections/[slug]`
+- `/newsletter` — Newsletter page (`pNewsletter`)
+- `/products` — Product index (`pProductIndex`); `/products/[slug]`, `/products/all`, `/products/categories`, `/products/categories/[slug]`, `/products/collections`, `/products/collections/[slug]`
 - `/events` — Events listing; `/events/[slug]` — single event
-- `/events-crew` — Event crew tracking (month-based with member filter)
-- `/email-signature` — Standalone email signature utility
+- `/events-crew` — Event crew tracking (month-based with member filter; directly under `(frontend)/`, not localized)
+- `/email-signature` — Standalone email signature utility (directly under `(frontend)/`, not localized)
 
 **Site-wide data** (`siteDataQuery`) fetches header, footer, announcement, sharing settings, and integrations in the root layout and passes to `<Layout>`.
 
@@ -126,9 +129,15 @@ Each page route follows this pattern:
 - `<SvgIcons>` — SVG icon set.
 - `<TextReveal>` / `<Typewriter>` — Motion-based text animation components.
 - `<Menu>` / `<MenuDropdown>` / `<MobileMenu>` — Navigation components.
+- `<LanguageSwitcher>` — Locale switcher.
+- `<LocaleProvider>` / `<ThemeProvider>` — Context providers for locale and theme.
+- `<Freeform>` — Renders the `freeform` page module.
+- `<ProductSubmission>` — Product submission form.
+- `<Popover>` — Popover component.
 - `<DraftModeToast>` — Draft mode indicator banner.
-- `src/components/layout/` — Shell: `AdaSkip`, `Footer`, `Header`, `HeadTrackingCode`, `Main`, `ToolBar`.
-- `src/components/ui/` — Radix UI-based: Accordion, Button, Checkbox, Dialog, Field, Input, InputGroup, Label, Progress, RadioGroup, Select, Separator, Sheet, Table, Textarea, Tooltip.
+- `src/components/consent/` — Cookie consent: `ConsentBanner`, `ManageCookiesButton` (backed by `settingsConsent` and `src/lib/consent.ts`).
+- `src/components/layout/` — Shell: `AdaSkip`, `Footer`, `Header`, `HeadTrackingCode`, `HtmlShell`, `Main`, `Newsletter`, `ToolBar`.
+- `src/components/ui/` — Radix UI-based: Accordion, Badge, Button, Checkbox, Dialog, DropdownMenu, Field, Input, InputGroup, Label, Pagination, Progress, RadioGroup, Select, Separator, Sheet, Spinner, Table, Textarea, Tooltip.
 - `src/components/PortableTable/` — Table rendering for Portable Text.
 
 ### Utilities (`src/lib/`)
@@ -142,6 +151,12 @@ Each page route follows this pattern:
 - `defineFaqJsonLd.ts` — `FAQPage` JSON-LD builder; `collectFaqItems()` flattens `faqList` modules into items.
 - `defineBreadcrumbJsonLd.ts` — `BreadcrumbList` JSON-LD builder (1-based positions, absolute URLs).
 - `defineMetadata.ts` — Next.js metadata builder from Sanity SEO fields.
+- `defineBaseMetadata.ts` — Site-level base metadata builder.
+- `i18n.ts` — Locale definitions and path helpers (`LOCALES`, `localizePath`, `stripLocaleFromPath`, `byLocale`).
+- `dictionary.ts` / `dictionary.server.ts` — UI string dictionaries per locale (from `src/dictionaries/`).
+- `consent.ts` — Cookie consent helpers.
+- `buildEventName.ts` — Event display-name builder.
+- `event-date.ts` — Event date helpers.
 - `icons.ts` — Maps social platform names to icon identifiers (facebook, instagram, linkedin, spotify, strava, x, youtube, github).
 - `providers/` — `ReactQueryProvider` (TanStack React Query wrapper).
 - `gtag/` — Google Analytics helpers.
@@ -150,6 +165,7 @@ Each page route follows this pattern:
 
 - `useKey.js` — Keyboard event listener.
 - `useOutsideClick.js` — Click outside detection.
+- `useReveal.ts` — Entrance-reveal props for Motion components (honors `prefers-reduced-motion`).
 - `useWindowDimensions.js` — Window size tracking.
 - `useWindowScroll.js` — Scroll position tracking.
 
@@ -157,6 +173,8 @@ Each page route follows this pattern:
 
 - `/contact-form/submit` — Contact form submission (email dispatch).
 - `/draft-mode/enable` — Enables Sanity draft mode.
+- `/newsletter/subscribe` — Newsletter signup.
+- `/product-submission/submit` — Product submission form handling.
 - `/revalidate-tag` — On-demand ISR via tag invalidation.
 - `/view-page` — Page view tracking.
 

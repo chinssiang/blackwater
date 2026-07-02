@@ -28,7 +28,7 @@
 ? Would you like to add the project ID and dataset to your .env file? (Y)
 ```
 
-3. Add CORS Origins to your newly created Sanity project by visiting manage.sanity.io and navigating to Settings → API. Then, add your Studio URLs with credentials, such as http://localhost:3000.
+3. Add CORS Origins to your newly created Sanity project by visiting manage.sanity.io and navigating to Settings → API. Then, add your Studio URLs with credentials, such as http://localhost:3001.
 
 ### 2. NextJS (App Router)
 
@@ -38,7 +38,7 @@
     NEXT_PUBLIC_SANITY_PROJECT_ID="XXXXXX"
    	NEXT_PUBLIC_SANITY_DATASET="production"
 
-   	SITE_URL="http://localhost:3000"
+   	SITE_URL="http://localhost:3001"
    	SANITY_API_READ_TOKEN="XXXXXX"
    	SANITY_REVALIDATE_SECRET="XXXXXX"
 
@@ -66,8 +66,8 @@
 
 `npm run dev` in the project folder to start the front end locally.
 
-- Your front end will be running on [http://localhost:3000](http://localhost:3000)
-- Your Sanity Studio will be running on [http://localhost:3000/sanity](http://localhost:3000/sanity)
+- Your front end will be running on [http://localhost:3001](http://localhost:3001)
+- Your Sanity Studio will be running on [http://localhost:3001/sanity](http://localhost:3001/sanity)
 
 ## 🚀 Deployment
 
@@ -83,64 +83,6 @@ For further details, refer to our [Next.js deployment documentation](https://nex
 
 - Use [`react-remove-scroll`](https://github.com/theKashey/react-remove-scroll) to disable scrolling wherever applicable
 - Use [`react-modal`](https://github.com/reactjs/react-modal) for modal and pop-up alike components
-- For scenario that `react-modal` is not applicable, like mega menu or contact form that needs to keep user inputs when closing, use the following custom hooks to manually set up `aria-hidden` and `tabindex`
-
-<details>
-<summary><code>useAriaFocusNavigation()</code></summary>
-
-The `useAriaFocusNavigation` hook manages keyboard navigation within a container, restricting focus to the elements within the component when active. This is particularly useful for modals, sidebars, or other UI components that need focus to remain contained while open.
-
-### 1. Import the `useAriaFocusNavigation` Hook
-
-```js
-import useAriaFocusNavigation from '@/hooks/useAriaFocusNavigation';
-```
-
-### 2. Create a Container Reference
-
-Set up a `ref` for the container element that holds the focusable elements. This is the element the hook will target.
-
-```js
-const modalRef = useRef(null);
-```
-
-### 3. Use `useAriaFocusNavigation`
-
-Pass the container `ref`, an `isActive` boolean to toggle focus containment, and an optional `onExit` callback (to perform any cleanup or state updates when the component closes).
-
-```js
-useAriaFocusNavigation(modalRef, isModalOpen, handleModalClose);
-```
-
-- `containerRef` (required): Reference to the container holding the focusable elements.
-- `isActive` (required): A boolean that determines if focus trapping is active (usually tied to the component’s visibility).
-- `onExit` (optional): Callback function triggered when the focus navigation deactivates, often used to restore state or focus.
-
-### 4. Apply `tabindex` and `aria-hidden` as Needed
-
-Ensure that elements within the container are set up for focus management and are optionally hidden when inactive.
-
-```jsx
-<div ref={modalRef} aria-hidden={!isModalOpen}>
-	{/* Focusable elements go here */}
-</div>
-```
-
-### FAQ
-
-#### Q1: Can I use `useAriaFocusNavigation` with multiple components?
-
-Yes, each instance operates independently using its own `ref` and `isActive` state, making it suitable for multiple components within the same page.
-
-#### Q2: How does `useAriaFocusNavigation` handle tab key behavior?
-
-The hook traps tab key navigation within the focusable elements inside the container, cycling back to the first element when the last one is reached and vice versa. This ensures that users cannot tab outside the modal or component while it is open.
-
-#### Q3: What happens to focus when the component deactivates?
-
-When `isActive` becomes `false`, the hook restores focus to the last focused element before the component was activated. The optional `onExit` callback also allows additional cleanup if needed.
-
-</details>
 
 ## ❓ FAQ
 
@@ -148,12 +90,5 @@ When `isActive` becomes `false`, the hook restores focus to the last focused ele
 <summary>Q: I encounter <code>Error: Failed to communicate with the Sanity API</code></summary>
 
 If you encounter this error, log out and log back in again. Run `sanity logout` and then `sanity login` to resolve it.
-
-</details>
-
-<details>
-<summary>Q: How can I see the bundle size of my website?</summary>
-
-Run `npm run analyze` from your project folder. This will build your site and automatically display the [Webpack Bundle Analyzer](https://github.com/webpack-contrib/webpack-bundle-analyzer) for your site's build files.
 
 </details>
