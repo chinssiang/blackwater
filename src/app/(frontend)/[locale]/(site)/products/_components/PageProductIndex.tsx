@@ -111,6 +111,7 @@ export function PageProductIndex({ data }: Props) {
 			<motion.section
 				className="mb-14 lg:mb-24"
 				{...reveal}
+				initial={false}
 				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
 			>
 				{subtitle && (

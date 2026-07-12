@@ -99,6 +99,7 @@ export default function ProductCategoriesGrid({
 	return (
 		<motion.section
 			{...reveal}
+			initial={false}
 			transition={{ duration: 0.8, ease: [0, 0.5, 0.5, 1] }}
 		>
 			{showHeader && (

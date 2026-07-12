@@ -113,6 +113,7 @@ export default function PageProductSingle({ data }: Props) {
 				aria-label="Breadcrumb"
 				className="t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
 				{...reveal}
+				initial={false}
 				transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
 			>
 				<Link
@@ -134,6 +135,7 @@ export default function PageProductSingle({ data }: Props) {
 				<motion.div
 					className="relative aspect-4/3 overflow-hidden p-6 lg:col-span-7 lg:p-10"
 					{...reveal}
+					initial={false}
 					transition={{ duration: 0.8, delay: 0.05, ease: [0, 0.5, 0.5, 1] }}
 				>
 					{mainImage ? (
@@ -173,6 +175,7 @@ export default function PageProductSingle({ data }: Props) {
 						<motion.p
 							className="t-l-1 text-foreground"
 							{...reveal}
+							initial={false}
 							transition={{
 								duration: 0.6,
 								delay: 0.1,
@@ -186,6 +189,7 @@ export default function PageProductSingle({ data }: Props) {
 					<motion.h1
 						className="mt-3 text-balance t-h-1 uppercase"
 						{...reveal}
+						initial={false}
 						transition={{
 							duration: 0.8,
 							delay: 0.15,

@@ -5,8 +5,15 @@ import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductIndexQuery } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
-import { type Locale } from '@/lib/i18n';
+import { LOCALES, type Locale } from '@/lib/i18n';
 import { PageProductIndex } from './_components/PageProductIndex';
+
+// Prerender both locale variants at build time so the heavy per-category
+// count() GROQ query stays out of the request path (mirrors the detail route,
+// which prerenders + relies on tag-based revalidation via /revalidate-tag).
+export function generateStaticParams() {
+	return LOCALES.map((locale) => ({ locale }));
+}
 
 const getCachedProductIndexData = cache(async (locale: string) =>
 	sanityFetch({
