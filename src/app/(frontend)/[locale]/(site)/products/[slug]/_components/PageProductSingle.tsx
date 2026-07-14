@@ -16,6 +16,7 @@ import { interpolate } from '@/lib/dictionary';
 import { resolveHref } from '@/lib/routes';
 import { localizePath } from '@/lib/i18n';
 import ProductCard from '../../_components/ProductCard';
+import BackInStockForm from './BackInStockForm';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
@@ -43,6 +44,7 @@ export default function PageProductSingle({ data }: Props) {
 		mainImage,
 		price,
 		purchaseLink,
+		soldOut,
 		content,
 		whyUseIt,
 		whoIsItFor,
@@ -213,7 +215,7 @@ export default function PageProductSingle({ data }: Props) {
 						</motion.p>
 					)}
 
-					{purchaseLink && (
+					{soldOut ? (
 						<motion.div
 							className="mt-6"
 							{...reveal}
@@ -223,31 +225,55 @@ export default function PageProductSingle({ data }: Props) {
 								ease: [0, 0.71, 0.2, 1.01],
 							}}
 						>
-							<Button asChild>
-								<a
-									href={appendReferralParams(purchaseLink, {
-										source: REFERRAL_SOURCE,
-										medium: 'referral',
-										campaign: 'curated-products',
-										content: slug ?? undefined,
-									})}
-									target="_blank"
-									rel="noopener"
-									aria-label={interpolate(productText.buyAriaLabel, {
-										product: title ?? productText.thisProduct,
-									})}
-									className="group lg:w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase w-full"
-								>
-									{productText.buyIt}
-									<span
-										aria-hidden
-										className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
-									>
-										↗
-									</span>
-								</a>
+							<Button
+								disabled
+								variant="secondary"
+								className="w-full uppercase lg:w-60"
+							>
+								{productText.soldOut}
 							</Button>
+							<BackInStockForm
+								productTitle={title ?? ''}
+								productSlug={slug ?? ''}
+							/>
 						</motion.div>
+					) : (
+						purchaseLink && (
+							<motion.div
+								className="mt-6"
+								{...reveal}
+								transition={{
+									duration: 0.6,
+									delay: 0.25,
+									ease: [0, 0.71, 0.2, 1.01],
+								}}
+							>
+								<Button asChild>
+									<a
+										href={appendReferralParams(purchaseLink, {
+											source: REFERRAL_SOURCE,
+											medium: 'referral',
+											campaign: 'curated-products',
+											content: slug ?? undefined,
+										})}
+										target="_blank"
+										rel="noopener"
+										aria-label={interpolate(productText.buyAriaLabel, {
+											product: title ?? productText.thisProduct,
+										})}
+										className="group lg:w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase w-full"
+									>
+										{productText.buyIt}
+										<span
+											aria-hidden
+											className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+										>
+											↗
+										</span>
+									</a>
+								</Button>
+							</motion.div>
+						)
 					)}
 
 					{content && content.length > 0 && (

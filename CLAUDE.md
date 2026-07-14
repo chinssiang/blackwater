@@ -179,6 +179,7 @@ EMAIL_SERVER_USER
 EMAIL_SERVER_PASSWORD
 EMAIL_SERVER_HOST
 EMAIL_SERVER_PORT
+KLAVIYO_PRIVATE_API_KEY     # Newsletter + product back-in-stock subscribe routes
 ```
 
 ### Type Generation

@@ -60,6 +60,14 @@ export const pProduct = defineType({
 			type: 'url',
 		}),
 		defineField({
+			name: 'soldOut',
+			title: 'Sold Out',
+			type: 'boolean',
+			initialValue: false,
+			description:
+				'When on, the purchase button becomes a disabled "Sold out" state and a "Notify when back in stock" form appears.',
+		}),
+		defineField({
 			name: 'badge',
 			title: 'Badge',
 			type: 'array',
@@ -240,6 +248,7 @@ export const pProduct = defineType({
 			language: 'language',
 			categoryTitle: 'categories.0.title',
 			mainImage: 'mainImage',
+			soldOut: 'soldOut',
 		},
 		prepare({
 			title = 'Untitled',
@@ -247,6 +256,7 @@ export const pProduct = defineType({
 			language,
 			categoryTitle,
 			mainImage,
+			soldOut,
 		}: Record<string, any>) {
 			const href = slug?.current
 				? resolveHref({
@@ -258,7 +268,7 @@ export const pProduct = defineType({
 			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
 			return {
 				title: tag ? `[${tag}] ${title}` : title,
-				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — ${href ?? '/products/(no slug)'}`,
+				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — ${href ?? '/products/(no slug)'}${soldOut ? ' · Sold out' : ''}`,
 				media: mainImage?.image.asset || ImageIcon,
 			};
 		},

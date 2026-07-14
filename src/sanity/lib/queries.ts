@@ -752,6 +752,7 @@ const productStaticSectionFields = `
 
 const productBaseFields = `
 	${productCardFields},
+	soldOut,
 	content[]{
 		${portableTextContentFields}
 	},
@@ -834,6 +835,13 @@ export const pageProductSingleQuery = defineQuery(`
 			${productCardFields}
 		}
 	}
+`);
+
+// Server-side config for the back-in-stock notify API route: the single global
+// Klaviyo list all "notify when back in stock" signups subscribe to. Product
+// identity is carried per signup as Klaviyo event properties, not stored here.
+export const backInStockConfigQuery = defineQuery(`
+	*[_type == "settingsIntegration"][0]{ "listId": klaviyoBackInStockListId }
 `);
 
 export const pageProductCollectionSlugsQuery = defineQuery(`

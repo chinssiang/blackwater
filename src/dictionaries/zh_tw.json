@@ -70,6 +70,20 @@
 			"most-popular": "最受歡迎",
 			"editors-choice": "編輯精選",
 			"new": "新品"
+		},
+		"soldOut": "已售完",
+		"notify": {
+			"title": "補貨時通知我",
+			"emailLabel": "電子郵件",
+			"emailPlaceholder": "you@example.com",
+			"submit": "通知我",
+			"submitting": "傳送中…",
+			"successHeading": "已為您登記",
+			"successBody": "商品補貨時我們會以電子郵件通知您。",
+			"errorHeading": "發生錯誤",
+			"errorBody": "請稍後再試一次。",
+			"invalidEmail": "請輸入有效的電子郵件地址。",
+			"ariaLabel": "當 {product} 補貨時通知我"
 		}
 	},
 	"productSubmission": {

@@ -76,6 +76,20 @@
 			"most-popular": "Most Popular",
 			"editors-choice": "Editor's Choice",
 			"new": "New"
+		},
+		"soldOut": "Sold out",
+		"notify": {
+			"title": "Notify when back in stock",
+			"emailLabel": "Email address",
+			"emailPlaceholder": "you@example.com",
+			"submit": "Notify me",
+			"submitting": "Submitting…",
+			"successHeading": "You're on the list",
+			"successBody": "We'll email you when this is back in stock.",
+			"errorHeading": "Something went wrong",
+			"errorBody": "Please try again in a moment.",
+			"invalidEmail": "Please enter a valid email address.",
+			"ariaLabel": "Get notified when {product} is back in stock"
 		}
 	},
 	"productSubmission": {
