@@ -9,7 +9,7 @@ import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate } from '@/lib/dictionary';
 
-type FormState = 'idle' | 'submitting' | 'success';
+type FormState = 'idle' | 'submitting';
 
 type Props = {
 	productTitle: string;
@@ -45,7 +45,10 @@ export default function BackInStockForm({ productTitle, productSlug }: Props) {
 
 			if (res.ok) {
 				setEmail('');
-				setFormState('success');
+				toast.success(notify.successHeading, {
+					description: notify.successBody,
+				});
+				setFormState('idle');
 			} else {
 				toast.error(notify.errorHeading, { description: notify.errorBody });
 				setFormState('idle');
@@ -56,17 +59,6 @@ export default function BackInStockForm({ productTitle, productSlug }: Props) {
 		}
 	};
 
-	if (formState === 'success') {
-		return (
-			<div className="mt-6 max-w-sm" role="status" aria-live="polite">
-				<p className="t-b-1 font-medium">{notify.successHeading}</p>
-				<p className="t-b-2 mt-1 text-pretty text-foreground/70">
-					{notify.successBody}
-				</p>
-			</div>
-		);
-	}
-
 	return (
 		<div className="mt-6 max-w-sm">
 			<p className="t-l-1 mb-3 uppercase text-foreground/65">{notify.title}</p>
@@ -76,7 +68,7 @@ export default function BackInStockForm({ productTitle, productSlug }: Props) {
 						{notify.emailLabel}
 					</FieldLabel>
 					<div className="relative flex gap-3">
-						<div className="field-hint-ring relative flex-1">
+						<div className="relative flex-1">
 							<Input
 								id="back-in-stock-email"
 								type="email"

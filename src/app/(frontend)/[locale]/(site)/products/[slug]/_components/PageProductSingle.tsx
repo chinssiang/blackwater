@@ -226,8 +226,9 @@ export default function PageProductSingle({ data }: Props) {
 							}}
 						>
 							<Button
-								disabled
-								variant="secondary"
+								aria-disabled="true"
+								tabIndex={-1}
+								variant="outline"
 								className="w-full uppercase lg:w-60"
 							>
 								{productText.soldOut}
