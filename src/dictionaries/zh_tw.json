@@ -7,7 +7,7 @@
 	"breadcrumb": {
 		"home": "首頁",
 		"events": "活動",
-		"products": "嚴選",
+		"products": "商品",
 		"faq": "常見問題"
 	},
 	"locationCurrentTime": {
@@ -70,6 +70,7 @@
 		},
 		"filters": {
 			"title": "篩選",
+			"description": "篩選並排序商品列表。",
 			"category": "分類",
 			"brand": "品牌",
 			"badge": "標籤",

@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { motion, useReducedMotion } from 'motion/react';
 import { SlidersHorizontal, X } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
 import {
 	Sheet,
 	SheetContent,
+	SheetDescription,
 	SheetFooter,
 	SheetHeader,
 	SheetTitle,
@@ -21,6 +23,7 @@ import {
 	SelectValue,
 } from '@/components/ui/Select';
 import { useTranslations } from '@/components/LocaleProvider';
+import useWindowDimensions from '@/hooks/useWindowDimensions';
 import { interpolate, pickPlural } from '@/lib/dictionary';
 import { cn } from '@/lib/utils';
 
@@ -40,6 +43,11 @@ type Props = {
 	sort: string;
 	/** Total products matching the active filters, shown in the status line. */
 	total: number;
+	/**
+	 * Show the result count in the status line. Off on pages that already show a
+	 * count in their header (e.g. /products/all) so the number isn't duplicated.
+	 */
+	showCount?: boolean;
 };
 
 const SORT_KEYS = ['az', 'za', 'newest', 'oldest'] as const;
@@ -51,12 +59,19 @@ export default function ProductFilters({
 	selected,
 	sort,
 	total,
+	showCount = true,
 }: Props) {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const t = useTranslations('products');
+	const { isSm } = useWindowDimensions();
+	const prefersReducedMotion = useReducedMotion();
+	const [isPending, startTransition] = useTransition();
 	const [open, setOpen] = useState(false);
+	// Phones get a bottom sheet (thumb-reachable); larger screens keep the side
+	// drawer. The panel content only mounts on open, so width is resolved by then.
+	const side = isSm ? 'bottom' : 'right';
 	// Drawer checkboxes stage into a local draft; nothing is fetched until the
 	// user taps "Show results". Sort and the active-filter chips stay live.
 	const [draft, setDraft] = useState(selected);
@@ -81,7 +96,9 @@ export default function ProductFilters({
 			else params.set(key, Array.isArray(value) ? value.join(',') : value);
 		}
 		const qs = params.toString();
-		router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+		startTransition(() => {
+			router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+		});
 	}
 
 	function toggle(dimension: Dimension, value: string) {
@@ -143,8 +160,12 @@ export default function ProductFilters({
 		draft.categories.length + draft.brands.length + draft.badges.length;
 
 	// Map a stored slug/value back to its display label for the active chips.
+	// Unknown values (e.g. a badge whose catalogue count dropped to 0 but is
+	// still in the URL) fall back to a humanized slug, never a raw "founders-pick".
+	const humanize = (value: string) =>
+		value.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 	const labelFor = (options: FacetOption[], value: string) =>
-		options.find((o) => o.value === value)?.label ?? value;
+		options.find((o) => o.value === value)?.label ?? humanize(value);
 
 	const activeChips: Array<{
 		dimension: Dimension;
@@ -195,7 +216,7 @@ export default function ProductFilters({
 	].filter((f) => f.options.length > 0);
 
 	return (
-		<div className="mb-10">
+		<div className="mb-10" aria-busy={isPending}>
 			{/* Controls bar — pinned under the header (matches the events pages) */}
 			<div className="sticky top-header z-10 flex items-center justify-between gap-3 bg-background/95 py-3 backdrop-blur-sm">
 				{/* Filters panel trigger */}
@@ -205,17 +226,34 @@ export default function ProductFilters({
 							<SlidersHorizontal />
 							{filters.title}
 							{activeCount > 0 && (
-								<span className="ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs text-primary-foreground">
+								<span className="t-spec ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded bg-primary/20 px-1.5 text-primary">
 									{activeCount}
 								</span>
 							)}
 						</Button>
 					</SheetTrigger>
-					<SheetContent className="w-full gap-0 overflow-y-auto sm:max-w-112">
+					<SheetContent
+						side={side}
+						className={cn(
+							'gap-0',
+							side === 'bottom'
+								? 'max-h-[85svh] rounded-t-2xl'
+								: 'w-full sm:max-w-112'
+						)}
+					>
+						{side === 'bottom' && (
+							<div
+								aria-hidden
+								className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-foreground/20"
+							/>
+						)}
 						<SheetHeader className="border-b border-foreground/10">
 							<SheetTitle className="t-h-3 uppercase">
 								{filters.title}
 							</SheetTitle>
+							<SheetDescription className="sr-only">
+								{filters.description}
+							</SheetDescription>
 						</SheetHeader>
 
 						<div className="flex-1 overflow-y-auto px-4 pt-6 space-y-6">
@@ -317,39 +355,63 @@ export default function ProductFilters({
 						</SelectContent>
 					</Select>
 				</div>
+
+				{/* Indeterminate bar while the server re-fetches the filtered list. */}
+				<div
+					aria-hidden
+					className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden"
+				>
+					{isPending &&
+						(prefersReducedMotion ? (
+							<div className="h-full w-full bg-primary/50" />
+						) : (
+							<motion.div
+								className="h-full w-1/3 bg-primary"
+								initial={{ x: '-120%' }}
+								animate={{ x: '360%' }}
+								transition={{ repeat: Infinity, duration: 1.1, ease: 'linear' }}
+							/>
+						))}
+				</div>
 			</div>
 
-			{/* Filtering status — results count, active chips, clear */}
-			{activeChips.length > 0 && (
+			{/* Filtering status — result count, active chips, clear. Shown when
+			   filters are active, or (where a count is shown) when a non-default
+			   sort has flattened the showcase, so the change is never silent. */}
+			{(activeChips.length > 0 || (showCount && sort !== 'az')) && (
 				<div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-					<span className="t-l-1 shrink-0 uppercase text-foreground/90 font-medium">
-						{interpolate(pickPlural(t.productCount, total), {
-							count: total,
-						})}
-					</span>
-					<div className="flex flex-wrap items-center gap-2">
-						{activeChips.map((chip) => (
+					{showCount && (
+						<span className="t-l-1 shrink-0 uppercase text-foreground/90 font-medium">
+							{interpolate(pickPlural(t.productCount, total), {
+								count: total,
+							})}
+						</span>
+					)}
+					{activeChips.length > 0 && (
+						<div className="flex flex-wrap items-center gap-2">
+							{activeChips.map((chip) => (
+								<Button
+									key={`${chip.dimension}:${chip.value}`}
+									onClick={() => toggle(chip.dimension, chip.value)}
+									variant="ghost"
+									size="sm"
+									className="gap-1.5 border border-foreground/15 uppercase hover:bg-foreground/5"
+								>
+									{chip.label}
+									<X className="size-3.5" />
+								</Button>
+							))}
 							<Button
-								key={`${chip.dimension}:${chip.value}`}
-								onClick={() => toggle(chip.dimension, chip.value)}
+								type="button"
+								onClick={clearAll}
+								className="uppercase text-foreground/50 underline-offset-4 hover:underline"
 								variant="ghost"
 								size="sm"
-								className="rounded-full border border-foreground/15 uppercase"
 							>
-								{chip.label}
-								<X className="size-3.5" />
+								{filters.clearFilters}
 							</Button>
-						))}
-						<Button
-							type="button"
-							onClick={clearAll}
-							className="uppercase text-foreground/50 underline-offset-4 hover:underline"
-							variant="ghost"
-							size="sm"
-						>
-							{filters.clearAll}
-						</Button>
-					</div>
+						</div>
+					)}
 				</div>
 			)}
 		</div>

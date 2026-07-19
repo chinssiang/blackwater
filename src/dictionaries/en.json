@@ -76,6 +76,7 @@
 		},
 		"filters": {
 			"title": "Filters",
+			"description": "Filter and sort the product list.",
 			"category": "Category",
 			"brand": "Brand",
 			"badge": "Badge",

@@ -9,6 +9,7 @@ import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { Badge } from '@/components/ui/Badge';
 import { ArrowRight } from '@/components/SvgIcons';
+import { WordmarkSvg } from '@/components/WordmarkSvg';
 
 type Category = { _id: string; title?: string | null; slug?: string | null };
 
@@ -99,7 +100,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw"
 					/>
 				) : (
-					<div className="h-full w-full" />
+					<div className="flex h-full w-full items-center justify-center bg-foreground/10">
+						<WordmarkSvg className="w-24 text-foreground/25" />
+					</div>
 				)}
 
 				{product.badge && product.badge.length > 0 && (

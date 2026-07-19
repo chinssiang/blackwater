@@ -159,6 +159,7 @@ export function PageProductsAll({
 				selected={selected}
 				sort={sort}
 				total={total}
+				showCount={false}
 				products={products ?? []}
 				footer={pagination}
 			/>

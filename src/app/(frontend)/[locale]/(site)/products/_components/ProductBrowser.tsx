@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { type ReactNode, useTransition } from 'react';
 import ProductFilters, { type FacetOption } from './ProductFilters';
 import ProductGrid, { type ProductCardData } from './ProductGrid';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -43,6 +43,9 @@ type Props = {
 	sort: string;
 	/** Total products matching the active filters (for the status line). */
 	total: number;
+	/** Forwarded to ProductFilters: hide the status-line count where a page
+	 * header already shows it (e.g. /products/all). */
+	showCount?: boolean;
 	products: ProductCardData[];
 	/** Rendered after the results grid — pagination or a "view more" button. */
 	footer?: ReactNode;
@@ -82,6 +85,7 @@ export default function ProductBrowser({
 	selected,
 	sort,
 	total,
+	showCount = true,
 	products,
 	footer,
 	showcase,
@@ -92,6 +96,7 @@ export default function ProductBrowser({
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
+	const [isPending, startTransition] = useTransition();
 
 	// Clear the active filter dimensions (keeping sort) and reset pagination.
 	// Mirrors ProductFilters' clearAll so the empty-state recovery matches the
@@ -102,7 +107,9 @@ export default function ProductBrowser({
 			params.delete(key);
 		}
 		const qs = params.toString();
-		router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+		startTransition(() => {
+			router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+		});
 	}
 
 	const categories = toOptions(facetCategories);
@@ -139,6 +146,7 @@ export default function ProductBrowser({
 				selected={selected}
 				sort={sort}
 				total={total}
+				showCount={showCount}
 			/>
 
 			{showResults ? (
@@ -153,6 +161,7 @@ export default function ProductBrowser({
 						<Button
 							variant="outline"
 							onClick={clearFilters}
+							disabled={isPending}
 							className="pointer-coarse:min-h-11"
 						>
 							{t.filters.clearFilters}
