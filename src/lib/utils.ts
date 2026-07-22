@@ -149,6 +149,14 @@ export function formatNumberWithCommas(string: string | number): string {
 }
 
 /**
+ * Formats a numeric price as an NTD display string.
+ * @example formatPrice(4280) => "NTD 4,280"
+ */
+export function formatPrice(amount: number): string {
+	return `NTD ${formatNumberWithCommas(amount)}`;
+}
+
+/**
  * Formats a number string in European style (space as thousands separator, comma as decimal separator).
  * (e.g., 3000.12 -> 3 000,12).
  * @param string - The number string to format.

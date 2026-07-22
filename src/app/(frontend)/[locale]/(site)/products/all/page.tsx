@@ -25,11 +25,21 @@ const getCachedData = cache(
 		categories: string[],
 		brands: string[],
 		badges: string[],
+		priceBuckets: string[],
 		sort: ProductSortKey
 	) =>
 		sanityFetch({
 			query: pageProductsAllQuery,
-			params: { locale, start, end, categories, brands, badges, sort },
+			params: {
+				locale,
+				start,
+				end,
+				categories,
+				brands,
+				badges,
+				priceBuckets,
+				sort,
+			},
 			tags: ['pProduct', 'pProductCategory', 'pBrand'],
 		})
 );
@@ -51,7 +61,8 @@ export default async function Page({
 	const start = (page - 1) * PAGE_SIZE;
 	const end = start + PAGE_SIZE;
 
-	const { categories, brands, badges, sort } = parseProductFilters(sp);
+	const { categories, brands, badges, priceBuckets, sort } =
+		parseProductFilters(sp);
 
 	const { data } = await getCachedData(
 		locale,
@@ -60,6 +71,7 @@ export default async function Page({
 		categories,
 		brands,
 		badges,
+		priceBuckets,
 		sort
 	);
 
@@ -83,7 +95,7 @@ export default async function Page({
 				currentPage={page}
 				totalPages={totalPages}
 				total={data.total ?? 0}
-				selected={{ categories, brands, badges }}
+				selected={{ categories, brands, badges, priceBuckets }}
 				sort={sort}
 			/>
 		</>

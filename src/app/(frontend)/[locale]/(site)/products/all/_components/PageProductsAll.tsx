@@ -74,8 +74,14 @@ export function PageProductsAll({
 	const breadcrumb = useTranslations('breadcrumb');
 	const t = useTranslations('products');
 	const common = useTranslations('common');
-	const { products, categories, facetCategories, facetBrands, badgeCounts } =
-		data || {};
+	const {
+		products,
+		categories,
+		facetCategories,
+		facetBrands,
+		badgeCounts,
+		facetPrice,
+	} = data || {};
 
 	// Pagination links keep the current filter/sort params and only swap `page`.
 	const hrefFor = (p: number) => {
@@ -156,6 +162,7 @@ export function PageProductsAll({
 				facetCategories={facetCategories ?? []}
 				facetBrands={facetBrands ?? []}
 				badgeCounts={badgeCounts}
+				facetPrice={facetPrice}
 				selected={selected}
 				sort={sort}
 				total={total}

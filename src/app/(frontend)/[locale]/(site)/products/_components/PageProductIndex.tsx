@@ -122,6 +122,7 @@ export function PageProductIndex({ data, selected, sort }: Props) {
 		facetCategories,
 		facetBrands,
 		badgeCounts,
+		facetPrice,
 	} = data || {};
 	const reveal = useReveal();
 	const locale = useLocale();
@@ -240,6 +241,7 @@ export function PageProductIndex({ data, selected, sort }: Props) {
 				facetCategories={facetCategories ?? []}
 				facetBrands={facetBrands ?? []}
 				badgeCounts={badgeCounts}
+				facetPrice={facetPrice}
 				selected={selected}
 				sort={sort}
 				total={allProductsTotal ?? 0}

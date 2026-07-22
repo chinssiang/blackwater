@@ -6813,6 +6813,13 @@
         },
         "optional": true
       },
+      "priceAmount": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "number"
+        },
+        "optional": true
+      },
       "price": {
         "type": "objectAttribute",
         "value": {

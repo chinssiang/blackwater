@@ -74,13 +74,22 @@
 			"category": "分類",
 			"brand": "品牌",
 			"badge": "標籤",
+			"price": "價格",
 			"sort": "排序",
 			"sortBy": "排序方式",
 			"sortOptions": {
 				"az": "名稱（A–Z）",
 				"za": "名稱（Z–A）",
 				"newest": "最新",
-				"oldest": "最舊"
+				"oldest": "最舊",
+				"price-asc": "價格（低到高）",
+				"price-desc": "價格（高到低）"
+			},
+			"priceBuckets": {
+				"u1000": "NTD 1,000 以下",
+				"1000-3000": "NTD 1,000–3,000",
+				"3000-7000": "NTD 3,000–7,000",
+				"o7000": "NTD 7,000 以上"
 			},
 			"clearAll": "清除全部",
 			"showResults": "顯示結果",

@@ -688,6 +688,7 @@ const productCardFields = `
 	excerpt,
 	badge,
 	price,
+	priceAmount,
 	purchaseLink,
 	categories[]->{
 		_id,
@@ -777,12 +778,23 @@ const productCategoriesFields = `
 const productCategoryPredicate = `(count($categories) == 0 || count(categories[@->slug.current in $categories]) > 0)`;
 const productBrandPredicate = `(count($brands) == 0 || count(brands[@->slug.current in $brands]) > 0)`;
 const productBadgePredicate = `(count($badges) == 0 || count(badge[@ in $badges]) > 0)`;
+// Maps a product's numeric priceAmount to its bucket key. Thresholds MUST stay in
+// sync with PRICE_BUCKETS in src/lib/productFilters.ts (kept as literals here
+// because Sanity typegen can't evaluate computed query interpolation).
+const productPriceBucket = `select(
+	priceAmount < 1000 => "u1000",
+	priceAmount < 3000 => "1000-3000",
+	priceAmount < 7000 => "3000-7000",
+	"o7000"
+)`;
+const productPricePredicate = `(count($priceBuckets) == 0 || (defined(priceAmount) && ${productPriceBucket} in $priceBuckets))`;
 
-// Shared filter clause for the product listings: all three dimensions AND-ed.
+// Shared filter clause for the product listings: all dimensions AND-ed.
 const productFilterClause = `
 	&& ${productCategoryPredicate}
 	&& ${productBrandPredicate}
 	&& ${productBadgePredicate}
+	&& ${productPricePredicate}
 `;
 
 // Shared sort clause driven by the $sort param. Each select() is null (a no-op)
@@ -790,6 +802,8 @@ const productFilterClause = `
 const productSortOrder = `order(
 	select($sort == "newest" => _createdAt) desc,
 	select($sort == "oldest" => _createdAt) asc,
+	select($sort == "price-asc" => coalesce(priceAmount, 9999999999)) asc,
+	select($sort == "price-desc" => coalesce(priceAmount, -1)) desc,
 	select($sort == "za" => title) desc,
 	title asc
 )`;
@@ -830,6 +844,12 @@ const productFilterFacets = `
 			"baseCount": count(*[_type == "pProduct" && "new" in badge && ${productLocaleFilter('pProduct')}]),
 			"count": count(*[_type == "pProduct" && "new" in badge && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBrandPredicate}])
 		}
+	},
+	"facetPrice": {
+		"u1000": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productBadgePredicate} && defined(priceAmount) && priceAmount < 1000]),
+		"1000-3000": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productBadgePredicate} && defined(priceAmount) && priceAmount >= 1000 && priceAmount < 3000]),
+		"3000-7000": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productBadgePredicate} && defined(priceAmount) && priceAmount >= 3000 && priceAmount < 7000]),
+		"o7000": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productBadgePredicate} && defined(priceAmount) && priceAmount >= 7000])
 	}
 `;
 

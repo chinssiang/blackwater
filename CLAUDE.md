@@ -2,6 +2,15 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Design Context
+
+Design work is grounded in two root files, read by design tooling (`/impeccable`) and agents:
+
+- **PRODUCT.md** — strategy: register (`brand`), users, purpose, brand personality, anti-references, design principles, accessibility.
+- **DESIGN.md** — visual system: theme, color tokens, typography, spacing, components, motion.
+
+Consult both before UI work so changes stay on-brand.
+
 ## Commands
 
 ```bash

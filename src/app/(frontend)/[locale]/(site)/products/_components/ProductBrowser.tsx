@@ -5,6 +5,7 @@ import ProductFilters, { type FacetOption } from './ProductFilters';
 import ProductGrid, { type ProductCardData } from './ProductGrid';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useTranslations } from '@/components/LocaleProvider';
+import { PRICE_BUCKETS } from '@/lib/productFilters';
 import { Button } from '@/components/ui/Button';
 
 // Raw facet rows as returned by `productFilterFacets` in queries.ts. `count` is the
@@ -33,12 +34,22 @@ export type ProductSelection = {
 	categories: string[];
 	brands: string[];
 	badges: string[];
+	priceBuckets: string[];
+};
+
+// Contextual product counts per price bucket (keys match PRICE_BUCKETS).
+export type PriceCounts = {
+	u1000: number;
+	'1000-3000': number;
+	'3000-7000': number;
+	o7000: number;
 };
 
 type Props = {
 	facetCategories: RawFacet[];
 	facetBrands: RawFacet[];
 	badgeCounts: BadgeCounts;
+	facetPrice: PriceCounts;
 	selected: ProductSelection;
 	sort: string;
 	/** Total products matching the active filters (for the status line). */
@@ -82,6 +93,7 @@ export default function ProductBrowser({
 	facetCategories,
 	facetBrands,
 	badgeCounts,
+	facetPrice,
 	selected,
 	sort,
 	total,
@@ -103,7 +115,7 @@ export default function ProductBrowser({
 	// toolbar's behaviour.
 	function clearFilters() {
 		const params = new URLSearchParams(searchParams.toString());
-		for (const key of ['category', 'brand', 'badge', 'page']) {
+		for (const key of ['category', 'brand', 'badge', 'price', 'page']) {
 			params.delete(key);
 		}
 		const qs = params.toString();
@@ -128,10 +140,26 @@ export default function ProductBrowser({
 		};
 	});
 
+	// Price buckets are fixed ranges (always offered); disabled when nothing in the
+	// range matches the other active filters. Labels come from the dictionary.
+	const priceLabels =
+		(t.filters as unknown as { priceBuckets?: Record<string, string> })
+			.priceBuckets ?? {};
+	const prices: FacetOption[] = PRICE_BUCKETS.map((bucket) => {
+		const count = facetPrice?.[bucket.key] ?? 0;
+		return {
+			value: bucket.key,
+			label: priceLabels[bucket.key] ?? bucket.key,
+			count,
+			disabled: count === 0,
+		};
+	});
+
 	const hasActiveFilters =
 		selected.categories.length > 0 ||
 		selected.brands.length > 0 ||
-		selected.badges.length > 0;
+		selected.badges.length > 0 ||
+		selected.priceBuckets.length > 0;
 
 	// Show the showcase only when one is provided and neither a filter nor a
 	// non-default sort is active; otherwise the grid (or empty state) takes over.
@@ -143,6 +171,7 @@ export default function ProductBrowser({
 				categories={categories}
 				brands={brands}
 				badges={badges}
+				prices={prices}
 				selected={selected}
 				sort={sort}
 				total={total}

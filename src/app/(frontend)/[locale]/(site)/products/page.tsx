@@ -22,6 +22,7 @@ const getCachedProductIndexData = cache(
 				categories: filters.categories,
 				brands: filters.brands,
 				badges: filters.badges,
+				priceBuckets: filters.priceBuckets,
 				sort: filters.sort,
 			},
 			tags: [
@@ -39,6 +40,7 @@ const UNFILTERED: ProductFilters = {
 	categories: [],
 	brands: [],
 	badges: [],
+	priceBuckets: [],
 	sort: 'az',
 };
 
@@ -72,6 +74,7 @@ export default async function Page(props: Props) {
 				categories: filters.categories,
 				brands: filters.brands,
 				badges: filters.badges,
+				priceBuckets: filters.priceBuckets,
 			}}
 			sort={filters.sort}
 		/>

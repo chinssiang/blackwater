@@ -33,13 +33,28 @@ export type FacetOption = {
 	count: number;
 	disabled?: boolean;
 };
-type Dimension = 'category' | 'brand' | 'badge';
+type Dimension = 'category' | 'brand' | 'badge' | 'price';
+
+// URL param name per dimension is the Dimension string itself; the local state
+// object keys are plural. This maps a dimension to its state key.
+const DIMENSION_KEY = {
+	category: 'categories',
+	brand: 'brands',
+	badge: 'badges',
+	price: 'priceBuckets',
+} as const;
 
 type Props = {
 	categories: FacetOption[];
 	brands: FacetOption[];
 	badges: FacetOption[];
-	selected: { categories: string[]; brands: string[]; badges: string[] };
+	prices: FacetOption[];
+	selected: {
+		categories: string[];
+		brands: string[];
+		badges: string[];
+		priceBuckets: string[];
+	};
 	sort: string;
 	/** Total products matching the active filters, shown in the status line. */
 	total: number;
@@ -50,12 +65,20 @@ type Props = {
 	showCount?: boolean;
 };
 
-const SORT_KEYS = ['az', 'za', 'newest', 'oldest'] as const;
+const SORT_KEYS = [
+	'az',
+	'za',
+	'newest',
+	'oldest',
+	'price-asc',
+	'price-desc',
+] as const;
 
 export default function ProductFilters({
 	categories,
 	brands,
 	badges,
+	prices,
 	selected,
 	sort,
 	total,
@@ -80,7 +103,8 @@ export default function ProductFilters({
 	const activeCount =
 		selected.categories.length +
 		selected.brands.length +
-		selected.badges.length;
+		selected.badges.length +
+		selected.priceBuckets.length;
 
 	// Push a new URL with the given param patches. Arrays/strings that are empty
 	// drop the param entirely; every change resets pagination to page 1.
@@ -102,34 +126,21 @@ export default function ProductFilters({
 	}
 
 	function toggle(dimension: Dimension, value: string) {
-		const next = new Set(
-			selected[
-				dimension === 'category'
-					? 'categories'
-					: dimension === 'brand'
-						? 'brands'
-						: 'badges'
-			]
-		);
+		const next = new Set(selected[DIMENSION_KEY[dimension]]);
 		if (next.has(value)) next.delete(value);
 		else next.add(value);
 		commit({ [dimension]: [...next] });
 	}
 
 	function clearAll() {
-		commit({ category: null, brand: null, badge: null });
+		commit({ category: null, brand: null, badge: null, price: null });
 	}
 
 	// Drawer-local helpers operate on the draft, not the URL. The draft re-syncs
 	// from the applied filters each time the drawer opens, so closing via the X
 	// or backdrop simply discards any unapplied changes.
 	function toggleDraft(dimension: Dimension, value: string) {
-		const key =
-			dimension === 'category'
-				? 'categories'
-				: dimension === 'brand'
-					? 'brands'
-					: 'badges';
+		const key = DIMENSION_KEY[dimension];
 		setDraft((prev) => {
 			const next = new Set(prev[key]);
 			if (next.has(value)) next.delete(value);
@@ -139,7 +150,7 @@ export default function ProductFilters({
 	}
 
 	function clearDraft() {
-		setDraft({ categories: [], brands: [], badges: [] });
+		setDraft({ categories: [], brands: [], badges: [], priceBuckets: [] });
 	}
 
 	function applyDraft() {
@@ -147,6 +158,7 @@ export default function ProductFilters({
 			category: draft.categories,
 			brand: draft.brands,
 			badge: draft.badges,
+			price: draft.priceBuckets,
 		});
 		setOpen(false);
 	}
@@ -157,7 +169,10 @@ export default function ProductFilters({
 	}
 
 	const draftCount =
-		draft.categories.length + draft.brands.length + draft.badges.length;
+		draft.categories.length +
+		draft.brands.length +
+		draft.badges.length +
+		draft.priceBuckets.length;
 
 	// Map a stored slug/value back to its display label for the active chips.
 	// Unknown values (e.g. a badge whose catalogue count dropped to 0 but is
@@ -187,6 +202,11 @@ export default function ProductFilters({
 			value: v,
 			label: labelFor(badges, v),
 		})),
+		...selected.priceBuckets.map((v) => ({
+			dimension: 'price' as const,
+			value: v,
+			label: labelFor(prices, v),
+		})),
 	];
 
 	const facets: Array<{
@@ -212,6 +232,12 @@ export default function ProductFilters({
 			label: filters.badge,
 			options: badges,
 			selected: draft.badges,
+		},
+		{
+			dimension: 'price' as const,
+			label: filters.price,
+			options: prices,
+			selected: draft.priceBuckets,
 		},
 	].filter((f) => f.options.length > 0);
 

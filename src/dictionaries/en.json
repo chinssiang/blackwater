@@ -80,13 +80,22 @@
 			"category": "Category",
 			"brand": "Brand",
 			"badge": "Badge",
+			"price": "Price",
 			"sort": "Sort",
 			"sortBy": "Sort by",
 			"sortOptions": {
 				"az": "Name (A–Z)",
 				"za": "Name (Z–A)",
 				"newest": "Newest",
-				"oldest": "Oldest"
+				"oldest": "Oldest",
+				"price-asc": "Price (low to high)",
+				"price-desc": "Price (high to low)"
+			},
+			"priceBuckets": {
+				"u1000": "Under NTD 1,000",
+				"1000-3000": "NTD 1,000–3,000",
+				"3000-7000": "NTD 3,000–7,000",
+				"o7000": "NTD 7,000+"
 			},
 			"clearAll": "Clear all",
 			"showResults": "Show results",

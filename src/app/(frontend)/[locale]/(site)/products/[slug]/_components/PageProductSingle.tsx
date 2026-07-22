@@ -9,6 +9,7 @@ import {
 	hasArrayValue,
 	appendReferralParams,
 	REFERRAL_SOURCE,
+	formatPrice,
 } from '@/lib/utils';
 import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
@@ -42,6 +43,7 @@ export default function PageProductSingle({ data }: Props) {
 		brands,
 		mainImage,
 		price,
+		priceAmount,
 		purchaseLink,
 		content,
 		whyUseIt,
@@ -195,7 +197,7 @@ export default function PageProductSingle({ data }: Props) {
 						{title}
 					</motion.h1>
 
-					{price && (
+					{(priceAmount != null || price) && (
 						<motion.p
 							className="t-spec font-semibold mt-5 text-foreground/75"
 							{...reveal}
@@ -205,7 +207,7 @@ export default function PageProductSingle({ data }: Props) {
 								ease: [0, 0.71, 0.2, 1.01],
 							}}
 						>
-							{price}
+							{priceAmount != null ? formatPrice(priceAmount) : price}
 						</motion.p>
 					)}
 

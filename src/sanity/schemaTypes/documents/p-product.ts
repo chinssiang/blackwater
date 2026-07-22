@@ -49,10 +49,20 @@ export const pProduct = defineType({
 		}),
 		customImage({ title: 'Main Image', name: 'mainImage' }),
 		defineField({
+			name: 'priceAmount',
+			title: 'Price',
+			type: 'number',
+			description:
+				'Product price in NTD. Shown on the site and used for sorting and filtering. Enter the number only, e.g. 1299.',
+			validation: (Rule) => Rule.required().min(0),
+		}),
+		defineField({
 			name: 'price',
+			title: 'Price (deprecated)',
 			type: 'string',
-			description: 'e.g. $1,299 or From $49/mo',
-			validation: (Rule) => [Rule.required()],
+			readOnly: true,
+			description:
+				'Legacy free-text price. No longer shown on the site; superseded by Price above. Kept for reference only.',
 		}),
 		defineField({
 			name: 'purchaseLink',

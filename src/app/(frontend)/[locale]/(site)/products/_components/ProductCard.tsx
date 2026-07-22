@@ -10,6 +10,7 @@ import { resolveHref } from '@/lib/routes';
 import { Badge } from '@/components/ui/Badge';
 import { ArrowRight } from '@/components/SvgIcons';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
+import { formatPrice } from '@/lib/utils';
 
 type Category = { _id: string; title?: string | null; slug?: string | null };
 
@@ -21,6 +22,7 @@ type ProductCardProps = {
 		badge?: string[] | null;
 		excerpt?: string | null;
 		price?: string | null;
+		priceAmount?: number | null;
 		categories?: Array<Category> | null;
 		brands?: Array<{ _id: string; title?: string | null }> | null;
 		mainImage?: any;
@@ -150,7 +152,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
 				<div className="mt-auto flex items-baseline justify-between gap-3">
 					<span className="t-spec text-foreground font-semibold">
-						{product.price ?? ''}
+						{product.priceAmount != null
+							? formatPrice(product.priceAmount)
+							: (product.price ?? '')}
 					</span>
 					<span
 						aria-hidden
