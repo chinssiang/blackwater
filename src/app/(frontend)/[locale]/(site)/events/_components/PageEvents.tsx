@@ -157,11 +157,18 @@ export function PageEvents({ data }: PageEventsProps) {
 		[currentMonthData]
 	);
 
+	// Drop the status column only when no row will render a pill. Must mirror all
+	// three pill sources in the status <Td> below (CMS status, ended, days-until)
+	// -- a pill with no column auto-places into an implicit row at column 1.
 	const isHideStatusColumn = useMemo(() => {
-		const isAllStatusEmpty = displayEvents.every((event) => {
-			return event.statusList === null || event.statusList === undefined;
+		return !displayEvents.some((event) => {
+			return (
+				event.statusList?.some((item) => item?.eventStatus) ||
+				isEventEnded(event.eventDatetime, currentDate) ||
+				getDaysUntilEvent(event.eventDatetime, currentDate) !== null
+			);
 		});
-		return isAllStatusEmpty;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [displayEvents]);
 	const colStyle = isHideStatusColumn
 		? 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_minmax(0,1fr)]'
