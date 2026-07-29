@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
 			from: `"${emailFrom}" <${authUser}>`,
 			to: sendToEmail,
 			replyTo,
-			subject: `${emailSubject}${formData?.name && ` [${formData.name}]`}`,
+			subject: `${emailSubject}${formData?.name ? ` [${formData.name}]` : ''}`,
 			html: formatObjectToHtml(formData),
 		};
 
