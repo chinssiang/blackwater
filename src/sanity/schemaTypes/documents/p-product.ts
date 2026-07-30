@@ -227,6 +227,14 @@ export const pProduct = defineType({
 			],
 		}),
 		defineField({
+			name: 'sizeChart',
+			title: 'Size Chart',
+			type: 'reference',
+			to: [{ type: 'gSizeChart' }],
+			description:
+				'Adds a size guide link on the product page. Charts are shared, so several products can point at the same one.',
+		}),
+		defineField({
 			title: 'Related Products',
 			name: 'relatedProducts',
 			type: 'array',

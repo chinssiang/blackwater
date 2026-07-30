@@ -4,6 +4,7 @@ import {
 	UnknownIcon,
 	DocumentsIcon,
 	HelpCircleIcon,
+	ThLargeIcon,
 } from '@sanity/icons';
 import { apiVersion } from '@/sanity/env';
 
@@ -59,6 +60,19 @@ const pageFaq = (S) => {
 		.icon(HelpCircleIcon);
 };
 
+const pageSizeGuide = (S) => {
+	return S.listItem()
+		.title('Size Guide Page')
+		.child(
+			S.editor()
+				.id('pSizeGuide')
+				.title('Size Guide Page')
+				.schemaType('pSizeGuide')
+				.documentId('pSizeGuide')
+		)
+		.icon(ThLargeIcon);
+};
+
 const pageNewsletter = (S) => {
 	return S.listItem()
 		.title('Newsletter Page')
@@ -85,6 +99,7 @@ export const pagesMenu = (S) => {
 					pageError(S),
 					pageContact(S),
 					pageFaq(S),
+					pageSizeGuide(S),
 					pageNewsletter(S),
 				])
 		);

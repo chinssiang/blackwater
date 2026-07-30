@@ -3,7 +3,7 @@ import { resolvedHrefGroq } from '@/lib/routes';
 export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 
 export const SITEMAP_PAGES_QUERY = defineQuery(`
-	*[_type in ["pHome", "pGeneral", "pContact", "pFaq"]
+	*[_type in ["pHome", "pGeneral", "pContact", "pFaq", "pSizeGuide"]
 		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
 		_type,
 		"slug": slug.current,
@@ -196,6 +196,21 @@ const gFaqItemFields = `
 	question,
 	"answer": answer[]{ ${portableTextContentFields} },
 	"answerText": pt::text(answer)
+`;
+
+// gSizeChart is deliberately NOT document-localized — the measurements are
+// locale-invariant, so the numbers are stored once. Only the fit note is
+// translated, via the inline internationalizedArray coalesce pattern.
+// `rows[]{...}` is splatted so adding a measurement to SIZE_MEASUREMENT_KEYS
+// needs no change here.
+const gSizeChartFields = `
+	_id,
+	title,
+	"slug": slug.current,
+	unit,
+	columns,
+	rows[]{...},
+	"note": coalesce(note[language == $locale][0].value, note[language == "en"][0].value)
 `;
 
 const faqListField = `
@@ -458,6 +473,18 @@ export const pageFaqQuery = defineQuery(`
 		intro,
 		"items": *[_type == "gFaq" && language == $locale] | order(order asc){
 			${gFaqItemFields}
+		}
+	}
+`);
+
+export const pageSizeGuideQuery = defineQuery(`
+	${byLocale('pSizeGuide')}[0]{
+		${baseFields},
+		${availableLocalesField},
+		intro,
+		footnote,
+		"charts": *[_type == "gSizeChart"] | order(order asc){
+			${gSizeChartFields}
 		}
 	}
 `);
@@ -824,6 +851,11 @@ export const pageProductSingleQuery = defineQuery(`
 	*[_type == "pProduct" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${productBaseFields},
 		${availableLocalesField},
+		"sizeChart": sizeChart->{
+			_id,
+			title,
+			"slug": slug.current
+		},
 		"relatedProducts": relatedProducts[]->{
 			${productCardFields}
 		},

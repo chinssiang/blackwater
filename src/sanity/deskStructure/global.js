@@ -3,6 +3,7 @@ import {
 	EnvelopeIcon,
 	HelpCircleIcon,
 	MenuIcon,
+	ThLargeIcon,
 } from '@sanity/icons';
 import { apiVersion } from '@/sanity/env';
 
@@ -74,6 +75,23 @@ export const globalMenu = (S) => {
 								)
 						)
 						.icon(HelpCircleIcon),
+					S.listItem()
+						.title('Size Charts')
+						.child(
+							S.documentTypeList('gSizeChart')
+								.title('Size Charts')
+								.filter(`_type == "gSizeChart"`)
+								.apiVersion(apiVersion)
+								.defaultOrdering([{ field: 'order', direction: 'asc' }])
+								.child((documentId) =>
+									S.document().documentId(documentId).schemaType('gSizeChart')
+								)
+								.canHandleIntent(
+									(intent, { type }) =>
+										['create', 'edit'].includes(intent) && type === 'gSizeChart'
+								)
+						)
+						.icon(ThLargeIcon),
 				])
 		)
 		.icon(ComponentIcon);
