@@ -1,6 +1,9 @@
 'use client';
 
-import SizeChartTable, { type SizeChart } from '@/components/SizeChartTable';
+import SizeChartTable, {
+	isRenderable,
+	type SizeChart,
+} from '@/components/SizeChartTable';
 import { useTranslations } from '@/components/LocaleProvider';
 
 interface PageSizeGuideData {
@@ -17,7 +20,12 @@ interface PageSizeGuideProps {
 export function PageSizeGuide({ data }: PageSizeGuideProps) {
 	const t = useTranslations('sizeGuide');
 	const { title, intro, footnote, charts } = data || {};
-	const chartList = (charts ?? []).filter(Boolean);
+
+	// Gate on charts that will actually render, not on how many were fetched:
+	// SizeChartTable returns null for a chart with no columns or no rows, so a
+	// dataset of half-authored drafts would otherwise show neither tables nor
+	// the empty-state message — a silently blank page in Presentation.
+	const chartList = (charts ?? []).filter(isRenderable);
 
 	return (
 		<div className="p-x-md min-h-[85vh] md:min-h-main py-10 lg:py-17.5">

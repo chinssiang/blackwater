@@ -3,7 +3,7 @@ import {
 	SIZE_MEASUREMENT_OPTIONS,
 	SIZE_MEASUREMENT_STUDIO_TITLES,
 } from '@/lib/size-measurements';
-import { slug } from '@/sanity/schemaTypes/objects/slug';
+import { isUniqueAcrossType, slug } from '@/sanity/schemaTypes/objects/slug';
 import { ThLargeIcon } from '@sanity/icons';
 import { defineArrayMember, defineField, defineType } from 'sanity';
 
@@ -27,7 +27,10 @@ export const gSizeChart = defineType({
 		}),
 		// Gives the chart a stable anchor on /size-guide so product pages can
 		// deep-link to it. hideViewPage: the chart has no route of its own.
-		slug({ hideViewPage: true }),
+		// isUniqueAcrossType is required — this type has no `language` field, and
+		// the default check short-circuits to "unique" for such types, which would
+		// let two charts share a slug and collide as duplicate DOM ids.
+		slug({ hideViewPage: true, isUnique: isUniqueAcrossType }),
 		defineField({
 			name: 'unit',
 			title: 'Unit',
@@ -46,7 +49,7 @@ export const gSizeChart = defineType({
 			name: 'columns',
 			title: 'Measurement Columns',
 			description:
-				'Which measurements this chart lists, in the order they appear. The row inputs below follow this selection.',
+				'Which measurements this chart lists. The row inputs below follow this selection. Columns always render in the standard order shown here, not in the order you tick them.',
 			type: 'array',
 			of: [defineArrayMember({ type: 'string' })],
 			options: { list: SIZE_MEASUREMENT_OPTIONS },
@@ -118,6 +121,7 @@ export const gSizeChart = defineType({
 			title: 'Order',
 			type: 'number',
 			description: 'Lower numbers appear first on the size guide page.',
+			initialValue: 0,
 		}),
 	],
 	orderings: [

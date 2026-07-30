@@ -1,7 +1,7 @@
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { language } from '@/sanity/schemaTypes/objects/language';
-import { DocumentsIcon } from '@sanity/icons';
+import { ThLargeIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
 
 // Dedicated size guide page at /size-guide. Thin wrapper: holds title, intro,
@@ -11,7 +11,7 @@ export const pSizeGuide = defineType({
 	title: 'Size Guide Page',
 	name: 'pSizeGuide',
 	type: 'document',
-	icon: DocumentsIcon,
+	icon: ThLargeIcon,
 	fields: [
 		{ name: 'title', type: 'string', validation: (Rule) => [Rule.required()] },
 		slug({

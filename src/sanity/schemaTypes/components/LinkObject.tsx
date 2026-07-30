@@ -65,6 +65,7 @@ const pageDocumentOrder = [
 	'pBlogIndex',
 	'pBlog',
 	'pFaq',
+	'pSizeGuide',
 ];
 
 type PageFetch = {
