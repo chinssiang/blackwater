@@ -51,6 +51,7 @@ type PageEventSingleProps = {
 		dateStatus?: string | null;
 		location?: string | null;
 		locationLink?: string | null;
+		locationRef?: { name?: string | null; mapLink?: string | null } | null;
 		startEndLocation?: { name?: string | null; link?: string | null } | null;
 		statusList?: StatusListItem[] | null;
 		stations?: Station[] | null;
@@ -134,11 +135,15 @@ function EventBody({
 	const {
 		location,
 		locationLink,
+		locationRef,
 		startEndLocation,
 		highlights,
 		stations,
 		content,
 	} = data || {};
+
+	const displayLocation = locationRef?.name || location;
+	const displayLocationLink = locationRef?.mapLink || locationLink;
 
 	const hasContent = hasArrayValue(content);
 	const hasStations = hasArrayValue(stations);
@@ -158,23 +163,23 @@ function EventBody({
 		<section className="flex flex-col lg:flex-row gap-10 lg:p-x-max">
 			{/* Left sticky meta — shared for both variants */}
 			<div className="lg:flex-1 lg:sticky lg:top-header h-fit space-y-8 px-contain lg:px-0">
-				{location && (
+				{displayLocation && (
 					<div>
 						<p className="t-b-2 uppercase text-muted-foreground mb-1">
 							Location
 						</p>
-						{locationLink ? (
+						{displayLocationLink ? (
 							<Link
-								href={locationLink}
+								href={displayLocationLink}
 								target="_blank"
 								rel="noopener noreferrer"
 								className="inline-flex items-center gap-1 t-h-3 uppercase hover:opacity-70 transition-opacity"
 							>
-								{location}
+								{displayLocation}
 								<ArrowUpRight className="size-2" aria-hidden />
 							</Link>
 						) : (
-							<p className="t-h-3 uppercase">{location}</p>
+							<p className="t-h-3 uppercase">{displayLocation}</p>
 						)}
 					</div>
 				)}

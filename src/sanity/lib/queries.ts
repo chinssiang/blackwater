@@ -581,6 +581,10 @@ export const eventCrewByMonthQuery = defineQuery(`
 		dateStatus,
 		location,
 		locationLink,
+		locationRef->{
+			"name": coalesce(name[language == "zh_tw"][0].value, name[language == "en"][0].value),
+			mapLink
+		},
 		teamNotes,
 		categories[]-> {
 			_id,

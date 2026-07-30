@@ -120,13 +120,19 @@ export const pEvent = defineType({
 		}),
 		defineField({
 			name: 'locationRef',
-			title: 'Location (reference)',
+			title: 'Location',
 			type: 'reference',
 			to: [{ type: 'gLocation' }],
+			description:
+				'Pick a saved venue (Global → Locations). Its name, map link and address are used on the site and in structured data — no need to type them again. Clear this to enter a one-off location instead.',
 		}),
 		defineField({
 			name: 'location',
+			title: 'One-off location name',
 			type: 'string',
+			description:
+				'Only for venues that are not saved in Global → Locations. Prefer a saved location above so the address and map link stay consistent.',
+			hidden: ({ document }) => !!(document as any)?.locationRef,
 			validation: (Rule) =>
 				Rule.custom((value, context) => {
 					const hasRef = !!(context.document as any)?.locationRef;
@@ -138,7 +144,10 @@ export const pEvent = defineType({
 		}),
 		defineField({
 			name: 'locationLink',
+			title: 'One-off location link',
 			type: 'url',
+			description: 'Google Maps link for the one-off location above.',
+			hidden: ({ document }) => !!(document as any)?.locationRef,
 		}),
 
 		defineField({
@@ -346,7 +355,7 @@ export const pEvent = defineType({
 			language,
 		}) {
 			const categoryTitle = categories ?? '';
-			const locationName = location || locationRefName || '';
+			const locationName = locationRefName || location || '';
 			const subtitle = `${locationName} - ${categoryTitle ? `[${categoryTitle}]` : ''}`;
 			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
 

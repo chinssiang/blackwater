@@ -302,10 +302,14 @@ function EventCard({
 		eventDatetime,
 		location,
 		locationLink,
+		locationRef,
 		categories,
 		teamAssignments,
 		teamNotes,
 	} = event;
+
+	const displayLocation = locationRef?.name || location;
+	const displayLocationLink = locationRef?.mapLink || locationLink;
 
 	const ended = isEventEnded(eventDatetime);
 	const dateInfo = eventDatetime ? formatEventDate(eventDatetime) : null;
@@ -372,18 +376,20 @@ function EventCard({
 								{dateInfo.display}
 							</span>
 						)}
-						{location &&
-							(locationLink ? (
+						{displayLocation &&
+							(displayLocationLink ? (
 								<a
-									href={locationLink}
+									href={displayLocationLink}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="t-b-1 text-muted-foreground underline underline-offset-2 decoration-white/20 hover:text-foreground hover:decoration-white/40 transition-colors"
 								>
-									{location}
+									{displayLocation}
 								</a>
 							) : (
-								<span className="t-b-1 text-muted-foreground">{location}</span>
+								<span className="t-b-1 text-muted-foreground">
+									{displayLocation}
+								</span>
 							))}
 					</div>
 				</div>
