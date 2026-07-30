@@ -483,8 +483,12 @@ export const pageSizeGuideQuery = defineQuery(`
 		${availableLocalesField},
 		intro,
 		footnote,
-		"charts": *[_type == "gSizeChart"] | order(order asc){
-			${gSizeChartFields}
+		sections[]{
+			_key,
+			title,
+			"charts": charts[]->{
+				${gSizeChartFields}
+			}
 		}
 	}
 `);

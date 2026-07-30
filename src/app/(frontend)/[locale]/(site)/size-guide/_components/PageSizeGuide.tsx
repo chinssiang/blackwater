@@ -1,13 +1,16 @@
 'use client';
 
-import SizeChartTable, { type SizeChart } from '@/components/SizeChartTable';
 import { useTranslations } from '@/components/LocaleProvider';
+import {
+	SizeGuideSection,
+	type SizeGuideSectionData,
+} from './SizeGuideSection';
 
 interface PageSizeGuideData {
 	title?: string | null;
 	intro?: string | null;
 	footnote?: string | null;
-	charts?: SizeChart[] | null;
+	sections?: SizeGuideSectionData[] | null;
 }
 
 interface PageSizeGuideProps {
@@ -16,8 +19,8 @@ interface PageSizeGuideProps {
 
 export function PageSizeGuide({ data }: PageSizeGuideProps) {
 	const t = useTranslations('sizeGuide');
-	const { title, intro, footnote, charts } = data || {};
-	const chartList = (charts ?? []).filter(Boolean);
+	const { title, intro, footnote, sections } = data || {};
+	const sectionList = (sections ?? []).filter(Boolean);
 
 	return (
 		<div className="p-x-md min-h-[85vh] md:min-h-main py-10 lg:py-17.5">
@@ -26,10 +29,10 @@ export function PageSizeGuide({ data }: PageSizeGuideProps) {
 				{intro && <p className="t-b-1 mt-2 whitespace-pre-line">{intro}</p>}
 			</div>
 
-			{chartList.length ? (
+			{sectionList.length ? (
 				<div className="mt-10 space-y-14 lg:space-y-20">
-					{chartList.map((chart, index) => (
-						<SizeChartTable key={chart._id ?? index} chart={chart} />
+					{sectionList.map((section, index) => (
+						<SizeGuideSection key={section._key ?? index} section={section} />
 					))}
 				</div>
 			) : (

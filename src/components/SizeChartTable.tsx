@@ -9,8 +9,13 @@ import {
 	TableRow,
 } from '@/components/ui/Table';
 import { useTranslations } from '@/components/LocaleProvider';
-import { interpolate } from '@/lib/dictionary';
-import { resolveColumns, type MeasurementKey } from '@/lib/size-measurements';
+import {
+	formatMeasurement,
+	resolveColumns,
+	resolveUnit,
+	type MeasurementKey,
+	type SizeUnit,
+} from '@/lib/size-measurements';
 import { cn } from '@/lib/utils';
 
 // Measurement fields are derived from the vocabulary so the row type can never
@@ -36,17 +41,21 @@ const ROW_CLASS = 'border-b border-border';
 // TableRow/TableCell ship a `group` + `group-hover:text-background` invert used
 // by the events table. Neutralised here — a size chart is static data, not a
 // list of links.
-const CELL_BASE = 'group-hover:text-foreground px-0 pr-6 last:pr-0 py-3.5 lg:py-4';
+const CELL_BASE =
+	'group-hover:text-foreground px-0 pr-6 last:pr-0 py-3.5 lg:py-4';
 
 export default function SizeChartTable({
 	chart,
+	displayUnit,
 	className,
 }: {
 	chart: SizeChart;
+	/** Unit to read the table in. Defaults to the unit the chart was authored in. */
+	displayUnit?: SizeUnit;
 	className?: string;
 }) {
 	const t = useTranslations('sizeGuide');
-	const { title, slug, unit, columns, rows, note } = chart;
+	const { unit, columns, rows, note } = chart;
 
 	const activeColumns = resolveColumns(columns);
 	const chartRows = (rows ?? []).filter(Boolean);
@@ -55,13 +64,13 @@ export default function SizeChartTable({
 	if (!activeColumns.length || !chartRows.length) return null;
 
 	const measurementLabels = t.measurements as Record<string, string>;
-	const resolvedUnit = unit || 'cm';
+	// Read per chart, so a section may mix a cm-authored and an in-authored chart.
+	const authoredUnit = resolveUnit(unit);
+	const shownUnit = displayUnit ?? authoredUnit;
 
 	return (
-		<section id={slug ?? undefined} className={cn('scroll-mt-28', className)}>
-			{title && <h2 className="t-h-3 uppercase">{title}</h2>}
-
-			<Table className="mt-5">
+		<div className={className}>
+			<Table>
 				<TableHeader>
 					<TableRow className={ROW_CLASS}>
 						<TableHead className={cn(CELL_BASE, 't-l-1 h-auto uppercase')}>
@@ -79,7 +88,10 @@ export default function SizeChartTable({
 				</TableHeader>
 				<TableBody>
 					{chartRows.map((row, index) => (
-						<TableRow key={row._key ?? `${row.size}-${index}`} className={ROW_CLASS}>
+						<TableRow
+							key={row._key ?? `${row.size}-${index}`}
+							className={ROW_CLASS}
+						>
 							<TableCell className={cn(CELL_BASE, 't-b-1 uppercase')}>
 								{row.size}
 							</TableCell>
@@ -87,7 +99,9 @@ export default function SizeChartTable({
 								const value = row[key];
 								return (
 									<TableCell key={key} className={cn(CELL_BASE, 't-spec')}>
-										{typeof value === 'number' ? value : '—'}
+										{typeof value === 'number'
+											? formatMeasurement(value, authoredUnit, shownUnit)
+											: '—'}
 									</TableCell>
 								);
 							})}
@@ -96,10 +110,11 @@ export default function SizeChartTable({
 				</TableBody>
 			</Table>
 
-			<div className="t-b-2 text-muted-foreground mt-4 space-y-1">
-				<p>{interpolate(t.unitNote, { unit: resolvedUnit })}</p>
-				{note && <p className="whitespace-pre-line">{note}</p>}
-			</div>
-		</section>
+			{note && (
+				<p className="t-b-2 text-muted-foreground mt-4 whitespace-pre-line">
+					{note}
+				</p>
+			)}
+		</div>
 	);
 }

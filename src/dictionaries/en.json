@@ -104,7 +104,11 @@
 			"hip": "HIP",
 			"inseam": "INSEAM"
 		},
-		"unitNote": "All measurements in {unit}.",
+		"units": {
+			"cm": "CM",
+			"in": "IN"
+		},
+		"unitToggleAria": "Measurement unit",
 		"empty": "No size charts yet."
 	},
 	"productSubmission": {

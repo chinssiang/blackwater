@@ -2,6 +2,7 @@ import {
 	SIZE_MEASUREMENT_KEYS,
 	SIZE_MEASUREMENT_OPTIONS,
 	SIZE_MEASUREMENT_STUDIO_TITLES,
+	SIZE_UNIT_OPTIONS,
 } from '@/lib/size-measurements';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { ThLargeIcon } from '@sanity/icons';
@@ -30,15 +31,11 @@ export const gSizeChart = defineType({
 		slug({ hideViewPage: true }),
 		defineField({
 			name: 'unit',
-			title: 'Unit',
+			title: 'Authoring Unit',
+			description:
+				'The unit the numbers below are entered in. The size guide page offers a cm/in toggle and converts automatically, so each measurement is only ever typed once.',
 			type: 'string',
-			options: {
-				list: [
-					{ title: 'Centimetres (cm)', value: 'cm' },
-					{ title: 'Inches (in)', value: 'in' },
-				],
-				layout: 'radio',
-			},
+			options: { list: SIZE_UNIT_OPTIONS, layout: 'radio' },
 			initialValue: 'cm',
 			validation: (Rule) => Rule.required(),
 		}),
@@ -117,7 +114,7 @@ export const gSizeChart = defineType({
 			name: 'order',
 			title: 'Order',
 			type: 'number',
-			description: 'Lower numbers appear first on the size guide page.',
+			description: 'Lower numbers appear first in the Studio list.',
 		}),
 	],
 	orderings: [

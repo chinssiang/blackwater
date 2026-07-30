@@ -55,3 +55,39 @@ export function resolveColumns(columns: unknown): MeasurementKey[] {
 	if (!Array.isArray(columns)) return [];
 	return columns.filter(isMeasurementKey);
 }
+
+export const SIZE_UNITS = ['cm', 'in'] as const;
+
+export type SizeUnit = (typeof SIZE_UNITS)[number];
+
+/** `options.list` for the gSizeChart `unit` field. */
+export const SIZE_UNIT_OPTIONS = [
+	{ title: 'Centimetres (cm)', value: 'cm' },
+	{ title: 'Inches (in)', value: 'in' },
+];
+
+/**
+ * Narrows an authored unit to a known value. Charts are entered in one unit and
+ * the page converts to the other, so an unrecognised value falling back to cm
+ * matches the schema's initialValue.
+ */
+export function resolveUnit(value: unknown): SizeUnit {
+	return value === 'in' ? 'in' : 'cm';
+}
+
+const CM_PER_INCH = 2.54;
+
+/**
+ * Formats a measurement for display. A value shown in the unit it was authored
+ * in passes through untouched (71 → "71"); a converted value is fixed to one
+ * decimal so the column stays aligned (71cm → "28.0").
+ */
+export function formatMeasurement(
+	value: number,
+	from: SizeUnit,
+	to: SizeUnit
+): string {
+	if (from === to) return String(value);
+	const converted = to === 'in' ? value / CM_PER_INCH : value * CM_PER_INCH;
+	return converted.toFixed(1);
+}

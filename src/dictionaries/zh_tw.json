@@ -98,7 +98,11 @@
 			"hip": "臀寬",
 			"inseam": "內縫長"
 		},
-		"unitNote": "所有尺寸單位為 {unit}。",
+		"units": {
+			"cm": "CM",
+			"in": "IN"
+		},
+		"unitToggleAria": "測量單位",
 		"empty": "目前尚無尺寸表。"
 	},
 	"productSubmission": {
