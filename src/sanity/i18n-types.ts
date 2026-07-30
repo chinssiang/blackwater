@@ -2,6 +2,7 @@ export const TRANSLATABLE_TYPES = [
 	'pHome',
 	'pContact',
 	'pFaq',
+	'pSizeGuide',
 	'pNewsletter',
 	'p404',
 	'pProductIndex',

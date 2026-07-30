@@ -50,9 +50,18 @@ export default function PageProductSingle({ data }: Props) {
 		whoIsItFor,
 		whenReachForIt,
 		metadata,
+		sizeChart,
 		relatedProducts,
 		defaultRelatedProducts,
 	} = data || {};
+
+	// Size charts are shared, non-localized documents; link to the matching
+	// anchor on the size guide page rather than duplicating the table here.
+	const sizeGuideBase = resolveHref({ documentType: 'pSizeGuide', locale });
+	const sizeGuideHref =
+		sizeGuideBase && sizeChart?.slug
+			? `${sizeGuideBase}#${sizeChart.slug}`
+			: null;
 
 	// `whenReachForIt` is a GROQ conditional-projection union (richText OR list
 	// variant); contentType isn't a true discriminant, so read it via `any`.
@@ -275,6 +284,25 @@ export default function PageProductSingle({ data }: Props) {
 								</Button>
 							</motion.div>
 						)
+					)}
+
+					{sizeGuideHref && (
+						<motion.div
+							className="mt-5"
+							{...reveal}
+							transition={{
+								duration: 0.6,
+								delay: 0.28,
+								ease: [0, 0.71, 0.2, 1.01],
+							}}
+						>
+							<Link
+								href={sizeGuideHref}
+								className="t-l-1 uppercase text-foreground/65 underline decoration-foreground/25 underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground/60"
+							>
+								{productText.sizeGuide}
+							</Link>
+						</motion.div>
 					)}
 
 					{content && content.length > 0 && (

@@ -49,6 +49,7 @@
 		"whoIsItFor": "Who is it for?",
 		"whenReachForIt": "When do we reach for it?",
 		"whyWeChoseIt": "Why we chose it",
+		"sizeGuide": "Size guide",
 		"buyIt": "Buy it",
 		"buyAriaLabel": "Buy {product} (opens in a new tab)",
 		"thisProduct": "this product",
@@ -91,6 +92,20 @@
 			"invalidEmail": "Please enter a valid email address.",
 			"ariaLabel": "Get notified when {product} is back in stock"
 		}
+	},
+	"sizeGuide": {
+		"sizeColumn": "SIZE",
+		"measurements": {
+			"bodyLength": "BODY LENGTH",
+			"chestWidth": "CHEST WIDTH",
+			"shoulderWidth": "SHOULDER WIDTH",
+			"sleeveLength": "SLEEVE LENGTH",
+			"waist": "WAIST",
+			"hip": "HIP",
+			"inseam": "INSEAM"
+		},
+		"unitNote": "All measurements in {unit}.",
+		"empty": "No size charts yet."
 	},
 	"productSubmission": {
 		"triggerLabel": "Submit a product",

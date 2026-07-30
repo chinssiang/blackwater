@@ -32,6 +32,7 @@ export const mainDocuments = defineDocuments([
 	...withLocales('/blog/:slug', `_type == "pBlog" && slug.current == $slug`),
 	...withLocales('/contact', `_type == "pContact"`),
 	...withLocales('/faq', `_type == "pFaq"`),
+	...withLocales('/size-guide', `_type == "pSizeGuide"`),
 	...withLocales('/products', `_type == "pProductIndex"`),
 	...withLocales('/products/:slug', `_type == "pProduct" && slug.current == $slug`),
 	...withLocales('/products/categories/:slug', `_type == "pProductCategory" && slug.current == $slug`),
@@ -94,6 +95,17 @@ export const locations = {
 		message: 'FAQ entries appear on the FAQ page and in FAQ modules',
 		tone: 'caution',
 		locations: locationsForAll('pFaq', 'FAQ'),
+	}),
+	pSizeGuide: defineLocations({
+		message: 'This document is used to render the size guide page',
+		tone: 'positive',
+		locations: locationsForAll('pSizeGuide', 'Size Guide'),
+	}),
+	gSizeChart: defineLocations({
+		message:
+			'Size charts appear on the size guide page and on the products that reference them',
+		tone: 'caution',
+		locations: locationsForAll('pSizeGuide', 'Size Guide'),
 	}),
 	pProductIndex: defineLocations({
 		message: 'This document is used to render the products page',

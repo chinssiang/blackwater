@@ -9,6 +9,7 @@ import { pBlogIndex } from './documents/p-blog-index';
 import { gTeamMember } from './documents/g-team-member';
 import { gLocation } from './documents/g-location';
 import { gFaq } from './documents/g-faq';
+import { gSizeChart } from './documents/g-size-chart';
 import { gTag } from './documents/g-tag';
 import { pEvent } from './documents/p-event';
 import { pEventCategory } from './documents/p-event-category';
@@ -40,6 +41,7 @@ import { p404 } from './singletons/p-404';
 import { pContact } from './singletons/p-contact';
 import { pProductIndex } from './singletons/p-product-index';
 import { pFaq } from './singletons/p-faq';
+import { pSizeGuide } from './singletons/p-size-guide';
 import { pNewsletter } from './singletons/p-newsletter';
 import { pHome } from './singletons/p-home';
 // Singletons
@@ -75,11 +77,13 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	gTeamMember,
 	gLocation,
 	gFaq,
+	gSizeChart,
 	pEventCategory,
 	pEvents,
 	pEventStatus,
 	pContact,
 	pFaq,
+	pSizeGuide,
 	pNewsletter,
 	pProductIndex,
 	pProduct,

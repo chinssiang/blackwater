@@ -49,6 +49,7 @@
 		"whoIsItFor": "它適合誰？",
 		"whenReachForIt": "我們何時會選用它？",
 		"whyWeChoseIt": "我們為什麼選擇它",
+		"sizeGuide": "尺寸指南",
 		"buyIt": "購買",
 		"buyAriaLabel": "購買 {product}（在新分頁開啟）",
 		"thisProduct": "此商品",
@@ -85,6 +86,20 @@
 			"invalidEmail": "請輸入有效的電子郵件地址。",
 			"ariaLabel": "當 {product} 補貨時通知我"
 		}
+	},
+	"sizeGuide": {
+		"sizeColumn": "尺寸",
+		"measurements": {
+			"bodyLength": "衣長",
+			"chestWidth": "胸寬",
+			"shoulderWidth": "肩寬",
+			"sleeveLength": "袖長",
+			"waist": "腰寬",
+			"hip": "臀寬",
+			"inseam": "內縫長"
+		},
+		"unitNote": "所有尺寸單位為 {unit}。",
+		"empty": "目前尚無尺寸表。"
 	},
 	"productSubmission": {
 		"triggerLabel": "推薦商品",
