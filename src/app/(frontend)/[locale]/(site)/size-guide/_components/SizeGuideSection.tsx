@@ -1,7 +1,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import SizeChartTable, { type SizeChart } from '@/components/SizeChartTable';
+import SizeChartTable, {
+	isRenderable,
+	type SizeChart,
+} from '@/components/SizeChartTable';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { SIZE_UNITS, type SizeUnit } from '@/lib/size-measurements';
@@ -29,8 +32,10 @@ export function SizeGuideSection({
 	const { title, charts } = section;
 
 	// charts[]-> yields null for a reference whose target was unpublished.
-	const chartList = (charts ?? []).filter((chart): chart is SizeChart =>
-		Boolean(chart)
+	// isRenderable keeps a half-authored chart from getting a tab whose panel
+	// would be empty — SizeChartTable returns null for those.
+	const chartList = (charts ?? []).filter(
+		(chart): chart is SizeChart => chart != null && isRenderable(chart)
 	);
 
 	const [active, setActive] = useState(() => tabValue(chartList[0] ?? {}));

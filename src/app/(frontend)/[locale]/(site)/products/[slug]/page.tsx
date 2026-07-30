@@ -28,7 +28,7 @@ const getCachedProductData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageProductSingleQuery,
 		params: { slug, locale },
-		tags: ['pProduct', 'pProductCategory'],
+		tags: ['pProduct', 'pProductCategory', 'gSizeChart'],
 	})
 );
 

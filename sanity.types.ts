@@ -36,6 +36,13 @@ export type PContactReference = {
 	[internalGroqTypeReferenceTo]?: 'pContact';
 };
 
+export type PSizeGuideReference = {
+	_ref: string;
+	_type: 'reference';
+	_weak?: boolean;
+	[internalGroqTypeReferenceTo]?: 'pSizeGuide';
+};
+
 export type PProductIndexReference = {
 	_ref: string;
 	_type: 'reference';
@@ -84,6 +91,7 @@ export type NavItemLink = {
 		| PHomeReference
 		| PGeneralReference
 		| PContactReference
+		| PSizeGuideReference
 		| PProductIndexReference
 		| PProductReference
 		| PProductCategoryReference
@@ -297,6 +305,7 @@ export type PortableTextSimple = Array<{
 			| PHomeReference
 			| PGeneralReference
 			| PContactReference
+			| PSizeGuideReference
 			| PProductIndexReference
 			| PProductReference
 			| PProductCategoryReference
@@ -337,6 +346,7 @@ export type PortableText = Array<
 							| PHomeReference
 							| PGeneralReference
 							| PContactReference
+							| PSizeGuideReference
 							| PProductIndexReference
 							| PProductReference
 							| PProductCategoryReference
@@ -354,6 +364,7 @@ export type PortableText = Array<
 							| PHomeReference
 							| PGeneralReference
 							| PContactReference
+							| PSizeGuideReference
 							| PProductIndexReference
 							| PProductReference
 							| PProductCategoryReference
@@ -409,6 +420,7 @@ export type Link = {
 		| PHomeReference
 		| PGeneralReference
 		| PContactReference
+		| PSizeGuideReference
 		| PProductIndexReference
 		| PProductReference
 		| PProductCategoryReference
@@ -748,13 +760,6 @@ export type PFaqReference = {
 	_type: 'reference';
 	_weak?: boolean;
 	[internalGroqTypeReferenceTo]?: 'pFaq';
-};
-
-export type PSizeGuideReference = {
-	_ref: string;
-	_type: 'reference';
-	_weak?: boolean;
-	[internalGroqTypeReferenceTo]?: 'pSizeGuide';
 };
 
 export type PNewsletterReference = {
@@ -1107,48 +1112,6 @@ export type PNewsletter = {
 	};
 };
 
-export type GSizeChartReference = {
-	_ref: string;
-	_type: 'reference';
-	_weak?: boolean;
-	[internalGroqTypeReferenceTo]?: 'gSizeChart';
-};
-
-export type PSizeGuide = {
-	_id: string;
-	_type: 'pSizeGuide';
-	_createdAt: string;
-	_updatedAt: string;
-	_rev: string;
-	title?: string;
-	slug?: Slug;
-	language?: string;
-	intro?: string;
-	sections?: Array<{
-		title?: string;
-		charts?: Array<
-			{
-				_key: string;
-			} & GSizeChartReference
-		>;
-		_type: 'sizeGuideSection';
-		_key: string;
-	}>;
-	footnote?: string;
-	sharing?: {
-		disableIndex?: boolean;
-		metaTitle?: string;
-		metaDesc?: string;
-		shareGraphic?: {
-			asset?: SanityImageAssetReference;
-			media?: unknown;
-			hotspot?: SanityImageHotspot;
-			crop?: SanityImageCrop;
-			_type: 'image';
-		};
-	};
-};
-
 export type PFaq = {
 	_id: string;
 	_type: 'pFaq';
@@ -1288,6 +1251,13 @@ export type GTagReference = {
 	_type: 'reference';
 	_weak?: boolean;
 	[internalGroqTypeReferenceTo]?: 'gTag';
+};
+
+export type GSizeChartReference = {
+	_ref: string;
+	_type: 'reference';
+	_weak?: boolean;
+	[internalGroqTypeReferenceTo]?: 'gSizeChart';
 };
 
 export type PProduct = {
@@ -1720,6 +1690,41 @@ export type PProductIndex = {
 	};
 };
 
+export type PSizeGuide = {
+	_id: string;
+	_type: 'pSizeGuide';
+	_createdAt: string;
+	_updatedAt: string;
+	_rev: string;
+	title?: string;
+	slug?: Slug;
+	language?: string;
+	intro?: string;
+	sections?: Array<{
+		title?: string;
+		charts?: Array<
+			{
+				_key: string;
+			} & GSizeChartReference
+		>;
+		_type: 'sizeGuideSection';
+		_key: string;
+	}>;
+	footnote?: string;
+	sharing?: {
+		disableIndex?: boolean;
+		metaTitle?: string;
+		metaDesc?: string;
+		shareGraphic?: {
+			asset?: SanityImageAssetReference;
+			media?: unknown;
+			hotspot?: SanityImageHotspot;
+			crop?: SanityImageCrop;
+			_type: 'image';
+		};
+	};
+};
+
 export type SettingsBrandColors = {
 	_id: string;
 	_type: 'settingsBrandColors';
@@ -1876,6 +1881,7 @@ export type AllSanitySchemaTypes =
 	| PHomeReference
 	| PGeneralReference
 	| PContactReference
+	| PSizeGuideReference
 	| PProductIndexReference
 	| PProductReference
 	| PProductCategoryReference
@@ -1923,7 +1929,6 @@ export type AllSanitySchemaTypes =
 	| TranslationMetadata
 	| InternationalizedArrayReference
 	| PFaqReference
-	| PSizeGuideReference
 	| PNewsletterReference
 	| P404Reference
 	| PBlogReference
@@ -1950,14 +1955,13 @@ export type AllSanitySchemaTypes =
 	| GAuthor
 	| P404
 	| PNewsletter
-	| GSizeChartReference
-	| PSizeGuide
 	| PFaq
 	| PHome
 	| PGeneral
 	| PContact
 	| PBrandReference
 	| GTagReference
+	| GSizeChartReference
 	| PProduct
 	| GSizeChart
 	| GLocationReference
@@ -1971,6 +1975,7 @@ export type AllSanitySchemaTypes =
 	| PProductCollection
 	| PProductCategory
 	| PProductIndex
+	| PSizeGuide
 	| SettingsBrandColors
 	| InternationalizedArrayTextValue
 	| InternationalizedArrayStringValue
@@ -2115,6 +2120,7 @@ export type SiteDataQueryResult = {
 								| '/contact'
 								| '/events/'
 								| '/products'
+								| '/size-guide'
 								| unknown;
 							label: null;
 							isNewTab: boolean | null;
@@ -2137,6 +2143,7 @@ export type SiteDataQueryResult = {
 									| '/contact'
 									| '/events/'
 									| '/products'
+									| '/size-guide'
 									| unknown;
 								label: null;
 								isNewTab: boolean | null;
@@ -2164,6 +2171,7 @@ export type SiteDataQueryResult = {
 								| '/contact'
 								| '/events/'
 								| '/products'
+								| '/size-guide'
 								| unknown;
 							label: null;
 							isNewTab: boolean | null;
@@ -2186,6 +2194,7 @@ export type SiteDataQueryResult = {
 									| '/contact'
 									| '/events/'
 									| '/products'
+									| '/size-guide'
 									| unknown;
 								label: null;
 								isNewTab: boolean | null;
@@ -2215,6 +2224,7 @@ export type SiteDataQueryResult = {
 								| '/contact'
 								| '/events/'
 								| '/products'
+								| '/size-guide'
 								| unknown;
 							label: null;
 							isNewTab: boolean | null;
@@ -2237,6 +2247,7 @@ export type SiteDataQueryResult = {
 									| '/contact'
 									| '/events/'
 									| '/products'
+									| '/size-guide'
 									| unknown;
 								label: null;
 								isNewTab: boolean | null;
@@ -2260,6 +2271,7 @@ export type SiteDataQueryResult = {
 					| '/contact'
 					| '/events/'
 					| '/products'
+					| '/size-guide'
 					| unknown;
 				label: null;
 				isNewTab: boolean | null;
@@ -2277,6 +2289,7 @@ export type SiteDataQueryResult = {
 					| '/contact'
 					| '/events/'
 					| '/products'
+					| '/size-guide'
 					| unknown;
 				label: null;
 				isNewTab: boolean | null;
@@ -2294,6 +2307,7 @@ export type SiteDataQueryResult = {
 					| '/contact'
 					| '/events/'
 					| '/products'
+					| '/size-guide'
 					| unknown;
 				label: string | null;
 				isNewTab: boolean | null;
@@ -2323,6 +2337,7 @@ export type SiteDataQueryResult = {
 					| '/contact'
 					| '/events/'
 					| '/products'
+					| '/size-guide'
 					| unknown;
 				internalLink?:
 					| PContactReference
@@ -2333,7 +2348,8 @@ export type SiteDataQueryResult = {
 					| PProductReference
 					| PProductCategoryReference
 					| PProductCollectionReference
-					| PProductIndexReference;
+					| PProductIndexReference
+					| PSizeGuideReference;
 				linkType: 'external' | 'internal' | null;
 				isNewTab: boolean | null;
 				_type: 'link';
@@ -2435,6 +2451,7 @@ export type SiteDataQueryResult = {
 				| '/contact'
 				| '/events/'
 				| '/products'
+				| '/size-guide'
 				| unknown;
 			label: string | null;
 			isNewTab: boolean | null;
@@ -2449,6 +2466,7 @@ export type SiteDataQueryResult = {
 				| '/contact'
 				| '/events/'
 				| '/products'
+				| '/size-guide'
 				| unknown;
 			label: string | null;
 			isNewTab: boolean | null;
@@ -2535,6 +2553,7 @@ export type PageHomeQueryResult = {
 								| '/contact'
 								| '/events/'
 								| '/products'
+								| '/size-guide'
 								| unknown;
 							internalLink?:
 								| PContactReference
@@ -2545,7 +2564,8 @@ export type PageHomeQueryResult = {
 								| PProductReference
 								| PProductCategoryReference
 								| PProductCollectionReference
-								| PProductIndexReference;
+								| PProductIndexReference
+								| PSizeGuideReference;
 							linkType: 'external' | 'internal' | null;
 							isNewTab: boolean | null;
 							_type: 'link';
@@ -2726,7 +2746,8 @@ export type PageHomeQueryResult = {
 											| PProductReference
 											| PProductCategoryReference
 											| PProductCollectionReference
-											| PProductIndexReference;
+											| PProductIndexReference
+											| PSizeGuideReference;
 										linkType?: 'external' | 'internal';
 										isNewTab?: boolean;
 										_type: 'callToAction';
@@ -2743,6 +2764,7 @@ export type PageHomeQueryResult = {
 											| '/contact'
 											| '/events/'
 											| '/products'
+											| '/size-guide'
 											| unknown;
 										internalLink?:
 											| PContactReference
@@ -2753,7 +2775,8 @@ export type PageHomeQueryResult = {
 											| PProductReference
 											| PProductCategoryReference
 											| PProductCollectionReference
-											| PProductIndexReference;
+											| PProductIndexReference
+											| PSizeGuideReference;
 										linkType: 'external' | 'internal' | null;
 										isNewTab: boolean | null;
 										_type: 'link';
@@ -2956,6 +2979,7 @@ export type Page404QueryResult = {
 				| '/contact'
 				| '/events/'
 				| '/products'
+				| '/size-guide'
 				| unknown;
 			internalLink?:
 				| PContactReference
@@ -2966,7 +2990,8 @@ export type Page404QueryResult = {
 				| PProductReference
 				| PProductCategoryReference
 				| PProductCollectionReference
-				| PProductIndexReference;
+				| PProductIndexReference
+				| PSizeGuideReference;
 			linkType: 'external' | 'internal' | null;
 			isNewTab: boolean | null;
 			_type: 'link';
@@ -2989,6 +3014,7 @@ export type Page404QueryResult = {
 				| '/contact'
 				| '/events/'
 				| '/products'
+				| '/size-guide'
 				| unknown;
 			label: string | null;
 			isNewTab: boolean | null;
@@ -3058,7 +3084,8 @@ export type PageGeneralQueryResult = {
 								| PProductReference
 								| PProductCategoryReference
 								| PProductCollectionReference
-								| PProductIndexReference;
+								| PProductIndexReference
+								| PSizeGuideReference;
 							linkType?: 'external' | 'internal';
 							isNewTab?: boolean;
 							_type: 'callToAction';
@@ -3075,6 +3102,7 @@ export type PageGeneralQueryResult = {
 								| '/contact'
 								| '/events/'
 								| '/products'
+								| '/size-guide'
 								| unknown;
 							internalLink?:
 								| PContactReference
@@ -3085,7 +3113,8 @@ export type PageGeneralQueryResult = {
 								| PProductReference
 								| PProductCategoryReference
 								| PProductCollectionReference
-								| PProductIndexReference;
+								| PProductIndexReference
+								| PSizeGuideReference;
 							linkType: 'external' | 'internal' | null;
 							isNewTab: boolean | null;
 							_type: 'link';
@@ -3138,6 +3167,7 @@ export type PageGeneralQueryResult = {
 								| '/contact'
 								| '/events/'
 								| '/products'
+								| '/size-guide'
 								| unknown;
 							internalLink?:
 								| PContactReference
@@ -3148,7 +3178,8 @@ export type PageGeneralQueryResult = {
 								| PProductReference
 								| PProductCategoryReference
 								| PProductCollectionReference
-								| PProductIndexReference;
+								| PProductIndexReference
+								| PSizeGuideReference;
 							linkType: 'external' | 'internal' | null;
 							isNewTab: boolean | null;
 							_type: 'link';
@@ -3329,7 +3360,8 @@ export type PageGeneralQueryResult = {
 											| PProductReference
 											| PProductCategoryReference
 											| PProductCollectionReference
-											| PProductIndexReference;
+											| PProductIndexReference
+											| PSizeGuideReference;
 										linkType?: 'external' | 'internal';
 										isNewTab?: boolean;
 										_type: 'callToAction';
@@ -3346,6 +3378,7 @@ export type PageGeneralQueryResult = {
 											| '/contact'
 											| '/events/'
 											| '/products'
+											| '/size-guide'
 											| unknown;
 										internalLink?:
 											| PContactReference
@@ -3356,7 +3389,8 @@ export type PageGeneralQueryResult = {
 											| PProductReference
 											| PProductCategoryReference
 											| PProductCollectionReference
-											| PProductIndexReference;
+											| PProductIndexReference
+											| PSizeGuideReference;
 										linkType: 'external' | 'internal' | null;
 										isNewTab: boolean | null;
 										_type: 'link';
@@ -3583,6 +3617,7 @@ export type PageContactQueryResult = {
 					| '/contact'
 					| '/events/'
 					| '/products'
+					| '/size-guide'
 					| unknown;
 				internalLink?:
 					| PContactReference
@@ -3593,7 +3628,8 @@ export type PageContactQueryResult = {
 					| PProductReference
 					| PProductCategoryReference
 					| PProductCollectionReference
-					| PProductIndexReference;
+					| PProductIndexReference
+					| PSizeGuideReference;
 				linkType: 'external' | 'internal' | null;
 				isNewTab: boolean | null;
 				_type: 'link';
@@ -3649,6 +3685,7 @@ export type PageContactQueryResult = {
 				| '/contact'
 				| '/events/'
 				| '/products'
+				| '/size-guide'
 				| unknown;
 			internalLink?:
 				| PContactReference
@@ -3659,7 +3696,8 @@ export type PageContactQueryResult = {
 				| PProductReference
 				| PProductCategoryReference
 				| PProductCollectionReference
-				| PProductIndexReference;
+				| PProductIndexReference
+				| PSizeGuideReference;
 			linkType: 'external' | 'internal' | null;
 			isNewTab: boolean | null;
 			_type: 'link';
@@ -3726,6 +3764,7 @@ export type PageFaqQueryResult = {
 					| '/contact'
 					| '/events/'
 					| '/products'
+					| '/size-guide'
 					| unknown;
 				internalLink?:
 					| PContactReference
@@ -3736,7 +3775,8 @@ export type PageFaqQueryResult = {
 					| PProductReference
 					| PProductCategoryReference
 					| PProductCollectionReference
-					| PProductIndexReference;
+					| PProductIndexReference
+					| PSizeGuideReference;
 				linkType: 'external' | 'internal' | null;
 				isNewTab: boolean | null;
 				_type: 'link';
@@ -3753,7 +3793,7 @@ export type PageFaqQueryResult = {
 
 // Source: src/sanity/lib/queries.ts
 // Variable: pageSizeGuideQuery
-// Query: *[_type == "pSizeGuide" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{			_id,	_type,	title,	"slug": slug.current,	"sharing":{		...sharing,		"shareGraphic": coalesce(			sharing.shareGraphic,			*[_type == "settingsGeneral"][0].shareGraphic		),		"siteTitle": coalesce(			*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,			*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value		),	},		"availableLocales": *[	_type == ^._type	&& (!defined(^.slug.current) || slug.current == ^.slug.current)	&& defined(language)].language,		intro,		footnote,		sections[]{			_key,			title,			"charts": charts[]->{					_id,	title,	"slug": slug.current,	unit,	columns,	rows[]{...},	"note": coalesce(note[language == $locale][0].value, note[language == "en"][0].value)			}		}	}
+// Query: *[_type == "pSizeGuide" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{			_id,	_type,	title,	"slug": slug.current,	"sharing":{		...sharing,		"shareGraphic": coalesce(			sharing.shareGraphic,			*[_type == "settingsGeneral"][0].shareGraphic		),		"siteTitle": coalesce(			*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,			*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value		),	},		"availableLocales": *[	_type == ^._type	&& (!defined(^.slug.current) || slug.current == ^.slug.current)	&& defined(language)].language,		intro,		footnote,		sections[]{			_key,			title,			"charts": charts[]->{					_id,	title,	"slug": slug.current,	unit,	columns,	rows[]{		_key,		size,		bodyLength,		chestWidth,		shoulderWidth,		sleeveLength,		waist,		hip,		inseam	},	"note": coalesce(note[language == $locale][0].value, note[language == "en"][0].value)			}		}	}
 export type PageSizeGuideQueryResult = {
 	_id: string;
 	_type: 'pSizeGuide';
@@ -3796,16 +3836,15 @@ export type PageSizeGuideQueryResult = {
 			unit: 'cm' | 'in' | null;
 			columns: Array<string> | null;
 			rows: Array<{
-				size?: string;
-				bodyLength?: number;
-				chestWidth?: number;
-				shoulderWidth?: number;
-				sleeveLength?: number;
-				waist?: number;
-				hip?: number;
-				inseam?: number;
-				_type: 'sizeChartRow';
 				_key: string;
+				size: string | null;
+				bodyLength: number | null;
+				chestWidth: number | null;
+				shoulderWidth: number | null;
+				sleeveLength: number | null;
+				waist: number | null;
+				hip: number | null;
+				inseam: number | null;
 			}> | null;
 			note: string | null;
 		}> | null;
@@ -3867,6 +3906,7 @@ export type PageNewsletterQueryResult = {
 					| '/contact'
 					| '/events/'
 					| '/products'
+					| '/size-guide'
 					| unknown;
 				internalLink?:
 					| PContactReference
@@ -3877,7 +3917,8 @@ export type PageNewsletterQueryResult = {
 					| PProductReference
 					| PProductCategoryReference
 					| PProductCollectionReference
-					| PProductIndexReference;
+					| PProductIndexReference
+					| PSizeGuideReference;
 				linkType: 'external' | 'internal' | null;
 				isNewTab: boolean | null;
 				_type: 'link';
@@ -3994,6 +4035,7 @@ export type PEventsQueryResult = {
 					| '/contact'
 					| '/events/'
 					| '/products'
+					| '/size-guide'
 					| unknown;
 				label: string | null;
 				isNewTab: boolean | null;
@@ -4330,7 +4372,8 @@ export type PageBlogSingleQueryResult = {
 								| PProductReference
 								| PProductCategoryReference
 								| PProductCollectionReference
-								| PProductIndexReference;
+								| PProductIndexReference
+								| PSizeGuideReference;
 							linkType?: 'external' | 'internal';
 							isNewTab?: boolean;
 							_type: 'callToAction';
@@ -4347,6 +4390,7 @@ export type PageBlogSingleQueryResult = {
 								| '/contact'
 								| '/events/'
 								| '/products'
+								| '/size-guide'
 								| unknown;
 							internalLink?:
 								| PContactReference
@@ -4357,7 +4401,8 @@ export type PageBlogSingleQueryResult = {
 								| PProductReference
 								| PProductCategoryReference
 								| PProductCollectionReference
-								| PProductIndexReference;
+								| PProductIndexReference
+								| PSizeGuideReference;
 							linkType: 'external' | 'internal' | null;
 							isNewTab: boolean | null;
 							_type: 'link';
@@ -4847,6 +4892,7 @@ export type PageProductSingleQueryResult = {
 				| '/contact'
 				| '/events/'
 				| '/products'
+				| '/size-guide'
 				| unknown;
 			internalLink?:
 				| PContactReference
@@ -4857,7 +4903,8 @@ export type PageProductSingleQueryResult = {
 				| PProductReference
 				| PProductCategoryReference
 				| PProductCollectionReference
-				| PProductIndexReference;
+				| PProductIndexReference
+				| PSizeGuideReference;
 			linkType: 'external' | 'internal' | null;
 			isNewTab: boolean | null;
 			_type: 'link';
@@ -4885,6 +4932,7 @@ export type PageProductSingleQueryResult = {
 				| '/contact'
 				| '/events/'
 				| '/products'
+				| '/size-guide'
 				| unknown;
 			internalLink?:
 				| PContactReference
@@ -4895,7 +4943,8 @@ export type PageProductSingleQueryResult = {
 				| PProductReference
 				| PProductCategoryReference
 				| PProductCollectionReference
-				| PProductIndexReference;
+				| PProductIndexReference
+				| PSizeGuideReference;
 			linkType: 'external' | 'internal' | null;
 			isNewTab: boolean | null;
 			_type: 'link';
@@ -4923,6 +4972,7 @@ export type PageProductSingleQueryResult = {
 				| '/contact'
 				| '/events/'
 				| '/products'
+				| '/size-guide'
 				| unknown;
 			internalLink?:
 				| PContactReference
@@ -4933,7 +4983,8 @@ export type PageProductSingleQueryResult = {
 				| PProductReference
 				| PProductCategoryReference
 				| PProductCollectionReference
-				| PProductIndexReference;
+				| PProductIndexReference
+				| PSizeGuideReference;
 			linkType: 'external' | 'internal' | null;
 			isNewTab: boolean | null;
 			_type: 'link';
@@ -4964,6 +5015,7 @@ export type PageProductSingleQueryResult = {
 							| '/contact'
 							| '/events/'
 							| '/products'
+							| '/size-guide'
 							| unknown;
 						internalLink?:
 							| PContactReference
@@ -4974,7 +5026,8 @@ export type PageProductSingleQueryResult = {
 							| PProductReference
 							| PProductCategoryReference
 							| PProductCollectionReference
-							| PProductIndexReference;
+							| PProductIndexReference
+							| PSizeGuideReference;
 						linkType: 'external' | 'internal' | null;
 						isNewTab: boolean | null;
 						_type: 'link';
@@ -5040,6 +5093,7 @@ export type PageProductSingleQueryResult = {
 							| '/contact'
 							| '/events/'
 							| '/products'
+							| '/size-guide'
 							| unknown;
 						internalLink?:
 							| PContactReference
@@ -5050,7 +5104,8 @@ export type PageProductSingleQueryResult = {
 							| PProductReference
 							| PProductCategoryReference
 							| PProductCollectionReference
-							| PProductIndexReference;
+							| PProductIndexReference
+							| PSizeGuideReference;
 						linkType: 'external' | 'internal' | null;
 						isNewTab: boolean | null;
 						_type: 'link';
@@ -5088,6 +5143,7 @@ export type PageProductSingleQueryResult = {
 							| '/contact'
 							| '/events/'
 							| '/products'
+							| '/size-guide'
 							| unknown;
 						internalLink?:
 							| PContactReference
@@ -5098,7 +5154,8 @@ export type PageProductSingleQueryResult = {
 							| PProductReference
 							| PProductCategoryReference
 							| PProductCollectionReference
-							| PProductIndexReference;
+							| PProductIndexReference
+							| PSizeGuideReference;
 						linkType: 'external' | 'internal' | null;
 						isNewTab: boolean | null;
 						_type: 'link';
@@ -5168,6 +5225,7 @@ export type PageProductSingleQueryResult = {
 							| '/contact'
 							| '/events/'
 							| '/products'
+							| '/size-guide'
 							| unknown;
 						internalLink?:
 							| PContactReference
@@ -5178,7 +5236,8 @@ export type PageProductSingleQueryResult = {
 							| PProductReference
 							| PProductCategoryReference
 							| PProductCollectionReference
-							| PProductIndexReference;
+							| PProductIndexReference
+							| PSizeGuideReference;
 						linkType: 'external' | 'internal' | null;
 						isNewTab: boolean | null;
 						_type: 'link';
@@ -5954,6 +6013,7 @@ export type PageEventSingleQueryResult = {
 				| '/contact'
 				| '/events/'
 				| '/products'
+				| '/size-guide'
 				| unknown;
 			label: string | null;
 			isNewTab: boolean | null;
@@ -6044,7 +6104,8 @@ export type PageEventSingleQueryResult = {
 								| PProductReference
 								| PProductCategoryReference
 								| PProductCollectionReference
-								| PProductIndexReference;
+								| PProductIndexReference
+								| PSizeGuideReference;
 							linkType?: 'external' | 'internal';
 							isNewTab?: boolean;
 							_type: 'callToAction';
@@ -6061,6 +6122,7 @@ export type PageEventSingleQueryResult = {
 								| '/contact'
 								| '/events/'
 								| '/products'
+								| '/size-guide'
 								| unknown;
 							internalLink?:
 								| PContactReference
@@ -6071,7 +6133,8 @@ export type PageEventSingleQueryResult = {
 								| PProductReference
 								| PProductCategoryReference
 								| PProductCollectionReference
-								| PProductIndexReference;
+								| PProductIndexReference
+								| PSizeGuideReference;
 							linkType: 'external' | 'internal' | null;
 							isNewTab: boolean | null;
 							_type: 'link';
@@ -6117,7 +6180,7 @@ declare module '@sanity/client' {
 		'\n  *[_type == "pGeneral" && defined(slug.current)]\n  {"slug": slug.current}\n': PageGeneralSlugsQueryResult;
 		'\n\t*[_type == "pContact" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{\n\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"shareGraphic": coalesce(\n\t\t\tsharing.shareGraphic,\n\t\t\t*[_type == "settingsGeneral"][0].shareGraphic\n\t\t),\n\t\t"siteTitle": coalesce(\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value\n\t\t),\n\t}\n,\n\t\t\n"availableLocales": *[\n\t_type == ^._type\n\t&& (!defined(^.slug.current) || slug.current == ^.slug.current)\n\t&& defined(language)\n].language\n,\n\t\tdescription,\n\t\tcontactForm {\n\t\t\tformTitle[]{\n\t\t\t\t\n\t...,\n\tmarkDefs[]{\n\t\t...,\n\t\t_type == "link" => {\n\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t},\n\t\t_type == "callToAction" => {\n\t\t\t\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tlink {\n\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t},\n\t"isButton": true\n\n\t\t}\n\t},\n\t_type == "image" => {\n\t\t\n  image{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatio,\n\timageMobile{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatioMobile,\n\tcaption,\n\tlink{\n\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t}\n,\n\t\tlink {\n\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t}\n\t}\n\n\t\t\t},\n\t\t\tformFields[] {\n\t\t\t\t\n\tplaceholder,\n\t_key,\n\trequired,\n\tfieldLabel,\n\tfieldName,\n\tfieldWidth,\n\tinputType,\n\tselectOptions[] {\n\t\t_key,\n\t\t"title": option,\n\t\t"value": option\n\t}\n\n\t\t\t},\n\t\t\tsuccessMessage,\n\t\t\terrorMessage,\n\t\t\tsendToEmail,\n\t\t\temailSubject,\n\t\t\tformFailureNotificationEmail\n\t\t},\n\t\tlegalConsent[]{\n\t\t\t\n\t...,\n\tmarkDefs[]{\n\t\t...,\n\t\t_type == "link" => {\n\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t},\n\t\t_type == "callToAction" => {\n\t\t\t\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tlink {\n\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t},\n\t"isButton": true\n\n\t\t}\n\t},\n\t_type == "image" => {\n\t\t\n  image{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatio,\n\timageMobile{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatioMobile,\n\tcaption,\n\tlink{\n\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t}\n,\n\t\tlink {\n\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t}\n\t}\n\n\t\t}\n\t}\n': PageContactQueryResult;
 		'\n\t*[_type == "pFaq" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{\n\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"shareGraphic": coalesce(\n\t\t\tsharing.shareGraphic,\n\t\t\t*[_type == "settingsGeneral"][0].shareGraphic\n\t\t),\n\t\t"siteTitle": coalesce(\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value\n\t\t),\n\t}\n,\n\t\t\n"availableLocales": *[\n\t_type == ^._type\n\t&& (!defined(^.slug.current) || slug.current == ^.slug.current)\n\t&& defined(language)\n].language\n,\n\t\tintro,\n\t\t"items": *[_type == "gFaq" && language == $locale] | order(order asc){\n\t\t\t\n\t_id,\n\tquestion,\n\t"answer": answer[]{ \n\t...,\n\tmarkDefs[]{\n\t\t...,\n\t\t_type == "link" => {\n\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t},\n\t\t_type == "callToAction" => {\n\t\t\t\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tlink {\n\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t},\n\t"isButton": true\n\n\t\t}\n\t},\n\t_type == "image" => {\n\t\t\n  image{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatio,\n\timageMobile{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatioMobile,\n\tcaption,\n\tlink{\n\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t}\n,\n\t\tlink {\n\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t}\n\t}\n },\n\t"answerText": pt::text(answer)\n\n\t\t}\n\t}\n': PageFaqQueryResult;
-		'\n\t*[_type == "pSizeGuide" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{\n\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"shareGraphic": coalesce(\n\t\t\tsharing.shareGraphic,\n\t\t\t*[_type == "settingsGeneral"][0].shareGraphic\n\t\t),\n\t\t"siteTitle": coalesce(\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value\n\t\t),\n\t}\n,\n\t\t\n"availableLocales": *[\n\t_type == ^._type\n\t&& (!defined(^.slug.current) || slug.current == ^.slug.current)\n\t&& defined(language)\n].language\n,\n\t\tintro,\n\t\tfootnote,\n\t\tsections[]{\n\t\t\t_key,\n\t\t\ttitle,\n\t\t\t"charts": charts[]->{\n\t\t\t\t\n\t_id,\n\ttitle,\n\t"slug": slug.current,\n\tunit,\n\tcolumns,\n\trows[]{...},\n\t"note": coalesce(note[language == $locale][0].value, note[language == "en"][0].value)\n\n\t\t\t}\n\t\t}\n\t}\n': PageSizeGuideQueryResult;
+		'\n\t*[_type == "pSizeGuide" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{\n\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"shareGraphic": coalesce(\n\t\t\tsharing.shareGraphic,\n\t\t\t*[_type == "settingsGeneral"][0].shareGraphic\n\t\t),\n\t\t"siteTitle": coalesce(\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value\n\t\t),\n\t}\n,\n\t\t\n"availableLocales": *[\n\t_type == ^._type\n\t&& (!defined(^.slug.current) || slug.current == ^.slug.current)\n\t&& defined(language)\n].language\n,\n\t\tintro,\n\t\tfootnote,\n\t\tsections[]{\n\t\t\t_key,\n\t\t\ttitle,\n\t\t\t"charts": charts[]->{\n\t\t\t\t\n\t_id,\n\ttitle,\n\t"slug": slug.current,\n\tunit,\n\tcolumns,\n\trows[]{\n\t\t_key,\n\t\tsize,\n\t\tbodyLength,\n\t\tchestWidth,\n\t\tshoulderWidth,\n\t\tsleeveLength,\n\t\twaist,\n\t\thip,\n\t\tinseam\n\t},\n\t"note": coalesce(note[language == $locale][0].value, note[language == "en"][0].value)\n\n\t\t\t}\n\t\t}\n\t}\n': PageSizeGuideQueryResult;
 		'\n\t*[_type == "pNewsletter" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{\n\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"shareGraphic": coalesce(\n\t\t\tsharing.shareGraphic,\n\t\t\t*[_type == "settingsGeneral"][0].shareGraphic\n\t\t),\n\t\t"siteTitle": coalesce(\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value\n\t\t),\n\t}\n,\n\t\t\n"availableLocales": *[\n\t_type == ^._type\n\t&& (!defined(^.slug.current) || slug.current == ^.slug.current)\n\t&& defined(language)\n].language\n,\n\t\t"newsletter": *[_type == "gNewsletter" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{\n\t\t\t\n\tklaviyoListID,\n\theading,\n\tsubheading,\n\tsubmitButtonText,\n\t"disclaimer": disclaimer[]{\n\t\t\n\t...,\n\tmarkDefs[]{\n\t\t...,\n\t\t_type == "link" => {\n\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t},\n\t\t_type == "callToAction" => {\n\t\t\t\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tlink {\n\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t},\n\t"isButton": true\n\n\t\t}\n\t},\n\t_type == "image" => {\n\t\t\n  image{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatio,\n\timageMobile{\n\t\t\n\t...,\n  asset,\n  crop,\n  hotspot,\n  "altText": asset->altText,\n  "metadata": asset->metadata {\n    lqip,\n    dimensions,\n    mimeType\n  }\n\n\t},\n\tcustomRatioMobile,\n\tcaption,\n\tlink{\n\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t}\n,\n\t\tlink {\n\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t}\n\t}\n\n\t},\n\tsuccessHeading,\n\tsuccessBody,\n\terrorHeading,\n\terrorBody,\n\n\t\t}\n\t}\n': PageNewsletterQueryResult;
 		'\n\t*[_type == "pEvents" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{\n\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"shareGraphic": coalesce(\n\t\t\tsharing.shareGraphic,\n\t\t\t*[_type == "settingsGeneral"][0].shareGraphic\n\t\t),\n\t\t"siteTitle": coalesce(\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value\n\t\t),\n\t}\n,\n\t\t\n"availableLocales": *[\n\t_type == ^._type\n\t&& (!defined(^.slug.current) || slug.current == ^.slug.current)\n\t&& defined(language)\n].language\n,\n\t\t"eventList": (\n\t\t\t*[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff]{\n\t\t\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"shareGraphic": coalesce(\n\t\t\tsharing.shareGraphic,\n\t\t\t*[_type == "settingsGeneral"][0].shareGraphic\n\t\t),\n\t\t"siteTitle": coalesce(\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value\n\t\t),\n\t}\n,\n\t\t\t\tsubtitle,\n\t\t\t\teventDatetime,\n\t\t\t\tdateStatus,\n\t\t\t\tlocation,\n\t\t\t\tlocationLink,\n\t\t\t\tlocationRef->{\n\t\t\t\t\t"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),\n\t\t\t\t\tmapLink,\n\t\t\t\t},\n\t\t\t\tcategories[]-> {\n\t\t\t\t\t_id,\n\t\t\t\t\ttitle,\n\t\t\t\t\t"slug": slug.current,\n\t\t\t\t\tcategoryColor->{...color}\n\t\t\t\t},\n\t\t\t\tstatusList[]{\n\t\t\t\t\t_key,\n\t\t\t\t\tlink {\n\t\t\t\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t\t\t\t},\n\t\t\t\t\teventStatus-> {\n\t\t\t\t\t\t_id,\n\t\t\t\t\t\t"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),\n\t\t\t\t\t\t"slug": slug.current,\n\t\t\t\t\t\tstatusTextColor->{...color},\n\t\t\t\t\t\tstatusBgColor->{...color}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t\t+ *[\n\t\t\t\t_type == "pEvent"\n\t\t\t\t&& (language == "en" || !defined(language))\n\t\t\t\t&& eventDatetime.utc >= $cutoff\n\t\t\t\t&& !(slug.current in *[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff].slug.current)\n\t\t\t]{\n\t\t\t\t\n\t_id,\n\t_type,\n\ttitle,\n\t"slug": slug.current,\n\t"sharing":{\n\t\t...sharing,\n\t\t"shareGraphic": coalesce(\n\t\t\tsharing.shareGraphic,\n\t\t\t*[_type == "settingsGeneral"][0].shareGraphic\n\t\t),\n\t\t"siteTitle": coalesce(\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,\n\t\t\t*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value\n\t\t),\n\t}\n,\n\t\t\t\tsubtitle,\n\t\t\t\teventDatetime,\n\t\t\t\tdateStatus,\n\t\t\t\tlocation,\n\t\t\t\tlocationLink,\n\t\t\t\tlocationRef->{\n\t\t\t\t\t"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),\n\t\t\t\t\tmapLink,\n\t\t\t\t},\n\t\t\t\tcategories[]-> {\n\t\t\t\t\t_id,\n\t\t\t\t\ttitle,\n\t\t\t\t\t"slug": slug.current,\n\t\t\t\t\tcategoryColor->{...color}\n\t\t\t\t},\n\t\t\t\tstatusList[]{\n\t\t\t\t\t_key,\n\t\t\t\t\tlink {\n\t\t\t\t\t\t\n\t_type,\n\tlinkType,\n\t"href": select(\n\t\tlinkType == "internal" => internalLink-> {\n\t\t\t"url": select(\n\t\t\t\t_type == "pHome" => select($locale == "en" => "/", "/" + $locale),\n\t\t\t\tselect($locale == "en" => "", "/" + $locale) + select(\n\t\t\t\t\t_type == "pGeneral" => "/" + slug.current,\n\t\t\t\t\t_type == "pProductIndex" => "/products",\n\t\t\t\t\t_type == "pProduct" => "/products/" + slug.current,\n\t\t\t\t\t_type == "pProductCategory" => "/products/categories/" + slug.current,\n\t\t\t\t\t_type == "pProductCollection" => "/products/collections/" + slug.current,\n\t\t\t\t\t_type == "pEvents" => "/events/",\n\t\t\t\t\t_type == "pEvent" => "/events/" + slug.current,\n\t\t\t\t\t_type == "pContact" => "/contact",\n\t\t\t\t\t_type == "pFaq" => "/faq",\n\t\t\t\t\t_type == "pSizeGuide" => "/size-guide",\n\t\t\t\t\tdefined(slug.current) => "/" + slug.current,\n\t\t\t\t\tnull\n\t\t\t\t)\n\t\t\t)\n\t\t}.url,\n\t\thref\n\t),\n\t"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),\n\tisNewTab\n\n\t\t\t\t\t},\n\t\t\t\t\teventStatus-> {\n\t\t\t\t\t\t_id,\n\t\t\t\t\t\t"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),\n\t\t\t\t\t\t"slug": slug.current,\n\t\t\t\t\t\tstatusTextColor->{...color},\n\t\t\t\t\t\tstatusBgColor->{...color}\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t}\n\t\t) | order(eventDatetime.utc asc),\n\t}\n': PEventsQueryResult;
 		'\n\t*[_type == "pEvent" && defined(teamAssignments) && defined(eventDatetime.utc)] | order(eventDatetime.utc asc) {\n\t\teventDatetime\n\t}\n': EventCrewMonthsQueryResult;
