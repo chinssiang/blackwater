@@ -199,31 +199,19 @@ const gFaqItemFields = `
 `;
 
 // gSizeChart is deliberately NOT document-localized — the measurements are
-// locale-invariant, so the numbers are stored once. Only the fit note is
-// translated, via the inline internationalizedArray coalesce pattern.
-// NOTE: the row fields must be listed literally and kept in sync with
-// SIZE_MEASUREMENT_KEYS in src/lib/size-measurements.ts. They cannot be
-// interpolated from that constant — Sanity's static query extractor cannot
-// evaluate function calls inside template literals, so a `.join()` here silently
-// drops this query from the generated typemap and degrades `data` to `any`.
-// (Same constraint as resolvedHrefGroq in src/lib/routes.ts.) A `...` splat would
-// avoid the duplication but also ships `_type` and loses field-level typing.
+// locale-invariant, so the numbers are stored once. Only the text fields are
+// translated, via the inline internationalizedArray coalesce pattern: the fit
+// note and each measurement's label.
 const gSizeChartFields = `
 	_id,
 	title,
 	"slug": slug.current,
 	unit,
-	columns,
+	sizes,
 	rows[]{
 		_key,
-		size,
-		bodyLength,
-		chestWidth,
-		shoulderWidth,
-		sleeveLength,
-		waist,
-		hip,
-		inseam
+		"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
+		values[]{ _key, size, min, max }
 	},
 	"note": coalesce(note[language == $locale][0].value, note[language == "en"][0].value)
 `;
@@ -501,8 +489,12 @@ export const pageSizeGuideQuery = defineQuery(`
 		sections[]{
 			_key,
 			title,
-			"charts": charts[]->{
-				${gSizeChartFields}
+			"charts": charts[]{
+				_key,
+				label,
+				"chart": chart->{
+					${gSizeChartFields}
+				}
 			}
 		}
 	}

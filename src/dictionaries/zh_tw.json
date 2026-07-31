@@ -89,20 +89,13 @@
 	},
 	"sizeGuide": {
 		"sizeColumn": "尺寸",
-		"measurements": {
-			"bodyLength": "衣長",
-			"chestWidth": "胸寬",
-			"shoulderWidth": "肩寬",
-			"sleeveLength": "袖長",
-			"waist": "腰寬",
-			"hip": "臀寬",
-			"inseam": "內縫長"
-		},
+		"measurementColumn": "測量部位",
 		"units": {
 			"cm": "CM",
 			"in": "IN"
 		},
-		"unitToggleAria": "測量單位",
+		"unitToggleAria": "{section} 的測量單位",
+		"navAria": "尺寸指南章節",
 		"empty": "目前尚無尺寸表。"
 	},
 	"productSubmission": {

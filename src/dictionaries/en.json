@@ -95,20 +95,13 @@
 	},
 	"sizeGuide": {
 		"sizeColumn": "SIZE",
-		"measurements": {
-			"bodyLength": "BODY LENGTH",
-			"chestWidth": "CHEST WIDTH",
-			"shoulderWidth": "SHOULDER WIDTH",
-			"sleeveLength": "SLEEVE LENGTH",
-			"waist": "WAIST",
-			"hip": "HIP",
-			"inseam": "INSEAM"
-		},
+		"measurementColumn": "MEASUREMENT",
 		"units": {
 			"cm": "CM",
 			"in": "IN"
 		},
-		"unitToggleAria": "Measurement unit",
+		"unitToggleAria": "Measurement unit for {section}",
+		"navAria": "Size guide sections",
 		"empty": "No size charts yet."
 	},
 	"productSubmission": {

@@ -60,7 +60,7 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 - `gTeamMember` — Team member profiles
 - `gLocation` — Event venues (referenced by `pEvent`; carries `address` + `geo` for structured data)
 - `gFaq` — Global FAQ entries (document-level i18n via `documentInternationalization`; referenced by the `faqList` module and listed on the FAQ page)
-- `gSizeChart` — Global garment size charts (deliberately **not** document-localized: measurements are locale-invariant, so numbers are stored once and only the fit `note` is translated via inline `internationalizedArrayText`). Referenced by `pProduct.sizeChart` and listed on `/size-guide`. Columns come from the preset vocabulary in `src/lib/size-measurements.ts`.
+- `gSizeChart` — Global garment size charts (deliberately **not** document-localized: measurements are locale-invariant, so numbers are stored once and only the text is translated via inline internationalized arrays — the fit `note` and each measurement's `label`). Referenced by `pProduct.sizeChart` and listed on `/size-guide`. Authoring mirrors the rendered table: `sizes[]` are the columns (free text, e.g. `XS…2XL`, or a single `One Size`) and each `rows[]` entry is **one measurement**, holding a `label` plus one `values[]` cell per size. A cell is `{ size, min, max? }`, so a chart mixes fit ranges (`34–36`) with single measurements (`32`) and both ends stay numeric for the cm/in toggle. **Cells are matched to columns by `size`, never by array position** — reordering or inserting a size can't shift a row's numbers under the wrong heading, and `values[]` order is irrelevant. A `Rule.custom` on `rows` blocks publishing unless every measurement covers exactly the chart's `sizes` (no gaps, strays, or repeats), so a typo'd size is a loud error rather than a phantom column. There is no preset measurement vocabulary — adding a measurement is content work, not a code change.
 
 **Localization:** Two locales (`en`, `zh_tw`) defined in `src/lib/i18n.ts`. Page/global docs are localized at the **document level** via the `documentInternationalization` plugin (`src/sanity/i18n-types.ts` lists translatable types; fetched per-locale via the `byLocale()` GROQ helper). Short, referenced strings (e.g. `gLocation.name`, `pEventStatus.title`, `settingsGeneral.alternateName`) use **inline `internationalizedArray`** instead, resolved with `coalesce(field[language == $locale][0].value, field[language == "en"][0].value)`.
 
@@ -89,8 +89,7 @@ Each page route follows this pattern:
 - `/[slug]` — Generic pages (`pGeneral`)
 - `/contact` — Contact page
 - `/faq` — FAQ page (`pFaq`; renders the full set of locale-matched `gFaq` entries)
-- `/size-guide` — Size guide (`pSizeGuide`; renders all `gSizeChart` entries ordered by `order`)
-- `/size-guide` — Size guide (`pSizeGuide`; renders all `gSizeChart` entries ordered by `order`)
+- `/size-guide` — Size guide (`pSizeGuide`; a sticky table-of-contents beside sections, each section rendering one tab per referenced chart. Section order drives the page — `gSizeChart.order` only sorts the Studio list)
 - `/curated` — Curated index; `/curated/products/[slug]`, `/curated/categories/[slug]`, `/curated/collections/[slug]`
 - `/events` — Events listing; `/events/[slug]` — single event
 - `/events-crew` — Event crew tracking (month-based with member filter)
@@ -124,7 +123,7 @@ Each page route follows this pattern:
 - `<CustomForm>` — Renders form fields from Sanity `formField` schema via controlled inputs.
 - `<JsonLd>` — Injects JSON-LD schema.org markup (site/Organization, Event, FAQPage, BreadcrumbList, ItemList).
 - `<FaqList>` — Renders an FAQ section (question headings + Portable Text answers) from resolved `gFaq` entries; used by the `faqList` module and the FAQ page.
-- `<SizeChartTable>` — Renders one `gSizeChart` as a table (built on `ui/Table`). Exports `isRenderable()` so callers gate empty states on the same condition it bails on. `stegaClean`s `columns` — see the note in the file about draft-mode encoding of primitive arrays.
+- `<SizeChartTable>` — Renders one `gSizeChart` as a table (built on `ui/Table`): sizes across the header row, one body row per measurement. Exports `isRenderable()` so callers gate empty states on the same condition it bails on. Uses `border-separate` and a column-count-derived `minWidth` so the label column can pin while values scroll — see the notes in the file before changing either.
 - `<BlogCard>` — Card component for blog post listings.
 - `<Caption>` — Shared caption for image/media blocks.
 - `<LocationCurrentTime>` — Displays location name with live local time.
@@ -134,7 +133,7 @@ Each page route follows this pattern:
 - `<Menu>` / `<MenuDropdown>` / `<MobileMenu>` — Navigation components.
 - `<DraftModeToast>` — Draft mode indicator banner.
 - `src/components/layout/` — Shell: `AdaSkip`, `Footer`, `Header`, `HeadTrackingCode`, `Main`, `ToolBar`.
-- `src/components/ui/` — Radix UI-based: Accordion, Button, Checkbox, Dialog, Field, Input, InputGroup, Label, Progress, RadioGroup, Select, Separator, Sheet, Table, Textarea, Tooltip.
+- `src/components/ui/` — Radix UI-based: Accordion, Badge, Button, Checkbox, Dialog, DropdownMenu, Field, Input, InputGroup, Label, Pagination, Progress, RadioGroup, Select, Separator, Sheet, Spinner, Table, Tabs, Textarea, Tooltip.
 - `src/components/PortableTable/` — Table rendering for Portable Text.
 
 ### Utilities (`src/lib/`)
@@ -142,7 +141,7 @@ Each page route follows this pattern:
 - `utils.ts` — `cn()` (Tailwind merge), format helpers (`formatDateUsStandard`, `formatUrl`, `formatHandleize`, etc.), validate helpers (`validateEmail`, `validateUsPhone`), array helpers (`arrayIntersection`, `arrayUniqueValues`, `arraySortObjVal*`), DOM helpers (`scrollDisable`, `scrollEnable`, `debounce`, `sleeper`).
 - `image-utils.ts` — `buildImageSrc()`, `buildImageSrcSet()`, `buildRgbaCssString()`.
 - `routes.ts` — `DOCUMENT_ROUTES`, `resolveHref()`, `buildDocumentHrefGroq()`, `checkIfLinkIsActive()`.
-- `size-measurements.ts` — `SIZE_MEASUREMENT_KEYS` (the size-chart column vocabulary, shared by the `gSizeChart` schema and `<SizeChartTable>`), `SIZE_MEASUREMENT_OPTIONS`, `resolveColumns()`. Display labels live in `src/dictionaries/*.json` under `sizeGuide.measurements`.
+- `size-measurements.ts` — size-chart units and number formatting: `SIZE_UNITS` (also the order the cm/in control renders in), `SIZE_UNIT_OPTIONS`, `resolveUnit()`, `formatMeasurement()`, `formatRange()` (renders `min–max`, or just `min` when `max` is unset).
 - `animate.ts` — Motion animation presets: `pageTransitionFade`, `fadeAnim`.
 - `defineEventJsonLd.ts` — schema.org `Event` JSON-LD builder (multi-location subEvents; emits endDate, PostalAddress + GeoCoordinates from `locationRef`, keywords, offers).
 - `defineSiteJsonLd.ts` — schema.org `Organization` + `SportsClub` and `WebSite` JSON-LD builder (areaServed, knowsLanguage, alternateName, address).
@@ -157,6 +156,8 @@ Each page route follows this pattern:
 
 - `useKey.js` — Keyboard event listener.
 - `useOutsideClick.js` — Click outside detection.
+- `useReveal.ts` — Entrance-reveal props for Motion components, honoring `prefers-reduced-motion`.
+- `useScrollSpy.ts` — IntersectionObserver scroll-spy for in-page section navs + horizontal-strip auto-scroll; also exports `readRootPxVar()`. Used by `EventStationsNav` and `SizeGuideNav`.
 - `useWindowDimensions.js` — Window size tracking.
 - `useWindowScroll.js` — Scroll position tracking.
 
