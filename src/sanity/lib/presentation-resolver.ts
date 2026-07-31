@@ -102,8 +102,7 @@ export const locations = {
 		locations: locationsForAll('pSizeGuide', 'Size Guide'),
 	}),
 	gSizeChart: defineLocations({
-		message:
-			'Size charts appear on the size guide page and on the products that reference them',
+		message: 'Size charts are listed on the size guide page',
 		tone: 'caution',
 		locations: locationsForAll('pSizeGuide', 'Size Guide'),
 	}),

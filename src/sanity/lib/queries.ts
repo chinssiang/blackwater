@@ -199,17 +199,20 @@ const gFaqItemFields = `
 `;
 
 // gSizeChart is deliberately NOT document-localized — the measurements are
-// locale-invariant, so the numbers are stored once. Only the fit note is
-// translated, via the inline internationalizedArray coalesce pattern.
-// `rows[]{...}` is splatted so adding a measurement to SIZE_MEASUREMENT_KEYS
-// needs no change here.
+// locale-invariant, so the numbers are stored once. Only the text fields are
+// translated, via the inline internationalizedArray coalesce pattern: the fit
+// note and each measurement's label.
 const gSizeChartFields = `
 	_id,
 	title,
 	"slug": slug.current,
 	unit,
-	columns,
-	rows[]{...},
+	sizes,
+	rows[]{
+		_key,
+		"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
+		values[]{ _key, size, min, max }
+	},
 	"note": coalesce(note[language == $locale][0].value, note[language == "en"][0].value)
 `;
 
@@ -483,8 +486,16 @@ export const pageSizeGuideQuery = defineQuery(`
 		${availableLocalesField},
 		intro,
 		footnote,
-		"charts": *[_type == "gSizeChart"] | order(order asc){
-			${gSizeChartFields}
+		sections[]{
+			_key,
+			title,
+			"charts": charts[]{
+				_key,
+				label,
+				"chart": chart->{
+					${gSizeChartFields}
+				}
+			}
 		}
 	}
 `);

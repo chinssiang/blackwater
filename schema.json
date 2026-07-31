@@ -91,6 +91,36 @@
   },
   {
     "type": "type",
+    "name": "pSizeGuide.reference",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "_ref": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          }
+        },
+        "_type": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string",
+            "value": "reference"
+          }
+        },
+        "_weak": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "boolean"
+          },
+          "optional": true
+        }
+      },
+      "dereferencesTo": "pSizeGuide"
+    }
+  },
+  {
+    "type": "type",
     "name": "pProductIndex.reference",
     "value": {
       "type": "object",
@@ -298,6 +328,10 @@
               {
                 "type": "inline",
                 "name": "pContact.reference"
+              },
+              {
+                "type": "inline",
+                "name": "pSizeGuide.reference"
               },
               {
                 "type": "inline",
@@ -1354,6 +1388,10 @@
                         },
                         {
                           "type": "inline",
+                          "name": "pSizeGuide.reference"
+                        },
+                        {
+                          "type": "inline",
                           "name": "pProductIndex.reference"
                         },
                         {
@@ -1636,6 +1674,10 @@
                                 },
                                 {
                                   "type": "inline",
+                                  "name": "pSizeGuide.reference"
+                                },
+                                {
+                                  "type": "inline",
                                   "name": "pProductIndex.reference"
                                 },
                                 {
@@ -1732,6 +1774,10 @@
                                 {
                                   "type": "inline",
                                   "name": "pContact.reference"
+                                },
+                                {
+                                  "type": "inline",
+                                  "name": "pSizeGuide.reference"
                                 },
                                 {
                                   "type": "inline",
@@ -2047,6 +2093,10 @@
               {
                 "type": "inline",
                 "name": "pContact.reference"
+              },
+              {
+                "type": "inline",
+                "name": "pSizeGuide.reference"
               },
               {
                 "type": "inline",
@@ -4261,6 +4311,10 @@
               {
                 "type": "inline",
                 "name": "pFaq.reference"
+              },
+              {
+                "type": "inline",
+                "name": "pSizeGuide.reference"
               },
               {
                 "type": "inline",
@@ -6610,6 +6664,36 @@
     }
   },
   {
+    "type": "type",
+    "name": "gSizeChart.reference",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "_ref": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          }
+        },
+        "_type": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string",
+            "value": "reference"
+          }
+        },
+        "_weak": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "boolean"
+          },
+          "optional": true
+        }
+      },
+      "dereferencesTo": "gSizeChart"
+    }
+  },
+  {
     "name": "pProduct",
     "type": "document",
     "attributes": {
@@ -7089,6 +7173,14 @@
               }
             }
           }
+        },
+        "optional": true
+      },
+      "sizeChart": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "gSizeChart.reference"
         },
         "optional": true
       },
@@ -9092,6 +9184,421 @@
               "optional": true
             }
           }
+        },
+        "optional": true
+      }
+    }
+  },
+  {
+    "name": "pSizeGuide",
+    "type": "document",
+    "attributes": {
+      "_id": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_type": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string",
+          "value": "pSizeGuide"
+        }
+      },
+      "_createdAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_updatedAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_rev": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "title": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "slug": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "slug"
+        },
+        "optional": true
+      },
+      "language": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "intro": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "sections": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "array",
+          "of": {
+            "type": "object",
+            "attributes": {
+              "title": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "string"
+                },
+                "optional": true
+              },
+              "charts": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "array",
+                  "of": {
+                    "type": "object",
+                    "attributes": {
+                      "chart": {
+                        "type": "objectAttribute",
+                        "value": {
+                          "type": "inline",
+                          "name": "gSizeChart.reference"
+                        },
+                        "optional": true
+                      },
+                      "label": {
+                        "type": "objectAttribute",
+                        "value": {
+                          "type": "string"
+                        },
+                        "optional": true
+                      },
+                      "_type": {
+                        "type": "objectAttribute",
+                        "value": {
+                          "type": "string",
+                          "value": "sizeGuideTab"
+                        }
+                      }
+                    },
+                    "rest": {
+                      "type": "object",
+                      "attributes": {
+                        "_key": {
+                          "type": "objectAttribute",
+                          "value": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "optional": true
+              },
+              "_type": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "string",
+                  "value": "sizeGuideSection"
+                }
+              }
+            },
+            "rest": {
+              "type": "object",
+              "attributes": {
+                "_key": {
+                  "type": "objectAttribute",
+                  "value": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "optional": true
+      },
+      "footnote": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "sharing": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "object",
+          "attributes": {
+            "disableIndex": {
+              "type": "objectAttribute",
+              "value": {
+                "type": "boolean"
+              },
+              "optional": true
+            },
+            "metaTitle": {
+              "type": "objectAttribute",
+              "value": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "metaDesc": {
+              "type": "objectAttribute",
+              "value": {
+                "type": "string"
+              },
+              "optional": true
+            },
+            "shareGraphic": {
+              "type": "objectAttribute",
+              "value": {
+                "type": "object",
+                "attributes": {
+                  "asset": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "inline",
+                      "name": "sanity.imageAsset.reference"
+                    },
+                    "optional": true
+                  },
+                  "media": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "unknown"
+                    },
+                    "optional": true
+                  },
+                  "hotspot": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "inline",
+                      "name": "sanity.imageHotspot"
+                    },
+                    "optional": true
+                  },
+                  "crop": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "inline",
+                      "name": "sanity.imageCrop"
+                    },
+                    "optional": true
+                  },
+                  "_type": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "string",
+                      "value": "image"
+                    }
+                  }
+                }
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": true
+      }
+    }
+  },
+  {
+    "name": "gSizeChart",
+    "type": "document",
+    "attributes": {
+      "_id": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_type": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string",
+          "value": "gSizeChart"
+        }
+      },
+      "_createdAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_updatedAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_rev": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "title": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "slug": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "slug"
+        },
+        "optional": true
+      },
+      "unit": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "union",
+          "of": [
+            {
+              "type": "string",
+              "value": "cm"
+            },
+            {
+              "type": "string",
+              "value": "in"
+            }
+          ]
+        },
+        "optional": true
+      },
+      "sizes": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "array",
+          "of": {
+            "type": "string"
+          }
+        },
+        "optional": true
+      },
+      "rows": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "array",
+          "of": {
+            "type": "object",
+            "attributes": {
+              "label": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "inline",
+                  "name": "internationalizedArrayString"
+                },
+                "optional": true
+              },
+              "values": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "array",
+                  "of": {
+                    "type": "object",
+                    "attributes": {
+                      "size": {
+                        "type": "objectAttribute",
+                        "value": {
+                          "type": "string"
+                        },
+                        "optional": true
+                      },
+                      "min": {
+                        "type": "objectAttribute",
+                        "value": {
+                          "type": "number"
+                        },
+                        "optional": true
+                      },
+                      "max": {
+                        "type": "objectAttribute",
+                        "value": {
+                          "type": "number"
+                        },
+                        "optional": true
+                      },
+                      "_type": {
+                        "type": "objectAttribute",
+                        "value": {
+                          "type": "string",
+                          "value": "sizeChartValue"
+                        }
+                      }
+                    },
+                    "rest": {
+                      "type": "object",
+                      "attributes": {
+                        "_key": {
+                          "type": "objectAttribute",
+                          "value": {
+                            "type": "string"
+                          }
+                        }
+                      }
+                    }
+                  }
+                },
+                "optional": true
+              },
+              "_type": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "string",
+                  "value": "sizeChartMeasurement"
+                }
+              }
+            },
+            "rest": {
+              "type": "object",
+              "attributes": {
+                "_key": {
+                  "type": "objectAttribute",
+                  "value": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "optional": true
+      },
+      "note": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayText"
+        },
+        "optional": true
+      },
+      "order": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "number"
         },
         "optional": true
       }

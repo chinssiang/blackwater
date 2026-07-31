@@ -48,7 +48,7 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 - `p-*` = page singletons or document types
 - `settings-*` = settings singletons (general, color, menus, integrations, redirect)
 
-**Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `gAuthor`, `pHome`, `pContact`, `pFaq`, `p404`, `pCuratedIndex`, `settingsGeneral`, `settingsColor`, `settingsMenu`, `settingsIntegrations`, `settingsRedirect`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
+**Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `gAuthor`, `pHome`, `pContact`, `pFaq`, `pSizeGuide`, `p404`, `pCuratedIndex`, `settingsGeneral`, `settingsColor`, `settingsMenu`, `settingsIntegrations`, `settingsRedirect`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
 
 **Document types** (multi-instance, slug-based):
 
@@ -60,10 +60,11 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 - `gTeamMember` — Team member profiles
 - `gLocation` — Event venues (referenced by `pEvent`; carries `address` + `geo` for structured data)
 - `gFaq` — Global FAQ entries (document-level i18n via `documentInternationalization`; referenced by the `faqList` module and listed on the FAQ page)
+- `gSizeChart` — Global garment size charts (deliberately **not** document-localized: measurements are locale-invariant, so numbers are stored once and only the text is translated via inline internationalized arrays — the fit `note` and each measurement's `label`). Referenced by `pProduct.sizeChart` and listed on `/size-guide`. Authoring mirrors the rendered table: `sizes[]` are the columns (free text, e.g. `XS…2XL`, or a single `One Size`) and each `rows[]` entry is **one measurement**, holding a `label` plus one `values[]` cell per size. A cell is `{ size, min, max? }`, so a chart mixes fit ranges (`34–36`) with single measurements (`32`) and both ends stay numeric for the cm/in toggle. **Cells are matched to columns by `size`, never by array position** — reordering or inserting a size can't shift a row's numbers under the wrong heading, and `values[]` order is irrelevant. A `Rule.custom` on `rows` blocks publishing unless every measurement covers exactly the chart's `sizes` (no gaps, strays, or repeats), so a typo'd size is a loud error rather than a phantom column. There is no preset measurement vocabulary — adding a measurement is content work, not a code change.
 
 **Localization:** Two locales (`en`, `zh_tw`) defined in `src/lib/i18n.ts`. Page/global docs are localized at the **document level** via the `documentInternationalization` plugin (`src/sanity/i18n-types.ts` lists translatable types; fetched per-locale via the `byLocale()` GROQ helper). Short, referenced strings (e.g. `gLocation.name`, `pEventStatus.title`, `settingsGeneral.alternateName`) use **inline `internationalizedArray`** instead, resolved with `coalesce(field[language == $locale][0].value, field[language == "en"][0].value)`.
 
-**GROQ queries** are centralized in `src/sanity/lib/queries.ts` using `defineQuery()` from `next-sanity`. Composed from reusable fragments: `baseFields`, `linkFields`, `menuFields`, `imageMetaFields`, `imageBlockMetaFields`, `callToActionFields`, `portableTextContentFields`, `freeformField`, `faqListField`, `gFaqItemFields`, `pageModuleFields`, `formField`.
+**GROQ queries** are centralized in `src/sanity/lib/queries.ts` using `defineQuery()` from `next-sanity`. Composed from reusable fragments: `baseFields`, `linkFields`, `menuFields`, `imageMetaFields`, `imageBlockMetaFields`, `callToActionFields`, `portableTextContentFields`, `freeformField`, `faqListField`, `gFaqItemFields`, `gSizeChartFields`, `pageModuleFields`, `formField`.
 
 **Data fetching** uses `sanityFetch` from `src/sanity/lib/live.ts` (wraps `defineLive` from `next-sanity`). This enables live content updates. Usage pattern in pages:
 
@@ -88,6 +89,7 @@ Each page route follows this pattern:
 - `/[slug]` — Generic pages (`pGeneral`)
 - `/contact` — Contact page
 - `/faq` — FAQ page (`pFaq`; renders the full set of locale-matched `gFaq` entries)
+- `/size-guide` — Size guide (`pSizeGuide`; a sticky table-of-contents beside sections, each section rendering one tab per referenced chart. Section order drives the page — `gSizeChart.order` only sorts the Studio list)
 - `/curated` — Curated index; `/curated/products/[slug]`, `/curated/categories/[slug]`, `/curated/collections/[slug]`
 - `/events` — Events listing; `/events/[slug]` — single event
 - `/events-crew` — Event crew tracking (month-based with member filter)
@@ -97,7 +99,9 @@ Each page route follows this pattern:
 
 ### Routing
 
-`src/lib/routes.ts` is the single source of truth for document type → URL resolution. `DOCUMENT_ROUTES` drives both `resolveHref()` (JS helper) and `buildDocumentHrefGroq()` (GROQ query builder). Add new routes here only — not scattered across files.
+`src/lib/routes.ts` is the single source of truth for document type → URL resolution. `DOCUMENT_ROUTES` drives both `resolveHref()` (JS helper) and `buildDocumentHrefGroq()` (GROQ query builder).
+
+**Adding a routable page type touches four hand-maintained lists** — `DOCUMENT_ROUTES` and the `resolvedHrefGroq` literal (both in `routes.ts`; the literal cannot call `buildDocumentHrefGroq()` because Sanity's static query extractor can't evaluate function calls inside template literals), plus `internalLink.to[]` in `schemaTypes/objects/link.ts` and `pageDocumentOrder` in `schemaTypes/components/LinkObject.tsx`. Miss either of the last two and the page never appears in the Studio link picker, so editors cannot add it to a menu or CTA and the `resolvedHrefGroq` case is dead. Also add the type to `SITEMAP_PAGES_QUERY` and `presentation-resolver.ts`.
 
 ### PageModules System
 
@@ -119,6 +123,7 @@ Each page route follows this pattern:
 - `<CustomForm>` — Renders form fields from Sanity `formField` schema via controlled inputs.
 - `<JsonLd>` — Injects JSON-LD schema.org markup (site/Organization, Event, FAQPage, BreadcrumbList, ItemList).
 - `<FaqList>` — Renders an FAQ section (question headings + Portable Text answers) from resolved `gFaq` entries; used by the `faqList` module and the FAQ page.
+- `<SizeChartTable>` — Renders one `gSizeChart` as a table (built on `ui/Table`): sizes across the header row, one body row per measurement. Exports `isRenderable()` so callers gate empty states on the same condition it bails on. Uses `border-separate` and a column-count-derived `minWidth` so the label column can pin while values scroll — see the notes in the file before changing either.
 - `<BlogCard>` — Card component for blog post listings.
 - `<Caption>` — Shared caption for image/media blocks.
 - `<LocationCurrentTime>` — Displays location name with live local time.
@@ -128,7 +133,7 @@ Each page route follows this pattern:
 - `<Menu>` / `<MenuDropdown>` / `<MobileMenu>` — Navigation components.
 - `<DraftModeToast>` — Draft mode indicator banner.
 - `src/components/layout/` — Shell: `AdaSkip`, `Footer`, `Header`, `HeadTrackingCode`, `Main`, `ToolBar`.
-- `src/components/ui/` — Radix UI-based: Accordion, Button, Checkbox, Dialog, Field, Input, InputGroup, Label, Progress, RadioGroup, Select, Separator, Sheet, Table, Textarea, Tooltip.
+- `src/components/ui/` — Radix UI-based: Accordion, Badge, Button, Checkbox, Dialog, DropdownMenu, Field, Input, InputGroup, Label, Pagination, Progress, RadioGroup, Select, Separator, Sheet, Spinner, Table, Tabs, Textarea, Tooltip.
 - `src/components/PortableTable/` — Table rendering for Portable Text.
 
 ### Utilities (`src/lib/`)
@@ -136,6 +141,7 @@ Each page route follows this pattern:
 - `utils.ts` — `cn()` (Tailwind merge), format helpers (`formatDateUsStandard`, `formatUrl`, `formatHandleize`, etc.), validate helpers (`validateEmail`, `validateUsPhone`), array helpers (`arrayIntersection`, `arrayUniqueValues`, `arraySortObjVal*`), DOM helpers (`scrollDisable`, `scrollEnable`, `debounce`, `sleeper`).
 - `image-utils.ts` — `buildImageSrc()`, `buildImageSrcSet()`, `buildRgbaCssString()`.
 - `routes.ts` — `DOCUMENT_ROUTES`, `resolveHref()`, `buildDocumentHrefGroq()`, `checkIfLinkIsActive()`.
+- `size-measurements.ts` — size-chart units and number formatting: `SIZE_UNITS` (also the order the cm/in control renders in), `SIZE_UNIT_OPTIONS`, `resolveUnit()`, `formatMeasurement()`, `formatRange()` (renders `min–max`, or just `min` when `max` is unset).
 - `animate.ts` — Motion animation presets: `pageTransitionFade`, `fadeAnim`.
 - `defineEventJsonLd.ts` — schema.org `Event` JSON-LD builder (multi-location subEvents; emits endDate, PostalAddress + GeoCoordinates from `locationRef`, keywords, offers).
 - `defineSiteJsonLd.ts` — schema.org `Organization` + `SportsClub` and `WebSite` JSON-LD builder (areaServed, knowsLanguage, alternateName, address).
@@ -150,6 +156,8 @@ Each page route follows this pattern:
 
 - `useKey.js` — Keyboard event listener.
 - `useOutsideClick.js` — Click outside detection.
+- `useReveal.ts` — Entrance-reveal props for Motion components, honoring `prefers-reduced-motion`.
+- `useScrollSpy.ts` — IntersectionObserver scroll-spy for in-page section navs + horizontal-strip auto-scroll; also exports `readRootPxVar()`. Used by `EventStationsNav` and `SizeGuideNav`.
 - `useWindowDimensions.js` — Window size tracking.
 - `useWindowScroll.js` — Scroll position tracking.
 

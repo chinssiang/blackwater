@@ -45,6 +45,7 @@ export function link({
 					{ type: 'pHome' },
 					{ type: 'pGeneral' },
 					{ type: 'pContact' },
+					{ type: 'pSizeGuide' },
 					{ type: 'pProductIndex' },
 					{ type: 'pProduct' },
 					{ type: 'pProductCategory' },

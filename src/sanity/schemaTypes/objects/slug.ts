@@ -28,6 +28,27 @@ export async function isUniqueOtherThanLanguage(
 	return result;
 }
 
+/**
+ * Uniqueness check for document types that are NOT document-localized (no
+ * `language` field), where `isUniqueOtherThanLanguage` would short-circuit to
+ * `true` and silently validate every duplicate. Matches on type + slug only.
+ */
+export async function isUniqueAcrossType(
+	slug: string,
+	context: SlugValidationContext
+) {
+	const { document, getClient } = context;
+	if (!document) return true;
+	const client = getClient({ apiVersion: '2025-02-19' });
+	const id = document._id.replace(/^drafts\./, '');
+	const query = `!defined(*[
+    !(sanity::versionOf($id)) &&
+    _type == $type &&
+    slug.current == $slug
+  ][0]._id)`;
+	return client.fetch(query, { id, type: document._type, slug });
+}
+
 type SlugFieldOptions = {
 	initialValue?: {_type: 'slug'; current: string};
 	readOnly?: boolean;
@@ -35,9 +56,18 @@ type SlugFieldOptions = {
 	// Hide the "View page" link (ViewPageField) for document types that have no
 	// front-end route — e.g. gTag — where the link would resolve to nothing.
 	hideViewPage?: boolean;
+	// Override the uniqueness check. Types without a `language` field must pass
+	// `isUniqueAcrossType`, because the default short-circuits to `true` for them.
+	isUnique?: typeof isUniqueOtherThanLanguage;
 };
 
-export function slug({ initialValue, readOnly, group, hideViewPage }: SlugFieldOptions = {}) {
+export function slug({
+	initialValue,
+	readOnly,
+	group,
+	hideViewPage,
+	isUnique = isUniqueOtherThanLanguage,
+}: SlugFieldOptions = {}) {
 	return defineField({
 		title: 'Slug (Page URL)',
 		name: 'slug',
@@ -49,7 +79,7 @@ export function slug({ initialValue, readOnly, group, hideViewPage }: SlugFieldO
 			// plain strings unchanged).
 			source: (doc) => pickLocalizedValue((doc as { title?: unknown }).title) ?? '',
 			maxLength: 200,
-			isUnique: isUniqueOtherThanLanguage,
+			isUnique,
 			slugify: (input) => {
 				if (!input) return '';
 				// Convert common ligatures to their regular character equivalents
