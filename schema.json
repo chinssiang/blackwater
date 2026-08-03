@@ -9594,13 +9594,6 @@
           "name": "internationalizedArrayText"
         },
         "optional": true
-      },
-      "order": {
-        "type": "objectAttribute",
-        "value": {
-          "type": "number"
-        },
-        "optional": true
       }
     }
   },

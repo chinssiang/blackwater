@@ -89,7 +89,7 @@ Each page route follows this pattern:
 - `/[slug]` — Generic pages (`pGeneral`)
 - `/contact` — Contact page
 - `/faq` — FAQ page (`pFaq`; renders the full set of locale-matched `gFaq` entries)
-- `/size-guide` — Size guide (`pSizeGuide`; a sticky table-of-contents beside sections, each section rendering one tab per referenced chart. Section order drives the page — `gSizeChart.order` only sorts the Studio list)
+- `/size-guide` — Size guide (`pSizeGuide`; a sticky table-of-contents beside sections, each section rendering one tab per referenced chart. Section order drives the page; the Studio list sorts by title)
 - `/curated` — Curated index; `/curated/products/[slug]`, `/curated/categories/[slug]`, `/curated/collections/[slug]`
 - `/events` — Events listing; `/events/[slug]` — single event
 - `/events-crew` — Event crew tracking (month-based with member filter)

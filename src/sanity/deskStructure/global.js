@@ -82,7 +82,7 @@ export const globalMenu = (S) => {
 								.title('Size Charts')
 								.filter(`_type == "gSizeChart"`)
 								.apiVersion(apiVersion)
-								.defaultOrdering([{ field: 'order', direction: 'asc' }])
+								.defaultOrdering([{ field: 'title', direction: 'asc' }])
 								.child((documentId) =>
 									S.document().documentId(documentId).schemaType('gSizeChart')
 								)

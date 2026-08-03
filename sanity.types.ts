@@ -1723,7 +1723,6 @@ export type GSizeChart = {
 		_key: string;
 	}>;
 	note?: InternationalizedArrayText;
-	order?: number;
 };
 
 export type SettingsBrandColors = {

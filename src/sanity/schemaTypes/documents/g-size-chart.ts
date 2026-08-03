@@ -212,21 +212,6 @@ export const gSizeChart = defineType({
 				'Optional note shown above this table, e.g. sizing-down advice or "One Size".',
 			type: 'internationalizedArrayText',
 		}),
-		defineField({
-			name: 'order',
-			title: 'Order',
-			type: 'number',
-			// Section order drives the page now, so this only sorts the Studio list.
-			description: 'Lower numbers appear first in the Studio list.',
-			initialValue: 0,
-		}),
-	],
-	orderings: [
-		{
-			title: 'Order',
-			name: 'orderAsc',
-			by: [{ field: 'order', direction: 'asc' }],
-		},
 	],
 	preview: {
 		select: { title: 'title', sizes: 'sizes', rows: 'rows', unit: 'unit' },
