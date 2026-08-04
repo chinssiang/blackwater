@@ -17,6 +17,8 @@ import { resolveHref } from '@/lib/routes';
 import { localizePath } from '@/lib/i18n';
 import ProductCard from '../../_components/ProductCard';
 import BackInStockForm from './BackInStockForm';
+import SizeChartDialog, { SIZE_GUIDE_LINK_CLASS } from './SizeChartDialog';
+import { isRenderable } from '@/components/SizeChartTable';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
@@ -55,13 +57,25 @@ export default function PageProductSingle({ data }: Props) {
 		defaultRelatedProducts,
 	} = data || {};
 
-	// Size charts are shared, non-localized documents; link to the matching
-	// anchor on the size guide page rather than duplicating the table here.
+	// One decision, made here: a chart with a table opens in place, and one
+	// without falls back to the size guide page. The dialog owns no part of this
+	// — a second copy of the predicate would drift and leave the animated
+	// wrapper below rendering around nothing.
 	const sizeGuideBase = resolveHref({ documentType: 'pSizeGuide', locale });
+	// The #slug anchor only resolves for charts the size guide page renders, which
+	// is exactly the set the fallback excludes — so the fallback links to the page
+	// itself, and only the dialog gets the anchored deep link.
 	const sizeGuideHref =
 		sizeGuideBase && sizeChart?.slug
 			? `${sizeGuideBase}#${sizeChart.slug}`
 			: null;
+	const sizeGuideControl = !sizeChart ? null : isRenderable(sizeChart) ? (
+		<SizeChartDialog chart={sizeChart} sizeGuideHref={sizeGuideHref} />
+	) : sizeGuideBase ? (
+		<Link href={sizeGuideBase} className={SIZE_GUIDE_LINK_CLASS}>
+			{productText.sizeGuide}
+		</Link>
+	) : null;
 
 	// `whenReachForIt` is a GROQ conditional-projection union (richText OR list
 	// variant); contentType isn't a true discriminant, so read it via `any`.
@@ -286,7 +300,7 @@ export default function PageProductSingle({ data }: Props) {
 						)
 					)}
 
-					{sizeGuideHref && (
+					{sizeGuideControl && (
 						<motion.div
 							className="mt-5"
 							{...reveal}
@@ -296,12 +310,7 @@ export default function PageProductSingle({ data }: Props) {
 								ease: [0, 0.71, 0.2, 1.01],
 							}}
 						>
-							<Link
-								href={sizeGuideHref}
-								className="t-l-1 uppercase text-foreground/65 underline decoration-foreground/25 underline-offset-4 transition-colors hover:text-foreground hover:decoration-foreground/60"
-							>
-								{productText.sizeGuide}
-							</Link>
+							{sizeGuideControl}
 						</motion.div>
 					)}
 

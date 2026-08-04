@@ -101,24 +101,25 @@ export default function SizeGuideNav({
 								{section.title}
 							</a>
 
-							{/* Chart names expand under the active section only, and only in
-							    the sidebar — they would wreck the mobile strip. These show the
-							    full chart title, not the short tab label. */}
-							{isActive && (
-								<ul className="mt-1 hidden lg:block">
-									{section.tabs.map((tab) => (
-										<li key={tab.value}>
-											<a
-												href={`#${tab.value}`}
-												onClick={(event) => navigateToHash(event, tab.value)}
-												className={cn(ITEM_CLASS, ITEM_IDLE, 'ml-3')}
-											>
-												{tab.title}
-											</a>
-										</li>
-									))}
-								</ul>
-							)}
+							{/* Every section lists its chart names, not just the active one:
+							    collapsing them would make the sidebar reflow under the reader
+							    as scrolling moves the active section, and would hide the charts
+							    of every other section. Sidebar only — they would wreck the
+							    mobile strip. These show the full chart title, not the short tab
+							    label. */}
+							<ul className="mt-1 hidden lg:block">
+								{section.tabs.map((tab) => (
+									<li key={tab.value}>
+										<a
+											href={`#${tab.value}`}
+											onClick={(event) => navigateToHash(event, tab.value)}
+											className={cn(ITEM_CLASS, ITEM_IDLE, 'ml-3')}
+										>
+											{tab.title}
+										</a>
+									</li>
+								))}
+							</ul>
 						</li>
 					);
 				})}

@@ -2,8 +2,7 @@
 
 import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { stripLocaleFromPath } from '@/lib/i18n';
-import { shouldHideGlobalNewsletter } from '@/lib/routes';
+import { isLightThemePath, shouldHideGlobalNewsletter } from '@/lib/routes';
 import * as gtag from '@/lib/gtag';
 import AdaSkip from './AdaSkip';
 import { Footer } from './Footer';
@@ -22,9 +21,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 		siteData || {};
 	const pathname = usePathname();
 	const gaID = siteData?.integrations?.gaIDs?.[0];
-	const { path: strippedPath } = stripLocaleFromPath(pathname);
-	const isProductsSection =
-		strippedPath === '/products' || strippedPath.startsWith('/products/');
+	const isLightSection = isLightThemePath(pathname);
 	const hideNewsletter = shouldHideGlobalNewsletter(pathname);
 
 	useEffect(() => {
@@ -58,7 +55,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 	return (
 		<LazyMotion features={domAnimation}>
 			<AdaSkip />
-			<Header data={headerData} isLightHeader={isProductsSection} />
+			<Header data={headerData} isLightHeader={isLightSection} />
 			<Main>
 				<div key={pathname} className="animate-page-in">
 					{children}

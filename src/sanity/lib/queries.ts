@@ -867,9 +867,7 @@ export const pageProductSingleQuery = defineQuery(`
 		${productBaseFields},
 		${availableLocalesField},
 		"sizeChart": sizeChart->{
-			_id,
-			title,
-			"slug": slug.current
+			${gSizeChartFields}
 		},
 		"relatedProducts": relatedProducts[]->{
 			${productCardFields}

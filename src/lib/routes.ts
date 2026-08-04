@@ -50,6 +50,21 @@ export function shouldHideGlobalNewsletter(pathname: string): boolean {
 	return HIDE_GLOBAL_NEWSLETTER_PATHS.includes(normalized);
 }
 
+// Routes that render on the light theme; everything else is dark. Each entry
+// matches itself and its descendants, so listing "/products" covers the whole
+// product subtree. Read by both ThemeProvider (which sets the html class) and
+// Layout (which flags the header) — keep it as the single predicate so the two
+// can never disagree about whether a page is light.
+const LIGHT_THEME_PATHS = ['/products', '/size-guide'];
+
+export function isLightThemePath(pathname: string): boolean {
+	const { path } = stripLocaleFromPath(pathname);
+	const normalized = path.replace(/\/+$/, '') || '/';
+	return LIGHT_THEME_PATHS.some(
+		(base) => normalized === base || normalized.startsWith(`${base}/`)
+	);
+}
+
 export function resolveHref({
 	documentType,
 	slug,

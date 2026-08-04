@@ -50,6 +50,7 @@
 		"whenReachForIt": "When do we reach for it?",
 		"whyWeChoseIt": "Why we chose it",
 		"sizeGuide": "Size guide",
+		"viewFullSizeGuide": "View full size guide",
 		"buyIt": "Buy it",
 		"buyAriaLabel": "Buy {product} (opens in a new tab)",
 		"thisProduct": "this product",
@@ -102,6 +103,7 @@
 		},
 		"unitToggleAria": "Measurement unit for {section}",
 		"navAria": "Size guide sections",
+		"tableRegionAria": "Size chart table, scrollable",
 		"empty": "No size charts yet."
 	},
 	"productSubmission": {

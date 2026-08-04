@@ -4,11 +4,26 @@ import * as React from 'react';
 
 import { cn } from '@/lib/utils';
 
-function Table({ className, ...props }: React.ComponentProps<'table'>) {
+function Table({
+	className,
+	containerProps,
+	...props
+}: React.ComponentProps<'table'> & {
+	/**
+	 * Props for the scroll container. A table wide enough to overflow needs
+	 * `tabIndex={0}` plus a `role`/label here, or keyboard users have no way to
+	 * scroll to the clipped columns.
+	 */
+	containerProps?: React.ComponentProps<'div'>;
+}) {
 	return (
 		<div
 			data-slot="table-container"
-			className={cn('relative w-full overflow-x-auto')}
+			{...containerProps}
+			className={cn(
+				'relative w-full overflow-x-auto',
+				containerProps?.className
+			)}
 		>
 			<table
 				data-slot="table"

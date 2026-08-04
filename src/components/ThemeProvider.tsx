@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { usePathname } from 'next/navigation';
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
-import { stripLocaleFromPath } from '@/lib/i18n';
+import { isLightThemePath } from '@/lib/routes';
 
 // next-themes (0.4.6, latest) injects its anti-flash theme <script> via
 // React.createElement. React 19 logs "Encountered a script tag while rendering
@@ -38,8 +38,7 @@ function ThemeProvider({
 	...props
 }: React.ComponentProps<typeof NextThemesProvider>) {
 	const pathname = usePathname();
-	const { path } = stripLocaleFromPath(pathname);
-	const isLight = path === '/products' || path.startsWith('/products/');
+	const isLight = isLightThemePath(pathname);
 
 	useSilenceNextThemesScriptWarning();
 

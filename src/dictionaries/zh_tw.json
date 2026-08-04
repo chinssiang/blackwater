@@ -50,6 +50,7 @@
 		"whenReachForIt": "我們何時會選用它？",
 		"whyWeChoseIt": "我們為什麼選擇它",
 		"sizeGuide": "尺寸指南",
+		"viewFullSizeGuide": "查看完整尺寸指南",
 		"buyIt": "購買",
 		"buyAriaLabel": "購買 {product}（在新分頁開啟）",
 		"thisProduct": "此商品",
@@ -96,6 +97,7 @@
 		},
 		"unitToggleAria": "{section} 的測量單位",
 		"navAria": "尺寸指南章節",
+		"tableRegionAria": "尺寸表，可捲動",
 		"empty": "目前尚無尺寸表。"
 	},
 	"productSubmission": {

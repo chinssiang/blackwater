@@ -232,7 +232,7 @@ export const pProduct = defineType({
 			type: 'reference',
 			to: [{ type: 'gSizeChart' }],
 			description:
-				'Adds a size guide link on the product page. Charts are shared, so several products can point at the same one.',
+				'Adds a size guide on the product page, opening this chart in a dialog. Charts are shared, so several products can point at the same one.',
 		}),
 		defineField({
 			title: 'Related Products',

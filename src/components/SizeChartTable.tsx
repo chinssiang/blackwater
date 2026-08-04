@@ -59,6 +59,15 @@ const TABLE_CLASS =
 // accessories chart to scroll sideways to reveal its single measurement.
 const LABEL_COLUMN_WIDTH = 120;
 const MIN_SIZE_COLUMN_WIDTH = 96;
+// ui/Table makes the table `w-full`, so without a ceiling a chart stretches to
+// whatever column it sits in and the values drift away from the labels they
+// belong to — a one-size accessories chart on the size guide page put its single
+// number 767px from its label. Cells hold two to five characters ("70", "27.6",
+// "34–36"), so 128px is generous for the content while keeping a row scannable
+// in one eye movement. Same derived shape as the floor above: the cap scales
+// with the column count, and a chart with enough sizes to exceed the container
+// simply never reaches it and scrolls as before.
+const MAX_SIZE_COLUMN_WIDTH = 128;
 const CELL_BORDER = 'border-r border-b border-foreground/10';
 // An opaque mix rather than `bg-muted` or `bg-foreground/5`: the dark theme's
 // --muted is a mid grey that reads as a heavy band against the near-black page,
@@ -85,12 +94,18 @@ const VALUE_CLASS =
  * page can gate its empty state on the same condition this component bails on,
  * instead of on how many documents were fetched.
  *
- * `some(Boolean)` rather than a length check on `sizes`: drafts render
+ * A cleaned truthiness test rather than a length check on `sizes`: drafts render
  * unvalidated, and a just-added, still-empty size entry (`sizes: ['']`) must
- * not earn a tab whose panel the component below then refuses to render.
+ * not earn a tab whose panel the component below then refuses to render. The
+ * stegaClean is load-bearing, not defensive — see the note on `cleanSizes`
+ * below: draft mode encodes metadata into `sizes[n]`, so a bare `Boolean('')`
+ * reads the encoding as content and calls an empty chart renderable.
  */
 export function isRenderable(chart: SizeChart): boolean {
-	return (chart.sizes ?? []).some(Boolean) && hasArrayValue(chart.rows);
+	return (
+		(chart.sizes ?? []).some((size) => Boolean(stegaClean(size))) &&
+		hasArrayValue(chart.rows)
+	);
 }
 
 export default function SizeChartTable({
@@ -162,9 +177,19 @@ export default function SizeChartTable({
 
 			<Table
 				className={TABLE_CLASS}
+				// A chart wider than its container scrolls sideways, and nothing
+				// inside the table is focusable, so the container has to be: without
+				// tabIndex a keyboard user cannot reach the clipped size columns.
+				containerProps={{
+					tabIndex: 0,
+					role: 'region',
+					'aria-label': t.tableRegionAria,
+				}}
 				style={{
 					minWidth:
 						LABEL_COLUMN_WIDTH + sizeColumns.length * MIN_SIZE_COLUMN_WIDTH,
+					maxWidth:
+						LABEL_COLUMN_WIDTH + sizeColumns.length * MAX_SIZE_COLUMN_WIDTH,
 				}}
 			>
 				<TableHeader>
