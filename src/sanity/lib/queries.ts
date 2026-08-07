@@ -557,8 +557,30 @@ export const pEventsQuery = defineQuery(`
 	}
 `);
 
+// /events-crew is an internal tool with no locale in its route, and
+// `teamAssignments` are locale-invariant -- but a translated event is a separate
+// document, so an event whose English and Chinese copies both carry assignments
+// gets listed once per copy. That is what rendered `132-rr` twice.
+//
+// Collapse to one document per slug: take the English source, and fall back to a
+// translation only when no English doc with that slug carries assignments, so a
+// translation-only event is still listed. Deliberately not `productLocaleFilter`
+// -- that one prefers $locale and falls back to English, which here would drop
+// translation-only events entirely.
+const crewSourceFilter = `(
+	language == "en"
+	|| !defined(language)
+	|| !(slug.current in *[
+		_type == "pEvent"
+		&& (language == "en" || !defined(language))
+		&& defined(teamAssignments)
+	].slug.current)
+)`;
+
 export const eventCrewMonthsQuery = defineQuery(`
-	*[_type == "pEvent" && defined(teamAssignments) && defined(eventDatetime.utc)] | order(eventDatetime.utc asc) {
+	*[_type == "pEvent" && defined(teamAssignments) && defined(eventDatetime.utc)
+		&& ${crewSourceFilter}
+	] | order(eventDatetime.utc asc) {
 		eventDatetime
 	}
 `);
@@ -567,6 +589,7 @@ export const eventCrewMembersQuery = defineQuery(`
 	*[_type == "gTeamMember" && _id in
 		*[_type == "pEvent" && defined(teamAssignments)
 			&& eventDatetime.utc >= $startDate && eventDatetime.utc < $endDate
+			&& ${crewSourceFilter}
 		].teamAssignments[].members[]._ref
 	] | order(coalesce(nickname, name) asc) {
 		_id,
@@ -581,6 +604,7 @@ export const eventCrewByMonthQuery = defineQuery(`
 	*[_type == "pEvent" && defined(teamAssignments)
 		&& eventDatetime.utc >= $startDate && eventDatetime.utc < $endDate
 		&& ($memberSlug == "" || $memberSlug in teamAssignments[].members[]->slug.current)
+		&& ${crewSourceFilter}
 	] | order(eventDatetime.utc asc) {
 		_id,
 		title,
