@@ -11,6 +11,7 @@ import { language } from '@/sanity/schemaTypes/objects/language';
 import { StarIcon, ImageIcon } from '@sanity/icons';
 import { defineArrayMember, defineField, defineType } from 'sanity';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
+import { ShopifyProductInput } from '@/sanity/schemaTypes/components/ShopifyProductInput';
 
 export const pProduct = defineType({
 	title: 'Product',
@@ -62,6 +63,7 @@ export const pProduct = defineType({
 					type: 'string',
 					description:
 						'The product handle from Shopify admin (the last part of the product URL, e.g. "waffle-knit-beanie"). Set it on every language version of this product.',
+					components: { input: ShopifyProductInput },
 					validation: (Rule) =>
 						Rule.custom((value) => {
 							if (!value) return true;
@@ -78,7 +80,17 @@ export const pProduct = defineType({
 			type: 'string',
 			description:
 				'e.g. $1,299 or From $49/mo. Fallback only when a Shopify product is linked above.',
-			validation: (Rule) => [Rule.required()],
+			validation: (Rule) => [
+				Rule.required(),
+				Rule.custom((value, context) => {
+					const handle = (
+						context.document as { shopify?: { handle?: string } } | undefined
+					)?.shopify?.handle;
+					if (handle && value)
+						return 'Linked to Shopify — the live price is shown instead; this value is only a fallback.';
+					return true;
+				}).warning(),
+			],
 		}),
 		defineField({
 			name: 'purchaseLink',
@@ -285,6 +297,7 @@ export const pProduct = defineType({
 			categoryTitle: 'categories.0.title',
 			mainImage: 'mainImage',
 			soldOut: 'soldOut',
+			shopifyHandle: 'shopify.handle',
 		},
 		prepare({
 			title = 'Untitled',
@@ -293,6 +306,7 @@ export const pProduct = defineType({
 			categoryTitle,
 			mainImage,
 			soldOut,
+			shopifyHandle,
 		}: Record<string, any>) {
 			const href = slug?.current
 				? resolveHref({
@@ -304,7 +318,7 @@ export const pProduct = defineType({
 			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
 			return {
 				title: tag ? `[${tag}] ${title}` : title,
-				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — ${href ?? '/products/(no slug)'}${soldOut ? ' · Sold out' : ''}`,
+				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — ${href ?? '/products/(no slug)'}${soldOut ? ' · Sold out' : ''}${shopifyHandle ? ' · 🔗 Shopify' : ''}`,
 				media: mainImage?.image.asset || ImageIcon,
 			};
 		},
