@@ -8,6 +8,7 @@ import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
 import JsonLd from '@/components/JsonLd';
+import { withLiveCardPrices } from '@/lib/shopify/product';
 import { PageProductsAll } from './_components/PageProductsAll';
 
 const PAGE_SIZE = 24;
@@ -51,11 +52,13 @@ export default async function Page({
 		{ name: dict.products.allProducts, path: localizePath('/products/all', locale) },
 	]);
 
+	const products = await withLiveCardPrices(data.products, locale);
+
 	return (
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
 			<PageProductsAll
-				data={data}
+				data={{ ...data, products }}
 				currentPage={page}
 				totalPages={totalPages}
 				total={data.total ?? 0}

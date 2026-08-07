@@ -1,10 +1,20 @@
 'use client';
 
 import Link from 'next/link';
+import { useMemo, useState } from 'react';
 import ImageBlock from '@/components/ImageBlock';
 import CustomPortableText from '@/components/CustomPortableText';
 import { motion } from 'motion/react';
 import type { PageProductSingleQueryResult } from 'sanity.types';
+import {
+	findVariantForSelection,
+	formatShopifyPrice,
+	hasOnlyDefaultVariant,
+	pickInitialVariant,
+	shopifyVariantUrl,
+	type ProductCommerce,
+} from '@/lib/shopify/types';
+import VariantPicker from './VariantPicker';
 import {
 	hasArrayValue,
 	appendReferralParams,
@@ -30,9 +40,11 @@ import {
 
 type Props = {
 	data: NonNullable<PageProductSingleQueryResult>;
+	/** Live Shopify data; null for unlinked products or when Shopify is unreachable. */
+	commerce: ProductCommerce | null;
 };
 
-export default function PageProductSingle({ data }: Props) {
+export default function PageProductSingle({ data, commerce }: Props) {
 	const reveal = useReveal();
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
@@ -56,6 +68,60 @@ export default function PageProductSingle({ data }: Props) {
 		relatedProducts,
 		defaultRelatedProducts,
 	} = data || {};
+
+	// --- Commerce: Shopify-linked products get live price/availability driven
+	// by the variant selection; unlinked ones keep the manual Sanity fields.
+	const initialVariant = useMemo(
+		() => (commerce ? pickInitialVariant(commerce.variants) : null),
+		[commerce]
+	);
+	const [selection, setSelection] = useState<Record<string, string>>(() =>
+		Object.fromEntries(
+			(initialVariant?.selectedOptions ?? []).map((o) => [o.name, o.value])
+		)
+	);
+	const selectedVariant = commerce
+		? findVariantForSelection(commerce.variants, selection)
+		: null;
+
+	const displayPrice = commerce
+		? formatShopifyPrice(
+				(selectedVariant ?? initialVariant)?.price ?? commerce.minPrice,
+				locale
+			)
+		: price;
+	const compareAtPrice = selectedVariant?.compareAtPrice;
+	const displayCompareAt =
+		commerce &&
+		compareAtPrice &&
+		Number(compareAtPrice.amount) >
+			Number((selectedVariant ?? initialVariant)?.price.amount)
+			? formatShopifyPrice(compareAtPrice, locale)
+			: null;
+
+	// Manual soldOut stays as an editorial override on top of live availability.
+	const liveUnavailable = commerce
+		? selectedVariant
+			? !selectedVariant.availableForSale
+			: !commerce.availableForSale
+		: false;
+	const isSoldOut = Boolean(soldOut) || liveUnavailable;
+
+	// An explicit purchaseLink wins (editors may deep-link a marketplace);
+	// otherwise linked products buy on Shopify with the variant preselected.
+	const buyUrl =
+		purchaseLink ||
+		(commerce
+			? shopifyVariantUrl(commerce.url, selectedVariant ?? initialVariant)
+			: null);
+
+	const showVariantPicker = commerce && !hasOnlyDefaultVariant(commerce);
+	// Carried into the Klaviyo back-in-stock event so restock campaigns can
+	// segment by the exact variant requested.
+	const backInStockTitle =
+		selectedVariant && selectedVariant.title !== 'Default Title'
+			? `${title ?? ''} — ${selectedVariant.title}`
+			: (title ?? '');
 
 	// One decision, made here: a chart with a table opens in place, and one
 	// without falls back to the size guide page. The dialog owns no part of this
@@ -224,7 +290,7 @@ export default function PageProductSingle({ data }: Props) {
 						{title}
 					</motion.h1>
 
-					{price && (
+					{displayPrice && (
 						<motion.p
 							className="t-spec font-semibold mt-5 text-foreground/75"
 							{...reveal}
@@ -234,11 +300,37 @@ export default function PageProductSingle({ data }: Props) {
 								ease: [0, 0.71, 0.2, 1.01],
 							}}
 						>
-							{price}
+							{displayPrice}
+							{displayCompareAt && (
+								<s className="ml-2 font-normal text-foreground/45">
+									{displayCompareAt}
+								</s>
+							)}
 						</motion.p>
 					)}
 
-					{soldOut ? (
+					{showVariantPicker && (
+						<motion.div
+							className="mt-6"
+							{...reveal}
+							transition={{
+								duration: 0.6,
+								delay: 0.22,
+								ease: [0, 0.71, 0.2, 1.01],
+							}}
+						>
+							<VariantPicker
+								options={commerce.options}
+								variants={commerce.variants}
+								selection={selection}
+								onSelect={(name, value) =>
+									setSelection((prev) => ({ ...prev, [name]: value }))
+								}
+							/>
+						</motion.div>
+					)}
+
+					{isSoldOut ? (
 						<motion.div
 							className="mt-6"
 							{...reveal}
@@ -257,12 +349,12 @@ export default function PageProductSingle({ data }: Props) {
 								{productText.soldOut}
 							</Button>
 							<BackInStockForm
-								productTitle={title ?? ''}
+								productTitle={backInStockTitle}
 								productSlug={slug ?? ''}
 							/>
 						</motion.div>
 					) : (
-						purchaseLink && (
+						buyUrl && (
 							<motion.div
 								className="mt-6"
 								{...reveal}
@@ -274,7 +366,7 @@ export default function PageProductSingle({ data }: Props) {
 							>
 								<Button asChild>
 									<a
-										href={appendReferralParams(purchaseLink, {
+										href={appendReferralParams(buyUrl, {
 											source: REFERRAL_SOURCE,
 											medium: 'referral',
 											campaign: 'curated-products',

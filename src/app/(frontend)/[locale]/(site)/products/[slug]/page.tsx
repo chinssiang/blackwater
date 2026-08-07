@@ -9,6 +9,12 @@ import {
 } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { type Locale } from '@/lib/i18n';
+import { getDictionary } from '@/lib/dictionary.server';
+import {
+	applyCardPrices,
+	getCardCommerce,
+	getProductCommerce,
+} from '@/lib/shopify/product';
 import PageProductSingle from './_components/PageProductSingle';
 
 type Props = {
@@ -49,5 +55,35 @@ export default async function Page({ params }: Props) {
 
 	if (!data) return <NotFoundContent locale={locale} />;
 
-	return <PageProductSingle data={data} />;
+	// Live Shopify data: full commerce for this product, card prices for the
+	// related grids. All soft-fail to the manual Sanity fields.
+	const [commerce, cardCommerce, dict] = await Promise.all([
+		getProductCommerce(data.shopifyHandle, locale as Locale),
+		getCardCommerce(
+			[
+				...(data.relatedProducts ?? []).map((p) => p.shopifyHandle),
+				...(data.defaultRelatedProducts ?? []).map((p) => p.shopifyHandle),
+			],
+			locale as Locale
+		),
+		getDictionary(locale as Locale),
+	]);
+
+	const pricedData = {
+		...data,
+		relatedProducts: applyCardPrices(
+			data.relatedProducts,
+			cardCommerce,
+			locale as Locale,
+			dict.products.fromPrice
+		),
+		defaultRelatedProducts: applyCardPrices(
+			data.defaultRelatedProducts,
+			cardCommerce,
+			locale as Locale,
+			dict.products.fromPrice
+		),
+	};
+
+	return <PageProductSingle data={pricedData} commerce={commerce} />;
 }

@@ -74,6 +74,8 @@
 			"new": "新品"
 		},
 		"soldOut": "已售完",
+		"fromPrice": "{price} 起",
+		"optionUnavailable": "{value}（已售完）",
 		"notify": {
 			"title": "補貨時通知我",
 			"emailLabel": "電子郵件",

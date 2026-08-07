@@ -1,4 +1,7 @@
+import { stegaClean } from '@sanity/client/stega';
 import { type Locale } from '@/lib/i18n';
+import { interpolate } from '@/lib/dictionary';
+import { getDictionary } from '@/lib/dictionary.server';
 import {
 	isShopifyConfigured,
 	shopifyStoreDomain,
@@ -6,6 +9,7 @@ import {
 } from './client';
 import {
 	LOCALE_SHOPIFY_CONTEXT,
+	formatShopifyPrice,
 	shopifyGidToId,
 	type CardCommerce,
 	type ProductCommerce,
@@ -124,9 +128,12 @@ export function shopifyProductTags(handle: string): string[] {
  * configured, the handle doesn't resolve, or the request fails.
  */
 export async function getProductCommerce(
-	handle: string | null | undefined,
+	rawHandle: string | null | undefined,
 	locale: Locale
 ): Promise<ProductCommerce | null> {
+	// Handles come from GROQ results, which carry invisible stega characters in
+	// draft mode — clean at the boundary or the Shopify lookup silently misses.
+	const handle = rawHandle ? stegaClean(rawHandle) : null;
 	if (!handle || !isShopifyConfigured()) return null;
 	try {
 		const data = await shopifyStorefrontFetch<{ product: GqlProduct | null }>({
@@ -185,7 +192,13 @@ export async function getCardCommerce(
 	locale: Locale
 ): Promise<Map<string, CardCommerce>> {
 	const result = new Map<string, CardCommerce>();
-	const unique = [...new Set(handles.filter((h): h is string => Boolean(h)))];
+	const unique = [
+		...new Set(
+			handles
+				.map((h) => (h ? stegaClean(h) : null))
+				.filter((h): h is string => Boolean(h))
+		),
+	];
 	if (unique.length === 0 || !isShopifyConfigured()) return result;
 
 	const chunks: string[][] = [];
@@ -222,4 +235,64 @@ export async function getCardCommerce(
 	);
 
 	return result;
+}
+
+type CardLike = {
+	shopifyHandle?: string | null;
+	price?: string | null;
+};
+
+function liveCardPrice(
+	card: CardCommerce,
+	locale: Locale,
+	fromTemplate: string
+): string {
+	const single = Number(card.minPrice.amount) === Number(card.maxPrice.amount);
+	const min = formatShopifyPrice(card.minPrice, locale);
+	return single ? min : interpolate(fromTemplate, { price: min });
+}
+
+/**
+ * Replaces each card's manual `price` string with its live Shopify price
+ * (formatted, "From X" for variant ranges). Cards without a resolvable handle
+ * keep their manual price — the shape is unchanged, so ProductCard needs no
+ * awareness of Shopify at all.
+ */
+export function applyCardPrices<T extends CardLike | null>(
+	products: ReadonlyArray<T> | null | undefined,
+	commerce: Map<string, CardCommerce>,
+	locale: Locale,
+	fromTemplate: string
+): T[] {
+	if (!products) return [];
+	if (commerce.size === 0) return [...products];
+	return products.map((product) => {
+		if (!product) return product;
+		const handle = product.shopifyHandle
+			? stegaClean(product.shopifyHandle)
+			: null;
+		const card = handle ? commerce.get(handle) : null;
+		if (!card) return product;
+		// Same shape with only `price` rewritten — safe for the generic.
+		return { ...product, price: liveCardPrice(card, locale, fromTemplate) } as T;
+	});
+}
+
+/**
+ * One-call convenience for pages with a single flat card array: fetch + apply.
+ * Pages with several arrays (index, product detail) should getCardCommerce()
+ * once over all handles and applyCardPrices() per array instead.
+ */
+export async function withLiveCardPrices<T extends CardLike | null>(
+	products: ReadonlyArray<T> | null | undefined,
+	locale: Locale
+): Promise<T[]> {
+	if (!products?.length) return products ? [...products] : [];
+	const commerce = await getCardCommerce(
+		products.map((p) => p?.shopifyHandle),
+		locale
+	);
+	if (commerce.size === 0) return [...products];
+	const dict = await getDictionary(locale);
+	return applyCardPrices(products, commerce, locale, dict.products.fromPrice);
 }

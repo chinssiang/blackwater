@@ -12,6 +12,7 @@ import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
 import JsonLd from '@/components/JsonLd';
+import { withLiveCardPrices } from '@/lib/shopify/product';
 import { type Locale, LOCALES } from '@/lib/i18n';
 import PageProductCategory from './_components/PageProductCategory';
 
@@ -63,10 +64,12 @@ export default async function Page({ params }: Props) {
 		{ name: cleanData?.title, path: resolveHref({ documentType: 'pProductCategory', slug, locale: locale as Locale }) },
 	]);
 
+	const products = await withLiveCardPrices(data.products, locale as Locale);
+
 	return (
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
-			<PageProductCategory data={data} />
+			<PageProductCategory data={{ ...data, products }} />
 		</>
 	);
 }

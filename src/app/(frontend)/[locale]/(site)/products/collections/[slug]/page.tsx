@@ -13,6 +13,7 @@ import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
 import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
+import { withLiveCardPrices } from '@/lib/shopify/product';
 import PageProductCollection from './_components/PageProductCollection';
 
 type Props = {
@@ -61,10 +62,12 @@ export default async function Page({ params }: Props) {
 		{ name: cleanData?.title, path: resolveHref({ documentType: 'pProductCollection', slug, locale: locale as Locale }) },
 	]);
 
+	const products = await withLiveCardPrices(data.products, locale as Locale);
+
 	return (
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
-			<PageProductCollection data={data} />
+			<PageProductCollection data={{ ...data, products }} />
 		</>
 	);
 }

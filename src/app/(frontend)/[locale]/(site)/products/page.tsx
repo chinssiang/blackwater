@@ -6,6 +6,8 @@ import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductIndexQuery } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { LOCALES, type Locale } from '@/lib/i18n';
+import { getDictionary } from '@/lib/dictionary.server';
+import { applyCardPrices, getCardCommerce } from '@/lib/shopify/product';
 import { PageProductIndex } from './_components/PageProductIndex';
 
 // Prerender both locale variants at build time so the heavy per-category
@@ -42,5 +44,43 @@ export default async function Page(props: Props) {
 
 	if (!data) return <NotFoundContent locale={locale} />;
 
-	return <PageProductIndex data={data} />;
+	// One batched Shopify lookup covers the "all products" grid and every
+	// collection strip; each array is then re-priced from the same map.
+	const [cardCommerce, dict] = await Promise.all([
+		getCardCommerce(
+			[
+				...(data.allProductsList ?? []).map((p) => p.shopifyHandle),
+				...(data.collections ?? []).flatMap(
+					(c) => c?.products?.map((p) => p.shopifyHandle) ?? []
+				),
+			],
+			locale as Locale
+		),
+		getDictionary(locale as Locale),
+	]);
+
+	const pricedData = {
+		...data,
+		allProductsList: applyCardPrices(
+			data.allProductsList,
+			cardCommerce,
+			locale as Locale,
+			dict.products.fromPrice
+		),
+		collections: (data.collections ?? []).map((collection) =>
+			collection
+				? {
+						...collection,
+						products: applyCardPrices(
+							collection.products,
+							cardCommerce,
+							locale as Locale,
+							dict.products.fromPrice
+						),
+					}
+				: collection
+		),
+	};
+
+	return <PageProductIndex data={pricedData} />;
 }

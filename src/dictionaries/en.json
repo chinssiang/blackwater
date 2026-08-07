@@ -80,6 +80,8 @@
 			"new": "New"
 		},
 		"soldOut": "Sold out",
+		"fromPrice": "From {price}",
+		"optionUnavailable": "{value} (sold out)",
 		"notify": {
 			"title": "Notify when back in stock",
 			"emailLabel": "Email address",
