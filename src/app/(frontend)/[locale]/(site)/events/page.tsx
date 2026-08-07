@@ -8,7 +8,7 @@ import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
 import { buildEventName } from '@/lib/buildEventName';
-import { formatRichDate } from '@/lib/event-date';
+import { getRichDateYearMonth } from '@/lib/event-date';
 import JsonLd from '@/components/JsonLd';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
 import { PageEvents, type EventListItem } from './_components/PageEvents';
@@ -121,9 +121,15 @@ async function EventsContent({ locale }: { locale: string }) {
 			acc: Record<string, (typeof eventList)[number][]>,
 			event: (typeof eventList)[number]
 		) => {
-			const key =
-				formatRichDate(event.eventDatetime, 'yyyy_MMMM').toLowerCase() ||
-				'unknown';
+			// `${year}_${month}` with a 0-based month, matching the keys
+			// /events-crew builds. Previously this was a *formatted display
+			// string* (`2025_december`) used as a data key, which only worked
+			// because no date-fns locale was passed -- pass one and the keys
+			// become localized month names, silently splitting the groups.
+			const yearMonth = getRichDateYearMonth(event.eventDatetime);
+			const key = yearMonth
+				? `${yearMonth.year}_${yearMonth.month}`
+				: 'unknown';
 
 			if (!acc[key]) {
 				acc[key] = [];
