@@ -1,4 +1,3 @@
-import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { language } from '@/sanity/schemaTypes/objects/language';
 import { TagsIcon } from '@sanity/icons';
@@ -19,7 +18,9 @@ export const pEventCategory = defineType({
 			type: 'reference',
 			to: [{ type: 'settingsBrandColors' }],
 		},
-		sharing(),
+		// No `sharing()`: pEventCategory has no route (it is absent from
+		// DOCUMENT_ROUTES and internalLink.to[]), so there is no page for the
+		// meta title/description, share graphic or noindex flag to apply to.
 	],
 	preview: {
 		select: {

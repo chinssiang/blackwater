@@ -1008,7 +1008,6 @@ export const pageEventSingleQuery = defineQuery(`
 		heroImage{${imageBlockMetaFields}},
 		highlights[]{label, value},
 		startEndLocation,
-		categories[]->{ _id, title, "slug": slug.current },
 		statusList[]{
 			_key,
 			link {
