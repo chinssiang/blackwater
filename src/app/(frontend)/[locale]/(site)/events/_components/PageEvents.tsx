@@ -22,6 +22,7 @@ import { cn, hasArrayValue } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
 import { localizePath, type Locale } from '@/lib/i18n';
+import { EVENTS_GRID_COLS } from './events-grid';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
 const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
@@ -174,8 +175,8 @@ export function PageEvents({ data }: PageEventsProps) {
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [displayEvents]);
 	const colStyle = isHideStatusColumn
-		? 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_minmax(0,1fr)]'
-		: 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_minmax(0,1fr)_230px]';
+		? EVENTS_GRID_COLS.withoutStatus
+		: EVENTS_GRID_COLS.withStatus;
 
 	const goToPreviousMonth = () => {
 		if (currentMonthIndex > 0) {
