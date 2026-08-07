@@ -61,9 +61,9 @@ export default async function Page({ params }: Props) {
 		getProductCommerce(data.shopifyHandle, locale as Locale),
 		getCardCommerce(
 			[
-				...(data.relatedProducts ?? []).map((p) => p.shopifyHandle),
-				...(data.defaultRelatedProducts ?? []).map((p) => p.shopifyHandle),
-			],
+				...(data.relatedProducts ?? []),
+				...(data.defaultRelatedProducts ?? []),
+			].map((p: { shopifyHandle?: string | null }) => p.shopifyHandle),
 			locale as Locale
 		),
 		getDictionary(locale as Locale),

@@ -167,6 +167,18 @@ Each page route follows this pattern:
 - `/draft-mode/enable` — Enables Sanity draft mode.
 - `/revalidate-tag` — On-demand ISR via tag invalidation.
 - `/view-page` — Page view tracking.
+- `/shopify/revalidate` — Shopify webhook receiver (HMAC-verified) that revalidates Storefront fetch tags.
+- `/shopify/search` — Admin-API product search proxy for the Studio's Shopify picker.
+
+### Shopify Integration (`src/lib/shopify/`)
+
+Products are **hybrid**: Sanity owns everything editorial (slug/routes, title, images, content, taxonomy, size charts, SEO, i18n) and Shopify owns commerce (price, compare-at, availability, variants, purchase URL). The only coupling is `pProduct.shopify.handle`, picked in the Studio via `ShopifyProductInput` (search UI backed by `/api/shopify/search`; degrades to a plain string field when `SHOPIFY_ADMIN_API_TOKEN` is unset). Handles must be set per language version of a product.
+
+- `types.ts` — client-safe types + pure helpers (`formatShopifyPrice`, variant selection/URL logic, `LOCALE_SHOPIFY_CONTEXT` mapping locales to Markets `@inContext` — `zh_tw` → TW market, `en` → store default). Client components import **only** from here.
+- `client.ts` — server-only Storefront GraphQL transport. Env is read at call time, so the whole integration is optional: without `SHOPIFY_STORE_DOMAIN`/`SHOPIFY_STOREFRONT_API_TOKEN`, everything renders from the manual Sanity fields.
+- `product.ts` — soft-failing server fetchers (`server-only` via its `getDictionary` import). `getProductCommerce(handle, locale)` powers the detail page; `getCardCommerce`/`applyCardPrices`/`withLiveCardPrices` batch-fetch listing-card prices (aliased `product(handle:)` lookups — the Storefront API has no by-handles query) and rewrite each card's `price` string in place so `ProductCard` stays Shopify-unaware. Handles are `stegaClean`ed at the boundary; a Shopify outage or unknown handle logs and falls back to manual fields, never 500s.
+
+Caching: every Storefront fetch is tagged `shopify` + `shopify:product:<handle>` with a 1-hour backstop TTL; `/api/shopify/revalidate` (register webhooks per its header comment) makes admin edits land in seconds. On the detail page, manual `soldOut` remains an editorial override on top of live availability, and `purchaseLink` overrides the Shopify buy URL (which otherwise carries `?variant=` from the picker). The variant picker (`VariantPicker.tsx`) keeps unavailable values selectable so the per-variant back-in-stock state stays reachable.
 
 ### Sanity Studio Structure
 
@@ -188,6 +200,16 @@ EMAIL_SERVER_PASSWORD
 EMAIL_SERVER_HOST
 EMAIL_SERVER_PORT
 KLAVIYO_PRIVATE_API_KEY     # Newsletter + product back-in-stock subscribe routes
+```
+
+Optional (Shopify integration — see `.env.example` for setup pointers):
+
+```
+SHOPIFY_STORE_DOMAIN        # your-store.myshopify.com
+SHOPIFY_STOREFRONT_API_TOKEN
+SHOPIFY_ADMIN_API_TOKEN     # read_products; Studio picker only
+SHOPIFY_WEBHOOK_SECRET      # webhook signing secret for /api/shopify/revalidate
+SHOPIFY_API_VERSION         # optional pin override (defaults in code)
 ```
 
 ### Type Generation

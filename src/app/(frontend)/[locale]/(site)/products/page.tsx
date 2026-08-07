@@ -38,6 +38,14 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 	});
 }
 
+// Next's build-time type check (unlike CLI tsc) bails to `any` on this
+// query's generated union, so the callback params below are annotated with
+// indexed-access types instead of relying on inference.
+type IndexData = NonNullable<
+	Awaited<ReturnType<typeof getCachedProductIndexData>>['data']
+>;
+type IndexCollection = NonNullable<IndexData['collections']>[number];
+
 export default async function Page(props: Props) {
 	const { locale } = await props.params;
 	const { data } = await getCachedProductIndexData(locale);
@@ -49,11 +57,11 @@ export default async function Page(props: Props) {
 	const [cardCommerce, dict] = await Promise.all([
 		getCardCommerce(
 			[
-				...(data.allProductsList ?? []).map((p) => p.shopifyHandle),
+				...(data.allProductsList ?? []),
 				...(data.collections ?? []).flatMap(
-					(c) => c?.products?.map((p) => p.shopifyHandle) ?? []
+					(c: IndexCollection) => c?.products ?? []
 				),
-			],
+			].map((p: { shopifyHandle?: string | null }) => p.shopifyHandle),
 			locale as Locale
 		),
 		getDictionary(locale as Locale),
@@ -67,7 +75,7 @@ export default async function Page(props: Props) {
 			locale as Locale,
 			dict.products.fromPrice
 		),
-		collections: (data.collections ?? []).map((collection) =>
+		collections: (data.collections ?? []).map((collection: IndexCollection) =>
 			collection
 				? {
 						...collection,

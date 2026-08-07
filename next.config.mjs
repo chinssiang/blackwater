@@ -1,8 +1,13 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 /** @type {import('next').NextConfig} */
 
 // NOTE: unsafe-inline is required for Next.js + GTM inline scripts.
 // To harden further, implement nonce-based CSP via Next.js proxy.
 const isDev = process.env.NODE_ENV === 'development';
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 const csp = [
 	"default-src 'self'",
@@ -37,6 +42,12 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+	// Pin the workspace root to this checkout. Without it, Next infers the root
+	// from the outermost lockfile, and builds inside a git worktree resolve
+	// modules (e.g. sanity.types) against the parent checkout's stale files.
+	turbopack: {
+		root: projectRoot,
+	},
 	allowedDevOrigins: ['192.168.0.109'],
 	experimental: {
 		// Enables React 19.2's <ViewTransition> for native page-navigation crossfades.
