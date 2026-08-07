@@ -6,6 +6,10 @@ import { pickLocalizedValue, LOCALE_SHORT_LABELS, isLocale } from '@/lib/i18n';
 import { BookIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
 import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
+import {
+	validateCrewOnSourceOnly,
+	validateEventTranslationParity,
+} from '@/sanity/schemaTypes/validation';
 import '@/sanity/schemaTypes/view-page-field-types';
 
 export const pEvent = defineType({
@@ -13,6 +17,12 @@ export const pEvent = defineType({
 	name: 'pEvent',
 	type: 'document',
 	icon: BookIcon,
+	// A translation is a separate document, so only its wording should differ.
+	// These keep the locale-invariant fields in step -- see validation.ts.
+	validation: (Rule) => [
+		Rule.custom(validateEventTranslationParity),
+		Rule.custom(validateCrewOnSourceOnly).warning(),
+	],
 	fieldsets: [
 		{
 			name: 'trail',
