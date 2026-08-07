@@ -731,6 +731,7 @@ const productCardFields = `
 	badge,
 	price,
 	purchaseLink,
+	"shopifyHandle": shopify.handle,
 	categories[]->{
 		_id,
 		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),

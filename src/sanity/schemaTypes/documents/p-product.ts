@@ -49,15 +49,43 @@ export const pProduct = defineType({
 		}),
 		customImage({ title: 'Main Image', name: 'mainImage' }),
 		defineField({
+			name: 'shopify',
+			title: 'Shopify',
+			type: 'object',
+			description:
+				'Link this product to Shopify. When linked, price, availability and the purchase button come live from Shopify, and the manual price / sold-out / purchase-link fields below are only used as fallbacks.',
+			options: { collapsible: true, collapsed: false },
+			fields: [
+				defineField({
+					name: 'handle',
+					title: 'Product handle',
+					type: 'string',
+					description:
+						'The product handle from Shopify admin (the last part of the product URL, e.g. "waffle-knit-beanie"). Set it on every language version of this product.',
+					validation: (Rule) =>
+						Rule.custom((value) => {
+							if (!value) return true;
+							if (value !== value.trim())
+								return 'Remove leading/trailing spaces';
+							if (/\s/.test(value)) return 'Handles cannot contain spaces';
+							return true;
+						}),
+				}),
+			],
+		}),
+		defineField({
 			name: 'price',
 			type: 'string',
-			description: 'e.g. $1,299 or From $49/mo',
+			description:
+				'e.g. $1,299 or From $49/mo. Fallback only when a Shopify product is linked above.',
 			validation: (Rule) => [Rule.required()],
 		}),
 		defineField({
 			name: 'purchaseLink',
 			title: 'Purchase Link',
 			type: 'url',
+			description:
+				'Overrides the Shopify product URL when set; required for products not linked to Shopify.',
 		}),
 		defineField({
 			name: 'soldOut',
@@ -65,7 +93,7 @@ export const pProduct = defineType({
 			type: 'boolean',
 			initialValue: false,
 			description:
-				'When on, the purchase button becomes a disabled "Sold out" state and a "Notify when back in stock" form appears.',
+				'When on, the purchase button becomes a disabled "Sold out" state and a "Notify when back in stock" form appears. Shopify-linked products get this automatically from live availability; the toggle stays as a manual override.',
 		}),
 		defineField({
 			name: 'badge',
