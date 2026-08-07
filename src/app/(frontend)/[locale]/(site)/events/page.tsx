@@ -11,19 +11,9 @@ import { buildEventName } from '@/lib/buildEventName';
 import { formatRichDate } from '@/lib/event-date';
 import JsonLd from '@/components/JsonLd';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
-import type { RichDate } from 'sanity.types';
-import { PageEvents } from './_components/PageEvents';
+import { PageEvents, type EventListItem } from './_components/PageEvents';
 
 const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
-
-type EventListItem = {
-	title?: string;
-	subtitle?: string;
-	slug?: string;
-	location?: string;
-	locationRef?: { name?: string | null } | null;
-	eventDatetime?: RichDate | null;
-};
 
 function defineEventsItemListJsonLd(
 	eventList: Array<EventListItem>,

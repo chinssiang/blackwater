@@ -5,7 +5,7 @@ import CustomLink from '@/components/CustomLink';
 import { enUS, zhTW } from 'date-fns/locale';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
-import type { PEvent, RichDate } from 'sanity.types';
+import type { PEventsQueryResult, RichDate } from 'sanity.types';
 import {
 	formatRichDate,
 	getRichDateInstant,
@@ -80,10 +80,13 @@ function getDaysUntilEvent(
 	return null;
 }
 
+type EventsData = NonNullable<PEventsQueryResult>;
+export type EventListItem = EventsData['eventList'][number];
+
 interface PageEventsProps {
-	data: PEvent & {
+	data: EventsData & {
 		groupedEvents: {
-			[key: string]: PEvent[];
+			[key: string]: EventListItem[];
 		};
 	};
 }
@@ -119,7 +122,7 @@ export function PageEvents({ data }: PageEventsProps) {
 					year: yearMonth.year,
 					date: instant,
 					firstEventDatetime: firstEvent.eventDatetime,
-					events: events as PEvent[],
+					events,
 				};
 			})
 			.filter((item): item is NonNullable<typeof item> => item !== null)
@@ -297,11 +300,9 @@ export function PageEvents({ data }: PageEventsProps) {
 							dateStatus,
 							location,
 							locationLink,
+							locationRef,
 						} = item || {};
 
-						const locationRef = (item as any)?.locationRef as
-							| { name?: string | null; mapLink?: string | null }
-							| undefined;
 						const displayLocation = locationRef?.name || location;
 						const displayLocationLink = locationRef?.mapLink || locationLink;
 
@@ -413,7 +414,7 @@ export function PageEvents({ data }: PageEventsProps) {
 										/>
 									)}
 									{hasArrayValue(statusList) &&
-										statusList.map((item: any) => (
+										statusList.map((item) => (
 											<StatusItem
 												key={item._key}
 												data={item}

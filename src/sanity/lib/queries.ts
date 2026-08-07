@@ -510,79 +510,50 @@ export const pageNewsletterQuery = defineQuery(`
 	}
 `);
 
+// Row projection for the /events index. Deliberately *not* built on baseFields:
+// the listing renders neither `sharing` nor `categories`, and baseFields' sharing
+// block re-scans settingsGeneral three times per row, so splicing it in here cost
+// ~3x the GROQ time and ~2x the payload for fields nothing displays. Keep this in
+// sync with what PageEvents actually reads — if a row starts showing a new field,
+// add it here rather than reaching back for baseFields.
+const eventListItemFields = `
+	_id,
+	title,
+	"slug": slug.current,
+	subtitle,
+	eventDatetime,
+	dateStatus,
+	location,
+	locationLink,
+	locationRef->{
+		"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
+		mapLink,
+	},
+	statusList[]{
+		_key,
+		link {
+			${linkFields}
+		},
+		eventStatus-> {
+			_id,
+			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+			statusTextColor->{...color},
+			statusBgColor->{...color}
+		}
+	}
+`;
+
 export const pEventsQuery = defineQuery(`
 	${byLocale('pEvents')}[0]{
 		${baseFields},
 		${availableLocalesField},
-		"eventList": (
-			*[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff]{
-				${baseFields},
-				subtitle,
-				eventDatetime,
-				dateStatus,
-				location,
-				locationLink,
-				locationRef->{
-					"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
-					mapLink,
-				},
-				categories[]-> {
-					_id,
-					title,
-					"slug": slug.current,
-					categoryColor->{...color}
-				},
-				statusList[]{
-					_key,
-					link {
-						${linkFields}
-					},
-					eventStatus-> {
-						_id,
-						"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-						"slug": slug.current,
-						statusTextColor->{...color},
-						statusBgColor->{...color}
-					}
-				}
-			}
-			+ *[
-				_type == "pEvent"
-				&& (language == "en" || !defined(language))
-				&& eventDatetime.utc >= $cutoff
-				&& !(slug.current in *[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff].slug.current)
-			]{
-				${baseFields},
-				subtitle,
-				eventDatetime,
-				dateStatus,
-				location,
-				locationLink,
-				locationRef->{
-					"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
-					mapLink,
-				},
-				categories[]-> {
-					_id,
-					title,
-					"slug": slug.current,
-					categoryColor->{...color}
-				},
-				statusList[]{
-					_key,
-					link {
-						${linkFields}
-					},
-					eventStatus-> {
-						_id,
-						"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-						"slug": slug.current,
-						statusTextColor->{...color},
-						statusBgColor->{...color}
-					}
-				}
-			}
-		) | order(eventDatetime.utc asc),
+		"eventList": *[
+			_type == "pEvent"
+			&& eventDatetime.utc >= $cutoff
+			&& ${productLocaleFilter('pEvent')}
+		] | order(eventDatetime.utc asc) {
+			${eventListItemFields}
+		},
 	}
 `);
 
