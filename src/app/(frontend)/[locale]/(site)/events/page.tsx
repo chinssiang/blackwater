@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
+import { Suspense, cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pEventsQuery } from '@/sanity/lib/queries';
@@ -12,6 +12,7 @@ import { formatRichDate } from '@/lib/event-date';
 import JsonLd from '@/components/JsonLd';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
 import { PageEvents, type EventListItem } from './_components/PageEvents';
+import { EventsSkeleton } from './_components/EventsSkeleton';
 
 const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 
@@ -84,8 +85,32 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 	});
 }
 
+// `sanityFetch` reads draftMode() internally, which opts this route out of
+// static rendering -- so the listing is refetched on every request and the
+// browser used to sit on the previous page for the whole round trip.
+// Suspending here lets the shell paint the skeleton and stream the table in
+// behind it.
+//
+// Scoped in-page rather than via loading.tsx, which would also wrap
+// /events/[slug] with this list-shaped skeleton.
+//
+// Ceiling worth knowing: the shell still cannot flush until [locale]/layout.tsx
+// resolves siteDataQuery, so the skeleton appears no earlier than that. This
+// boundary buys time only while the events fetch is the slower of the two --
+// measured 600ms (skeleton) vs 2s (table) with the listing artificially
+// delayed. Making the *first* paint faster is a layout-level change, not one
+// that belongs here.
 export default async function Page(props: Props) {
 	const { locale } = await props.params;
+
+	return (
+		<Suspense fallback={<EventsSkeleton />}>
+			<EventsContent locale={locale} />
+		</Suspense>
+	);
+}
+
+async function EventsContent({ locale }: { locale: string }) {
 	const { data } = await getCachedEventsData(locale);
 
 	if (!data) return <NotFoundContent locale={locale} />;

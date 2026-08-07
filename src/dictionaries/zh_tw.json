@@ -36,6 +36,7 @@
 			"other": "{count} 天後"
 		},
 		"emptyMonth": "本月暫無活動",
+		"loading": "活動載入中",
 		"dateFormat": "yyyy/MM/dd (iii) HH:mm",
 		"monthYearFormat": "yyyy年M月"
 	},
