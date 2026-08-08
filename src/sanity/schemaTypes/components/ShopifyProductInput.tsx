@@ -106,7 +106,13 @@ export function ShopifyProductInput(props: StringInputProps) {
 					setUnconfigured(true);
 					return;
 				}
-				const product = body.products?.[0] ?? null;
+				// The lookup goes through Shopify's tokenized search index, so a
+				// near-miss handle can come back as a confident hit. The storefront
+				// resolves handles by exact match, so accept nothing less here —
+				// otherwise the Studio shows a healthy link for a handle the live
+				// page can't resolve.
+				const match = body.products?.[0];
+				const product = match?.handle === value ? match : null;
 				setHandleLookup({
 					for: value,
 					product,

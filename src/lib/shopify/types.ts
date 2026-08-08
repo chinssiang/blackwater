@@ -67,10 +67,19 @@ export function shopifyGidToId(gid: string): string {
 	return gid.slice(gid.lastIndexOf('/') + 1);
 }
 
+// Currencies CLDR renders as a bare "$" in their own locale — correct for a
+// local reader, but it reads as USD next to the other locale of the same site
+// (zh-TW gives "$1,299" where en gives "NT$1,299"). No `currencyDisplay` value
+// produces the disambiguated form in both, so pin the symbol explicitly.
+const CURRENCY_SYMBOL_OVERRIDES: Record<string, string> = {
+	TWD: 'NT$',
+};
+
 /**
  * Formats a Shopify money value for display. Whole amounts drop the fraction
  * (TWD prices read "NT$1,299", not "NT$1,299.00") while fractional amounts
- * keep two digits (USD "$49.99").
+ * keep both digits (USD "$49.90" — min and max must move together, or Intl
+ * trims the trailing zero to "$49.9").
  */
 export function formatShopifyPrice(
 	money: ShopifyMoney,
@@ -78,14 +87,20 @@ export function formatShopifyPrice(
 ): string {
 	const amount = Number(money.amount);
 	if (!Number.isFinite(amount)) return '';
-	const wholeAmount = amount % 1 === 0;
+	const fractionDigits = amount % 1 === 0 ? 0 : 2;
 	try {
-		return new Intl.NumberFormat(htmlLangFor(locale), {
+		const formatter = new Intl.NumberFormat(htmlLangFor(locale), {
 			style: 'currency',
 			currency: money.currencyCode,
-			minimumFractionDigits: 0,
-			maximumFractionDigits: wholeAmount ? 0 : 2,
-		}).format(amount);
+			minimumFractionDigits: fractionDigits,
+			maximumFractionDigits: fractionDigits,
+		});
+		const override = CURRENCY_SYMBOL_OVERRIDES[money.currencyCode];
+		if (!override) return formatter.format(amount);
+		return formatter
+			.formatToParts(amount)
+			.map((part) => (part.type === 'currency' ? override : part.value))
+			.join('');
 	} catch {
 		// Unknown currency code — degrade to a readable raw value.
 		return `${money.amount} ${money.currencyCode}`;
@@ -132,11 +147,27 @@ export function findVariantForSelection(
 }
 
 /**
- * Initial picker state: the first available variant, or the first variant at
- * all when everything is sold out (so the sold-out price still shows).
+ * Initial picker state: the cheapest available variant, or the first variant
+ * at all when everything is sold out (so the sold-out price still shows).
+ *
+ * Cheapest rather than first-in-position so the opening price agrees with the
+ * "From <min>" a listing card derives from `priceRange.minVariantPrice` —
+ * position order would let a card advertise a price the page never shows even
+ * with nothing sold out. (They still differ when the cheapest variant alone is
+ * sold out: the card states the product's floor, the page states what you can
+ * actually buy.)
  */
 export function pickInitialVariant(
 	variants: ShopifyVariant[]
 ): ShopifyVariant | null {
-	return variants.find((v) => v.availableForSale) ?? variants[0] ?? null;
+	const cheapestAvailable = variants
+		.filter((v) => v.availableForSale)
+		.reduce<ShopifyVariant | null>(
+			(cheapest, v) =>
+				!cheapest || Number(v.price.amount) < Number(cheapest.price.amount)
+					? v
+					: cheapest,
+			null
+		);
+	return cheapestAvailable ?? variants[0] ?? null;
 }

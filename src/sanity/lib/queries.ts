@@ -842,7 +842,7 @@ export const pageProductIndexQuery = defineQuery(`
 				coverImage {
 					${imageBlockMetaFields}
 				},
-				"products": products[0...8]->{
+				"products": products[defined(@->)][0...8]->{
 					${productCardFields}
 				}
 			}
@@ -870,7 +870,7 @@ export const pageProductSingleQuery = defineQuery(`
 		"sizeChart": sizeChart->{
 			${gSizeChartFields}
 		},
-		"relatedProducts": relatedProducts[]->{
+		"relatedProducts": relatedProducts[defined(@->)]->{
 			${productCardFields}
 		},
 		"defaultRelatedProducts": *[_type == "pProduct"
@@ -900,7 +900,7 @@ export const pageProductCollectionSingleQuery = defineQuery(`
 		${baseFields},
 		${availableLocalesField},
 		description,
-		"products": products[]->{
+		"products": products[defined(@->)]->{
 			${productCardFields}
 		},
 		${productCategoriesFields}

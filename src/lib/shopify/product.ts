@@ -21,9 +21,12 @@ import {
 // and the page renders from the manual Sanity fallback fields — commerce data
 // being unreachable must never 500 a product page.
 
-// Backstop TTL. Webhook-driven revalidateTag() is the real freshness
-// mechanism; this only bounds staleness if webhooks are missed.
-const REVALIDATE_SECONDS = 3600;
+// Webhook-driven revalidateTag() is the freshness mechanism. Deliberately not
+// a TTL: Next takes the minimum revalidate across every fetch on a route, so
+// any number here would also drop the whole page from tag-only invalidation
+// (sanityFetch uses `false`) to that interval, expiring hundreds of
+// prerendered product pages on a clock instead of on an actual store change.
+const REVALIDATE: false = false;
 
 // Aliased product(handle:) lookups per request — one round trip per chunk
 // while keeping well under Next's 128-tags-per-fetch cache limit.
@@ -139,7 +142,7 @@ export async function getProductCommerce(
 		const data = await shopifyStorefrontFetch<{ product: GqlProduct | null }>({
 			query: PRODUCT_COMMERCE_QUERY,
 			variables: { handle, ...contextVariables(locale) },
-			next: { revalidate: REVALIDATE_SECONDS, tags: shopifyProductTags(handle) },
+			next: { revalidate: REVALIDATE, tags: shopifyProductTags(handle) },
 		});
 		if (!data.product) {
 			console.warn(`[shopify] no product for handle "${handle}"`);
@@ -215,14 +218,22 @@ export async function getCardCommerce(
 					query: buildCardQuery(chunk),
 					variables: contextVariables(locale),
 					next: {
-						revalidate: REVALIDATE_SECONDS,
+						revalidate: REVALIDATE,
 						tags: ['shopify', ...chunk.map((h) => `shopify:product:${h}`)],
 					},
 				});
-				for (const product of Object.values(data)) {
-					if (!product) continue;
-					result.set(product.handle, {
-						handle: product.handle,
+				for (const [alias, product] of Object.entries(data)) {
+					// Key by the handle we asked for, not the one Shopify echoes:
+					// callers look the result up by the handle stored in Sanity, so
+					// any canonicalization on Shopify's side would be a silent miss.
+					const requested = chunk[Number(alias.slice(1))] ?? product?.handle;
+					if (!requested) continue;
+					if (!product) {
+						console.warn(`[shopify] no product for handle "${requested}"`);
+						continue;
+					}
+					result.set(requested, {
+						handle: requested,
 						availableForSale: product.availableForSale,
 						minPrice: product.priceRange.minVariantPrice,
 						maxPrice: product.priceRange.maxVariantPrice,

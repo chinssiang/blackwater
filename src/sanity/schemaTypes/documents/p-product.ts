@@ -80,17 +80,18 @@ export const pProduct = defineType({
 			type: 'string',
 			description:
 				'e.g. $1,299 or From $49/mo. Fallback only when a Shopify product is linked above.',
-			validation: (Rule) => [
-				Rule.required(),
+			// Required only while there's no Shopify link — once one exists the
+			// live price is authoritative and this field is an unused fallback,
+			// so demanding a value here would leave linked products permanently
+			// un-publishable (or permanently warned at).
+			validation: (Rule) =>
 				Rule.custom((value, context) => {
 					const handle = (
 						context.document as { shopify?: { handle?: string } } | undefined
 					)?.shopify?.handle;
-					if (handle && value)
-						return 'Linked to Shopify — the live price is shown instead; this value is only a fallback.';
+					if (!handle && !value) return 'Required';
 					return true;
-				}).warning(),
-			],
+				}),
 		}),
 		defineField({
 			name: 'purchaseLink',

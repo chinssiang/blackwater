@@ -81,9 +81,11 @@ export default function VariantPicker({
 										selected
 											? 'border-foreground bg-foreground text-background'
 											: 'border-foreground/25 text-foreground/80 hover:border-foreground/60',
+										// These stay interactive (not disabled), so they must meet
+										// AA text contrast — /35 lands near 3:1 on the dark theme.
 										!available &&
 											!selected &&
-											'border-foreground/15 text-foreground/35 line-through decoration-1'
+											'border-foreground/30 text-foreground/60 line-through decoration-1'
 									)}
 								>
 									{value}

@@ -75,47 +75,70 @@ export default function PageProductSingle({ data, commerce }: Props) {
 		() => (commerce ? pickInitialVariant(commerce.variants) : null),
 		[commerce]
 	);
-	const [selection, setSelection] = useState<Record<string, string>>(() =>
-		Object.fromEntries(
-			(initialVariant?.selectedOptions ?? []).map((o) => [o.name, o.value])
-		)
+	const initialSelection = useMemo(
+		() =>
+			Object.fromEntries(
+				(initialVariant?.selectedOptions ?? []).map((o) => [o.name, o.value])
+			),
+		[initialVariant]
 	);
+	const [selection, setSelection] =
+		useState<Record<string, string>>(initialSelection);
+	// The picker is seeded from `commerce`, which arrives as a prop — so when a
+	// refresh swaps in a different product (or fills in commerce that was null
+	// because Shopify was unreachable on first render), the seed has to be
+	// re-applied or the picker keeps a selection belonging to the old payload.
+	// Keyed on the handle so an ordinary re-render never clobbers the shopper's
+	// in-progress choice.
+	const [selectionKey, setSelectionKey] = useState(commerce?.handle ?? null);
+	if (selectionKey !== (commerce?.handle ?? null)) {
+		setSelectionKey(commerce?.handle ?? null);
+		setSelection(initialSelection);
+	}
+
 	const selectedVariant = commerce
 		? findVariantForSelection(commerce.variants, selection)
 		: null;
+	const showVariantPicker = commerce && !hasOnlyDefaultVariant(commerce);
+	// Shopify catalogs are routinely sparse (Sand/M may simply not exist), and
+	// the picker deliberately keeps such values clickable. Falling back to
+	// another variant here would price, stock-check and — worst — deep-link
+	// `?variant=` for an item the shopper never chose, so an unmatched
+	// combination resolves to no variant at all and reads as unavailable.
+	const unmatchedSelection = Boolean(showVariantPicker) && !selectedVariant;
+	const activeVariant = unmatchedSelection
+		? null
+		: (selectedVariant ?? initialVariant);
 
 	const displayPrice = commerce
-		? formatShopifyPrice(
-				(selectedVariant ?? initialVariant)?.price ?? commerce.minPrice,
-				locale
-			)
+		? formatShopifyPrice(activeVariant?.price ?? commerce.minPrice, locale)
 		: price;
-	const compareAtPrice = selectedVariant?.compareAtPrice;
+	const compareAtPrice = activeVariant?.compareAtPrice;
 	const displayCompareAt =
 		commerce &&
 		compareAtPrice &&
-		Number(compareAtPrice.amount) >
-			Number((selectedVariant ?? initialVariant)?.price.amount)
+		Number(compareAtPrice.amount) > Number(activeVariant?.price.amount)
 			? formatShopifyPrice(compareAtPrice, locale)
 			: null;
 
-	// Manual soldOut stays as an editorial override on top of live availability.
 	const liveUnavailable = commerce
-		? selectedVariant
-			? !selectedVariant.availableForSale
-			: !commerce.availableForSale
+		? unmatchedSelection
+			? true
+			: selectedVariant
+				? !selectedVariant.availableForSale
+				: !commerce.availableForSale
 		: false;
-	const isSoldOut = Boolean(soldOut) || liveUnavailable;
+	// Manual soldOut is the editorial override and always wins. Live Shopify
+	// stock only drives the sold-out state when there's no editor-set
+	// purchaseLink: that link points somewhere Shopify doesn't track stock for,
+	// so a Shopify stock-out must not silently remove it.
+	const isSoldOut = Boolean(soldOut) || (liveUnavailable && !purchaseLink);
 
 	// An explicit purchaseLink wins (editors may deep-link a marketplace);
 	// otherwise linked products buy on Shopify with the variant preselected.
 	const buyUrl =
 		purchaseLink ||
-		(commerce
-			? shopifyVariantUrl(commerce.url, selectedVariant ?? initialVariant)
-			: null);
-
-	const showVariantPicker = commerce && !hasOnlyDefaultVariant(commerce);
+		(commerce ? shopifyVariantUrl(commerce.url, activeVariant) : null);
 	// Carried into the Klaviyo back-in-stock event so restock campaigns can
 	// segment by the exact variant requested.
 	const backInStockTitle =

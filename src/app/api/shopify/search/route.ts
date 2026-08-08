@@ -4,15 +4,48 @@
  * needs a custom-app Admin token with the read_products scope in
  * SHOPIFY_ADMIN_API_TOKEN.
  *
- * The route is reachable without auth, so it returns only public catalog
- * facts (title, handle, status, thumbnail) capped at 10 results; the
- * same-origin check below turns away cross-site browser callers.
+ * The Admin API returns DRAFT and ARCHIVED products, which are NOT public. The
+ * embedded Studio authenticates against *.api.sanity.io, so no session cookie
+ * reaches this origin and the route cannot identify its caller — treat it as
+ * publicly reachable and make it safe by construction instead:
+ *   - every query is ANDed with `status:active`, so only products that are
+ *     already public can ever be returned (these are also the only ones the
+ *     Storefront API can resolve, i.e. the only linkable ones),
+ *   - the caller's search text is escaped into one quoted term so it cannot
+ *     inject Shopify search-syntax filters,
+ *   - requests are throttled per IP to protect the shop-wide Admin API bucket.
  */
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 const API_VERSION_FALLBACK = '2026-01';
 const MAX_RESULTS = 10;
+
+// Best-effort per-IP throttle, mirroring the other third-party proxy routes.
+// In-memory, so it's per server instance — enough to stop scripted abuse of
+// the shop-wide Admin API rate bucket.
+const RATE_LIMIT = 30;
+const RATE_WINDOW_MS = 10 * 60 * 1000;
+const requestTimes = new Map<string, number[]>();
+
+function isRateLimited(ip: string): boolean {
+	if (requestTimes.size > 10_000) requestTimes.clear();
+	const now = Date.now();
+	const recent = (requestTimes.get(ip) ?? []).filter(
+		(t) => now - t < RATE_WINDOW_MS
+	);
+	if (recent.length >= RATE_LIMIT) {
+		requestTimes.set(ip, recent);
+		return true;
+	}
+	recent.push(now);
+	requestTimes.set(ip, recent);
+	return false;
+}
+
+// Non-negotiable filter ANDed into every query: the Admin API would otherwise
+// return DRAFT and ARCHIVED products, which are not public.
+const PUBLIC_ONLY = 'status:active';
 
 const SEARCH_QUERY = `
 	query StudioProductSearch($query: String!, $first: Int!) {
@@ -46,10 +79,41 @@ function sanitizeHandle(handle: string): string {
 	return handle.replace(/["'\\\s]/g, '');
 }
 
-export async function GET(req: NextRequest) {
+/**
+ * Wraps free-text search input in a quoted term so Shopify treats it as a
+ * literal phrase. Without this, `status:draft` is parsed as a field filter and
+ * enumerates unreleased products.
+ */
+function quoteSearchTerm(text: string): string {
+	return `"${text.replace(/[\\"]/g, '')}"`;
+}
+
+function sameOrigin(req: NextRequest): boolean {
 	const origin = req.headers.get('origin');
-	if (origin && new URL(origin).host !== req.nextUrl.host) {
+	// Absent Origin (non-browser callers) can't be judged, so it passes here —
+	// this only turns away cross-site browser callers cheaply. The real
+	// protection is that the query is pinned to public products.
+	if (!origin) return true;
+	try {
+		return new URL(origin).host === req.nextUrl.host;
+	} catch {
+		// Opaque/malformed Origin ("null" from a sandboxed iframe) — reject,
+		// but never let the URL parser throw an unhandled 500.
+		return false;
+	}
+}
+
+export async function GET(req: NextRequest) {
+	if (!sameOrigin(req)) {
 		return NextResponse.json({ ok: false }, { status: 403 });
+	}
+
+	const ip =
+		req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+		req.headers.get('x-real-ip') ||
+		'unknown';
+	if (isRateLimited(ip)) {
+		return NextResponse.json({ ok: false }, { status: 429 });
 	}
 
 	const domain = process.env.SHOPIFY_STORE_DOMAIN;
@@ -63,13 +127,18 @@ export async function GET(req: NextRequest) {
 
 	const q = req.nextUrl.searchParams.get('q')?.trim().slice(0, 64);
 	const handle = req.nextUrl.searchParams.get('handle')?.trim().slice(0, 200);
-	const query = handle ? `handle:${sanitizeHandle(handle)}` : q;
-	if (!query) {
+	const term = handle
+		? `handle:${sanitizeHandle(handle)}`
+		: q
+			? quoteSearchTerm(q)
+			: undefined;
+	if (!term) {
 		return NextResponse.json(
 			{ ok: false, message: 'Missing q or handle parameter.' },
 			{ status: 400 }
 		);
 	}
+	const query = `${PUBLIC_ONLY} AND ${term}`;
 
 	const version = process.env.SHOPIFY_API_VERSION || API_VERSION_FALLBACK;
 	try {
