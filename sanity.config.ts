@@ -19,6 +19,7 @@ import { pSizeGuide } from '@/sanity/schemaTypes/singletons/p-size-guide';
 import { pNewsletter } from '@/sanity/schemaTypes/singletons/p-newsletter';
 import { pProductIndex } from '@/sanity/schemaTypes/singletons/p-product-index';
 import { pHome } from '@/sanity/schemaTypes/singletons/p-home';
+import { settingsCart } from '@/sanity/schemaTypes/singletons/settings-cart';
 import { settingsConsent } from '@/sanity/schemaTypes/singletons/settings-consent';
 import { settingsGeneral } from '@/sanity/schemaTypes/singletons/settings-general';
 import { settingsIntegration } from '@/sanity/schemaTypes/singletons/settings-integrations';
@@ -74,6 +75,7 @@ const singletonDocuments = [
 	settingsIntegration.name,
 	settingsConsent.name,
 	settingsGeneral.name,
+	settingsCart.name,
 	p404.name,
 	pContact.name,
 	pFaq.name,

@@ -12,6 +12,7 @@ export const TRANSLATABLE_TYPES = [
 	'pBlogCategory',
 	'pProduct',
 	'pProductCollection',
+	'settingsCart',
 	'pEvent',
 	'pEvents',
 	'pEventCategory',

@@ -4,7 +4,6 @@ import React, { useEffect, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { LaunchIcon, SearchIcon } from '@sanity/icons';
 import {
-	Badge,
 	Button,
 	Card,
 	Flex,
@@ -13,28 +12,25 @@ import {
 	Text,
 	TextInput,
 } from '@sanity/ui';
-import { set, unset, type StringInputProps } from 'sanity';
+import { set, unset, useFormValue, type StringInputProps } from 'sanity';
 
 // Search-as-you-type picker for pProduct.shopify.handle. Talks to
-// /api/shopify/search (Admin API proxy); when that isn't configured it
+// /api/shopify/search (Storefront API proxy); when that isn't configured it
 // degrades to the plain string input so handles can still be pasted by hand.
-// Only the handle is stored — the linked card is fetched live, so titles,
-// thumbnails and status never go stale in the dataset.
+// Only the handle is stored — the linked card is fetched live, so titles and
+// thumbnails never go stale in the dataset.
+//
+// The Storefront token only resolves products published to its sales channel,
+// so this lists exactly the products the product page can render commerce for.
+// A product missing here is a publishing problem in Shopify, not a search bug.
 
 type ShopifyProduct = {
 	id: string;
 	handle: string;
 	title: string;
-	status: 'ACTIVE' | 'ARCHIVED' | 'DRAFT';
 	imageUrl: string | null;
 	adminUrl: string;
 };
-
-const STATUS_TONE = {
-	ACTIVE: 'positive',
-	DRAFT: 'caution',
-	ARCHIVED: 'default',
-} as const;
 
 type SearchResponse = {
 	ok: boolean;
@@ -49,12 +45,13 @@ type SearchResponse = {
 type HandleLookup = {
 	for: string;
 	product: ShopifyProduct | null;
-	state: 'ok' | 'notFound' | 'error';
+	state: 'ok' | 'notFound' | 'rateLimited' | 'error';
 };
 
 type SearchLookup = {
 	for: string;
 	products: ShopifyProduct[];
+	state: 'ok' | 'rateLimited' | 'error';
 };
 
 async function fetchSearch(
@@ -95,11 +92,20 @@ export function ShopifyProductInput(props: StringInputProps) {
 	const [handleLookup, setHandleLookup] = useState<HandleLookup | null>(null);
 	const [searchLookup, setSearchLookup] = useState<SearchLookup | null>(null);
 
+	// Resolve in the document's own language, so the picker asks Shopify the
+	// same market question the product page will ask for that translation.
+	const documentLanguage = useFormValue(['language']);
+	const locale = typeof documentLanguage === 'string' ? documentLanguage : '';
+
 	// Resolve the stored handle into a live product card.
 	useEffect(() => {
 		if (!value || handleLookup?.for === value) return;
 		let cancelled = false;
-		fetchSearch(new URLSearchParams({ handle: value }))
+		fetchSearch(
+			new URLSearchParams(
+				locale ? { handle: value, locale } : { handle: value }
+			)
+		)
 			.then(({ status, body }) => {
 				if (cancelled) return;
 				if (status === 503) {
@@ -116,7 +122,14 @@ export function ShopifyProductInput(props: StringInputProps) {
 				setHandleLookup({
 					for: value,
 					product,
-					state: !body.ok ? 'error' : product ? 'ok' : 'notFound',
+					state:
+						status === 429
+							? 'rateLimited'
+							: !body.ok
+								? 'error'
+								: product
+									? 'ok'
+									: 'notFound',
 				});
 			})
 			.catch(() => {
@@ -126,7 +139,7 @@ export function ShopifyProductInput(props: StringInputProps) {
 		return () => {
 			cancelled = true;
 		};
-	}, [value, handleLookup]);
+	}, [value, handleLookup, locale]);
 
 	// Debounced search while unlinked.
 	const trimmedQuery = query.trim();
@@ -134,29 +147,41 @@ export function ShopifyProductInput(props: StringInputProps) {
 		if (value || !trimmedQuery || searchLookup?.for === trimmedQuery) return;
 		let cancelled = false;
 		const timeout = setTimeout(() => {
-			fetchSearch(new URLSearchParams({ q: trimmedQuery }))
+			fetchSearch(
+				new URLSearchParams(
+					locale ? { q: trimmedQuery, locale } : { q: trimmedQuery }
+				)
+			)
 				.then(({ status, body }) => {
 					if (cancelled) return;
 					if (status === 503) setUnconfigured(true);
-					setSearchLookup({ for: trimmedQuery, products: body.products ?? [] });
+					setSearchLookup({
+						for: trimmedQuery,
+						products: body.products ?? [],
+						state: status === 429 ? 'rateLimited' : body.ok ? 'ok' : 'error',
+					});
 				})
 				.catch(() => {
 					if (!cancelled)
-						setSearchLookup({ for: trimmedQuery, products: [] });
+						setSearchLookup({
+							for: trimmedQuery,
+							products: [],
+							state: 'error',
+						});
 				});
 		}, 300);
 		return () => {
 			cancelled = true;
 			clearTimeout(timeout);
 		};
-	}, [value, trimmedQuery, searchLookup]);
+	}, [value, trimmedQuery, searchLookup, locale]);
 
 	if (unconfigured) {
 		return (
-			<Stack space={2}>
+			<Stack gap={2}>
 				<Text size={1} muted>
-					Shopify search is not configured (SHOPIFY_ADMIN_API_TOKEN) — paste
-					the product handle manually.
+					Shopify search is not configured (SHOPIFY_STOREFRONT_PRIVATE_TOKEN) —
+					paste the product handle manually.
 				</Text>
 				{props.renderDefault(props)}
 			</Stack>
@@ -169,7 +194,11 @@ export function ShopifyProductInput(props: StringInputProps) {
 		return (
 			<Card padding={2} radius={2} border>
 				<Flex align="center" gap={3}>
-					{!current ? <Spinner muted /> : linked ? <Thumb product={linked} /> : null}
+					{!current ? (
+						<Spinner muted />
+					) : linked ? (
+						<Thumb product={linked} />
+					) : null}
 					<Stack space={2} flex={1}>
 						<Text size={1} weight="medium" textOverflow="ellipsis">
 							{linked?.title ?? value}
@@ -177,14 +206,13 @@ export function ShopifyProductInput(props: StringInputProps) {
 						<Text size={1} muted textOverflow="ellipsis">
 							{current?.state === 'notFound'
 								? 'Not found in Shopify — check the handle'
-								: current?.state === 'error'
-									? 'Could not reach Shopify'
-									: value}
+								: current?.state === 'rateLimited'
+									? 'Too many lookups — pause a moment and try again'
+									: current?.state === 'error'
+										? 'Could not reach Shopify'
+										: value}
 						</Text>
 					</Stack>
-					{linked && (
-						<Badge tone={STATUS_TONE[linked.status]}>{linked.status}</Badge>
-					)}
 					{linked && (
 						<Button
 							as="a"
@@ -209,8 +237,8 @@ export function ShopifyProductInput(props: StringInputProps) {
 		);
 	}
 
-	const results = searchLookup?.for === trimmedQuery ? searchLookup.products : null;
-	const searching = Boolean(trimmedQuery) && results === null;
+	const search = searchLookup?.for === trimmedQuery ? searchLookup : null;
+	const searching = Boolean(trimmedQuery) && search === null;
 
 	return (
 		<Stack space={2}>
@@ -228,16 +256,20 @@ export function ShopifyProductInput(props: StringInputProps) {
 					<Spinner muted />
 				</Flex>
 			)}
-			{results && results.length === 0 && (
+			{search && search.products.length === 0 && (
 				<Card padding={2}>
 					<Text size={1} muted>
-						No products found
+						{search.state === 'rateLimited'
+							? 'Too many searches — pause a moment and try again'
+							: search.state === 'error'
+								? 'Could not reach Shopify'
+								: 'No products found'}
 					</Text>
 				</Card>
 			)}
-			{results && results.length > 0 && (
+			{search && search.products.length > 0 && (
 				<Stack space={1}>
-					{results.map((product) => (
+					{search.products.map((product) => (
 						<Card
 							key={product.id}
 							as="button"
@@ -260,9 +292,6 @@ export function ShopifyProductInput(props: StringInputProps) {
 										{product.handle}
 									</Text>
 								</Stack>
-								<Badge tone={STATUS_TONE[product.status]}>
-									{product.status}
-								</Badge>
 							</Flex>
 						</Card>
 					))}

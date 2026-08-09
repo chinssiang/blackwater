@@ -13,7 +13,8 @@ import { CloseIcon, MenuIcon } from '@/components/SvgIcons';
 import { buttonVariants } from '@/components/ui/Button';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { mobileMenuItem, mobileMenuList, mobileMenuPanel } from '@/lib/animate';
-import { resolveHref } from '@/lib/routes';
+import { usePathname } from 'next/navigation';
+import { isEventPath, resolveHref } from '@/lib/routes';
 import { cn, scrollDisable, scrollEnable } from '@/lib/utils';
 
 type MobileMenuProps = {
@@ -84,6 +85,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 	const [open, setOpen] = useState(false);
 	const t = useTranslations('nav');
 	const locale = useLocale();
+	const showLocalTime = isEventPath(usePathname());
 
 	// Lock body/html scroll while the menu is open so only the menu's own
 	// scroll container can scroll; restore it on close (and on unmount).
@@ -214,10 +216,12 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 											custom={reduce}
 											className="t-b-2 flex items-center gap-4 justify-between uppercase"
 										>
-											<div className="flex items-center gap-2">
-												<LocationCurrentTime />
-												<span>(TPE)</span>
-											</div>
+											{showLocalTime && (
+												<div className="flex items-center gap-2">
+													<LocationCurrentTime />
+													<span>(TPE)</span>
+												</div>
+											)}
 											<LanguageSwitcher onSelect={() => setOpen(false)} />
 										</motion.div>
 

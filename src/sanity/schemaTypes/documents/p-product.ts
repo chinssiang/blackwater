@@ -12,6 +12,7 @@ import { StarIcon, ImageIcon } from '@sanity/icons';
 import { defineArrayMember, defineField, defineType } from 'sanity';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { ShopifyProductInput } from '@/sanity/schemaTypes/components/ShopifyProductInput';
+import { apiVersion } from '@/sanity/env';
 
 export const pProduct = defineType({
 	title: 'Product',
@@ -62,7 +63,7 @@ export const pProduct = defineType({
 					title: 'Product handle',
 					type: 'string',
 					description:
-						'The product handle from Shopify admin (the last part of the product URL, e.g. "waffle-knit-beanie"). Set it on every language version of this product.',
+						'The product handle from Shopify admin (the last part of the product URL, e.g. "waffle-knit-beanie"). Set it once — every language version of this product inherits it. Fill it in here only to point one language at a different Shopify product.',
 					components: { input: ShopifyProductInput },
 					validation: (Rule) =>
 						Rule.custom((value) => {
@@ -84,13 +85,30 @@ export const pProduct = defineType({
 			// live price is authoritative and this field is an unused fallback,
 			// so demanding a value here would leave linked products permanently
 			// un-publishable (or permanently warned at).
+			//
+			// "Linked" includes an inherited link: a translation with no handle of
+			// its own still renders live commerce from its sibling's (see
+			// shopifyHandleField in queries.ts). Checking only this document's own
+			// handle would block every translation on a price string the site never
+			// displays, which is why this reaches for the sibling.
 			validation: (Rule) =>
-				Rule.custom((value, context) => {
-					const handle = (
-						context.document as { shopify?: { handle?: string } } | undefined
-					)?.shopify?.handle;
-					if (!handle && !value) return 'Required';
-					return true;
+				Rule.custom(async (value, context) => {
+					if (value) return true;
+					const doc = context.document as
+						| { slug?: { current?: string }; shopify?: { handle?: string } }
+						| undefined;
+					if (doc?.shopify?.handle) return true;
+					const slug = doc?.slug?.current;
+					if (!slug) return 'Required';
+					// Siblings are matched on slug, the same way the frontend query
+					// resolves them.
+					const inherited = await context
+						.getClient({ apiVersion })
+						.fetch<string | null>(
+							`*[_type == "pProduct" && slug.current == $slug && defined(shopify.handle)][0].shopify.handle`,
+							{ slug }
+						);
+					return inherited ? true : 'Required';
 				}),
 		}),
 		defineField({
@@ -317,6 +335,11 @@ export const pProduct = defineType({
 					})
 				: null;
 			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
+			// The marker reports this document's *own* handle, because prepare()
+			// only ever sees fields selected from this document — it cannot tell an
+			// unlinked product from a translation inheriting a sibling's handle.
+			// So absence is left unlabelled rather than captioned "not linked",
+			// which would be wrong for every translation.
 			return {
 				title: tag ? `[${tag}] ${title}` : title,
 				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — ${href ?? '/products/(no slug)'}${soldOut ? ' · Sold out' : ''}${shopifyHandle ? ' · 🔗 Shopify' : ''}`,

@@ -13,10 +13,16 @@ export const SITE_DATA_TAGS = [
 	'settingsGeneral',
 	'settingsIntegration',
 	'settingsConsent',
+	'settingsCart',
 	'settingsBrandColors',
 	'pProductIndex',
 ] as const;
 
+// Deliberately Sanity-only. This runs for every page that renders the site
+// chrome — including generateMetadata, /email-signature, /events-crew and the
+// 404 — so nothing here may depend on Shopify: `revalidateTag('shopify')` fires
+// on every product and inventory webhook, and a Storefront lookup in this path
+// would make the next render of an unrelated page block on it.
 export const getCachedSiteData = cache((locale: string) =>
 	sanityFetch({
 		query: siteDataQuery,

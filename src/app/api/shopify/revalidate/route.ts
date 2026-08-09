@@ -1,7 +1,8 @@
 /**
- * Revalidates the cached Shopify Storefront fetches when the store changes,
- * so admin edits (price, stock, variants) reach product pages within seconds
- * instead of waiting out the hourly backstop TTL.
+ * Revalidates the cached Shopify Storefront fetches when the store changes.
+ * There is deliberately no backstop TTL (see product.ts), so this is the only
+ * mechanism that gets admin edits (price, stock, variants) onto product pages
+ * without a redeploy.
  *
  * Set up in Shopify admin → Settings → Notifications → Webhooks:
  * 1. Create webhooks (format JSON, latest API version), all pointing at
@@ -10,15 +11,21 @@
  *    - "Product deletion"        → broad refresh (payload carries no handle)
  *    - "Inventory level update"  → broad refresh (ditto; drop this webhook if
  *      sales volume makes it too chatty — product updates still cover most
- *      availability flips, and the TTL bounds the rest)
+ *      availability flips)
  * 2. Copy the webhook signing secret shown at the bottom of that settings
  *    page into the SHOPIFY_WEBHOOK_SECRET env var (all admin-created webhooks
  *    on a shop share one signing secret).
  * 3. Add it to Vercel (`npx vercel env add SHOPIFY_WEBHOOK_SECRET`) and
  *    redeploy.
  *
- * "Product creation" is deliberately not registered: a new Shopify product
- * changes nothing here until an editor links it in Sanity.
+ * Caveat: webhooks registered through an *app* instead (Dev Dashboard, or the
+ * webhookSubscriptionCreate mutation) are signed with that app's client secret,
+ * not the shop's shared webhook secret — SHOPIFY_WEBHOOK_SECRET would then have
+ * to hold the client secret. Getting this wrong 401s every delivery silently.
+ *
+ * "Product creation" isn't worth registering on its own — a new Shopify product
+ * changes nothing here until an editor links it in Sanity — but it is handled
+ * below so that registering it anyway is harmless.
  */
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { revalidateTag } from 'next/cache';

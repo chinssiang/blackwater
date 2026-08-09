@@ -2,11 +2,7 @@ import { stegaClean } from '@sanity/client/stega';
 import { type Locale } from '@/lib/i18n';
 import { interpolate } from '@/lib/dictionary';
 import { getDictionary } from '@/lib/dictionary.server';
-import {
-	isShopifyConfigured,
-	shopifyStoreDomain,
-	shopifyStorefrontFetch,
-} from './client';
+import { isShopifyConfigured, shopifyStorefrontFetch } from './client';
 import {
 	LOCALE_SHOPIFY_CONTEXT,
 	formatShopifyPrice,
@@ -40,7 +36,6 @@ const PRODUCT_COMMERCE_QUERY = `
 		product(handle: $handle) {
 			handle
 			availableForSale
-			onlineStoreUrl
 			priceRange {
 				minVariantPrice ${MONEY_FRAGMENT}
 				maxVariantPrice ${MONEY_FRAGMENT}
@@ -68,7 +63,6 @@ type GqlMoney = ShopifyMoney;
 type GqlProduct = {
 	handle: string;
 	availableForSale: boolean;
-	onlineStoreUrl: string | null;
 	priceRange: { minVariantPrice: GqlMoney; maxVariantPrice: GqlMoney };
 	options: Array<{ name: string; optionValues: Array<{ name: string }> }>;
 	variants: {
@@ -83,18 +77,10 @@ type GqlProduct = {
 	};
 };
 
-function productUrl(handle: string, onlineStoreUrl: string | null): string {
-	if (onlineStoreUrl) return onlineStoreUrl;
-	// Not published to the Online Store channel (or URL not exposed) — fall
-	// back to the canonical product URL on the store domain.
-	return `https://${shopifyStoreDomain()}/products/${handle}`;
-}
-
 function normalizeProduct(product: GqlProduct): ProductCommerce {
 	return {
 		handle: product.handle,
 		availableForSale: product.availableForSale,
-		url: productUrl(product.handle, product.onlineStoreUrl),
 		minPrice: product.priceRange.minVariantPrice,
 		maxPrice: product.priceRange.maxVariantPrice,
 		options: product.options.map((o) => ({

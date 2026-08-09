@@ -54,3 +54,25 @@ export const mobileMenuItem: Variants = {
 		transition: { duration: reduce ? 0 : 0.5, ease: MOBILE_MENU_EASE },
 	}),
 };
+
+// Cart drawer — slides in from the right. Unlike the full-screen mobile menu
+// this panel sits over the page, so it moves rather than only fading; under
+// reduced motion it collapses to the same plain fade.
+export const cartPanel: Variants = {
+	hide: (reduce = false) => ({
+		opacity: 0,
+		x: reduce ? 0 : '100%',
+		transition: { duration: 0.2, ease: 'easeIn' },
+	}),
+	show: {
+		opacity: 1,
+		x: 0,
+		transition: { duration: 0.3, ease: MOBILE_MENU_EASE },
+	},
+};
+
+// Dimmed backdrop behind the cart drawer.
+export const cartOverlay: Variants = {
+	hide: { opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } },
+	show: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
+};

@@ -36,13 +36,75 @@ export type ShopifyProductOption = {
 export type ProductCommerce = {
 	handle: string;
 	availableForSale: boolean;
-	/** Online Store product URL (primary domain when published there). */
-	url: string;
 	minPrice: ShopifyMoney;
 	maxPrice: ShopifyMoney;
 	options: ShopifyProductOption[];
 	variants: ShopifyVariant[];
 };
+
+// One line in the shopper's cart, flattened from Shopify's
+// `line { merchandise { ...ProductVariant } }` nesting.
+export type ShopifyCartLine = {
+	/** Cart line id — what cartLinesUpdate/cartLinesRemove address. */
+	id: string;
+	quantity: number;
+	/** Line total (unit price × quantity), already discounted by Shopify. */
+	total: ShopifyMoney;
+	/**
+	 * True when Shopify capped this line at the stock on hand rather than the
+	 * quantity we asked for. Only ever set on the response to the mutation that
+	 * was capped — the client remembers the ceiling, since a later read has no
+	 * way to rediscover it (`quantityAvailable` needs an inventory scope the
+	 * Storefront token doesn't have).
+	 */
+	atStockLimit: boolean;
+	merchandise: {
+		gid: string;
+		/** Variant name, e.g. "M". "Default Title" for option-less products. */
+		title: string;
+		availableForSale: boolean;
+		price: ShopifyMoney;
+		imageUrl: string | null;
+		imageAlt: string | null;
+		productTitle: string;
+		productHandle: string;
+	};
+};
+
+// Serializable cart payload shared between the API route and the client.
+export type ShopifyCart = {
+	id: string;
+	/** Shopify-hosted checkout. The only place the shopper leaves this site. */
+	checkoutUrl: string;
+	totalQuantity: number;
+	subtotal: ShopifyMoney;
+	lines: ShopifyCartLine[];
+};
+
+/**
+ * Ceiling on a single cart line's quantity. Shared so the stepper, the
+ * add-to-cart accumulation and the API's validation all agree — enforcing it in
+ * only one of them lets a line reach a quantity the others then reject.
+ */
+export const MAX_LINE_QUANTITY = 99;
+
+/**
+ * Shopify's checkout language comes from the URL, not the cart: `buyerIdentity`
+ * accepts only a `countryCode`, so a zh_tw shopper whose market resolves to TW
+ * would otherwise check out in English. Appending `locale` is the only lever.
+ * Shopify falls back to the market's default when the language isn't published,
+ * so an unpublished locale degrades rather than erroring.
+ */
+export function shopifyCheckoutUrl(checkoutUrl: string, locale: Locale): string {
+	try {
+		const url = new URL(checkoutUrl);
+		url.searchParams.set('locale', htmlLangFor(locale));
+		return url.toString();
+	} catch {
+		// Never break the one link that completes a purchase.
+		return checkoutUrl;
+	}
+}
 
 // Lean payload for listing cards: display price + availability only.
 export type CardCommerce = {
@@ -105,19 +167,6 @@ export function formatShopifyPrice(
 		// Unknown currency code — degrade to a readable raw value.
 		return `${money.amount} ${money.currencyCode}`;
 	}
-}
-
-/**
- * Buy-URL for a specific variant. Shopify's product page preselects the
- * variant from the numeric ?variant= param.
- */
-export function shopifyVariantUrl(
-	productUrl: string,
-	variant?: ShopifyVariant | null
-): string {
-	if (!variant) return productUrl;
-	const sep = productUrl.includes('?') ? '&' : '?';
-	return `${productUrl}${sep}variant=${variant.id}`;
 }
 
 /**

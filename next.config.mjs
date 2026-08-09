@@ -14,7 +14,8 @@ const csp = [
 	// unsafe-eval is needed in dev for React/Turbopack debugging features (never used in prod)
 	`script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://va.vercel-scripts.com`,
 	"style-src 'self' 'unsafe-inline'",
-	"img-src 'self' data: blob: https://cdn.sanity.io https://www.google-analytics.com https://www.googletagmanager.com",
+	// cdn.shopify.com serves the cart drawer's line-item thumbnails.
+	"img-src 'self' data: blob: https://cdn.sanity.io https://cdn.shopify.com https://www.google-analytics.com https://www.googletagmanager.com",
 	"font-src 'self'",
 	"connect-src 'self' https://*.sanity.io https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://vitals.vercel-insights.com",
 	"frame-src 'self' https://*.sanity.io",
@@ -65,6 +66,12 @@ const nextConfig = {
 				protocol: 'https',
 				hostname: 'cdn.sanity.io',
 				pathname: `/images/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET}/**`,
+			},
+			// Shopify variant images, used only for cart line-item thumbnails.
+			{
+				protocol: 'https',
+				hostname: 'cdn.shopify.com',
+				pathname: '/s/files/**',
 			},
 		],
 	},

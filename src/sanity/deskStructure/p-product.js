@@ -1,5 +1,5 @@
 import { apiVersion } from '@/sanity/env';
-import { StarIcon, TagsIcon, StackIcon } from '@sanity/icons';
+import { StarIcon, TagsIcon, StackIcon, BasketIcon } from '@sanity/icons';
 import { client } from '@/sanity/lib/client';
 
 const pageProductCollection = (S) => [
@@ -151,5 +151,19 @@ export const pageProductItems = (S) => {
 						pageTag(S),
 					])
 			),
+		// Cart configuration lives with Products rather than under Settings —
+		// it's part of the commerce surface an editor is already working in.
+		// documentId pins the English document; settingsCart is localized, so the
+		// language dropdown inside the editor reaches the other versions.
+		S.listItem()
+			.title('Cart')
+			.child(
+				S.editor()
+					.id('settingsCart')
+					.title('Cart')
+					.schemaType('settingsCart')
+					.documentId('settingsCart')
+			)
+			.icon(BasketIcon),
 	];
 };

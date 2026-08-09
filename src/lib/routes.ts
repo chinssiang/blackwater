@@ -65,6 +65,35 @@ export function isLightThemePath(pathname: string): boolean {
 	);
 }
 
+// Routes where something is actually for sale, and so where the header cart
+// belongs. Matches itself and its descendants, same as LIGHT_THEME_PATHS.
+// Elsewhere the cart trigger only appears once the cart has something in it —
+// see CartButton, which owns that second half of the rule.
+const COMMERCE_PATHS = ['/products'];
+
+export function isCommercePath(pathname: string): boolean {
+	const { path } = stripLocaleFromPath(pathname);
+	const normalized = path.replace(/\/+$/, '') || '/';
+	return COMMERCE_PATHS.some(
+		(base) => normalized === base || normalized.startsWith(`${base}/`)
+	);
+}
+
+// Routes where the local-time readout is meaningful — event schedules are the
+// only place the Taipei clock earns its space in the header. Matches itself and
+// its descendants, same as LIGHT_THEME_PATHS. Note this deliberately does NOT
+// cover /events-crew: it is a separate top-level route, not a descendant, and
+// the exact-or-"${base}/" match below is what keeps it out.
+const EVENT_PATHS = ['/events'];
+
+export function isEventPath(pathname: string): boolean {
+	const { path } = stripLocaleFromPath(pathname);
+	const normalized = path.replace(/\/+$/, '') || '/';
+	return EVENT_PATHS.some(
+		(base) => normalized === base || normalized.startsWith(`${base}/`)
+	);
+}
+
 export function resolveHref({
 	documentType,
 	slug,

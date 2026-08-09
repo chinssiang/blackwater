@@ -11,9 +11,9 @@ import {
 	formatShopifyPrice,
 	hasOnlyDefaultVariant,
 	pickInitialVariant,
-	shopifyVariantUrl,
 	type ProductCommerce,
 } from '@/lib/shopify/types';
+import { useCart } from '@/components/cart/CartProvider';
 import VariantPicker from './VariantPicker';
 import {
 	hasArrayValue,
@@ -49,6 +49,12 @@ export default function PageProductSingle({ data, commerce }: Props) {
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
 	const productText = useTranslations('products');
+	const cartText = useTranslations('cart');
+	const { addLine, setOpen: setCartOpen } = useCart();
+	// Local rather than the cart's global `isPending`: that also fires for the
+	// drawer's own quantity steppers, which must not put this button in a
+	// loading state.
+	const [isAdding, setIsAdding] = useState(false);
 	const {
 		title,
 		slug,
@@ -134,11 +140,17 @@ export default function PageProductSingle({ data, commerce }: Props) {
 	// so a Shopify stock-out must not silently remove it.
 	const isSoldOut = Boolean(soldOut) || (liveUnavailable && !purchaseLink);
 
-	// An explicit purchaseLink wins (editors may deep-link a marketplace);
-	// otherwise linked products buy on Shopify with the variant preselected.
-	const buyUrl =
-		purchaseLink ||
-		(commerce ? shopifyVariantUrl(commerce.url, activeVariant) : null);
+	// An explicit purchaseLink still wins and stays an outbound link — editors
+	// set it to deep-link a marketplace we don't sell through. Everything else
+	// buys here: Shopify-linked products add to the on-site cart, and the
+	// shopper only leaves at checkout.
+	const handleAddToCart = async () => {
+		if (!activeVariant) return;
+		setIsAdding(true);
+		const added = await addLine(activeVariant.gid);
+		setIsAdding(false);
+		if (added) setCartOpen(true);
+	};
 	// Carried into the Klaviyo back-in-stock event so restock campaigns can
 	// segment by the exact variant requested.
 	const backInStockTitle =
@@ -247,7 +259,7 @@ export default function PageProductSingle({ data, commerce }: Props) {
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
 				{/* Image */}
 				<motion.div
-					className="relative aspect-4/3 overflow-hidden p-6 lg:col-span-7 lg:p-10"
+					className="bg-background relative aspect-4/3 overflow-hidden p-6 lg:col-span-7 lg:p-10"
 					{...reveal}
 					initial={false}
 					transition={{ duration: 0.8, delay: 0.05, ease: [0, 0.5, 0.5, 1] }}
@@ -377,7 +389,7 @@ export default function PageProductSingle({ data, commerce }: Props) {
 							/>
 						</motion.div>
 					) : (
-						buyUrl && (
+						(purchaseLink || commerce) && (
 							<motion.div
 								className="mt-6"
 								{...reveal}
@@ -387,30 +399,40 @@ export default function PageProductSingle({ data, commerce }: Props) {
 									ease: [0, 0.71, 0.2, 1.01],
 								}}
 							>
-								<Button asChild>
-									<a
-										href={appendReferralParams(buyUrl, {
-											source: REFERRAL_SOURCE,
-											medium: 'referral',
-											campaign: 'curated-products',
-											content: slug ?? undefined,
-										})}
-										target="_blank"
-										rel="noopener"
-										aria-label={interpolate(productText.buyAriaLabel, {
-											product: title ?? productText.thisProduct,
-										})}
-										className="group lg:w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase w-full"
-									>
-										{productText.buyIt}
-										<span
-											aria-hidden
-											className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+								{purchaseLink ? (
+									<Button asChild>
+										<a
+											href={appendReferralParams(purchaseLink, {
+												source: REFERRAL_SOURCE,
+												medium: 'referral',
+												campaign: 'curated-products',
+												content: slug ?? undefined,
+											})}
+											target="_blank"
+											rel="noopener"
+											aria-label={interpolate(productText.buyAriaLabel, {
+												product: title ?? productText.thisProduct,
+											})}
+											className="group lg:w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase w-full"
 										>
-											↗
-										</span>
-									</a>
-								</Button>
+											{productText.buyIt}
+											<span
+												aria-hidden
+												className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
+											>
+												↗
+											</span>
+										</a>
+									</Button>
+								) : (
+									<Button
+										onClick={handleAddToCart}
+										disabled={isAdding || !activeVariant}
+										className="w-full uppercase lg:w-60 transition-[background-color,filter] hover:brightness-[0.97]"
+									>
+										{isAdding ? cartText.adding : cartText.addToCart}
+									</Button>
+								)}
 							</motion.div>
 						)
 					)}

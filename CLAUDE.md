@@ -48,7 +48,7 @@ This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in
 - `p-*` = page singletons or document types
 - `settings-*` = settings singletons (general, color, menus, integrations, redirect)
 
-**Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `gAuthor`, `pHome`, `pContact`, `pFaq`, `pSizeGuide`, `p404`, `pCuratedIndex`, `settingsGeneral`, `settingsColor`, `settingsMenu`, `settingsIntegrations`, `settingsRedirect`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
+**Singleton documents** (non-duplicatable, single-instance): `gHeader`, `gFooter`, `gAnnouncement`, `gAuthor`, `pHome`, `pContact`, `pFaq`, `pSizeGuide`, `p404`, `pCuratedIndex`, `settingsGeneral`, `settingsColor`, `settingsMenu`, `settingsIntegrations`, `settingsCart` (document-localized; lives under Products in the Studio), `settingsRedirect`. Configured in `sanity.config.ts` to remove "duplicate" and new-document actions.
 
 **Document types** (multi-instance, slug-based):
 
@@ -168,17 +168,37 @@ Each page route follows this pattern:
 - `/revalidate-tag` — On-demand ISR via tag invalidation.
 - `/view-page` — Page view tracking.
 - `/shopify/revalidate` — Shopify webhook receiver (HMAC-verified) that revalidates Storefront fetch tags.
-- `/shopify/search` — Admin-API product search proxy for the Studio's Shopify picker.
+- `/shopify/search` — Storefront-API product search proxy for the Studio's Shopify picker.
+- `/shopify/cart` — on-site cart: read, add, update quantity, remove. Cart id in an httpOnly cookie.
 
 ### Shopify Integration (`src/lib/shopify/`)
 
-Products are **hybrid**: Sanity owns everything editorial (slug/routes, title, images, content, taxonomy, size charts, SEO, i18n) and Shopify owns commerce (price, compare-at, availability, variants, purchase URL). The only coupling is `pProduct.shopify.handle`, picked in the Studio via `ShopifyProductInput` (search UI backed by `/api/shopify/search`; degrades to a plain string field when `SHOPIFY_ADMIN_API_TOKEN` is unset). Handles must be set per language version of a product.
+Products are **hybrid**: Sanity owns everything editorial (slug/routes, title, images, content, taxonomy, size charts, SEO, i18n) and Shopify owns commerce (price, compare-at, availability, variants, cart, checkout). The only coupling is `pProduct.shopify.handle`, picked in the Studio via `ShopifyProductInput` (search UI backed by `/api/shopify/search`; degrades to a plain string field when no Storefront token is set). Setup walkthrough: `docs/SHOPIFY-SETUP.md`.
 
-- `types.ts` — client-safe types + pure helpers (`formatShopifyPrice`, variant selection/URL logic, `LOCALE_SHOPIFY_CONTEXT` mapping locales to Markets `@inContext` — `zh_tw` → TW market, `en` → store default). Client components import **only** from here.
-- `client.ts` — server-only Storefront GraphQL transport. Env is read at call time, so the whole integration is optional: without `SHOPIFY_STORE_DOMAIN`/`SHOPIFY_STOREFRONT_API_TOKEN`, everything renders from the manual Sanity fields.
+The handle is **locale-invariant and inherited across translations** — it names the same physical product in every language, and localized price/currency come from Markets `@inContext`, never from a second Shopify product. `shopifyHandleField` in `queries.ts` coalesces to a slug-matched sibling (preferring `en`) when a translated doc has none, so an editor sets it once. Skipping that inheritance is what used to make a `zh_tw` page silently drop to the manual `price` string, which has no currency.
+
+- `types.ts` — client-safe types + pure helpers (`formatShopifyPrice`, variant selection, `LOCALE_SHOPIFY_CONTEXT` mapping locales to Markets `@inContext` — `zh_tw` → TW market, `en` → store default). Client components import **only** from here.
+- `client.ts` — server-only Storefront GraphQL transport. Env is read at call time, so the whole integration is optional: without `SHOPIFY_STORE_DOMAIN` plus a Storefront token, everything renders from the manual Sanity fields. Prefers `SHOPIFY_STOREFRONT_PRIVATE_TOKEN` (shop-level rate limit, correct for server-side calls) over the public `SHOPIFY_STOREFRONT_API_TOKEN` (throttled per buyer IP).
 - `product.ts` — soft-failing server fetchers (`server-only` via its `getDictionary` import). `getProductCommerce(handle, locale)` powers the detail page; `getCardCommerce`/`applyCardPrices`/`withLiveCardPrices` batch-fetch listing-card prices (aliased `product(handle:)` lookups — the Storefront API has no by-handles query) and rewrite each card's `price` string in place so `ProductCard` stays Shopify-unaware. Handles are `stegaClean`ed at the boundary; a Shopify outage or unknown handle logs and falls back to manual fields, never 500s.
+- `cart.ts` — Storefront cart operations (`getCart`, `createCart`, `addCartLines`, `updateCartLine`, `removeCartLine`). Unlike `product.ts` these **do not** soft-fail: a cart is the shopper's own state, so errors propagate to the route rather than showing a stale cart. Two rules that differ from the rest of the integration and must not be "made consistent": every cart request passes `cache: 'no-store'` with no tags (a cached cart would leak between shoppers), and cart calls carry **no `@inContext`** — the market is pinned once via `buyerIdentity.countryCode` at `cartCreate`, because reading a cart back under a different country than it was created with is a mismatch error the moment someone switches language.
 
-Caching: every Storefront fetch is tagged `shopify` + `shopify:product:<handle>` with a 1-hour backstop TTL; `/api/shopify/revalidate` (register webhooks per its header comment) makes admin edits land in seconds. On the detail page, manual `soldOut` remains an editorial override on top of live availability, and `purchaseLink` overrides the Shopify buy URL (which otherwise carries `?variant=` from the picker). The variant picker (`VariantPicker.tsx`) keeps unavailable values selectable so the per-variant back-in-stock state stays reachable.
+### Cart & checkout
+
+The site is the store: browsing, variants and the cart all live here, and the shopper only leaves at Shopify's hosted checkout (there is no self-hosted checkout on Shopify). The old outbound deep link to the Online Store is gone — it was also broken, since products aren't published to that channel and the store is password-gated.
+
+- `/api/shopify/cart` — `GET` reads the cart, `POST` takes a zod discriminated union on `action` (`add` | `update` | `remove`). The cart id lives in the httpOnly `blackwater_cart` cookie (14 days): it is a capability, so page scripts must never see it. A cookie pointing at a cart Shopify has already expired (~10 days idle) is a normal path, not an error — `add` transparently creates a new cart, `update`/`remove` 409.
+- `CartProvider` (mounted in `[locale]/layout.tsx` inside `LocaleProvider`) holds the last server snapshot and replaces it wholesale on every mutation — no local quantity reconciliation, so totals always match what Shopify will charge. It hydrates in a mount effect rather than on the server, which keeps prerendered product pages static.
+- `CartDrawer` follows `MobileMenu`'s raw Radix `Dialog` + Motion idiom (`z-popover`, `scrollDisable`/`scrollEnable`), **not** `ui/Sheet.tsx`, which is unused and animates differently. Its width is an explicit `max-w-[26rem]` because `globals.css` remaps Tailwind's container scale (`sm` is 600px here). Checkout is an `<a>`, never a form — the site's `form-action 'self'` CSP would block a cross-origin submit.
+- Cart line thumbnails come from `cdn.shopify.com`, which is allowlisted in both `images.remotePatterns` and the CSP `img-src` in `next.config.mjs`.
+- **Stock ceilings are learned, not read.** `quantityAvailable` needs the `unauthenticated_read_product_inventory` scope, which this token lacks, so nothing knows a variant's stock up front. Instead every cart mutation selects `warnings { code target }`: a `MERCHANDISE_NOT_ENOUGH_STOCK` warning names the capped cart line, `cart.ts` flags it as `atStockLimit`, and `CartProvider` remembers the ceiling for the session so the stepper's `+` disables at it. Enabling that scope would let the limit be shown before the first click; the learned ceiling stays as the fallback either way.
+- **The cart trigger is scoped**: `isCommercePath()` (routes.ts) puts it on `/products/*`, and `CartButton` additionally shows it anywhere the cart is non-empty so nobody gets stranded mid-purchase.
+- **`settingsCart`** (Studio → Products → Cart, *not* under Settings) holds the empty-cart heading and an ordered `pProduct` reference list. It is **document-localized** (listed in `i18n-types.ts`), so there is one Cart document per language: the heading is a plain `string`, and the reference picker is filtered to the document's own language, which is why the query needs no locale re-resolution — `byLocale('settingsCart')` and a plain dereference are enough. An untranslated locale falls back to the English document (and therefore English products), the same fallback `gHeader`/`gFooter` have. `getCachedSiteData` stays Sanity-only on purpose — see the note in that file.
+- The cart panel is light in both themes, so the drawer carries **`.cart-surface`** (globals.css), which pins the tokens its contents use — including `--accent-foreground`, which the empty-state `ProductCard`s use for hover text and focus rings — to the same values `:root` declares. Without it the drawer is unreadable on a dark route; without `--accent-foreground` specifically, card hover and focus rings go invisible.
+- The empty-state recommendation cards render **without a price**. A live one would mean a Shopify lookup inside `getCachedSiteData`, i.e. on every page of the site, and the manual `price` these cards carry is only a fallback that can be stale for a linked product.
+
+Only the Storefront API is used — there is no Admin API dependency. The Studio picker runs on the same public Storefront token as the frontend, so it lists exactly the products published to that token's sales channel, i.e. the ones a product page can actually render commerce for. (Shopify removed admin-created custom apps on 2026-01-01; a `shpat_` Admin token is no longer obtainable and no longer needed.)
+
+Caching: every **catalog** Storefront fetch is tagged `shopify` + `shopify:product:<handle>` with **no** backstop TTL (deliberate — see the comment on `REVALIDATE` in `product.ts`), so `/api/shopify/revalidate` (register webhooks per its header comment) is the only thing that gets admin edits onto the site without a redeploy. Cart fetches are exempt: they are uncached and untagged (see `cart.ts` above). On the detail page, manual `soldOut` remains an editorial override on top of live availability, and an editor-set `purchaseLink` still wins over the cart — it deep-links a marketplace we don't sell through, so it stays an outbound link with UTM params. The variant picker (`VariantPicker.tsx`) keeps unavailable values selectable so the per-variant back-in-stock state stays reachable.
 
 ### Sanity Studio Structure
 
@@ -202,15 +222,17 @@ EMAIL_SERVER_PORT
 KLAVIYO_PRIVATE_API_KEY     # Newsletter + product back-in-stock subscribe routes
 ```
 
-Optional (Shopify integration — see `.env.example` for setup pointers):
+Optional (Shopify integration — full walkthrough in `docs/SHOPIFY-SETUP.md`):
 
 ```
 SHOPIFY_STORE_DOMAIN        # your-store.myshopify.com
-SHOPIFY_STOREFRONT_API_TOKEN
-SHOPIFY_ADMIN_API_TOKEN     # read_products; Studio picker only
+SHOPIFY_STOREFRONT_PRIVATE_TOKEN # private token from the Headless channel (preferred)
+SHOPIFY_STOREFRONT_API_TOKEN # public token; fallback, throttled per buyer IP
 SHOPIFY_WEBHOOK_SECRET      # webhook signing secret for /api/shopify/revalidate
 SHOPIFY_API_VERSION         # optional pin override (defaults in code)
 ```
+
+`SHOPIFY_ADMIN_API_TOKEN` is retired and read nowhere — a 38-char `shpss_` value is an app *client secret*, not an access token, and belongs in neither.
 
 ### Type Generation
 

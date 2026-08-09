@@ -294,6 +294,42 @@ const newsletterFormFields = `
 	errorBody,
 `;
 
+// The Shopify handle is commerce identity, not copy: it points at the same
+// physical product in every locale, and the localized price/language come from
+// Shopify Markets `@inContext`, never from a second Shopify product. So a
+// translation with no handle of its own inherits its sibling's, preferring the
+// English one. Without this, a translated doc an editor forgot to link silently
+// loses live pricing and drops to the manual `price` string — which carries no
+// currency, so a TWD product renders as a bare "1,480".
+//
+// Siblings are matched on slug, the same way `availableLocalesField` and
+// `productLocaleFilter` resolve translations elsewhere in this file.
+const shopifyHandleField = `
+	"shopifyHandle": coalesce(
+		shopify.handle,
+		*[_type == "pProduct" && slug.current == ^.slug.current && defined(shopify.handle)]
+			| order(select(language == "en" => 0, 1)) [0].shopify.handle
+	)
+`;
+
+const productCardFields = `
+	${baseFields},
+	excerpt,
+	badge,
+	price,
+	purchaseLink,
+	${shopifyHandleField},
+	categories[]->{
+		_id,
+		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+		"slug": slug.current
+	},
+	brands[]->{ _id, title, "slug": slug.current },
+	mainImage {
+		${imageBlockMetaFields}
+	}
+`;
+
 export const siteDataQuery = defineQuery(`{
 		"announcement": ${byLocale('gAnnouncement')}[0]{
 			display,
@@ -382,6 +418,12 @@ export const siteDataQuery = defineQuery(`{
 			"marketingDescription": coalesce(marketingDescription[language == $locale][0].value, marketingDescription[language == "en"][0].value),
 			"privacyPolicyLink": privacyPolicyLink{ ${linkFields} },
 			"cookiePolicyLink": cookiePolicyLink{ ${linkFields} }
+		},
+		"cart": ${byLocale('settingsCart')}[0]{
+			emptyHeading,
+			"recommendedProducts": recommendedProducts[defined(@->)]->{
+				${productCardFields}
+			}
 		},
 	}
 `);
@@ -724,24 +766,6 @@ export const pageBlogSingleQuery = defineQuery(`
 		}
 	}
 `);
-
-const productCardFields = `
-	${baseFields},
-	excerpt,
-	badge,
-	price,
-	purchaseLink,
-	"shopifyHandle": shopify.handle,
-	categories[]->{
-		_id,
-		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-		"slug": slug.current
-	},
-	brands[]->{ _id, title, "slug": slug.current },
-	mainImage {
-		${imageBlockMetaFields}
-	}
-`;
 
 const productMetadataFields = `
 	metadata[]{

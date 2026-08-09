@@ -129,6 +129,28 @@
 		"openMenu": "開啟選單",
 		"closeMenu": "關閉選單"
 	},
+	"cart": {
+		"title": "購物車",
+		"open": "開啟購物車",
+		"close": "關閉購物車",
+		"empty": "您的購物車是空的。",
+		"addToCart": "加入購物車",
+		"adding": "加入中…",
+		"added": "已加入購物車",
+		"selectSize": "請選擇尺寸",
+		"checkout": "前往結帳",
+		"subtotal": "小計",
+		"shippingNote": "運費與稅金將於結帳時計算。",
+		"quantity": "數量",
+		"increase": "增加數量",
+		"decrease": "減少數量",
+		"remove": "移除",
+		"removeAriaLabel": "從購物車移除 {product}",
+		"itemCount": { "one": "{count} 件商品", "other": "{count} 件商品" },
+		"stockLimited": "僅剩 {count} 件",
+		"errorHeading": "發生錯誤",
+		"errorBody": "購物車更新失敗，請再試一次。"
+	},
 	"newsletter": {
 		"emailLabel": "電子郵件地址",
 		"emailPlaceholder": "您的電子郵件",

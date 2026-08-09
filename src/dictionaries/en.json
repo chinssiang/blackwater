@@ -135,6 +135,28 @@
 		"openMenu": "Open menu",
 		"closeMenu": "Close menu"
 	},
+	"cart": {
+		"title": "Cart",
+		"open": "Open cart",
+		"close": "Close cart",
+		"empty": "Your cart is empty.",
+		"addToCart": "Add to cart",
+		"adding": "Adding…",
+		"added": "Added to cart",
+		"selectSize": "Select a size",
+		"checkout": "Checkout",
+		"subtotal": "Subtotal",
+		"shippingNote": "Shipping and taxes are calculated at checkout.",
+		"quantity": "Quantity",
+		"increase": "Increase quantity",
+		"decrease": "Decrease quantity",
+		"remove": "Remove",
+		"removeAriaLabel": "Remove {product} from cart",
+		"itemCount": { "one": "{count} item", "other": "{count} items" },
+		"stockLimited": "Only {count} left in stock",
+		"errorHeading": "Something went wrong",
+		"errorBody": "Your cart could not be updated. Please try again."
+	},
 	"newsletter": {
 		"emailLabel": "Email address",
 		"emailPlaceholder": "Your email",

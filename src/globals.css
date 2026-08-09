@@ -298,6 +298,30 @@
 }
 
 @layer components {
+	/* The cart panel is light in both themes (bg-white/text-black), but the
+	   tokens its contents resolve — borders, muted copy, the recommendation
+	   cards' hover and focus colours — inherit from <html>, which is dark on
+	   every route except /products and /size-guide. There that leaves
+	   --border at white/10% (dividers invisible on white) and
+	   --muted-foreground around 2.6:1 (fails AA). Pin the values :root
+	   declares so the panel reads the same wherever it is opened.
+
+	   Set on the panel element itself, so it simply out-inherits .dark on
+	   <html> — no layer or specificity contest involved. */
+	.cart-surface {
+		--background: oklch(0.9612 0 0);
+		--foreground: oklch(0.145 0 0);
+		--muted: oklch(0.97 0 0);
+		--muted-foreground: oklch(0.556 0 0);
+		--accent: oklch(0.97 0 0);
+		--accent-foreground: oklch(48.49% 0.291 264.12);
+		--primary: oklch(0.205 0 0);
+		--primary-foreground: oklch(0.985 0 0);
+		--border: oklch(0.75 0 0);
+		--input: oklch(0.922 0 0);
+		--ring: oklch(0.708 0 0);
+	}
+
 	.field-hint-ring {
 		&::before {
 			content: '';

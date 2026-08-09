@@ -213,7 +213,10 @@ export function PageProductIndex({ data }: Props) {
 						<Button
 							asChild
 							size="lg"
-							className="t-l-1 whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11 px-6"
+							// text-xs is load-bearing: t-l-1 sets the size in @layer
+						// components, but Button's base text-sm is a utility and wins
+						// the cascade. Not a duplicate.
+						className="t-l-1 text-xs whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11 px-6"
 						>
 							<Link href={allProductsHref}>{t.moreProducts}</Link>
 						</Button>

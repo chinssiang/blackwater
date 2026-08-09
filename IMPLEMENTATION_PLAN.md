@@ -53,23 +53,25 @@ product handle.**
 
 - **Storefront API** (public storefront token, server-side anyway): all page reads.
   Generous rate limits; with ISR caching, usage is negligible.
-- **Admin API** (private token, server-only): only for the Studio product-search picker
-  (Stage 4) and optional webhook registration script. Never called from page renders.
+- ~~**Admin API** (private token, server-only): only for the Studio product-search picker
+  (Stage 4) and optional webhook registration script.~~ Superseded — see the amendment
+  at the end of this file. The picker runs on the Storefront API; no Admin API is used.
 - Pin `SHOPIFY_API_VERSION` (quarterly releases); upgrade deliberately.
 
 ### Environment variables (add to `.env` + Vercel)
 
 ```
 SHOPIFY_STORE_DOMAIN=<store>.myshopify.com
-SHOPIFY_STOREFRONT_API_TOKEN=   # Storefront API access token (custom app)
+SHOPIFY_STOREFRONT_PRIVATE_TOKEN= # private Storefront token (Headless channel)
 SHOPIFY_API_VERSION=2026-01     # pinned
 SHOPIFY_WEBHOOK_SECRET=         # Stage 3
-SHOPIFY_ADMIN_API_TOKEN=        # Stage 4 only (product search in Studio)
 ```
 
-Setup prerequisite: create a **custom app** in Shopify admin (Settings → Apps →
-Develop apps), enable Storefront API scopes (`unauthenticated_read_product_listings`,
-inventory/price scopes), copy tokens.
+Setup prerequisite: add the **Headless** sales channel in the Shopify admin, create a
+storefront, enable its Storefront API permissions (`unauthenticated_read_product_listings`,
+`unauthenticated_read_product_inventory`) and copy the **private** access token (all
+calls are server-side; public tokens are throttled per buyer IP). Full walkthrough:
+`docs/SHOPIFY-SETUP.md`.
 
 ---
 
@@ -145,13 +147,52 @@ change a price in Shopify admin → page updates without redeploy.
 **Tests**: manual — search, link, preview renders; unlinked flow unchanged.
 **Status**: Complete
 
-## Stage 5 (later / optional — explicitly out of scope now)
+## Stage 5: Handle inheritance across translations
 
-- On-site cart & checkout (Storefront API cart mutations) if we outgrow link-out.
-- Multi-currency / zh-TW pricing via Shopify Markets (`@inContext` directive).
+**Goal**: A translated product never silently loses live commerce because an editor
+forgot to mirror the handle onto that language version.
+**Success Criteria**:
+- `shopifyHandleField` in `queries.ts` coalesces `shopify.handle` to a slug-matched
+  sibling document's handle, preferring `en`. Projected once, in `productCardFields`,
+  so every product query inherits it.
+- `p-product.ts` handle description tells editors to set it once.
+- `/zh_tw/products/communion-t-new-balance-redux` renders `NT$1,480` and a variant
+  picker where it previously rendered the bare manual string `1,480`.
+**Tests**: manual — both locales of a product with the handle set on `en` only;
+`npm run typegen` shows `shopifyHandle` still typed `string | null`.
+**Status**: Complete
+
+## Stage 6: On-site cart & Shopify checkout
+
+**Goal**: This site is the store. Browsing, variant choice and the cart stay on our
+domain; the shopper leaves only for Shopify's hosted checkout. Replaces the outbound
+Online Store link, which was also broken — products aren't published to that channel
+and the storefront is password-gated, so it 302'd to `/password`.
+**Success Criteria**:
+- `src/lib/shopify/cart.ts` — `getCart` / `createCart` / `addCartLines` /
+  `updateCartLine` / `removeCartLine`. Uncached (`no-store`, no tags); market pinned
+  once via `buyerIdentity.countryCode`, no `@inContext` on cart calls; errors
+  propagate instead of soft-failing.
+- `src/app/api/shopify/cart/route.ts` — GET + POST (zod union: add/update/remove),
+  cart id in an httpOnly cookie, expired-cart recovery, per-IP rate limit.
+- `CartProvider` / `CartButton` / `CartDrawer` under `src/components/cart/`.
+- Product page: "Add to cart" opens the drawer. `purchaseLink` and the sold-out
+  branch are unchanged.
+- Orphans removed: `shopifyVariantUrl`, `ProductCommerce.url`, `onlineStoreUrl`.
+**Tests**: manual — curl the route (add/accumulate/update/remove/persist, 400 on a
+bad merchandise id, 409 on update with no cart); browser in both locales (add →
+drawer, stepper → subtotal, decrement to 0 → empty state, reload → cart persists,
+Shopify thumbnails load without CSP violations); `purchaseLink` product still shows
+an outbound "Buy it ↗" with UTM params.
+**Status**: Complete
+
+## Later / optional — explicitly out of scope
+
 - Klaviyo's native Shopify back-in-stock trigger replacing the custom list flow.
 - Sanity Connect sync if listing pages should be driven by the Shopify catalog.
 - Migration script deleting manual `price`/`soldOut` once all products are linked.
+- Unlinked products still render the raw manual `price` string, which carries no
+  currency (e.g. `1,880`). Either require a currency in the field or format it.
 
 ---
 
@@ -168,3 +209,48 @@ change a price in Shopify admin → page updates without redeploy.
    Back-in-stock form appears when the selected variant (or whole product) is
    unavailable; manual `soldOut` stays as a page-level editorial override.
 3. **Purchase stays link-out to Shopify** — no on-site cart. Stage 5 unchanged.
+
+---
+
+## Amendment (2026-08): Shopify credential model change
+
+Stages 1–4 above shipped as recorded and are left unedited. This amendment records
+a change on Shopify's side that invalidated one of their assumptions.
+
+**What happened.** On 2026-01-01 Shopify removed custom-app creation from the Shopify
+admin ("Settings → Apps and sales channels → Develop apps"). That flow was the only
+source of a static `shpat_` Admin API access token, which Stage 4's Studio picker
+depended on. Apps are now created in the Dev Dashboard, which issues a Client ID +
+Client Secret; Admin tokens must be minted via the client-credentials grant and expire
+every 24 hours. Existing admin-created apps still work — this store has none.
+
+**What we did.** Rather than adopt client-credentials token minting, **Stage 4's Admin
+API dependency was removed entirely**. `/api/shopify/search` now runs on the Storefront
+API via the existing `shopifyStorefrontFetch` transport: `product(handle:)` for exact
+lookups, `search(… types: [PRODUCT], prefix: LAST)` for free text. `SHOPIFY_ADMIN_API_TOKEN`
+is retired.
+
+**Why.**
+
+- The integration needs one credential instead of three, and the Storefront token was
+  already mandatory for page rendering.
+- The Admin-only safety scaffolding the route carried (`status:active` ANDed into every
+  query, search-term quoting, handle sanitizing) existed solely to make an Admin
+  credential safe behind an endpoint that cannot identify its caller. A public
+  Storefront token makes the invariant structural rather than remembered.
+- Because `status:active` was already forced, the picker never surfaced drafts, so
+  nothing was lost — the `status` field it returned could only ever be `ACTIVE`, making
+  the Studio's DRAFT/ARCHIVED badges dead code. They were removed.
+- It fixes a real bug class: Admin `status:active` ≠ resolvable by the storefront. A
+  product active but unpublished to the Storefront token's sales channel used to be
+  linkable in the Studio while the product page silently fell back to manual fields.
+  The picker and the page now see exactly the same set of products.
+
+**Cost.** Products must be published to the Headless storefront's sales channel to be
+pickable — which was already required for their prices to render. Draft products cannot
+be pre-linked, which `status:active` already prevented; handles can still be pasted by
+hand via the degraded input.
+
+**If Admin API access is ever needed again** (inventory quantities, draft products,
+scripted webhook registration), add a `src/lib/shopify/admin.ts` that mints and caches
+a client-credentials token. Nothing in this change stands in the way.
