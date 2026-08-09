@@ -134,16 +134,17 @@ export default function PageProductSingle({ data, commerce }: Props) {
 				? !selectedVariant.availableForSale
 				: !commerce.availableForSale
 		: false;
-	// Manual soldOut is the editorial override and always wins. Live Shopify
-	// stock only drives the sold-out state when there's no editor-set
-	// purchaseLink: that link points somewhere Shopify doesn't track stock for,
-	// so a Shopify stock-out must not silently remove it.
-	const isSoldOut = Boolean(soldOut) || (liveUnavailable && !purchaseLink);
+	// Manual soldOut is the editorial override and always wins; live Shopify
+	// stock drives the state otherwise. `liveUnavailable` is already false
+	// whenever there's no commerce, so an unlinked product is unaffected.
+	const isSoldOut = Boolean(soldOut) || liveUnavailable;
 
-	// An explicit purchaseLink still wins and stays an outbound link — editors
-	// set it to deep-link a marketplace we don't sell through. Everything else
-	// buys here: Shopify-linked products add to the on-site cart, and the
-	// shopper only leaves at checkout.
+	// Buy-button precedence: manual soldOut, then the on-site cart, then
+	// purchaseLink. Linking a Shopify product moves the sale here — the shopper
+	// only leaves at checkout — so a leftover purchaseLink must not send them
+	// back out. It stays a fallback rather than being ignored outright because
+	// `commerce` is also null when Shopify is simply unreachable, and in that
+	// case the outbound link is the only buy path left.
 	const handleAddToCart = async () => {
 		if (!activeVariant) return;
 		setIsAdding(true);
@@ -399,7 +400,15 @@ export default function PageProductSingle({ data, commerce }: Props) {
 									ease: [0, 0.71, 0.2, 1.01],
 								}}
 							>
-								{purchaseLink ? (
+								{commerce ? (
+									<Button
+										onClick={handleAddToCart}
+										disabled={isAdding || !activeVariant}
+										className="w-full uppercase lg:w-60 transition-[background-color,filter] hover:brightness-[0.97]"
+									>
+										{isAdding ? cartText.adding : cartText.addToCart}
+									</Button>
+								) : purchaseLink ? (
 									<Button asChild>
 										<a
 											href={appendReferralParams(purchaseLink, {
@@ -424,15 +433,7 @@ export default function PageProductSingle({ data, commerce }: Props) {
 											</span>
 										</a>
 									</Button>
-								) : (
-									<Button
-										onClick={handleAddToCart}
-										disabled={isAdding || !activeVariant}
-										className="w-full uppercase lg:w-60 transition-[background-color,filter] hover:brightness-[0.97]"
-									>
-										{isAdding ? cartText.adding : cartText.addToCart}
-									</Button>
-								)}
+								) : null}
 							</motion.div>
 						)
 					)}

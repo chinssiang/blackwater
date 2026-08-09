@@ -9,10 +9,85 @@ import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { language } from '@/sanity/schemaTypes/objects/language';
 import { StarIcon, ImageIcon } from '@sanity/icons';
-import { defineArrayMember, defineField, defineType } from 'sanity';
+import {
+	defineArrayMember,
+	defineField,
+	defineType,
+	type ValidationContext,
+} from 'sanity';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { ShopifyProductInput } from '@/sanity/schemaTypes/components/ShopifyProductInput';
 import { apiVersion } from '@/sanity/env';
+
+/**
+ * The handle that actually drives this product's commerce — its own, or the
+ * slug-matched sibling's. Mirrors `shopifyHandleField` in queries.ts: a
+ * translation with no handle of its own still renders live commerce from the
+ * handle set on its sibling, so "is this linked?" can't be answered from this
+ * document alone.
+ *
+ * That lookup is async, which is why the fields Shopify supersedes carry a
+ * validation *warning* rather than a conditional `hidden` / `readOnly`: those
+ * callbacks are synchronous and see only this document, so they'd miss the
+ * inherited case — which is the common one, since editors set the handle once
+ * on the English document. Warning rather than error, and never read-only, so
+ * an editor can still clear a stale value.
+ */
+async function effectiveShopifyHandle(
+	context: ValidationContext
+): Promise<string | null> {
+	const doc = context.document as
+		| { slug?: { current?: string }; shopify?: { handle?: string } }
+		| undefined;
+	if (doc?.shopify?.handle) return doc.shopify.handle;
+	const slug = doc?.slug?.current;
+	if (!slug) return null;
+	return await siblingShopifyHandle(context, slug);
+}
+
+/**
+ * Sibling lookup, cached per slug for a few seconds. Three rules across two
+ * fields ask this same question about the same document, and Sanity re-runs
+ * validation on open and on every (debounced) edit — without the cache a single
+ * pass over an ordinary unlinked product costs one query per field.
+ */
+const SIBLING_CACHE_MS = 5000;
+const siblingCache = new Map<
+	string,
+	{ at: number; result: Promise<string | null> }
+>();
+
+function siblingShopifyHandle(
+	context: ValidationContext,
+	slug: string
+): Promise<string | null> {
+	const hit = siblingCache.get(slug);
+	if (hit && Date.now() - hit.at < SIBLING_CACHE_MS) return hit.result;
+	// Siblings are matched on slug, the same way the frontend query resolves them.
+	const result = context
+		.getClient({ apiVersion })
+		.fetch<
+			string | null
+		>(`*[_type == "pProduct" && slug.current == $slug && defined(shopify.handle)][0].shopify.handle`, { slug });
+	// A rejection must not be served to later callers for the rest of the TTL.
+	result.catch(() => siblingCache.delete(slug));
+	siblingCache.set(slug, { at: Date.now(), result });
+	return result;
+}
+
+/**
+ * `effectiveShopifyHandle` for the advisory warnings: a failed lookup means
+ * "we don't know", not "invalid". Without this a dropped connection would put
+ * a validation error on `price` / `purchaseLink`, whose correctness has nothing
+ * to do with the network.
+ */
+async function linkedToShopify(context: ValidationContext): Promise<boolean> {
+	try {
+		return Boolean(await effectiveShopifyHandle(context));
+	} catch {
+		return false;
+	}
+}
 
 export const pProduct = defineType({
 	title: 'Product',
@@ -55,7 +130,7 @@ export const pProduct = defineType({
 			title: 'Shopify',
 			type: 'object',
 			description:
-				'Link this product to Shopify. When linked, price, availability and the purchase button come live from Shopify, and the manual price / sold-out / purchase-link fields below are only used as fallbacks.',
+				'Link this product to Shopify. When linked, price, availability and the Add to cart button come live from Shopify: the manual price and purchase link below are only fallbacks for when Shopify is unreachable, while the sold-out toggle stays a manual override.',
 			options: { collapsible: true, collapsed: false },
 			fields: [
 				defineField({
@@ -84,39 +159,33 @@ export const pProduct = defineType({
 			// Required only while there's no Shopify link — once one exists the
 			// live price is authoritative and this field is an unused fallback,
 			// so demanding a value here would leave linked products permanently
-			// un-publishable (or permanently warned at).
-			//
-			// "Linked" includes an inherited link: a translation with no handle of
-			// its own still renders live commerce from its sibling's (see
-			// shopifyHandleField in queries.ts). Checking only this document's own
-			// handle would block every translation on a price string the site never
-			// displays, which is why this reaches for the sibling.
-			validation: (Rule) =>
-				Rule.custom(async (value, context) => {
-					if (value) return true;
-					const doc = context.document as
-						| { slug?: { current?: string }; shopify?: { handle?: string } }
-						| undefined;
-					if (doc?.shopify?.handle) return true;
-					const slug = doc?.slug?.current;
-					if (!slug) return 'Required';
-					// Siblings are matched on slug, the same way the frontend query
-					// resolves them.
-					const inherited = await context
-						.getClient({ apiVersion })
-						.fetch<string | null>(
-							`*[_type == "pProduct" && slug.current == $slug && defined(shopify.handle)][0].shopify.handle`,
-							{ slug }
-						);
-					return inherited ? true : 'Required';
-				}),
+			// un-publishable (or permanently warned at). Exactly one of these two
+			// rules reaches for the handle on any given pass — the other is
+			// short-circuited by `value` — and siblingShopifyHandle() caches the
+			// lookup they share.
+			validation: (Rule) => [
+				Rule.custom(async (value, context) =>
+					value || (await effectiveShopifyHandle(context)) ? true : 'Required'
+				),
+				Rule.custom(async (value, context) =>
+					value && (await linkedToShopify(context))
+						? 'Not shown while Shopify is reachable — the live price is used instead. Kept as the fallback for when it is not.'
+						: true
+				).warning(),
+			],
 		}),
 		defineField({
 			name: 'purchaseLink',
 			title: 'Purchase Link',
 			type: 'url',
 			description:
-				'Overrides the Shopify product URL when set; required for products not linked to Shopify.',
+				'External buy link for products we do not sell through our own Shopify cart. Ignored once a Shopify product is linked above — the Add to cart button is shown instead — and only falls back to this link if Shopify is unreachable.',
+			validation: (Rule) =>
+				Rule.custom(async (value, context) =>
+					value && (await linkedToShopify(context))
+						? 'Not used while Shopify is reachable — shoppers get the Add to cart button instead. This link stays as the fallback for when it is not, including if the handle above stops resolving, so it is safe to leave in place.'
+						: true
+				).warning(),
 		}),
 		defineField({
 			name: 'soldOut',
