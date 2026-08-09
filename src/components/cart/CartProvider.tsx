@@ -5,6 +5,7 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
 	useRef,
 	useState,
 	type ReactNode,
@@ -20,7 +21,13 @@ import type { ShopifyCart } from '@/lib/shopify/types';
 // than adjusting quantities locally, which keeps totals and per-line discounts
 // exactly what Shopify will charge.
 
-type CartContextValue = {
+// State and actions are two contexts, not one. The actions never change
+// identity, so a component that only dispatches — the product page's Add to
+// cart, the header trigger — subscribes to something that never updates and is
+// never re-rendered by a quantity step inside the drawer. Merging them would
+// re-render every consumer on each `isPending` flip, which is what a single
+// object value did before.
+type CartState = {
 	cart: ShopifyCart | null;
 	/** True while a cart request is in flight (initial load or a mutation). */
 	isPending: boolean;
@@ -32,18 +39,46 @@ type CartContextValue = {
 	 */
 	stockLimits: Record<string, number>;
 	isOpen: boolean;
+};
+
+type CartActions = {
 	setOpen: (open: boolean) => void;
 	addLine: (merchandiseId: string, quantity?: number) => Promise<boolean>;
 	updateLine: (lineId: string, quantity: number) => Promise<boolean>;
 	removeLine: (lineId: string) => Promise<boolean>;
 };
 
-const CartContext = createContext<CartContextValue | null>(null);
+const CartStateContext = createContext<CartState | null>(null);
+const CartActionsContext = createContext<CartActions | null>(null);
 
-export function useCart(): CartContextValue {
-	const value = useContext(CartContext);
-	if (!value) throw new Error('useCart must be used within CartProvider');
-	return value;
+/**
+ * Cart state *and* actions. For components that only dispatch, prefer
+ * `useCartActions()` — this subscribes to every cart change.
+ */
+export function useCart(): CartState & CartActions {
+	const state = useContext(CartStateContext);
+	const actions = useContext(CartActionsContext);
+	// Memoized, not merged fresh each call: the whole point of splitting the
+	// contexts is to hand callers something with a stable identity. Returning a
+	// new object every render would silently defeat that for anyone who puts the
+	// result in a dependency array or passes it to a memoized child — the exact
+	// class of re-render bug the split exists to remove.
+	// The merge runs unconditionally so the hook order never depends on whether
+	// the provider is present; the throw happens after.
+	const merged = useMemo(
+		() => (state && actions ? { ...state, ...actions } : null),
+		[state, actions]
+	);
+	if (!merged) throw new Error('useCart must be used within CartProvider');
+	return merged;
+}
+
+/** Dispatch-only view of the cart. Never re-renders on cart state changes. */
+export function useCartActions(): CartActions {
+	const actions = useContext(CartActionsContext);
+	if (!actions)
+		throw new Error('useCartActions must be used within CartProvider');
+	return actions;
 }
 
 type CartResponse = { ok: boolean; cart: ShopifyCart | null };
@@ -212,20 +247,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
 		[mutate]
 	);
 
+	// `setOpen` is a useState setter and the three mutations are useCallback-stable
+	// on `mutate`, so with an empty-ish dep set this object is created once for the
+	// life of the provider — dispatch-only consumers never re-render.
+	const actions = useMemo(
+		() => ({ setOpen, addLine, updateLine, removeLine }),
+		[addLine, updateLine, removeLine]
+	);
+
+	const state = useMemo(
+		() => ({ cart, isPending, stockLimits, isOpen }),
+		[cart, isPending, stockLimits, isOpen]
+	);
+
 	return (
-		<CartContext.Provider
-			value={{
-				cart,
-				isPending,
-				stockLimits,
-				isOpen,
-				setOpen,
-				addLine,
-				updateLine,
-				removeLine,
-			}}
-		>
-			{children}
-		</CartContext.Provider>
+		<CartActionsContext.Provider value={actions}>
+			<CartStateContext.Provider value={state}>
+				{children}
+			</CartStateContext.Provider>
+		</CartActionsContext.Provider>
 	);
 }

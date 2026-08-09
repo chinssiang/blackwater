@@ -58,6 +58,15 @@ const nextConfig = {
 		// `taint` is the most behavior-neutral flag that flips Next to react-experimental
 		// (it only exposes the taint APIs; no runtime/UI change). Required for the import above.
 		taint: true,
+		// Both are umbrella barrels pulling far more into a chunk than the few
+		// primitives actually used. Rewriting every call site to `@radix-ui/react-*`
+		// would do the same job with a much larger diff.
+		//
+		// Entries are matched against the import specifier, so these must be the
+		// exact strings the source imports from: `radix-ui` (10 files) and
+		// `motion/react` (12 files). Plain `motion` matches nothing here — no file
+		// imports it — and silently optimizes nothing.
+		optimizePackageImports: ['radix-ui', 'motion/react'],
 	},
 	images: {
 		formats: ['image/avif', 'image/webp'],

@@ -285,11 +285,18 @@ export async function withLiveCardPrices<T extends CardLike | null>(
 	locale: Locale
 ): Promise<T[]> {
 	if (!products?.length) return products ? [...products] : [];
-	const commerce = await getCardCommerce(
-		products.map((p) => p?.shopifyHandle),
-		locale
-	);
+	// Started together: the dictionary is a local import (static for `en`,
+	// module-cached dynamic for `zh_tw`), so loading it costs nothing next to the
+	// Storefront round trip — but awaited in sequence it added its whole load to
+	// the front of that request. Fetching it even when no handles resolve is the
+	// deliberate trade for taking it off the critical path.
+	const [commerce, dict] = await Promise.all([
+		getCardCommerce(
+			products.map((p) => p?.shopifyHandle),
+			locale
+		),
+		getDictionary(locale),
+	]);
 	if (commerce.size === 0) return [...products];
-	const dict = await getDictionary(locale);
 	return applyCardPrices(products, commerce, locale, dict.products.fromPrice);
 }

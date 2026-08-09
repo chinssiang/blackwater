@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
+import { cache, Suspense } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import {
@@ -9,13 +9,11 @@ import {
 } from '@/sanity/lib/queries';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { type Locale } from '@/lib/i18n';
-import { getDictionary } from '@/lib/dictionary.server';
-import {
-	applyCardPrices,
-	getCardCommerce,
-	getProductCommerce,
-} from '@/lib/shopify/product';
+import { isShopifyConfigured } from '@/lib/shopify/client';
 import PageProductSingle from './_components/PageProductSingle';
+import ProductBuyColumn from './_components/ProductBuyColumn';
+import ProductRelatedGrid from './_components/ProductRelatedGrid';
+import { BuyColumnSkeleton } from './_components/BuyColumn';
 
 type Props = {
 	params: Promise<{ locale: string; slug: string }>;
@@ -55,35 +53,82 @@ export default async function Page({ params }: Props) {
 
 	if (!data) return <NotFoundContent locale={locale} />;
 
-	// Live Shopify data: full commerce for this product, card prices for the
-	// related grids. All soft-fail to the manual Sanity fields.
-	const [commerce, cardCommerce, dict] = await Promise.all([
-		getProductCommerce(data.shopifyHandle, locale as Locale),
-		getCardCommerce(
-			[
-				...(data.relatedProducts ?? []),
-				...(data.defaultRelatedProducts ?? []),
-			].map((p: { shopifyHandle?: string | null }) => p.shopifyHandle),
-			locale as Locale
-		),
-		getDictionary(locale as Locale),
-	]);
+	const firstCategory = data.categories?.[0];
 
-	const pricedData = {
-		...data,
-		relatedProducts: applyCardPrices(
-			data.relatedProducts,
-			cardCommerce,
-			locale as Locale,
-			dict.products.fromPrice
-		),
-		defaultRelatedProducts: applyCardPrices(
-			data.defaultRelatedProducts,
-			cardCommerce,
-			locale as Locale,
-			dict.products.fromPrice
-		),
-	};
+	// Only show the buy-column placeholder when there is actually a Storefront
+	// lookup to wait for. `getProductCommerce` returns null without a network
+	// call for an unlinked product, and `isShopifyConfigured()` short-circuits
+	// the same way wherever the env vars are unset — in both cases BuyColumn
+	// resolves to a bare manual price, so a skeleton showing a price line, five
+	// size chips and a full-width button would promise controls that never come
+	// and then collapse to one line of text.
+	const awaitsCommerce = Boolean(
+		stegaClean(data.shopifyHandle) && isShopifyConfigured()
+	);
 
-	return <PageProductSingle data={pricedData} commerce={commerce} />;
+	// Picked rather than spread: `data` also holds both related arrays, the SEO
+	// `sharing` block, `availableLocales` and every commerce field, none of which
+	// PageProductSingle renders — and all of which would otherwise be serialized
+	// across the client boundary on every product page.
+	const {
+		title,
+		badge,
+		categories,
+		brands,
+		mainImage,
+		content,
+		whyUseIt,
+		whoIsItFor,
+		whenReachForIt,
+		metadata,
+		sizeChart,
+	} = data;
+
+	// Both Shopify lookups stream. Awaiting them here put two Storefront round
+	// trips in front of the first byte, so the LCP product image — which Sanity
+	// has already returned — waited on commerce data it doesn't use. Each
+	// boundary soft-fails to the manual Sanity fields on its own.
+	return (
+		<PageProductSingle
+			data={{
+				title,
+				badge,
+				categories,
+				brands,
+				mainImage,
+				content,
+				whyUseIt,
+				whoIsItFor,
+				whenReachForIt,
+				metadata,
+				sizeChart,
+			}}
+			buySlot={
+				<Suspense fallback={awaitsCommerce ? <BuyColumnSkeleton /> : null}>
+					<ProductBuyColumn
+						handle={data.shopifyHandle}
+						locale={locale as Locale}
+						price={data.price}
+						purchaseLink={data.purchaseLink}
+						soldOut={data.soldOut}
+						title={data.title}
+						slug={data.slug}
+					/>
+				</Suspense>
+			}
+			relatedSlot={
+				// No fallback: the grid is below the fold and its heading would be a
+				// promise of content that may not exist (both arrays can be empty).
+				<Suspense fallback={null}>
+					<ProductRelatedGrid
+						relatedProducts={data.relatedProducts as any}
+						defaultRelatedProducts={data.defaultRelatedProducts as any}
+						locale={locale as Locale}
+						categoryTitle={firstCategory?.title}
+						categorySlug={firstCategory?.slug}
+					/>
+				</Suspense>
+			}
+		/>
+	);
 }

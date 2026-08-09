@@ -1,34 +1,16 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState, type CSSProperties } from 'react';
+import type { ReactNode, CSSProperties } from 'react';
 import ImageBlock from '@/components/ImageBlock';
 import CustomPortableText from '@/components/CustomPortableText';
 import type { PageProductSingleQueryResult } from 'sanity.types';
-import {
-	findVariantForSelection,
-	formatShopifyPrice,
-	hasOnlyDefaultVariant,
-	pickInitialVariant,
-	type ProductCommerce,
-} from '@/lib/shopify/types';
-import { useCart } from '@/components/cart/CartProvider';
-import VariantPicker from './VariantPicker';
-import {
-	hasArrayValue,
-	appendReferralParams,
-	REFERRAL_SOURCE,
-} from '@/lib/utils';
+import { hasArrayValue } from '@/lib/utils';
 import { REVEAL_SOFT } from '@/lib/animate';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { interpolate } from '@/lib/dictionary';
 import { resolveHref } from '@/lib/routes';
-import { localizePath } from '@/lib/i18n';
-import ProductCard from '../../_components/ProductCard';
-import BackInStockForm from './BackInStockForm';
 import SizeChartDialog, { SIZE_GUIDE_LINK_CLASS } from './SizeChartDialog';
 import { isRenderable } from '@/components/SizeChartTable';
-import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
 import {
 	Accordion,
@@ -37,125 +19,59 @@ import {
 	AccordionContent,
 } from '@/components/ui/Accordion';
 
+// Renders only what Sanity already has: image, title, copy, size guide. Both
+// Shopify-dependent regions arrive as streamed server components, so nothing
+// here waits on a Storefront round trip.
+
+// Explicitly the fields this component renders, not the whole query result.
+// Everything crossing into a client component is serialized into the HTML and
+// every later RSC response, so the payload used to carry both related-product
+// arrays, the SEO `sharing` block and every commerce field — none of which are
+// read here — on every product page.
+type ProductData = NonNullable<PageProductSingleQueryResult>;
+
 type Props = {
-	data: NonNullable<PageProductSingleQueryResult>;
-	/** Live Shopify data; null for unlinked products or when Shopify is unreachable. */
-	commerce: ProductCommerce | null;
+	data: Pick<
+		ProductData,
+		| 'title'
+		| 'badge'
+		| 'categories'
+		| 'brands'
+		| 'mainImage'
+		| 'content'
+		| 'whyUseIt'
+		| 'whoIsItFor'
+		| 'whenReachForIt'
+		| 'metadata'
+		| 'sizeChart'
+	>;
+	/** Streamed <ProductBuyColumn> — price, variants, buy button. */
+	buySlot: ReactNode;
+	/** Streamed <ProductRelatedGrid>. */
+	relatedSlot: ReactNode;
 };
 
-export default function PageProductSingle({ data, commerce }: Props) {
+export default function PageProductSingle({
+	data,
+	buySlot,
+	relatedSlot,
+}: Props) {
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
 	const productText = useTranslations('products');
-	const cartText = useTranslations('cart');
-	const { addLine, setOpen: setCartOpen } = useCart();
-	// Local rather than the cart's global `isPending`: that also fires for the
-	// drawer's own quantity steppers, which must not put this button in a
-	// loading state.
-	const [isAdding, setIsAdding] = useState(false);
 	const {
 		title,
-		slug,
 		badge,
 		categories,
 		brands,
 		mainImage,
-		price,
-		purchaseLink,
-		soldOut,
 		content,
 		whyUseIt,
 		whoIsItFor,
 		whenReachForIt,
 		metadata,
 		sizeChart,
-		relatedProducts,
-		defaultRelatedProducts,
 	} = data || {};
-
-	// --- Commerce: Shopify-linked products get live price/availability driven
-	// by the variant selection; unlinked ones keep the manual Sanity fields.
-	const initialVariant = useMemo(
-		() => (commerce ? pickInitialVariant(commerce.variants) : null),
-		[commerce]
-	);
-	const initialSelection = useMemo(
-		() =>
-			Object.fromEntries(
-				(initialVariant?.selectedOptions ?? []).map((o) => [o.name, o.value])
-			),
-		[initialVariant]
-	);
-	const [selection, setSelection] =
-		useState<Record<string, string>>(initialSelection);
-	// The picker is seeded from `commerce`, which arrives as a prop — so when a
-	// refresh swaps in a different product (or fills in commerce that was null
-	// because Shopify was unreachable on first render), the seed has to be
-	// re-applied or the picker keeps a selection belonging to the old payload.
-	// Keyed on the handle so an ordinary re-render never clobbers the shopper's
-	// in-progress choice.
-	const [selectionKey, setSelectionKey] = useState(commerce?.handle ?? null);
-	if (selectionKey !== (commerce?.handle ?? null)) {
-		setSelectionKey(commerce?.handle ?? null);
-		setSelection(initialSelection);
-	}
-
-	const selectedVariant = commerce
-		? findVariantForSelection(commerce.variants, selection)
-		: null;
-	const showVariantPicker = commerce && !hasOnlyDefaultVariant(commerce);
-	// Shopify catalogs are routinely sparse (Sand/M may simply not exist), and
-	// the picker deliberately keeps such values clickable. Falling back to
-	// another variant here would price, stock-check and — worst — deep-link
-	// `?variant=` for an item the shopper never chose, so an unmatched
-	// combination resolves to no variant at all and reads as unavailable.
-	const unmatchedSelection = Boolean(showVariantPicker) && !selectedVariant;
-	const activeVariant = unmatchedSelection
-		? null
-		: (selectedVariant ?? initialVariant);
-
-	const displayPrice = commerce
-		? formatShopifyPrice(activeVariant?.price ?? commerce.minPrice, locale)
-		: price;
-	const compareAtPrice = activeVariant?.compareAtPrice;
-	const displayCompareAt =
-		commerce &&
-		compareAtPrice &&
-		Number(compareAtPrice.amount) > Number(activeVariant?.price.amount)
-			? formatShopifyPrice(compareAtPrice, locale)
-			: null;
-
-	const liveUnavailable = commerce
-		? unmatchedSelection
-			? true
-			: selectedVariant
-				? !selectedVariant.availableForSale
-				: !commerce.availableForSale
-		: false;
-	// Manual soldOut is the editorial override and always wins; live Shopify
-	// stock drives the state otherwise. `liveUnavailable` is already false
-	// whenever there's no commerce, so an unlinked product is unaffected.
-	const isSoldOut = Boolean(soldOut) || liveUnavailable;
-
-	// Buy-button precedence: manual soldOut, then the on-site cart, then
-	// purchaseLink. Linking a Shopify product moves the sale here — the shopper
-	// only leaves at checkout — so a leftover purchaseLink must not send them
-	// back out. It stays a fallback rather than being ignored outright because
-	// `commerce` is also null when Shopify is simply unreachable, and in that
-	// case the outbound link is the only buy path left.
-	const handleAddToCart = async () => {
-		if (!activeVariant) return;
-		setIsAdding(true);
-		const added = await addLine(activeVariant.gid);
-		setIsAdding(false);
-		if (added) setCartOpen(true);
-	};
-	// Carried into the Klaviyo back-in-stock event so restock campaigns can
-	// segment by the exact variant requested.
-	const backInStockTitle =
-		selectedVariant && selectedVariant.title !== 'Default Title'
-			? `${title ?? ''} — ${selectedVariant.title}`
-			: (title ?? '');
 
 	// One decision, made here: a chart with a table opens in place, and one
 	// without falls back to the size guide page. The dialog owns no part of this
@@ -205,11 +121,6 @@ export default function PageProductSingle({ data, commerce }: Props) {
 			},
 	].filter(Boolean) as any[];
 
-	const displayRelated =
-		relatedProducts && relatedProducts.length > 0
-			? relatedProducts
-			: defaultRelatedProducts;
-
 	const categoryLabel = hasArrayValue(categories)
 		? categories
 				.map((c: any) => c.title)
@@ -223,9 +134,6 @@ export default function PageProductSingle({ data, commerce }: Props) {
 				.join(', ')
 		: null;
 
-	const firstCategory = hasArrayValue(categories)
-		? (categories[0] as any)
-		: null;
 	// Keep the eyebrow concise: lead with the brand (the key identifier) and
 	// let the breadcrumb carry the category. Products can be tagged with many
 	// categories, so listing them all here reads as noise.
@@ -295,97 +203,9 @@ export default function PageProductSingle({ data, commerce }: Props) {
 
 					<h1 className="mt-3 text-balance t-h-1 uppercase">{title}</h1>
 
-					{displayPrice && (
-						<p
-							className="reveal t-spec font-semibold mt-5 text-foreground/75"
-							style={{ '--reveal-delay': '0.2s' } as CSSProperties}
-						>
-							{displayPrice}
-							{displayCompareAt && (
-								<s className="ml-2 font-normal text-foreground/45">
-									{displayCompareAt}
-								</s>
-							)}
-						</p>
-					)}
-
-					{showVariantPicker && (
-						<div
-							className="reveal mt-6"
-							style={{ '--reveal-delay': '0.22s' } as CSSProperties}
-						>
-							<VariantPicker
-								options={commerce.options}
-								variants={commerce.variants}
-								selection={selection}
-								onSelect={(name, value) =>
-									setSelection((prev) => ({ ...prev, [name]: value }))
-								}
-							/>
-						</div>
-					)}
-
-					{isSoldOut ? (
-						<div
-							className="reveal mt-6"
-							style={{ '--reveal-delay': '0.25s' } as CSSProperties}
-						>
-							<Button
-								aria-disabled="true"
-								tabIndex={-1}
-								variant="outline"
-								className="w-full uppercase lg:w-60"
-							>
-								{productText.soldOut}
-							</Button>
-							<BackInStockForm
-								productTitle={backInStockTitle}
-								productSlug={slug ?? ''}
-							/>
-						</div>
-					) : (
-						(purchaseLink || commerce) && (
-							<div
-								className="reveal mt-6"
-								style={{ '--reveal-delay': '0.25s' } as CSSProperties}
-							>
-								{commerce ? (
-									<Button
-										onClick={handleAddToCart}
-										disabled={isAdding || !activeVariant}
-										className="w-full uppercase lg:w-60 transition-[background-color,filter] hover:brightness-[0.97]"
-									>
-										{isAdding ? cartText.adding : cartText.addToCart}
-									</Button>
-								) : purchaseLink ? (
-									<Button asChild>
-										<a
-											href={appendReferralParams(purchaseLink, {
-												source: REFERRAL_SOURCE,
-												medium: 'referral',
-												campaign: 'curated-products',
-												content: slug ?? undefined,
-											})}
-											target="_blank"
-											rel="noopener"
-											aria-label={interpolate(productText.buyAriaLabel, {
-												product: title ?? productText.thisProduct,
-											})}
-											className="group lg:w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase w-full"
-										>
-											{productText.buyIt}
-											<span
-												aria-hidden
-												className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
-											>
-												↗
-											</span>
-										</a>
-									</Button>
-								) : null}
-							</div>
-						)
-					)}
+					{/* Price, variants and the buy button — everything that waits on
+					    Shopify — arrive here as a streamed server component. */}
+					{buySlot}
 
 					{sizeGuideControl && (
 						<div
@@ -490,39 +310,8 @@ export default function PageProductSingle({ data, commerce }: Props) {
 				</div>
 			</div>
 
-			{/* Related products */}
-			{displayRelated && displayRelated.length > 0 && (
-				<section className="border-t border-foreground/10 pt-12 lg:pt-16">
-					<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
-						<h2 className="t-l-2 uppercase text-foreground/70">
-							{firstCategory?.title
-								? interpolate(productText.moreCategory, {
-										category: firstCategory.title,
-									})
-								: productText.morePicks}
-						</h2>
-						<Link
-							href={
-								firstCategory?.slug
-									? resolveHref({
-											documentType: 'pProductCategory',
-											slug: firstCategory.slug,
-											locale,
-										})!
-									: localizePath('/products/all', locale)
-							}
-							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
-						>
-							{firstCategory?.title ?? productText.allProducts}
-						</Link>
-					</div>
-					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-10">
-						{displayRelated.map((product, index) => (
-							<ProductCard key={product._id} product={product} index={index} />
-						))}
-					</div>
-				</section>
-			)}
+			{/* Below the fold and Shopify-dependent, so it streams too. */}
+			{relatedSlot}
 		</>
 	);
 }

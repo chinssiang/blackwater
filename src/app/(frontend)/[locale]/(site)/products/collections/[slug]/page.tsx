@@ -55,14 +55,18 @@ export default async function Page({ params }: Props) {
 	if (!data) return <NotFoundContent locale={locale} />;
 
 	const cleanData = stegaClean(data);
-	const dict = await getDictionary(locale as Locale);
+	// Independent: a local dictionary import and a Storefront round trip. Awaited
+	// in sequence, the dictionary sat in front of the network call for no reason.
+	const [dict, products] = await Promise.all([
+		getDictionary(locale as Locale),
+		withLiveCardPrices(data.products, locale as Locale),
+	]);
+
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
 		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: locale as Locale }) },
 		{ name: dict.breadcrumb.products, path: resolveHref({ documentType: 'pProductIndex', locale: locale as Locale }) },
 		{ name: cleanData?.title, path: resolveHref({ documentType: 'pProductCollection', slug, locale: locale as Locale }) },
 	]);
-
-	const products = await withLiveCardPrices(data.products, locale as Locale);
 
 	return (
 		<>
