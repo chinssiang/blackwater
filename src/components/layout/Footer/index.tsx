@@ -1,8 +1,6 @@
-import { useLayoutEffect, useRef } from 'react';
-import { pageTransitionFade } from '@/lib/animate';
+import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import CustomLink from '@/components/CustomLink';
 import ManageCookiesButton from '@/components/consent/ManageCookiesButton';
-import { motion } from 'motion/react';
 import type { GFooter, SettingsMenu } from 'sanity.types';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
 import Link from 'next/link';
@@ -36,12 +34,10 @@ export function Footer({ data }: { data: FooterProps }) {
 	}, []);
 
 	return (
-		<motion.footer
+		<footer
 			ref={footerRef}
-			initial="initial"
-			animate="animate"
-			variants={pageTransitionFade}
-			className="bg-background text-foreground pt-section lg:pb-14 p-x-max empty:hidden pb-[max(calc(var(--height-g-toolbar)+3.5rem),3.5rem)]"
+			className="reveal bg-background text-foreground pt-section lg:pb-14 p-x-max empty:hidden pb-[max(calc(var(--height-g-toolbar)+3.5rem),3.5rem)]"
+			style={{ '--reveal-duration': '0.4s' } as CSSProperties}
 		>
 			{hasMenus && (
 				<nav
@@ -87,21 +83,20 @@ export function Footer({ data }: { data: FooterProps }) {
 					<ManageCookiesButton className="t-l-2 text-foreground/60 hover:text-foreground ml-auto" />
 				)}
 				{copyright && (
-					<motion.small
-						variants={{
-							hidden: { opacity: 0 },
-							show: { opacity: 1 },
-						}}
-						transition={{ duration: 0.3, delay: 1.5 }}
-						initial="hidden"
-						animate="show"
-						className="t-l-2 lg:t-l-1 flex gap-2 uppercase text-foreground/60"
+					<small
+						className="reveal t-l-2 lg:t-l-1 flex gap-2 uppercase text-foreground/60"
+						style={
+							{
+								'--reveal-duration': '0.3s',
+								'--reveal-delay': '1.5s',
+							} as CSSProperties
+						}
 					>
 						<span className="shrink-0">© {new Date().getFullYear()}</span>
 						<span className="max-sm:whitespace-pre-line">{copyright}</span>
-					</motion.small>
+					</small>
 				)}
 			</div>
-		</motion.footer>
+		</footer>
 	);
 }

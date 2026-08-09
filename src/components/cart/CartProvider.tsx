@@ -56,6 +56,16 @@ export function CartProvider({ children }: { children: ReactNode }) {
 	const [stockLimits, setStockLimits] = useState<Record<string, number>>({});
 	const [isOpen, setOpen] = useState(false);
 
+	// A response can still be in flight when the provider goes away; applying it
+	// then would write state into a torn-down tree.
+	const mounted = useRef(true);
+	useEffect(() => {
+		mounted.current = true;
+		return () => {
+			mounted.current = false;
+		};
+	}, []);
+
 	// A capped response tells us the real ceiling for that line: whatever
 	// quantity came back.
 	//
@@ -65,6 +75,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 	// line would otherwise clear the ceiling learned for another and re-enable a
 	// stepper that is still at its limit.
 	const applyCart = useCallback((next: ShopifyCart | null) => {
+		if (!mounted.current) return;
 		setCart(next);
 		setStockLimits((prev) => {
 			const updated: Record<string, number> = {};
@@ -91,44 +102,78 @@ export function CartProvider({ children }: { children: ReactNode }) {
 		setOpen(false);
 	}, [pathname]);
 
+	// Every cart request — mutations *and* plain reads — runs strictly one at a
+	// time, chained onto this tail. Each response replaces the whole snapshot, so
+	// two in flight at once would apply in arrival order: removing line B while
+	// stepping line A could land A's older snapshot last and resurrect B, and a
+	// bfcache-restore refresh landing after a quantity bump would revert the line
+	// to its pre-bump state. Per-line guards can't fix that — the race is *across*
+	// lines and actions — so the ordering belongs here.
+	const queue = useRef<Promise<unknown>>(Promise.resolve());
+	// Counts requests rather than flagging one, so the first response to land
+	// doesn't clear `isPending` while its successors are still out.
+	const inFlight = useRef(0);
+
+	const enqueue = useCallback(<T,>(run: () => Promise<T>): Promise<T> => {
+		inFlight.current += 1;
+		setIsPending(true);
+		const tracked = async (): Promise<T> => {
+			try {
+				return await run();
+			} finally {
+				inFlight.current -= 1;
+				if (inFlight.current === 0) setIsPending(false);
+			}
+		};
+		// `catch` keeps one rejection from poisoning the tail for every later
+		// request; the callers already resolve rather than throw.
+		const next = queue.current.then(tracked, tracked);
+		queue.current = next.catch(() => {});
+		return next;
+	}, []);
+
+	const refreshCart = useCallback(
+		() =>
+			enqueue(async () => {
+				try {
+					const res = await fetch('/api/shopify/cart');
+					if (!res.ok) return;
+					const data = (await res.json()) as CartResponse;
+					applyCart(data.cart);
+				} catch {
+					// No cart on screen yet, so a failed read has nothing to report —
+					// the next mutation surfaces the error itself.
+				}
+			}),
+		[enqueue, applyCart]
+	);
+
 	// Hydrate after mount rather than on the server. Reading the cart cookie
 	// during render would make the cart part of the cached HTML for every page
 	// that renders the header, which is the whole site — and one shopper's lines
 	// must never be served to another. Fetching client-side keeps the cart out of
 	// any shared render entirely.
 	useEffect(() => {
-		let cancelled = false;
-		(async () => {
-			try {
-				const res = await fetch('/api/shopify/cart');
-				if (!res.ok) return;
-				const data = (await res.json()) as CartResponse;
-				if (!cancelled) applyCart(data.cart);
-			} catch {
-				// No cart on screen yet, so a failed hydrate has nothing to report —
-				// the next mutation surfaces the error itself.
-			}
-		})();
-		return () => {
-			cancelled = true;
-		};
-	}, [applyCart]);
+		refreshCart();
+	}, [refreshCart]);
 
-	// Cart mutations run strictly one at a time, chained onto this tail. Each
-	// response replaces the whole snapshot, so two in flight at once would apply
-	// in arrival order: removing line B while stepping line A could land A's
-	// older snapshot last and resurrect B. Per-line guards can't fix that — the
-	// race is *across* lines and actions — so the ordering belongs here.
-	const queue = useRef<Promise<unknown>>(Promise.resolve());
-	// Counts requests rather than flagging one, so the first response to land
-	// doesn't clear `isPending` while its successors are still out.
-	const inFlight = useRef(0);
+	// Checkout is a cross-origin link, so the shopper leaves mid-state and React
+	// effect cleanups never run on unload. On a back/forward-cache restore the
+	// cart snapshot predates whatever happened at Shopify — an order they just
+	// placed would still be sitting in the drawer — so re-read it. The drawer's
+	// own restore (closing it, releasing the scroll lock) belongs to
+	// `useScrollLock`, which every overlay shares.
+	useEffect(() => {
+		const onShow = (event: PageTransitionEvent) => {
+			if (event.persisted) refreshCart();
+		};
+		window.addEventListener('pageshow', onShow);
+		return () => window.removeEventListener('pageshow', onShow);
+	}, [refreshCart]);
 
 	const mutate = useCallback(
-		(body: Record<string, unknown>): Promise<boolean> => {
-			inFlight.current += 1;
-			setIsPending(true);
-			const run = async (): Promise<boolean> => {
+		(body: Record<string, unknown>): Promise<boolean> =>
+			enqueue(async (): Promise<boolean> => {
 				try {
 					const res = await fetch('/api/shopify/cart', {
 						method: 'POST',
@@ -145,18 +190,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 				} catch {
 					toast.error(t.errorHeading, { description: t.errorBody });
 					return false;
-				} finally {
-					inFlight.current -= 1;
-					if (inFlight.current === 0) setIsPending(false);
 				}
-			};
-			// `catch` keeps one rejection from poisoning the tail for every later
-			// mutation; `run` already resolves rather than throwing.
-			const next = queue.current.then(run, run);
-			queue.current = next.catch(() => {});
-			return next;
-		},
-		[applyCart, locale, t.errorBody, t.errorHeading]
+			}),
+		[enqueue, applyCart, locale, t.errorBody, t.errorHeading]
 	);
 
 	const addLine = useCallback(

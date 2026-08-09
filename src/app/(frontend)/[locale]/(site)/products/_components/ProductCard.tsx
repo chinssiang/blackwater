@@ -3,8 +3,7 @@
 import { Fragment } from 'react';
 import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
-import { motion } from 'motion/react';
-import { useReveal } from '@/hooks/useReveal';
+import { revealStagger } from '@/lib/animate';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { Badge } from '@/components/ui/Badge';
@@ -66,7 +65,6 @@ function CategoryLinks({
 }
 
 export default function ProductCard({ product, index = 0 }: ProductCardProps) {
-	const reveal = useReveal();
 	const locale = useLocale();
 	const t = useTranslations('products');
 	const categories = product.categories?.filter((c) => Boolean(c.title)) ?? [];
@@ -81,14 +79,9 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 	const showCategoryTag = Boolean(brandLabel && hasCategories);
 
 	return (
-		<motion.article
-			{...reveal}
-			transition={{
-				duration: 0.8,
-				delay: index * 0.06,
-				ease: [0, 0.5, 0.5, 1],
-			}}
-			className="group relative flex h-full flex-col"
+		<article
+			className="reveal group relative flex h-full flex-col"
+			style={revealStagger(index)}
 		>
 			<div className="relative aspect-square overflow-hidden bg-background rounded">
 				{product.mainImage ? (
@@ -176,6 +169,6 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 			>
 				<span className="sr-only">{product.title}</span>
 			</Link>
-		</motion.article>
+		</article>
 	);
 }

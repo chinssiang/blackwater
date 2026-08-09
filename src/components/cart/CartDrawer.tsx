@@ -16,7 +16,7 @@ import {
 	MAX_LINE_QUANTITY,
 	type ShopifyCartLine,
 } from '@/lib/shopify/types';
-import { scrollDisable, scrollEnable } from '@/lib/utils';
+import { useScrollLock } from '@/hooks/useScrollLock';
 import ProductCard from '@/app/(frontend)/[locale]/(site)/products/_components/ProductCard';
 import CartCountBadge from './CartCountBadge';
 import { useCart } from './CartProvider';
@@ -181,11 +181,7 @@ export default function CartDrawer({ settings }: { settings?: CartSettings }) {
 			price: null,
 		}));
 
-	useEffect(() => {
-		if (!isOpen) return;
-		scrollDisable();
-		return () => scrollEnable();
-	}, [isOpen]);
+	useScrollLock(isOpen, () => setOpen(false));
 
 	const lines = cart?.lines ?? [];
 	const count = cart?.totalQuantity ?? 0;

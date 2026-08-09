@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
-import { motion } from 'motion/react';
-import { useReveal } from '@/hooks/useReveal';
+import { revealStagger } from '@/lib/animate';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { pickPlural, interpolate } from '@/lib/dictionary';
@@ -16,7 +15,6 @@ type Props = {
 
 export function PageProductCollectionsIndex({ data }: Props) {
 	const { collections } = data || {};
-	const reveal = useReveal();
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
 	const t = useTranslations('products');
@@ -24,11 +22,9 @@ export function PageProductCollectionsIndex({ data }: Props) {
 	return (
 		<>
 			{/* Breadcrumb */}
-			<motion.nav
+			<nav
 				aria-label="Breadcrumb"
-				className="t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
-				{...reveal}
-				transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
+				className="reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
@@ -42,7 +38,7 @@ export function PageProductCollectionsIndex({ data }: Props) {
 				<span aria-current="page" className="text-foreground/90">
 					{t.collectionsTitle}
 				</span>
-			</motion.nav>
+			</nav>
 
 			<ProductPageHeader
 				title={t.collectionsTitle}
@@ -53,14 +49,10 @@ export function PageProductCollectionsIndex({ data }: Props) {
 				<div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
 					{collections.map((collection, index) => {
 						return (
-							<motion.article
+							<article
 								key={collection._id}
-								{...reveal}
-								transition={{
-									duration: 0.8,
-									delay: index * 0.06,
-									ease: [0, 0.5, 0.5, 1],
-								}}
+								className="reveal"
+								style={revealStagger(index)}
 							>
 								<Link
 									href={
@@ -102,7 +94,7 @@ export function PageProductCollectionsIndex({ data }: Props) {
 										</p>
 									)}
 								</Link>
-							</motion.article>
+							</article>
 						);
 					})}
 				</div>

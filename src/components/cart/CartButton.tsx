@@ -1,9 +1,7 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
-import { isCommercePath } from '@/lib/routes';
 import CartCountBadge from './CartCountBadge';
 import { useCart } from './CartProvider';
 
@@ -12,19 +10,14 @@ import { useCart } from './CartProvider';
  * after mount — rendering a "0" first would flash to the real number on every
  * page load for shoppers who already have a cart.
  *
- * Only shown where there is something to buy, plus anywhere the cart already
- * holds items: hiding it outright would strand a shopper who wandered from
- * /products to /events with two tees in their cart and no way back to checkout.
- * The rule lives here rather than in Header so it can read cart state without
- * threading a prop through Header's Sanity-typed props.
+ * Shown on every page: the cart is a shopper's own state, and hiding the way
+ * back to it off the product routes stranded anyone who wandered to /events
+ * mid-purchase. An empty cart renders the label alone, without a badge.
  */
 export default function CartButton() {
 	const t = useTranslations('cart');
-	const pathname = usePathname();
 	const { cart, setOpen } = useCart();
 	const count = cart?.totalQuantity ?? 0;
-
-	if (count === 0 && !isCommercePath(pathname)) return null;
 
 	return (
 		<button

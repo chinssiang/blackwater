@@ -128,7 +128,11 @@ export const imageMetaFields = `
   "metadata": asset->metadata {
     lqip,
     dimensions,
-    mimeType
+    isOpaque,
+    // From the asset, not the metadata object: sanity.imageMetadata has no
+    // mimeType, so projecting it here resolved to null and left SanityImage's
+    // JPEG fallback unreachable.
+    "mimeType": ^.asset->mimeType
   }
 `;
 

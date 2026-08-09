@@ -3,8 +3,7 @@
 import { ArrowRight } from '@/components/SvgIcons';
 import { cn, hasArrayValue } from '@/lib/utils';
 import Link from 'next/link';
-import { motion } from 'motion/react';
-import { useReveal } from '@/hooks/useReveal';
+import { REVEAL_SOFT, revealStagger } from '@/lib/animate';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { localizePath } from '@/lib/i18n';
@@ -101,19 +100,13 @@ export function PageProductIndex({ data }: Props) {
 		allProducts,
 		allProductsList,
 	} = data || {};
-	const reveal = useReveal();
 	const locale = useLocale();
 	const t = useTranslations('products');
 	const allProductsHref = localizePath('/products/all', locale);
 
 	return (
 		<>
-			<motion.section
-				className="mb-14 lg:mb-24"
-				{...reveal}
-				initial={false}
-				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
-			>
+			<section className="mb-14 lg:mb-24">
 				{subtitle && (
 					<p className="t-l-2 mb-5 uppercase text-foreground/65 lg:mb-7">
 						{subtitle}
@@ -127,7 +120,7 @@ export function PageProductIndex({ data }: Props) {
 						{description}
 					</p>
 				)}
-			</motion.section>
+			</section>
 
 			<ProductCategoriesGrid
 				categories={categories ?? null}
@@ -144,15 +137,10 @@ export function PageProductIndex({ data }: Props) {
 					return null;
 				}
 				return (
-					<motion.section
+					<section
 						key={collection._id}
-						className="mt-14 lg:mt-24"
-						{...reveal}
-						transition={{
-							duration: 0.8,
-							delay: index * 0.06,
-							ease: [0, 0.5, 0.5, 1],
-						}}
+						className="reveal mt-14 lg:mt-24"
+						style={revealStagger(index)}
 					>
 						<CollectionMasthead collection={collection} />
 
@@ -167,15 +155,14 @@ export function PageProductIndex({ data }: Props) {
 								))}
 							</div>
 						)}
-					</motion.section>
+					</section>
 				);
 			})}
 
 			{hasArrayValue(allProductsList) && (
-				<motion.section
-					className="mt-14 lg:mt-24"
-					{...reveal}
-					transition={{ duration: 0.8, ease: [0, 0.5, 0.5, 1] }}
+				<section
+					className="reveal mt-14 lg:mt-24"
+					style={REVEAL_SOFT}
 				>
 					<div className="border-t border-foreground/15 pt-4">
 						<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
@@ -221,7 +208,7 @@ export function PageProductIndex({ data }: Props) {
 							<Link href={allProductsHref}>{t.moreProducts}</Link>
 						</Button>
 					</div>
-				</motion.section>
+				</section>
 			)}
 		</>
 	);

@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type CSSProperties } from 'react';
 import ImageBlock from '@/components/ImageBlock';
 import CustomPortableText from '@/components/CustomPortableText';
-import { motion } from 'motion/react';
 import type { PageProductSingleQueryResult } from 'sanity.types';
 import {
 	findVariantForSelection,
@@ -20,7 +19,7 @@ import {
 	appendReferralParams,
 	REFERRAL_SOURCE,
 } from '@/lib/utils';
-import { useReveal } from '@/hooks/useReveal';
+import { REVEAL_SOFT } from '@/lib/animate';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate } from '@/lib/dictionary';
 import { resolveHref } from '@/lib/routes';
@@ -45,7 +44,6 @@ type Props = {
 };
 
 export default function PageProductSingle({ data, commerce }: Props) {
-	const reveal = useReveal();
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
 	const productText = useTranslations('products');
@@ -236,12 +234,9 @@ export default function PageProductSingle({ data, commerce }: Props) {
 	return (
 		<>
 			{/* Breadcrumb */}
-			<motion.nav
+			<nav
 				aria-label="Breadcrumb"
 				className="t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
-				{...reveal}
-				initial={false}
-				transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
@@ -255,86 +250,55 @@ export default function PageProductSingle({ data, commerce }: Props) {
 				<span aria-current="page" className="text-foreground/90">
 					{title}
 				</span>
-			</motion.nav>
+			</nav>
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
 				{/* Image */}
-				<motion.div
-					className="bg-background relative aspect-4/3 overflow-hidden p-6 lg:col-span-7 lg:p-10"
-					{...reveal}
-					initial={false}
-					transition={{ duration: 0.8, delay: 0.05, ease: [0, 0.5, 0.5, 1] }}
-				>
+				<div className="bg-background relative aspect-4/3 overflow-hidden lg:col-span-7">
 					{mainImage ? (
-						<ImageBlock
-							fill="contain"
-							imageObj={mainImage as any}
-							alt={title ?? ''}
-							sizes="(max-width: 1024px) 100vw, 58vw"
-							priority
-						/>
+						// The inset lives on this positioned wrapper, not as padding on
+						// the parent: `img-object-contain` is absolutely positioned at
+						// 100%/100%, and percentages there resolve against the *padding*
+						// box — so padding on the parent never reaches the image.
+						<div className="absolute inset-6 lg:inset-10">
+							<ImageBlock
+								fill="contain"
+								imageObj={mainImage as any}
+								alt={title ?? ''}
+								sizes="(max-width: 1024px) 100vw, 58vw"
+								priority
+							/>
+						</div>
 					) : (
 						<div className="absolute inset-0 bg-foreground/10" />
 					)}
-				</motion.div>
+				</div>
 
 				{/* Details */}
 				<div className="flex flex-col lg:col-span-5 lg:pt-2">
 					{badge && badge.length > 0 && (
-						<motion.div
-							className="mb-4 flex flex-wrap gap-1.5"
-							{...reveal}
-							transition={{
-								duration: 0.6,
-								delay: 0.08,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
+						<div
+							className="reveal mb-4 flex flex-wrap gap-1.5"
+							style={{ '--reveal-delay': '0.08s' } as CSSProperties}
 						>
 							{badge.map((b: string) => (
 								<Badge key={b}>
 									{(productText.badges as Record<string, string>)[b] ?? b}
 								</Badge>
 							))}
-						</motion.div>
+						</div>
 					)}
 
 					{eyebrow && (
-						<motion.p
-							className="t-l-1 text-foreground"
-							{...reveal}
-							initial={false}
-							transition={{
-								duration: 0.6,
-								delay: 0.1,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
-						>
-							{eyebrow}
-						</motion.p>
+						<p className="t-l-1 text-foreground">{eyebrow}</p>
 					)}
 
-					<motion.h1
-						className="mt-3 text-balance t-h-1 uppercase"
-						{...reveal}
-						initial={false}
-						transition={{
-							duration: 0.8,
-							delay: 0.15,
-							ease: [0, 0.71, 0.2, 1.01],
-						}}
-					>
-						{title}
-					</motion.h1>
+					<h1 className="mt-3 text-balance t-h-1 uppercase">{title}</h1>
 
 					{displayPrice && (
-						<motion.p
-							className="t-spec font-semibold mt-5 text-foreground/75"
-							{...reveal}
-							transition={{
-								duration: 0.6,
-								delay: 0.2,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
+						<p
+							className="reveal t-spec font-semibold mt-5 text-foreground/75"
+							style={{ '--reveal-delay': '0.2s' } as CSSProperties}
 						>
 							{displayPrice}
 							{displayCompareAt && (
@@ -342,18 +306,13 @@ export default function PageProductSingle({ data, commerce }: Props) {
 									{displayCompareAt}
 								</s>
 							)}
-						</motion.p>
+						</p>
 					)}
 
 					{showVariantPicker && (
-						<motion.div
-							className="mt-6"
-							{...reveal}
-							transition={{
-								duration: 0.6,
-								delay: 0.22,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
+						<div
+							className="reveal mt-6"
+							style={{ '--reveal-delay': '0.22s' } as CSSProperties}
 						>
 							<VariantPicker
 								options={commerce.options}
@@ -363,18 +322,13 @@ export default function PageProductSingle({ data, commerce }: Props) {
 									setSelection((prev) => ({ ...prev, [name]: value }))
 								}
 							/>
-						</motion.div>
+						</div>
 					)}
 
 					{isSoldOut ? (
-						<motion.div
-							className="mt-6"
-							{...reveal}
-							transition={{
-								duration: 0.6,
-								delay: 0.25,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
+						<div
+							className="reveal mt-6"
+							style={{ '--reveal-delay': '0.25s' } as CSSProperties}
 						>
 							<Button
 								aria-disabled="true"
@@ -388,17 +342,12 @@ export default function PageProductSingle({ data, commerce }: Props) {
 								productTitle={backInStockTitle}
 								productSlug={slug ?? ''}
 							/>
-						</motion.div>
+						</div>
 					) : (
 						(purchaseLink || commerce) && (
-							<motion.div
-								className="mt-6"
-								{...reveal}
-								transition={{
-									duration: 0.6,
-									delay: 0.25,
-									ease: [0, 0.71, 0.2, 1.01],
-								}}
+							<div
+								className="reveal mt-6"
+								style={{ '--reveal-delay': '0.25s' } as CSSProperties}
 							>
 								{commerce ? (
 									<Button
@@ -434,33 +383,23 @@ export default function PageProductSingle({ data, commerce }: Props) {
 										</a>
 									</Button>
 								) : null}
-							</motion.div>
+							</div>
 						)
 					)}
 
 					{sizeGuideControl && (
-						<motion.div
-							className="mt-5"
-							{...reveal}
-							transition={{
-								duration: 0.6,
-								delay: 0.28,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
+						<div
+							className="reveal mt-5"
+							style={{ '--reveal-delay': '0.28s' } as CSSProperties}
 						>
 							{sizeGuideControl}
-						</motion.div>
+						</div>
 					)}
 
 					{content && content.length > 0 && (
-						<motion.div
-							className="mt-10 lg:max-w-[60ch] border-t border-foreground/10 pt-8"
-							{...reveal}
-							transition={{
-								duration: 0.8,
-								delay: 0.3,
-								ease: [0, 0.5, 0.5, 1],
-							}}
+						<div
+							className="reveal mt-10 lg:max-w-[60ch] border-t border-foreground/10 pt-8"
+							style={{ ...REVEAL_SOFT, '--reveal-delay': '0.3s' } as CSSProperties}
 						>
 							<p className="t-l-1 mb-5 uppercase text-foreground/65">
 								{productText.whyWeChoseIt}
@@ -468,18 +407,15 @@ export default function PageProductSingle({ data, commerce }: Props) {
 							<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4]">
 								<CustomPortableText blocks={content as any} />
 							</div>
-						</motion.div>
+						</div>
 					)}
 
 					{staticSections.length > 0 && (
-						<motion.div
-							className="mt-8 lg:max-w-[60ch] border-t border-foreground/10"
-							{...reveal}
-							transition={{
-								duration: 0.8,
-								delay: 0.35,
-								ease: [0, 0.5, 0.5, 1],
-							}}
+						<div
+							className="reveal mt-8 lg:max-w-[60ch] border-t border-foreground/10"
+							style={
+								{ ...REVEAL_SOFT, '--reveal-delay': '0.35s' } as CSSProperties
+							}
 						>
 							{staticSections.map((item: any) => (
 								<div
@@ -505,18 +441,15 @@ export default function PageProductSingle({ data, commerce }: Props) {
 									)}
 								</div>
 							))}
-						</motion.div>
+						</div>
 					)}
 
 					{metadata && metadata.length > 0 && (
-						<motion.div
-							className="mt-8 max-w-[60ch] border-t border-foreground/10 pt-4"
-							{...reveal}
-							transition={{
-								duration: 0.8,
-								delay: 0.4,
-								ease: [0, 0.5, 0.5, 1],
-							}}
+						<div
+							className="reveal mt-8 max-w-[60ch] border-t border-foreground/10 pt-4"
+							style={
+								{ ...REVEAL_SOFT, '--reveal-delay': '0.4s' } as CSSProperties
+							}
 						>
 							<Accordion type="multiple">
 								{metadata.map((item: any, i: number) => {
@@ -552,7 +485,7 @@ export default function PageProductSingle({ data, commerce }: Props) {
 									);
 								})}
 							</Accordion>
-						</motion.div>
+						</div>
 					)}
 				</div>
 			</div>

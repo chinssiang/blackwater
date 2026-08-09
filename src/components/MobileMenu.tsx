@@ -15,7 +15,8 @@ import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { mobileMenuItem, mobileMenuList, mobileMenuPanel } from '@/lib/animate';
 import { usePathname } from 'next/navigation';
 import { isEventPath, resolveHref } from '@/lib/routes';
-import { cn, scrollDisable, scrollEnable } from '@/lib/utils';
+import { cn } from '@/lib/utils';
+import { useScrollLock } from '@/hooks/useScrollLock';
 
 type MobileMenuProps = {
 	data?: SiteDataQueryResult['mobileMenu'];
@@ -89,11 +90,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 
 	// Lock body/html scroll while the menu is open so only the menu's own
 	// scroll container can scroll; restore it on close (and on unmount).
-	useEffect(() => {
-		if (!open) return;
-		scrollDisable();
-		return () => scrollEnable();
-	}, [open]);
+	useScrollLock(open, () => setOpen(false));
 
 	const primary = data?.primaryMenu ?? [];
 	const secondary = data?.secondaryMenu ?? [];

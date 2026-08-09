@@ -97,6 +97,8 @@ Each page route follows this pattern:
 
 **Site-wide data** (`siteDataQuery`) fetches header, footer, announcement, sharing settings, and integrations in the root layout and passes to `<Layout>`.
 
+**Entrance animations are CSS, not JS.** Page content fades in via the `reveal` utility in `globals.css` — add the class and, optionally, `--reveal-delay` / `--reveal-duration` / `--reveal-ease` through the `style` prop (`REVEAL_SOFT` and `revealStagger(index)` in `src/lib/animate.ts` carry the shared presets). Do **not** reach for a Motion mount animation or a keyframe animation for this: both make invisible the default and need something to execute to undo it, so a page the browser never paints — or one whose JS never hydrates — strands the price and buy button at `opacity: 0`. `reveal` instead leaves the element's own opacity alone and puts the hidden value in `@starting-style`, so it is only ever a transition start point. Read the comment on the utility before adding a delay: the delay window is the one span where content is still hidden, so keep it off anything a shopper must see or click. `.animate-page-in` (the per-navigation fade on `<main>`) works the same way for the same reason.
+
 ### Routing
 
 `src/lib/routes.ts` is the single source of truth for document type → URL resolution. `DOCUMENT_ROUTES` drives both `resolveHref()` (JS helper) and `buildDocumentHrefGroq()` (GROQ query builder).
@@ -142,7 +144,7 @@ Each page route follows this pattern:
 - `image-utils.ts` — `buildImageSrc()`, `buildImageSrcSet()`, `buildRgbaCssString()`.
 - `routes.ts` — `DOCUMENT_ROUTES`, `resolveHref()`, `buildDocumentHrefGroq()`, `checkIfLinkIsActive()`.
 - `size-measurements.ts` — size-chart units and number formatting: `SIZE_UNITS` (also the order the cm/in control renders in), `SIZE_UNIT_OPTIONS`, `resolveUnit()`, `formatMeasurement()`, `formatRange()` (renders `min–max`, or just `min` when `max` is unset).
-- `animate.ts` — Motion animation presets: `pageTransitionFade`, `fadeAnim`.
+- `animate.ts` — Motion animation presets (`fadeAnim`, `mobileMenu*`, `cartPanel`, `cartOverlay`) plus the tuning props for the CSS `reveal` utility: `REVEAL_SOFT` and `revealStagger(index)`.
 - `defineEventJsonLd.ts` — schema.org `Event` JSON-LD builder (multi-location subEvents; emits endDate, PostalAddress + GeoCoordinates from `locationRef`, keywords, offers).
 - `defineSiteJsonLd.ts` — schema.org `Organization` + `SportsClub` and `WebSite` JSON-LD builder (areaServed, knowsLanguage, alternateName, address).
 - `defineFaqJsonLd.ts` — `FAQPage` JSON-LD builder; `collectFaqItems()` flattens `faqList` modules into items.
@@ -156,7 +158,7 @@ Each page route follows this pattern:
 
 - `useKey.js` — Keyboard event listener.
 - `useOutsideClick.js` — Click outside detection.
-- `useReveal.ts` — Entrance-reveal props for Motion components, honoring `prefers-reduced-motion`.
+- `useScrollLock.ts` — Locks document scroll while an overlay is open, and keeps that lock honest across the page lifecycle (`pagehide` releases it, `pageshow` lets the owner close itself on a bfcache restore). Used by `CartDrawer` and `MobileMenu`; the lock is global, so new overlays must go through this rather than calling `scrollDisable`/`scrollEnable` directly.
 - `useScrollSpy.ts` — IntersectionObserver scroll-spy for in-page section navs + horizontal-strip auto-scroll; also exports `readRootPxVar()`. Used by `EventStationsNav` and `SizeGuideNav`.
 - `useWindowDimensions.js` — Window size tracking.
 - `useWindowScroll.js` — Scroll position tracking.
@@ -191,7 +193,7 @@ The site is the store: browsing, variants and the cart all live here, and the sh
 - `CartDrawer` follows `MobileMenu`'s raw Radix `Dialog` + Motion idiom (`z-popover`, `scrollDisable`/`scrollEnable`), **not** `ui/Sheet.tsx`, which is unused and animates differently. Its width is an explicit `max-w-[26rem]` because `globals.css` remaps Tailwind's container scale (`sm` is 600px here). Checkout is an `<a>`, never a form — the site's `form-action 'self'` CSP would block a cross-origin submit.
 - Cart line thumbnails come from `cdn.shopify.com`, which is allowlisted in both `images.remotePatterns` and the CSP `img-src` in `next.config.mjs`.
 - **Stock ceilings are learned, not read.** `quantityAvailable` needs the `unauthenticated_read_product_inventory` scope, which this token lacks, so nothing knows a variant's stock up front. Instead every cart mutation selects `warnings { code target }`: a `MERCHANDISE_NOT_ENOUGH_STOCK` warning names the capped cart line, `cart.ts` flags it as `atStockLimit`, and `CartProvider` remembers the ceiling for the session so the stepper's `+` disables at it. Enabling that scope would let the limit be shown before the first click; the learned ceiling stays as the fallback either way.
-- **The cart trigger is scoped**: `isCommercePath()` (routes.ts) puts it on `/products/*`, and `CartButton` additionally shows it anywhere the cart is non-empty so nobody gets stranded mid-purchase.
+- **The cart trigger is global**: `CartButton` renders on every page that uses the site chrome, empty or not, so nobody gets stranded mid-purchase. It was once scoped to `/products/*` via an `isCommercePath()` predicate; that predicate is gone, not merely unused.
 - **`settingsCart`** (Studio → Products → Cart, *not* under Settings) holds the empty-cart heading and an ordered `pProduct` reference list. It is **document-localized** (listed in `i18n-types.ts`), so there is one Cart document per language: the heading is a plain `string`, and the reference picker is filtered to the document's own language, which is why the query needs no locale re-resolution — `byLocale('settingsCart')` and a plain dereference are enough. An untranslated locale falls back to the English document (and therefore English products), the same fallback `gHeader`/`gFooter` have. `getCachedSiteData` stays Sanity-only on purpose — see the note in that file.
 - The cart panel is light in both themes, so the drawer carries **`.cart-surface`** (globals.css), which pins the tokens its contents use — including `--accent-foreground`, which the empty-state `ProductCard`s use for hover text and focus rings — to the same values `:root` declares. Without it the drawer is unreadable on a dark route; without `--accent-foreground` specifically, card hover and focus rings go invisible.
 - The empty-state recommendation cards render **without a price**. A live one would mean a Shopify lookup inside `getCachedSiteData`, i.e. on every page of the site, and the manual `price` these cards carry is only a fallback that can be stale for a linked product.
