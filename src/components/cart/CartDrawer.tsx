@@ -18,6 +18,7 @@ import {
 } from '@/lib/shopify/types';
 import { scrollDisable, scrollEnable } from '@/lib/utils';
 import ProductCard from '@/app/(frontend)/[locale]/(site)/products/_components/ProductCard';
+import CartCountBadge from './CartCountBadge';
 import { useCart } from './CartProvider';
 
 // Right-side cart panel. Built on raw Radix Dialog + Motion to match
@@ -223,15 +224,26 @@ export default function CartDrawer({ settings }: { settings?: CartSettings }) {
 									exit="hide"
 									custom={reduce}
 								>
+									{/* The visible count is a badge, which is aria-hidden — so the
+									    item-count phrasing lives here, and screen readers still get
+									    it in words. */}
 									<Dialog.Description className="sr-only">
-										{t.title}
+										{count > 0
+											? `${t.title}, ${interpolate(pickPlural(t.itemCount, count), { count })}`
+											: t.title}
 									</Dialog.Description>
 
 									<div className="flex shrink-0 items-center justify-between px-4 h-header">
-										<Dialog.Title className="t-b-2 uppercase">
+										{/* `relative inline-flex` shrinks the title to its text so
+										    the badge hangs off the word, not off the header row. */}
+										<Dialog.Title className="t-b-2 relative inline-flex uppercase">
 											{t.title}
-											{count > 0 &&
-												` (${interpolate(pickPlural(t.itemCount, count), { count })})`}
+											{count > 0 && (
+												<CartCountBadge
+													count={count}
+													className="absolute -top-2 -right-4"
+												/>
+											)}
 										</Dialog.Title>
 										<Dialog.Close
 											aria-label={t.close}

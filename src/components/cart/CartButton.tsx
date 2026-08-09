@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
 import { isCommercePath } from '@/lib/routes';
+import CartCountBadge from './CartCountBadge';
 import { useCart } from './CartProvider';
 
 /**
@@ -39,10 +40,14 @@ export default function CartButton() {
 					? `${t.open}, ${interpolate(pickPlural(t.itemCount, count), { count })}`
 					: t.open
 			}
-			className="t-b-2 flex cursor-pointer items-center gap-1 uppercase focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2"
+			// `relative` so the badge can hang off the label's top-right corner.
+			// The button box is exactly the label, so no extra wrapper is needed.
+			className="t-b-2 relative flex cursor-pointer items-center uppercase focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 max-lg:mr-3"
 		>
 			<span>{t.title}</span>
-			{count > 0 && <span aria-hidden="true">({count})</span>}
+			{count > 0 && (
+				<CartCountBadge count={count} className="absolute -top-2 -right-4" />
+			)}
 		</button>
 	);
 }
