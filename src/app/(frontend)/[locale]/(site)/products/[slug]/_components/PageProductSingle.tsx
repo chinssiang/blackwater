@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import type { ReactNode, CSSProperties } from 'react';
-import ImageBlock from '@/components/ImageBlock';
 import CustomPortableText from '@/components/CustomPortableText';
 import type { PageProductSingleQueryResult } from 'sanity.types';
 import { hasArrayValue } from '@/lib/utils';
@@ -19,9 +18,10 @@ import {
 	AccordionContent,
 } from '@/components/ui/Accordion';
 
-// Renders only what Sanity already has: image, title, copy, size guide. Both
-// Shopify-dependent regions arrive as streamed server components, so nothing
-// here waits on a Storefront round trip.
+// Renders only what Sanity already has: title, copy, size guide. All three
+// Shopify-dependent regions — gallery, buy column, related grid — arrive as
+// slots holding streamed server components, so nothing here waits on a
+// Storefront round trip.
 
 // Explicitly the fields this component renders, not the whole query result.
 // Everything crossing into a client component is serialized into the HTML and
@@ -37,7 +37,6 @@ type Props = {
 		| 'badge'
 		| 'categories'
 		| 'brands'
-		| 'mainImage'
 		| 'content'
 		| 'whyUseIt'
 		| 'whoIsItFor'
@@ -45,6 +44,11 @@ type Props = {
 		| 'metadata'
 		| 'sizeChart'
 	>;
+	/**
+	 * The image frame's contents: <ProductMainImage> directly for products with
+	 * no Shopify handle, otherwise a streamed <ProductGalleryColumn>.
+	 */
+	gallerySlot: ReactNode;
 	/** Streamed <ProductBuyColumn> — price, variants, buy button. */
 	buySlot: ReactNode;
 	/** Streamed <ProductRelatedGrid>. */
@@ -53,6 +57,7 @@ type Props = {
 
 export default function PageProductSingle({
 	data,
+	gallerySlot,
 	buySlot,
 	relatedSlot,
 }: Props) {
@@ -64,7 +69,6 @@ export default function PageProductSingle({
 		badge,
 		categories,
 		brands,
-		mainImage,
 		content,
 		whyUseIt,
 		whoIsItFor,
@@ -161,25 +165,12 @@ export default function PageProductSingle({
 			</nav>
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
-				{/* Image */}
+				{/* Image — the frame stays here so the Sanity fallback and the
+				    streamed Shopify gallery occupy exactly the same box. Slides
+				    inside the gallery re-declare this aspect ratio; keep them in
+				    step. */}
 				<div className="bg-background relative aspect-4/3 overflow-hidden lg:col-span-7">
-					{mainImage ? (
-						// The inset lives on this positioned wrapper, not as padding on
-						// the parent: `img-object-contain` is absolutely positioned at
-						// 100%/100%, and percentages there resolve against the *padding*
-						// box — so padding on the parent never reaches the image.
-						<div className="absolute inset-6 lg:inset-10">
-							<ImageBlock
-								fill="contain"
-								imageObj={mainImage as any}
-								alt={title ?? ''}
-								sizes="(max-width: 1024px) 100vw, 58vw"
-								priority
-							/>
-						</div>
-					) : (
-						<div className="absolute inset-0 bg-foreground/10" />
-					)}
+					{gallerySlot}
 				</div>
 
 				{/* Details */}

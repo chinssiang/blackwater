@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { type Locale } from '@/lib/i18n';
 import { interpolate } from '@/lib/dictionary';
@@ -28,6 +29,12 @@ const REVALIDATE: false = false;
 // while keeping well under Next's 128-tags-per-fetch cache limit.
 const CARD_CHUNK_SIZE = 40;
 
+// Gallery ceiling. Bounds the RSC payload and the dot indicator row rather than
+// the store: real products carry one or two images. Only the detail page asks
+// for images — the card query deliberately does not, so a listing grid's LCP
+// never waits on Shopify when Sanity's mainImage is already there.
+const PRODUCT_IMAGE_LIMIT = 10;
+
 const MONEY_FRAGMENT = `{ amount currencyCode }`;
 
 const PRODUCT_COMMERCE_QUERY = `
@@ -54,6 +61,9 @@ const PRODUCT_COMMERCE_QUERY = `
 					selectedOptions { name value }
 				}
 			}
+			images(first: ${PRODUCT_IMAGE_LIMIT}) {
+				nodes { url altText }
+			}
 		}
 	}
 `;
@@ -75,6 +85,7 @@ type GqlProduct = {
 			selectedOptions: Array<{ name: string; value: string }>;
 		}>;
 	};
+	images: { nodes: Array<{ url: string; altText: string | null }> };
 };
 
 function normalizeProduct(product: GqlProduct): ProductCommerce {
@@ -96,6 +107,10 @@ function normalizeProduct(product: GqlProduct): ProductCommerce {
 			compareAtPrice: v.compareAtPrice,
 			selectedOptions: v.selectedOptions,
 		})),
+		images: product.images.nodes.map((i) => ({
+			url: i.url,
+			altText: i.altText,
+		})),
 	};
 }
 
@@ -112,34 +127,48 @@ export function shopifyProductTags(handle: string): string[] {
 }
 
 /**
- * Full commerce payload (variants, options, prices, availability) for one
- * product, in the given locale's market context. Null when Shopify is not
+ * Full commerce payload (variants, options, prices, images, availability) for
+ * one product, in the given locale's market context. Null when Shopify is not
  * configured, the handle doesn't resolve, or the request fails.
+ *
+ * `cache()`d because the product page reads this from two Suspense boundaries —
+ * the buy column and the image gallery. Not to avoid a second Storefront round
+ * trip: Next's Data Cache already locks per key, so only one request goes out
+ * either way. What it avoids is the *second* boundary blocking on that lock and
+ * then re-parsing and re-normalizing the same payload, since request
+ * memoization is GET/HEAD-only and this call is a POST.
+ *
+ * Consequence for callers: both boundaries must be handed the identical
+ * `rawHandle` value. `cache()` keys on argument identity and runs before the
+ * stegaClean below, so cleaning it in one call site and not the other silently
+ * splits the entry in two.
  */
-export async function getProductCommerce(
-	rawHandle: string | null | undefined,
-	locale: Locale
-): Promise<ProductCommerce | null> {
-	// Handles come from GROQ results, which carry invisible stega characters in
-	// draft mode — clean at the boundary or the Shopify lookup silently misses.
-	const handle = rawHandle ? stegaClean(rawHandle) : null;
-	if (!handle || !isShopifyConfigured()) return null;
-	try {
-		const data = await shopifyStorefrontFetch<{ product: GqlProduct | null }>({
-			query: PRODUCT_COMMERCE_QUERY,
-			variables: { handle, ...contextVariables(locale) },
-			next: { revalidate: REVALIDATE, tags: shopifyProductTags(handle) },
-		});
-		if (!data.product) {
-			console.warn(`[shopify] no product for handle "${handle}"`);
+export const getProductCommerce = cache(
+	async (
+		rawHandle: string | null | undefined,
+		locale: Locale
+	): Promise<ProductCommerce | null> => {
+		// Handles come from GROQ results, which carry invisible stega characters in
+		// draft mode — clean at the boundary or the Shopify lookup silently misses.
+		const handle = rawHandle ? stegaClean(rawHandle) : null;
+		if (!handle || !isShopifyConfigured()) return null;
+		try {
+			const data = await shopifyStorefrontFetch<{ product: GqlProduct | null }>({
+				query: PRODUCT_COMMERCE_QUERY,
+				variables: { handle, ...contextVariables(locale) },
+				next: { revalidate: REVALIDATE, tags: shopifyProductTags(handle) },
+			});
+			if (!data.product) {
+				console.warn(`[shopify] no product for handle "${handle}"`);
+				return null;
+			}
+			return normalizeProduct(data.product);
+		} catch (err) {
+			console.error(`[shopify] getProductCommerce failed for "${handle}"`, err);
 			return null;
 		}
-		return normalizeProduct(data.product);
-	} catch (err) {
-		console.error(`[shopify] getProductCommerce failed for "${handle}"`, err);
-		return null;
 	}
-}
+);
 
 type GqlCardProduct = Pick<
 	GqlProduct,

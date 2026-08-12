@@ -12,6 +12,8 @@ import { type Locale } from '@/lib/i18n';
 import { isShopifyConfigured } from '@/lib/shopify/client';
 import PageProductSingle from './_components/PageProductSingle';
 import ProductBuyColumn from './_components/ProductBuyColumn';
+import ProductGalleryColumn from './_components/ProductGalleryColumn';
+import ProductMainImage from './_components/ProductMainImage';
 import ProductRelatedGrid from './_components/ProductRelatedGrid';
 import { BuyColumnSkeleton } from './_components/BuyColumn';
 
@@ -75,7 +77,6 @@ export default async function Page({ params }: Props) {
 		badge,
 		categories,
 		brands,
-		mainImage,
 		content,
 		whyUseIt,
 		whoIsItFor,
@@ -84,10 +85,17 @@ export default async function Page({ params }: Props) {
 		sizeChart,
 	} = data;
 
-	// Both Shopify lookups stream. Awaiting them here put two Storefront round
-	// trips in front of the first byte, so the LCP product image — which Sanity
-	// has already returned — waited on commerce data it doesn't use. Each
-	// boundary soft-fails to the manual Sanity fields on its own.
+	// Cleaned once for both hero renders below, the same way ProductGalleryColumn
+	// cleans it for the gallery: this feeds alt text, and in draft mode the title
+	// carries invisible stega characters that would ship to the a11y tree.
+	const imageAlt = stegaClean(title) ?? '';
+
+	// Every Shopify lookup streams. Awaiting them here put Storefront round trips
+	// in front of the first byte, delaying content Sanity had already returned.
+	// Each boundary soft-fails to the manual Sanity fields on its own. The buy
+	// column and the gallery read the same cache()d fetch, so the pair costs one
+	// round trip — which is also why both are handed `data.shopifyHandle`
+	// untouched: cache() keys on argument identity.
 	return (
 		<PageProductSingle
 			data={{
@@ -95,7 +103,6 @@ export default async function Page({ params }: Props) {
 				badge,
 				categories,
 				brands,
-				mainImage,
 				content,
 				whyUseIt,
 				whoIsItFor,
@@ -103,6 +110,35 @@ export default async function Page({ params }: Props) {
 				metadata,
 				sizeChart,
 			}}
+			gallerySlot={
+				awaitsCommerce ? (
+					// The fallback is the Sanity mainImage but deliberately not
+					// `priority`: static generation emits fallback and resolved markup
+					// into the same HTML, and a high-priority image preload survives
+					// React's swap — so priority here would fetch this image on every
+					// page load only to discard it, competing with the Shopify image
+					// that actually paints.
+					<Suspense
+						fallback={
+							<ProductMainImage imageObj={data.mainImage} alt={imageAlt} />
+						}
+					>
+						<ProductGalleryColumn
+							handle={data.shopifyHandle}
+							locale={locale as Locale}
+							mainImage={data.mainImage}
+							title={title}
+						/>
+					</Suspense>
+				) : (
+					// Nothing to wait for, so this is the real LCP element.
+					<ProductMainImage
+						imageObj={data.mainImage}
+						alt={imageAlt}
+						priority
+					/>
+				)
+			}
 			buySlot={
 				<Suspense fallback={awaitsCommerce ? <BuyColumnSkeleton /> : null}>
 					<ProductBuyColumn

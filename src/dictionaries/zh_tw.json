@@ -88,6 +88,14 @@
 			"errorBody": "請稍後再試一次。",
 			"invalidEmail": "請輸入有效的電子郵件地址。",
 			"ariaLabel": "當 {product} 補貨時通知我"
+		},
+		"gallery": {
+			"label": "商品圖片",
+			"imageAlt": "{product} — 第 {index} 張圖片，共 {count} 張",
+			"slide": "第 {index} 張圖片，共 {count} 張",
+			"goTo": "前往第 {index} 張圖片",
+			"previous": "上一張圖片",
+			"next": "下一張圖片"
 		}
 	},
 	"sizeGuide": {

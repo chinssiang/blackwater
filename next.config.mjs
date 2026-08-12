@@ -14,7 +14,8 @@ const csp = [
 	// unsafe-eval is needed in dev for React/Turbopack debugging features (never used in prod)
 	`script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://va.vercel-scripts.com`,
 	"style-src 'self' 'unsafe-inline'",
-	// cdn.shopify.com serves the cart drawer's line-item thumbnails.
+	// cdn.shopify.com serves the product page's image gallery and the cart
+	// drawer's line-item thumbnails.
 	"img-src 'self' data: blob: https://cdn.sanity.io https://cdn.shopify.com https://www.google-analytics.com https://www.googletagmanager.com",
 	"font-src 'self'",
 	"connect-src 'self' https://*.sanity.io https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://vitals.vercel-insights.com",
@@ -76,7 +77,10 @@ const nextConfig = {
 				hostname: 'cdn.sanity.io',
 				pathname: `/images/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET}/**`,
 			},
-			// Shopify variant images, used only for cart line-item thumbnails.
+			// Shopify product and variant images: the product page gallery and the
+			// cart's line-item thumbnails. Both go through the image optimizer, so a
+			// Shopify URL outside this pathname prefix answers 400 and that one
+			// image breaks — widen the pattern rather than bypassing next/image.
 			{
 				protocol: 'https',
 				hostname: 'cdn.shopify.com',

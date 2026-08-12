@@ -31,6 +31,15 @@ export type ShopifyProductOption = {
 	values: string[];
 };
 
+// One product image. Deliberately no width/height: slides render with next/image
+// `fill`, both are nullable in the Storefront schema, and carrying them would
+// serialize two unused numbers per image into every product page's RSC payload.
+export type ShopifyImage = {
+	url: string;
+	/** Almost always null in practice — callers must supply their own fallback. */
+	altText: string | null;
+};
+
 // Normalized commerce payload for one product — everything the product page
 // needs from Shopify, fully serializable so it can cross into client components.
 export type ProductCommerce = {
@@ -40,6 +49,7 @@ export type ProductCommerce = {
 	maxPrice: ShopifyMoney;
 	options: ShopifyProductOption[];
 	variants: ShopifyVariant[];
+	images: ShopifyImage[];
 };
 
 // One line in the shopper's cart, flattened from Shopify's

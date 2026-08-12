@@ -37,7 +37,7 @@ export default function CartButton() {
 			// The button box is exactly the label, so no extra wrapper is needed.
 			className="t-b-2 relative flex cursor-pointer items-center uppercase focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 max-lg:mr-3"
 		>
-			<span>{t.title}</span>
+			{t.title}
 			{count > 0 && (
 				<CartCountBadge count={count} className="absolute -top-2 -right-4" />
 			)}

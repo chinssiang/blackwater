@@ -94,6 +94,14 @@
 			"errorBody": "Please try again in a moment.",
 			"invalidEmail": "Please enter a valid email address.",
 			"ariaLabel": "Get notified when {product} is back in stock"
+		},
+		"gallery": {
+			"label": "Product images",
+			"imageAlt": "{product} — image {index} of {count}",
+			"slide": "Image {index} of {count}",
+			"goTo": "Go to image {index}",
+			"previous": "Previous image",
+			"next": "Next image"
 		}
 	},
 	"sizeGuide": {
