@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
 import { enUS, zhTW } from 'date-fns/locale';
@@ -10,6 +10,7 @@ import {
 	formatRichDate,
 	getRichDateInstant,
 	getRichDateYearMonth,
+	isEventEnded,
 } from '@/lib/event-date';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
@@ -50,15 +51,9 @@ const DATE_FNS_LOCALES: Record<
 	zh_tw: zhTW,
 } as Record<Locale, typeof enUS | typeof zhTW>;
 
-function isEventEnded(
-	eventDatetime: RichDate | null | undefined,
-	currentDate: Date
-): boolean {
-	const eventDateEndOfDay = getRichDateInstant(eventDatetime);
-	if (!eventDateEndOfDay) return false;
-	eventDateEndOfDay.setHours(23, 59, 59, 999);
-	return eventDateEndOfDay < currentDate;
-}
+// How often the ended/days-until state is re-evaluated once mounted, so a row
+// dims at its end time without the visitor reloading.
+const CLOCK_TICK_MS = 60 * 1000;
 
 function getDaysUntilEvent(
 	eventDatetime: RichDate | null | undefined,
@@ -96,11 +91,19 @@ export function PageEvents({ data }: PageEventsProps) {
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
 	const prefersReducedMotion = useReducedMotion();
 
-	const currentDate = new Date();
+	// Seeded during render, then refreshed on mount: this page is statically
+	// prerendered, so the server-side value is the build time, not "now".
+	const [currentDate, setCurrentDate] = useState(() => new Date());
 	const [selectedMonth, setSelectedMonth] = useState<{
 		month: number;
 		year: number;
 	} | null>(null);
+
+	useEffect(() => {
+		setCurrentDate(new Date());
+		const timer = setInterval(() => setCurrentDate(new Date()), CLOCK_TICK_MS);
+		return () => clearInterval(timer);
+	}, []);
 
 	const availableMonths = useMemo(() => {
 		if (!groupedEvents) return [];
@@ -130,11 +133,15 @@ export function PageEvents({ data }: PageEventsProps) {
 		if (availableMonths.length === 0) return 0;
 		const index = availableMonths.findIndex((itemMonth) =>
 			itemMonth.events.some(
-				(event) => !isEventEnded(event.eventDatetime, currentDate)
+				(event) =>
+					!isEventEnded(event.eventDatetime, event.endDatetime, currentDate)
 			)
 		);
 		// All events are in the past -> open on the most recent month.
 		return index >= 0 ? index : availableMonths.length - 1;
+		// `currentDate` is deliberately omitted: the landing month is a first-render
+		// decision. Recomputing it on a clock tick would move the view out from
+		// under someone browsing a month they had not explicitly selected.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [availableMonths]);
 
@@ -164,12 +171,11 @@ export function PageEvents({ data }: PageEventsProps) {
 		return !displayEvents.some((event) => {
 			return (
 				event.statusList?.some((item) => item?.eventStatus) ||
-				isEventEnded(event.eventDatetime, currentDate) ||
+				isEventEnded(event.eventDatetime, event.endDatetime, currentDate) ||
 				getDaysUntilEvent(event.eventDatetime, currentDate) !== null
 			);
 		});
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [displayEvents]);
+	}, [displayEvents, currentDate]);
 	const colStyle = isHideStatusColumn
 		? 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_minmax(0,1fr)]'
 		: 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_minmax(0,1fr)_230px]';
@@ -294,6 +300,7 @@ export function PageEvents({ data }: PageEventsProps) {
 							slug,
 							statusList,
 							eventDatetime,
+							endDatetime,
 							dateStatus,
 							location,
 							locationLink,
@@ -305,7 +312,11 @@ export function PageEvents({ data }: PageEventsProps) {
 						const displayLocation = locationRef?.name || location;
 						const displayLocationLink = locationRef?.mapLink || locationLink;
 
-						const eventHasEnded = isEventEnded(eventDatetime, currentDate);
+						const eventHasEnded = isEventEnded(
+							eventDatetime,
+							endDatetime,
+							currentDate
+						);
 						const daysUntil = getDaysUntilEvent(eventDatetime, currentDate);
 
 						return (

@@ -66,6 +66,12 @@ function defineEventsItemListJsonLd(
 // accumulate over the years.
 const EVENTS_PAST_WINDOW_MONTHS = 12;
 
+// This page's output depends on the wall clock (the cutoff below, and the ended
+// state each row renders), so tag-based invalidation alone is not enough -- with
+// no content edits the prerendered HTML would keep serving build-time state.
+// Composes with the `pEvents`/`pEvent` tags rather than replacing them.
+export const revalidate = 3600;
+
 function getEventsCutoff(): string {
 	const cutoff = new Date();
 	cutoff.setMonth(cutoff.getMonth() - EVENTS_PAST_WINDOW_MONTHS);
