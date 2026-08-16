@@ -1,15 +1,22 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 /** @type {import('next').NextConfig} */
 
 // NOTE: unsafe-inline is required for Next.js + GTM inline scripts.
 // To harden further, implement nonce-based CSP via Next.js proxy.
 const isDev = process.env.NODE_ENV === 'development';
 
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
+
 const csp = [
 	"default-src 'self'",
 	// unsafe-eval is needed in dev for React/Turbopack debugging features (never used in prod)
 	`script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''} https://www.googletagmanager.com https://www.google-analytics.com https://ssl.google-analytics.com https://va.vercel-scripts.com`,
 	"style-src 'self' 'unsafe-inline'",
-	"img-src 'self' data: blob: https://cdn.sanity.io https://www.google-analytics.com https://www.googletagmanager.com",
+	// cdn.shopify.com serves the product page's image gallery and the cart
+	// drawer's line-item thumbnails.
+	"img-src 'self' data: blob: https://cdn.sanity.io https://cdn.shopify.com https://www.google-analytics.com https://www.googletagmanager.com",
 	"font-src 'self'",
 	"connect-src 'self' https://*.sanity.io https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://vitals.vercel-insights.com",
 	"frame-src 'self' https://*.sanity.io",
@@ -37,6 +44,12 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+	// Pin the workspace root to this checkout. Without it, Next infers the root
+	// from the outermost lockfile, and builds inside a git worktree resolve
+	// modules (e.g. sanity.types) against the parent checkout's stale files.
+	turbopack: {
+		root: projectRoot,
+	},
 	allowedDevOrigins: ['192.168.0.109'],
 	experimental: {
 		// Enables React 19.2's <ViewTransition> for native page-navigation crossfades.
@@ -46,6 +59,15 @@ const nextConfig = {
 		// `taint` is the most behavior-neutral flag that flips Next to react-experimental
 		// (it only exposes the taint APIs; no runtime/UI change). Required for the import above.
 		taint: true,
+		// Both are umbrella barrels pulling far more into a chunk than the few
+		// primitives actually used. Rewriting every call site to `@radix-ui/react-*`
+		// would do the same job with a much larger diff.
+		//
+		// Entries are matched against the import specifier, so these must be the
+		// exact strings the source imports from: `radix-ui` (10 files) and
+		// `motion/react` (12 files). Plain `motion` matches nothing here — no file
+		// imports it — and silently optimizes nothing.
+		optimizePackageImports: ['radix-ui', 'motion/react'],
 	},
 	images: {
 		formats: ['image/avif', 'image/webp'],
@@ -54,6 +76,15 @@ const nextConfig = {
 				protocol: 'https',
 				hostname: 'cdn.sanity.io',
 				pathname: `/images/${process.env.NEXT_PUBLIC_SANITY_PROJECT_ID}/${process.env.NEXT_PUBLIC_SANITY_DATASET}/**`,
+			},
+			// Shopify product and variant images: the product page gallery and the
+			// cart's line-item thumbnails. Both go through the image optimizer, so a
+			// Shopify URL outside this pathname prefix answers 400 and that one
+			// image breaks — widen the pattern rather than bypassing next/image.
+			{
+				protocol: 'https',
+				hostname: 'cdn.shopify.com',
+				pathname: '/s/files/**',
 			},
 		],
 	},

@@ -10,6 +10,10 @@ const eslintConfig = defineConfig([
 		'out/**',
 		'build/**',
 		'next-env.d.ts',
+		// `.next/**` is root-anchored, so it misses build output nested inside
+		// git worktrees (.claude/worktrees/*/.next). Those hold their own full
+		// .next/, and ESLint OOMs trying to parse the generated bundles.
+		'**/.next/**',
 	]),
 ]);
 

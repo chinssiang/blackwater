@@ -1,5 +1,16 @@
 import { defineQuery } from 'next-sanity';
 import { resolvedHrefGroq } from '@/lib/routes';
+import { LOCALES } from '@/lib/i18n';
+
+// Every locale, as a GROQ array literal. Spelled out rather than derived from
+// LOCALES because Sanity's static query extractor cannot evaluate function
+// calls inside a query template literal (same constraint as `resolvedHrefGroq`
+// — see CLAUDE.md's Routing section). The assignment below is a compile-time
+// guard: adding a locale to LOCALES breaks the build here until this literal is
+// updated, rather than silently dropping that locale from the sitemap.
+const ALL_LOCALES_GROQ = '["en", "zh_tw"]';
+const _localesCovered: typeof LOCALES = ['en', 'zh_tw'] as const;
+void _localesCovered;
 export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 
 export const SITEMAP_PAGES_QUERY = defineQuery(`
@@ -22,13 +33,40 @@ export const SITEMAP_EVENTS_QUERY = defineQuery(`
 	}
 `);
 
+// Which locales a field-level i18n array actually carries copy for.
+//
+// `defined(value)` is load-bearing: the internationalizedArray plugin is
+// configured with defaultLanguages: ['en'], and it patches a valueless
+// `{_key, language: 'en'}` item into any i18n array it mounts that lacks the
+// default language. So merely opening a zh-only product in the Studio would
+// otherwise make it advertise an `en` hreflang + sitemap URL that 404s, because
+// `productTitleVisible` (correctly) requires an actual value.
+//
+// Declared here, above its first use in SITEMAP_PRODUCTS_QUERY, so the sitemap
+// and the hreflang projection below share one definition of "translated into".
+export const localesWithValue = (field: string) =>
+	`${field}[defined(value)].language`;
+
+// `locales` carries which locales each entry exists in, because the four types
+// signal it differently: document-level types (pProductIndex, and un-merged
+// product docs during the transition) carry `language`; field-level types
+// (pProduct/pProductCollection post-merge) signal per-locale presence via
+// title[].language; pProductCategory has an i18n-array title too but its pages
+// render an English fallback for every locale, so it advertises all of them.
+// Without this, field-level types' zh_tw URLs silently vanish from the sitemap
+// — categories had exactly that bug.
 export const SITEMAP_PRODUCTS_QUERY = defineQuery(`
 	*[_type in ["pProductIndex", "pProduct", "pProductCategory", "pProductCollection"]
-		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
+		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)
+		&& (disableIndex != true)] {
 		_type,
 		"slug": slug.current,
 		_updatedAt,
-		language
+		"locales": select(
+			defined(language) => [language],
+			_type == "pProductCategory" => ${ALL_LOCALES_GROQ},
+			${localesWithValue('title')}
+		)
 	}
 `);
 
@@ -128,7 +166,11 @@ export const imageMetaFields = `
   "metadata": asset->metadata {
     lqip,
     dimensions,
-    mimeType
+    isOpaque,
+    // From the asset, not the metadata object: sanity.imageMetadata has no
+    // mimeType, so projecting it here resolved to null and left SanityImage's
+    // JPEG fallback unreachable.
+    "mimeType": ^.asset->mimeType
   }
 `;
 
@@ -294,6 +336,148 @@ const newsletterFormFields = `
 	errorBody,
 `;
 
+// ---------------------------------------------------------------------------
+// Product family (pProduct / pProductCollection): FIELD-level i18n.
+//
+// One document per product carries every language — prose lives in
+// internationalizedArrays, everything else (handle, price, refs, images)
+// exists once. This mirrors Shopify's own model, where a product is a single
+// entity and language is a query-time context.
+//
+// TRANSITION (delete after the prod merge migration has run): every projection
+// below carries a `select(defined(language) => <old field>)` tail, and the
+// visibility filters keep their old-shape branches, so a build prerendered
+// against un-migrated data still renders. Old-shape docs have `language`;
+// merged docs never do — that is the discriminator throughout.
+// ---------------------------------------------------------------------------
+
+// Localized string/text with old-shape fallback.
+const locString = (field: string) =>
+	`coalesce(${field}[language == $locale][0].value, ${field}[language == "en"][0].value, select(defined(language) => ${field}))`;
+
+// Localized Portable Text with old-shape fallback. Resolution is identical to
+// `locString` — the alias exists only to mark, at the call site, that what comes
+// back is a block array the caller still has to project with `[]{ ... }`.
+const locPT = locString;
+
+// Visibility guard appended to product-family list filters: merged docs are
+// shown in a locale only when they carry a title in that locale or in English.
+// This preserves the doc-level behavior exactly — a zh-only product never
+// leaks onto English pages (it used to have no `en` document; now it has no
+// `en` title). Old-shape docs pass unconditionally; `productLocaleFilter`
+// still governs them.
+const productTitleVisible = `(defined(language) || defined(title[language == $locale][0].value) || defined(title[language == "en"][0].value))`;
+
+// The same guard applied AFTER a dereference, for editor-curated reference
+// arrays (relatedProducts, collection products, cart recommendations). Those
+// pickers are unfiltered — products are language-agnostic documents, so there
+// is nothing to filter them by in the Studio — which means a zh-only product
+// can be picked into a list rendered on an English page. Without this it comes
+// through as a card with a null title linking to a URL that 404s, since
+// pageProductSingleQuery does carry the guard.
+// The parentheses are load-bearing: `refs[defined(@->)]->[<cond>]` parses but
+// does NOT filter (verified against the API — 6 refs in, 6 out), silently
+// producing exactly the leak this guards against. Wrapping the dereference
+// first makes the trailing bracket a filter over the resulting array.
+const visibleProducts = (refField: string) =>
+	`(${refField}[defined(@->)]->)[${productTitleVisible}]`;
+
+// Which locales this merged doc is translated into — feeds hreflang and the
+// sitemap. Old-shape docs keep the sibling-document lookup. See
+// `localesWithValue` above for why the new-shape arm filters on `defined(value)`.
+const productAvailableLocalesField = `
+"availableLocales": select(
+	defined(language) => *[
+		_type == ^._type
+		&& slug.current == ^.slug.current
+		&& defined(language)
+	].language,
+	${localesWithValue('title')}
+)
+`;
+
+// The Shopify handle is commerce identity: one product, one handle, every
+// language renders from it (localized prices come from Markets @inContext).
+// The sibling lookup is transition-only, and is guarded like every other tail
+// so a merged doc short-circuits to its own handle: unguarded it would re-run a
+// correlated pProduct scan per card forever — including inside siteDataQuery's
+// cart recommendations, which render on every page of the site.
+const shopifyHandleField = `
+	"shopifyHandle": coalesce(
+		shopify.handle,
+		select(defined(language) =>
+			*[_type == "pProduct" && slug.current == ^.slug.current && defined(shopify.handle)]
+				| order(select(language == "en" => 0, 1)) [0].shopify.handle
+		)
+	)
+`;
+
+// SEO block for the product family, shaped exactly like baseFields' `sharing`
+// so defineMetadata needs no awareness of the field-level model. New docs use
+// the seo fieldset (seoTitle/seoDescription/shareGraphic/disableIndex); the
+// old-shape tails read the retired `sharing` object.
+//
+// Belongs only on a query's TOP-LEVEL document, never in `productCardFields`:
+// nothing renders a card's SEO block, and each copy costs two `settingsGeneral`
+// subqueries (share graphic + site title). Inside a 45-card listing that was 90
+// subqueries and a full metadata block per card serialized to the client, all
+// of it unread.
+//
+// `descFallback` names the localized prose field the meta description falls back
+// to (excerpt for products, description for collections) — both schemas promise
+// that in the SEO Description field's help text, and pProductCategory already
+// implements it. It sits BEFORE the transition tail deliberately: on an
+// un-merged doc the i18n-array access yields null, so `sharing.metaDesc` still
+// wins there rather than being shadowed by an old-shape plain excerpt.
+const productSharingFields = (imageFallback: string, descFallback: string) => `
+	"sharing": {
+		"disableIndex": coalesce(disableIndex, sharing.disableIndex),
+		"metaTitle": coalesce(seoTitle[language == $locale][0].value, seoTitle[language == "en"][0].value, select(defined(language) => sharing.metaTitle)),
+		"metaDesc": coalesce(
+			seoDescription[language == $locale][0].value,
+			seoDescription[language == "en"][0].value,
+			${descFallback}[language == $locale][0].value,
+			${descFallback}[language == "en"][0].value,
+			select(defined(language) => sharing.metaDesc)
+		),
+		"shareGraphic": coalesce(
+			shareGraphic,
+			sharing.shareGraphic,
+			${imageFallback},
+			*[_type == "settingsGeneral"][0].shareGraphic
+		),
+		"siteTitle": coalesce(
+			*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,
+			*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value
+		),
+	}
+`;
+
+// Sort key for product-family lists: English title (stable across locales,
+// matching the Studio ordering), falling back to the old-shape plain title.
+const productTitleOrder = `coalesce(title[language == "en"][0].value, select(defined(language) => title))`;
+
+const productCardFields = `
+	_id,
+	_type,
+	"title": ${locString('title')},
+	"slug": slug.current,
+	"excerpt": ${locString('excerpt')},
+	badge,
+	price,
+	purchaseLink,
+	${shopifyHandleField},
+	categories[]->{
+		_id,
+		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+		"slug": slug.current
+	},
+	brands[]->{ _id, title, "slug": slug.current },
+	mainImage {
+		${imageBlockMetaFields}
+	}
+`;
+
 export const siteDataQuery = defineQuery(`{
 		"announcement": ${byLocale('gAnnouncement')}[0]{
 			display,
@@ -382,6 +566,12 @@ export const siteDataQuery = defineQuery(`{
 			"marketingDescription": coalesce(marketingDescription[language == $locale][0].value, marketingDescription[language == "en"][0].value),
 			"privacyPolicyLink": privacyPolicyLink{ ${linkFields} },
 			"cookiePolicyLink": cookiePolicyLink{ ${linkFields} }
+		},
+		"cart": ${byLocale('settingsCart')}[0]{
+			emptyHeading,
+			"recommendedProducts": ${visibleProducts('recommendedProducts')}{
+				${productCardFields}
+			}
 		},
 	}
 `);
@@ -725,30 +915,16 @@ export const pageBlogSingleQuery = defineQuery(`
 	}
 `);
 
-const productCardFields = `
-	${baseFields},
-	excerpt,
-	badge,
-	price,
-	purchaseLink,
-	categories[]->{
-		_id,
-		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-		"slug": slug.current
-	},
-	brands[]->{ _id, title, "slug": slug.current },
-	mainImage {
-		${imageBlockMetaFields}
-	}
-`;
-
+// Inside nested projections the document's transition discriminator is
+// reached through ^ (one hop per scope): ^.language from a direct object or
+// array item, ^.^.language from a list item inside one.
 const productMetadataFields = `
 	metadata[]{
 		_key,
-		title,
+		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value, select(defined(^.language) => title)),
 		contentType,
 		contentType == "richText" => {
-			"richText": richText[]{ ${portableTextContentFields} }
+			"richText": coalesce(richText[language == $locale][0].value, richText[language == "en"][0].value, select(defined(^.language) => richText))[]{ ${portableTextContentFields} }
 		},
 		contentType == "list" => {
 			"list": list[]{
@@ -761,19 +937,21 @@ const productMetadataFields = `
 						"slug": slug.current
 					}
 				},
-				_type == "textItem" => { text }
+				_type == "textItem" => {
+					"text": coalesce(text[language == $locale][0].value, text[language == "en"][0].value, select(defined(^.^.language) => text))
+				}
 			}
 		}
 	}
 `;
 
 const productStaticSectionFields = `
-	whyUseIt[]{ ${portableTextContentFields} },
-	whoIsItFor[]{ ${portableTextContentFields} },
+	"whyUseIt": ${locPT('whyUseIt')}[]{ ${portableTextContentFields} },
+	"whoIsItFor": ${locPT('whoIsItFor')}[]{ ${portableTextContentFields} },
 	whenReachForIt{
 		contentType,
 		contentType == "richText" => {
-			"richText": richText[]{ ${portableTextContentFields} }
+			"richText": coalesce(richText[language == $locale][0].value, richText[language == "en"][0].value, select(defined(^.language) => richText))[]{ ${portableTextContentFields} }
 		},
 		contentType == "list" => {
 			"list": list[]{
@@ -786,7 +964,9 @@ const productStaticSectionFields = `
 						"slug": slug.current
 					}
 				},
-				_type == "textItem" => { text }
+				_type == "textItem" => {
+					"text": coalesce(text[language == $locale][0].value, text[language == "en"][0].value, select(defined(^.^.language) => text))
+				}
 			}
 		}
 	}
@@ -794,8 +974,9 @@ const productStaticSectionFields = `
 
 const productBaseFields = `
 	${productCardFields},
+	${productSharingFields('mainImage.image', 'excerpt')},
 	soldOut,
-	content[]{
+	"content": ${locPT('content')}[]{
 		${portableTextContentFields}
 	},
 	${productStaticSectionFields},
@@ -810,7 +991,7 @@ const productCategoriesFields = `
 		coverImage {
 			${imageBlockMetaFields}
 		},
-		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
+		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')} && ${productTitleVisible}])
 	}
 `;
 
@@ -825,7 +1006,7 @@ export const pageProductIndexQuery = defineQuery(`
 			title,
 			description
 		},
-		"allProductsList": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}]
+		"allProductsList": *[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productTitleVisible}]
 			| order(_createdAt desc)[0...24]{
 			${productCardFields}
 		},
@@ -835,13 +1016,13 @@ export const pageProductIndexQuery = defineQuery(`
 				&& (language == $locale || language == "en" || !defined(language))
 			] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 				_id,
-				title,
-				description,
+				"title": ${locString('title')},
+				"description": ${locString('description')},
 				"slug": slug.current,
 				coverImage {
 					${imageBlockMetaFields}
 				},
-				"products": products[0...8]->{
+				"products": ${visibleProducts('products')}[0...8]{
 					${productCardFields}
 				}
 			}
@@ -852,7 +1033,7 @@ export const pageProductIndexQuery = defineQuery(`
 			coverImage {
 				${imageBlockMetaFields}
 			},
-			"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
+			"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')} && ${productTitleVisible}])
 		}
 	}
 `);
@@ -863,19 +1044,20 @@ export const pageProductSlugsQuery = defineQuery(`
 `);
 
 export const pageProductSingleQuery = defineQuery(`
-	*[_type == "pProduct" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
+	*[_type == "pProduct" && slug.current == $slug && (language == $locale || language == "en" || !defined(language)) && ${productTitleVisible}] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${productBaseFields},
-		${availableLocalesField},
+		${productAvailableLocalesField},
 		"sizeChart": sizeChart->{
 			${gSizeChartFields}
 		},
-		"relatedProducts": relatedProducts[]->{
+		"relatedProducts": ${visibleProducts('relatedProducts')}{
 			${productCardFields}
 		},
 		"defaultRelatedProducts": *[_type == "pProduct"
 			&& count(categories[@._ref in ^.^.categories[]._ref]) > 0
 			&& _id != ^._id
 			&& ${productLocaleFilter('pProduct')}
+			&& ${productTitleVisible}
 		] | order(_createdAt desc) [0...3] {
 			${productCardFields}
 		}
@@ -895,11 +1077,15 @@ export const pageProductCollectionSlugsQuery = defineQuery(`
 `);
 
 export const pageProductCollectionSingleQuery = defineQuery(`
-	*[_type == "pProductCollection" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
-		${baseFields},
-		${availableLocalesField},
-		description,
-		"products": products[]->{
+	*[_type == "pProductCollection" && slug.current == $slug && (language == $locale || language == "en" || !defined(language)) && ${productTitleVisible}] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
+		_id,
+		_type,
+		"title": ${locString('title')},
+		"slug": slug.current,
+		${productSharingFields('coverImage.image', 'description')},
+		${productAvailableLocalesField},
+		"description": ${locString('description')},
+		"products": ${visibleProducts('products')}{
 			${productCardFields}
 		},
 		${productCategoriesFields}
@@ -908,7 +1094,7 @@ export const pageProductCollectionSingleQuery = defineQuery(`
 
 export const pageProductCategoriesIndexQuery = defineQuery(`
 	{
-		"productCount": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')}]),
+		"productCount": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productTitleVisible}]),
 		${productCategoriesFields},
 		"sharing": {
 			"shareGraphic": *[_type == "settingsGeneral"][0].shareGraphic,
@@ -953,7 +1139,7 @@ export const pageProductCategorySingleQuery = defineQuery(`
 		coverImage {
 			${imageBlockMetaFields}
 		},
-		"products": *[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}] | order(title asc) {
+		"products": *[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')} && ${productTitleVisible}] | order(${productTitleOrder} asc) {
 			${productCardFields}
 		}
 	}
@@ -961,10 +1147,10 @@ export const pageProductCategorySingleQuery = defineQuery(`
 
 export const pageProductCollectionsIndexQuery = defineQuery(`
 	{
-		"collections": *[_type == "pProductCollection" && ${productLocaleFilter('pProductCollection')}] | order(title asc) {
+		"collections": *[_type == "pProductCollection" && ${productLocaleFilter('pProductCollection')} && ${productTitleVisible}] | order(${productTitleOrder} asc) {
 			_id,
-			title,
-			description,
+			"title": ${locString('title')},
+			"description": ${locString('description')},
 			"slug": slug.current,
 			coverImage {
 				${imageBlockMetaFields}
@@ -976,10 +1162,10 @@ export const pageProductCollectionsIndexQuery = defineQuery(`
 
 export const pageProductsAllQuery = defineQuery(`
 	{
-		"products": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}] | order(title asc) [$start...$end] {
+		"products": *[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productTitleVisible}] | order(${productTitleOrder} asc) [$start...$end] {
 			${productCardFields}
 		},
-		"total": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')}]),
+		"total": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productTitleVisible}]),
 		${productCategoriesFields}
 	}
 `);

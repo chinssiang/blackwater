@@ -1,5 +1,5 @@
 import type { Viewport } from 'next';
-import { ProductSubmission } from '@/components/ProductSubmission';
+import ProductSubmissionLazy from '@/components/ProductSubmissionLazy';
 import { getCachedSiteData } from '@/sanity/lib/siteData';
 
 // Let the soft keyboard resize the layout viewport (not just the visual one) so
@@ -28,7 +28,7 @@ export default async function ProductsLayout({
 			{children}
 			{data?.productSubmissionEmail && (
 				<div className="pointer-events-none sticky bottom-[calc(var(--height-g-toolbar)+1rem)] mt-auto flex justify-end lg:bottom-6 z-11 pt-section">
-					<ProductSubmission />
+					<ProductSubmissionLazy />
 				</div>
 			)}
 		</div>

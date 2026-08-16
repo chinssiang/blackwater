@@ -387,11 +387,13 @@ export function scrollDisable(): void {
 }
 
 /**
- * Enables scrolling on the document body by setting overflow to 'initial'.
+ * Re-enables scrolling by removing the inline overflow set by `scrollDisable`.
+ * Removes the property rather than assigning a value, so the stylesheet's own
+ * overflow rules take over again instead of being permanently overridden.
  */
 export function scrollEnable(): void {
-	document.documentElement.style.overflow = 'initial';
-	document.body.style.overflow = 'initial';
+	document.documentElement.style.removeProperty('overflow');
+	document.body.style.removeProperty('overflow');
 }
 
 /**

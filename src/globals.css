@@ -298,6 +298,30 @@
 }
 
 @layer components {
+	/* The cart panel is light in both themes (bg-white/text-black), but the
+	   tokens its contents resolve — borders, muted copy, the recommendation
+	   cards' hover and focus colours — inherit from <html>, which is dark on
+	   every route except /products and /size-guide. There that leaves
+	   --border at white/10% (dividers invisible on white) and
+	   --muted-foreground around 2.6:1 (fails AA). Pin the values :root
+	   declares so the panel reads the same wherever it is opened.
+
+	   Set on the panel element itself, so it simply out-inherits .dark on
+	   <html> — no layer or specificity contest involved. */
+	.cart-surface {
+		--background: oklch(0.9612 0 0);
+		--foreground: oklch(0.145 0 0);
+		--muted: oklch(0.97 0 0);
+		--muted-foreground: oklch(0.556 0 0);
+		--accent: oklch(0.97 0 0);
+		--accent-foreground: oklch(48.49% 0.291 264.12);
+		--primary: oklch(0.205 0 0);
+		--primary-foreground: oklch(0.985 0 0);
+		--border: oklch(0.75 0 0);
+		--input: oklch(0.922 0 0);
+		--ring: oklch(0.708 0 0);
+	}
+
 	.field-hint-ring {
 		&::before {
 			content: '';
@@ -716,25 +740,70 @@ body:has([data-not-found]) footer {
 }
 
 /* Page navigation fade. The route content in the Layout is keyed by pathname
-   and remounts on navigation, replaying this fade-in. A plain opacity animation
-   on the content (not a View Transition snapshot of the full-height page) avoids
-   the geometry "morph" that read as the page scrolling to the top and back. */
-@keyframes page-in {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
+   and remounts on navigation, replaying this fade-in. A plain opacity fade on
+   the content (not a View Transition snapshot of the full-height page) avoids
+   the geometry "morph" that read as the page scrolling to the top and back.
+
+   A transition with @starting-style, not a keyframe animation: an animation
+   from opacity 0 begins its active phase at t=0, so a document whose timeline
+   never advances (see `reveal` below) would hold the entire <main> — the whole
+   page, not one column — at opacity 0. `animation-fill-mode` cannot help; it
+   only governs the phases outside the active one. */
+.animate-page-in {
+	transition: opacity 0.3s ease-out;
 }
 
-.animate-page-in {
-	animation: page-in 0.3s ease-out both;
+@starting-style {
+	.animate-page-in {
+		opacity: 0;
+	}
 }
 
 /* Honor reduced-motion: show content instantly, no fade. */
 @media (prefers-reduced-motion: reduce) {
 	.animate-page-in {
-		animation: none;
+		transition: none;
+	}
+}
+
+/* Entrance reveal for page content, staggered via --reveal-delay.
+
+   This drives the visibility of the price and the buy button, so the visible
+   state is the *resting* state: the element declares no opacity of its own, and
+   the hidden value lives only in @starting-style as a transition start point.
+   Deliberately not a JS mount animation (Motion needs hydration plus a live rAF
+   before content becomes visible at all) and not a keyframe animation (which
+   holds its `from` state for as long as the document timeline is frozen — a
+   page the browser never paints, such as a discarded tab, sits at currentTime 0
+   indefinitely).
+
+   The guarantee this gives is narrower than "nothing has to run": a transition
+   is created as soon as a second style resolution happens, and it holds the
+   start value for the whole --reveal-delay window. So a stalled clock can still
+   hide a *delayed* reveal — measured directly: a frozen-timeline browser
+   reported a live CSSTransition at currentTime 0 with computed opacity 0. What
+   it does buy is that visibility never depends on JS, and that an element with
+   no delay is never hidden for longer than one frame. Keep delays off anything
+   a shopper must be able to see or click; the buy column's 0.2–0.28s stagger is
+   the practical ceiling.
+
+   Omitting a base `opacity` also keeps this composable: `reveal opacity-50`
+   resolves to 50%, where a hard-coded `opacity: 1` here would fight Tailwind's
+   own utility in the same cascade layer.
+
+   Browsers without @starting-style show the content immediately, un-faded. */
+@utility reveal {
+	transition: opacity var(--reveal-duration, 0.6s)
+		var(--reveal-ease, cubic-bezier(0, 0.71, 0.2, 1.01))
+		var(--reveal-delay, 0s);
+
+	@starting-style {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.reveal {
+		transition: none;
 	}
 }

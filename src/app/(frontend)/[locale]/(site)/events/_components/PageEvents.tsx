@@ -231,7 +231,10 @@ export function PageEvents({ data }: PageEventsProps) {
 							aria-label={t.aria.previousMonth}
 							variant="ghost"
 							size="sm"
-							className="uppercase t-b-2 cursor-pointer hover:opacity-60 min-h-11"
+							// text-xs/font-normal are load-bearing: t-b-2 sets both in
+						// @layer components, but Button's base text-sm font-medium
+						// are utilities and win the cascade. Not duplicates.
+						className="uppercase t-b-2 text-xs font-normal cursor-pointer hover:opacity-60 min-h-11"
 						>
 							<ArrowLeft />
 							{t.aria.previousMonth}
@@ -243,7 +246,10 @@ export function PageEvents({ data }: PageEventsProps) {
 							aria-label={t.aria.nextMonth}
 							variant="ghost"
 							size="sm"
-							className="uppercase t-b-2 cursor-pointer hover:opacity-60 min-h-11"
+							// text-xs/font-normal are load-bearing: t-b-2 sets both in
+						// @layer components, but Button's base text-sm font-medium
+						// are utilities and win the cascade. Not duplicates.
+						className="uppercase t-b-2 text-xs font-normal cursor-pointer hover:opacity-60 min-h-11"
 						>
 							{t.aria.nextMonth}
 							<ArrowRight className="size-3.5" />

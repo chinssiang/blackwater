@@ -80,6 +80,8 @@
 			"new": "New"
 		},
 		"soldOut": "Sold out",
+		"fromPrice": "From {price}",
+		"optionUnavailable": "{value} (sold out)",
 		"notify": {
 			"title": "Notify when back in stock",
 			"emailLabel": "Email address",
@@ -92,6 +94,14 @@
 			"errorBody": "Please try again in a moment.",
 			"invalidEmail": "Please enter a valid email address.",
 			"ariaLabel": "Get notified when {product} is back in stock"
+		},
+		"gallery": {
+			"label": "Product images",
+			"imageAlt": "{product} — image {index} of {count}",
+			"slide": "Image {index} of {count}",
+			"goTo": "Go to image {index}",
+			"previous": "Previous image",
+			"next": "Next image"
 		}
 	},
 	"sizeGuide": {
@@ -132,6 +142,28 @@
 		"close": "Close",
 		"openMenu": "Open menu",
 		"closeMenu": "Close menu"
+	},
+	"cart": {
+		"title": "Cart",
+		"open": "Open cart",
+		"close": "Close cart",
+		"empty": "Your cart is empty.",
+		"addToCart": "Add to cart",
+		"adding": "Adding…",
+		"added": "Added to cart",
+		"selectSize": "Select a size",
+		"checkout": "Checkout",
+		"subtotal": "Subtotal",
+		"shippingNote": "Shipping and taxes are calculated at checkout.",
+		"quantity": "Quantity",
+		"increase": "Increase quantity",
+		"decrease": "Decrease quantity",
+		"remove": "Remove",
+		"removeAriaLabel": "Remove {product} from cart",
+		"itemCount": { "one": "{count} item", "other": "{count} items" },
+		"stockLimited": "Only {count} left in stock",
+		"errorHeading": "Something went wrong",
+		"errorBody": "Your cart could not be updated. Please try again."
 	},
 	"newsletter": {
 		"emailLabel": "Email address",

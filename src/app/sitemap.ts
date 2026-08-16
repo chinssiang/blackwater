@@ -17,8 +17,23 @@ type SitemapDoc = {
 	_type: string;
 	slug: string | null;
 	_updatedAt: string;
+	/** Document-level i18n types: the language of this document row. */
 	language?: string;
+	/**
+	 * Field-level i18n types (the product family): every locale this single
+	 * document is translated into, derived in GROQ from title[].language.
+	 */
+	locales?: Array<string | null> | null;
 };
+
+/** Locales a row represents, whichever i18n model its type uses. */
+function docLocales(doc: SitemapDoc): Locale[] {
+	if (Array.isArray(doc.locales)) {
+		const filtered = doc.locales.filter(isLocale);
+		if (filtered.length > 0) return filtered;
+	}
+	return [isLocale(doc.language) ? doc.language : DEFAULT_LOCALE];
+}
 
 const QUERIES: Record<string, string> = {
 	pages: SITEMAP_PAGES_QUERY,
@@ -57,11 +72,11 @@ export default async function sitemap({
 		for (const group of grouped.values()) {
 			const { _type, slug } = group[0];
 
-			// Determine which locales have a Sanity document in this group
+			// Determine which locales this group's page exists in — one row per
+			// locale for document-level types, one row carrying all locales for
+			// field-level ones.
 			const availableLocales: Locale[] = [
-				...new Set(
-					group.map((d) => (isLocale(d.language) ? d.language : DEFAULT_LOCALE))
-				),
+				...new Set(group.flatMap(docLocales)),
 			];
 
 			// Build reusable hreflang map for all entries in this group
@@ -84,9 +99,7 @@ export default async function sitemap({
 				if (!href) continue;
 
 				const row =
-					group.find((d) =>
-						(isLocale(d.language) ? d.language : DEFAULT_LOCALE) === locale
-					) ?? group[0];
+					group.find((d) => docLocales(d).includes(locale)) ?? group[0];
 
 				entries.push({
 					url: new URL(href, process.env.SITE_URL).toString(),

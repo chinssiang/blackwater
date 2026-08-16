@@ -23,6 +23,35 @@ type Props = {
 	availableLocales?: Locale[];
 };
 
+/**
+ * Drops the fields only `generateMetadata` reads — the `sharing` block (meta
+ * title/description, share graphic, site title) and `availableLocales` — before
+ * a page's data crosses into a client component.
+ *
+ * Both are projected by the page queries because `generateMetadata` needs them,
+ * but no client component renders either: without this they are serialized into
+ * the RSC payload of every listing page for nothing. The product detail page
+ * avoids the same cost by picking its fields explicitly; listing pages spread
+ * their whole query result, so they strip instead.
+ *
+ * The return type drops them too, rather than lying with `T`: a component that
+ * later reaches for `data.sharing` should fail to compile here, not throw on
+ * `undefined` in the browser.
+ */
+export type WithoutPageMetadata<T> = Omit<T, 'sharing' | 'availableLocales'>;
+
+export function omitPageMetadata<T extends object>(
+	data: T
+): WithoutPageMetadata<T> {
+	const { sharing, availableLocales, ...rest } = data as T & {
+		sharing?: unknown;
+		availableLocales?: unknown;
+	};
+	void sharing;
+	void availableLocales;
+	return rest;
+}
+
 export function normalizeLocales(raw: unknown): Locale[] {
 	const arr = Array.isArray(raw) ? raw : [];
 	const filtered = [...new Set(arr.filter(isLocale))] as Locale[];
