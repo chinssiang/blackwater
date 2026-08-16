@@ -11,13 +11,21 @@ import type {
 	EventCrewMonthsQueryResult,
 	EventCrewMembersQueryResult,
 } from 'sanity.types';
-import { fromZonedTime } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { getRichDateYearMonth } from '@/lib/event-date';
 import { PageEventCrew } from './_components/PageEventsCrew';
 
 // Crew months are bucketed by their Asia/Taipei local month, so the GROQ range
 // boundaries must be expressed as Taipei wall-clock midnights converted to UTC.
 const CREW_TIMEZONE = 'Asia/Taipei';
+
+const pad = (n: number) => String(n).padStart(2, '0');
+
+// Month keys are compared as strings -- both by `.sort()` and by the `>=` scan
+// that picks the landing month -- so the 0-based month has to be zero-padded or
+// lexicographic order stops matching calendar order (November, "_10", would sort
+// between February and March).
+const monthKey = (year: number, month: number) => `${year}_${pad(month)}`;
 
 export const metadata: Metadata = {
 	title: 'Event Crew',
@@ -35,7 +43,6 @@ function parseMonthParam(param: string | undefined) {
 }
 
 function getMonthDateRange(year: number, month: number) {
-	const pad = (n: number) => String(n).padStart(2, '0');
 	const startDate = fromZonedTime(
 		`${year}-${pad(month + 1)}-01T00:00:00`,
 		CREW_TIMEZONE
@@ -65,7 +72,7 @@ export default async function Page({
 		...new Set(
 			entries.flatMap((entry) => {
 				const ym = getRichDateYearMonth(entry.eventDatetime);
-				return ym ? [`${ym.year}_${ym.month}`] : [];
+				return ym ? [monthKey(ym.year, ym.month)] : [];
 			})
 		),
 	].sort();
@@ -74,15 +81,20 @@ export default async function Page({
 	let activeKey: string | null = null;
 
 	if (parsed) {
-		const requestedKey = `${parsed.year}_${parsed.month}`;
+		const requestedKey = monthKey(parsed.year, parsed.month);
 		if (availableMonthKeys.includes(requestedKey)) {
 			activeKey = requestedKey;
 		}
 	}
 
 	if (!activeKey && availableMonthKeys.length > 0) {
-		const now = new Date();
-		const currentKey = `${now.getFullYear()}_${now.getMonth()}`;
+		// Must be the Taipei month, since that is how the keys were bucketed --
+		// reading the runtime's month instead opens on the previous month for the
+		// first eight hours of every Taipei month on a UTC server.
+		const [year, month] = formatInTimeZone(new Date(), CREW_TIMEZONE, 'yyyy-MM')
+			.split('-')
+			.map(Number);
+		const currentKey = monthKey(year, month - 1);
 		const futureKey = availableMonthKeys.find((key) => key >= currentKey);
 		activeKey = futureKey || availableMonthKeys[availableMonthKeys.length - 1];
 	}
