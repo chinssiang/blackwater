@@ -19,6 +19,14 @@ import { PageEventCrew } from './_components/PageEventsCrew';
 // boundaries must be expressed as Taipei wall-clock midnights converted to UTC.
 const CREW_TIMEZONE = 'Asia/Taipei';
 
+const pad = (n: number) => String(n).padStart(2, '0');
+
+// Month keys are compared as strings -- both by `.sort()` and by the `>=` scan
+// that picks the landing month -- so the 0-based month has to be zero-padded or
+// lexicographic order stops matching calendar order (November, "_10", would sort
+// between February and March).
+const monthKey = (year: number, month: number) => `${year}_${pad(month)}`;
+
 export const metadata: Metadata = {
 	title: 'Event Crew',
 	robots: { index: false, follow: false },
@@ -35,7 +43,6 @@ function parseMonthParam(param: string | undefined) {
 }
 
 function getMonthDateRange(year: number, month: number) {
-	const pad = (n: number) => String(n).padStart(2, '0');
 	const startDate = fromZonedTime(
 		`${year}-${pad(month + 1)}-01T00:00:00`,
 		CREW_TIMEZONE
@@ -65,7 +72,7 @@ export default async function Page({
 		...new Set(
 			entries.flatMap((entry) => {
 				const ym = getRichDateYearMonth(entry.eventDatetime);
-				return ym ? [`${ym.year}_${ym.month}`] : [];
+				return ym ? [monthKey(ym.year, ym.month)] : [];
 			})
 		),
 	].sort();
@@ -74,7 +81,7 @@ export default async function Page({
 	let activeKey: string | null = null;
 
 	if (parsed) {
-		const requestedKey = `${parsed.year}_${parsed.month}`;
+		const requestedKey = monthKey(parsed.year, parsed.month);
 		if (availableMonthKeys.includes(requestedKey)) {
 			activeKey = requestedKey;
 		}
@@ -82,7 +89,7 @@ export default async function Page({
 
 	if (!activeKey && availableMonthKeys.length > 0) {
 		const now = new Date();
-		const currentKey = `${now.getFullYear()}_${now.getMonth()}`;
+		const currentKey = monthKey(now.getFullYear(), now.getMonth());
 		const futureKey = availableMonthKeys.find((key) => key >= currentKey);
 		activeKey = futureKey || availableMonthKeys[availableMonthKeys.length - 1];
 	}
