@@ -618,6 +618,7 @@ export const eventCrewByMonthQuery = defineQuery(`
 		"sharing":{},
 		subtitle,
 		eventDatetime,
+		endDatetime,
 		dateStatus,
 		location,
 		locationLink,

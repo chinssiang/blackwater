@@ -94,3 +94,32 @@ export function isEventEnded(
 	if (!end) return false;
 	return end < now;
 }
+
+/**
+ * Whole calendar days from `now` to a `richDate`, counted in the event's stored
+ * timezone: 0 = same day there, 1 = the next day, negative = already past.
+ *
+ * Both sides are reduced to a civil `yyyy-MM-dd` in that timezone before being
+ * diffed, so the answer is the one an attendee standing in that timezone would
+ * give. Snapping to midnight with `.setHours(0, 0, 0, 0)` instead would bucket by
+ * the *runtime's* calendar date, which puts a late-night Taipei event on the
+ * wrong day for anyone whose UTC offset differs (a UTC server included).
+ *
+ * The final diff goes through `Date.UTC` purely as integer arithmetic on the
+ * y/m/d parts — no timezone or DST is involved by the time we get there.
+ */
+export function getRichDateDaysUntil(
+	value: RichDate | null | undefined,
+	now: Date
+): number | null {
+	const instant = getRichDateInstant(value);
+	if (!instant) return null;
+	const timezone = value?.timezone || FALLBACK_TIMEZONE;
+	const toUtcDays = (date: Date) => {
+		const [year, month, day] = formatInTimeZone(date, timezone, 'yyyy-MM-dd')
+			.split('-')
+			.map(Number);
+		return Date.UTC(year, month - 1, day);
+	};
+	return Math.round((toUtcDays(instant) - toUtcDays(now)) / 86_400_000);
+}

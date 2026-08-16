@@ -12,7 +12,8 @@ import type {
 	EventCrewMembersQueryResult,
 	RichDate,
 } from 'sanity.types';
-import { formatRichDate, getRichDateInstant } from '@/lib/event-date';
+import { formatRichDate, isEventEnded } from '@/lib/event-date';
+import { useNow } from '@/hooks/useNow';
 import SanityImage from '@/components/SanityImage';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -38,12 +39,9 @@ function formatEventDate(datetime: RichDate) {
 	};
 }
 
-function isEventEnded(eventDatetime: RichDate | null | undefined): boolean {
-	const eventDateEndOfDay = getRichDateInstant(eventDatetime);
-	if (!eventDateEndOfDay) return false;
-	eventDateEndOfDay.setHours(23, 59, 59, 999);
-	return eventDateEndOfDay < new Date();
-}
+// Crew often have this page open through an event, so the ended badge is
+// re-evaluated on a timer rather than only at render.
+const CLOCK_TICK_MS = 60 * 1000;
 
 function keyToMonthParam(key: string): string {
 	const [year, month] = key.split('_');
@@ -74,6 +72,7 @@ export function PageEventCrew({
 }: PageEventCrewProps) {
 	const router = useRouter();
 	const [scrolled, setScrolled] = useState(false);
+	const now = useNow(CLOCK_TICK_MS);
 
 	const setSelectedMemberSlug = useCallback(
 		(slug: string | null) => {
@@ -271,6 +270,7 @@ export function PageEventCrew({
 							event={event}
 							index={index}
 							highlightMemberSlug={selectedMember?.slug || null}
+							now={now}
 						/>
 					))}
 				</div>
@@ -291,15 +291,18 @@ function EventCard({
 	event,
 	index,
 	highlightMemberSlug,
+	now,
 }: {
 	event: EventItem;
 	index: number;
 	highlightMemberSlug: string | null;
+	now: Date;
 }) {
 	const {
 		title,
 		subtitle,
 		eventDatetime,
+		endDatetime,
 		location,
 		locationLink,
 		locationRef,
@@ -311,7 +314,7 @@ function EventCard({
 	const displayLocation = locationRef?.name || location;
 	const displayLocationLink = locationRef?.mapLink || locationLink;
 
-	const ended = isEventEnded(eventDatetime);
+	const ended = isEventEnded(eventDatetime, endDatetime, now);
 	const dateInfo = eventDatetime ? formatEventDate(eventDatetime) : null;
 
 	const categoryTitle = categories?.[0]?.title;

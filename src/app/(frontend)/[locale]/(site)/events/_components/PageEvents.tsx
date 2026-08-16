@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
 import { enUS, zhTW } from 'date-fns/locale';
@@ -8,10 +8,12 @@ import { motion, useReducedMotion } from 'motion/react';
 import type { PEvent, RichDate } from 'sanity.types';
 import {
 	formatRichDate,
+	getRichDateDaysUntil,
 	getRichDateInstant,
 	getRichDateYearMonth,
 	isEventEnded,
 } from '@/lib/event-date';
+import { useNow } from '@/hooks/useNow';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
 import { fadeAnim } from '@/lib/animate';
@@ -55,24 +57,16 @@ const DATE_FNS_LOCALES: Record<
 // dims at its end time without the visitor reloading.
 const CLOCK_TICK_MS = 60 * 1000;
 
+// How far ahead an event still earns a "today"/"in N days" pill.
+const DAYS_UNTIL_PILL_WINDOW = 3;
+
 function getDaysUntilEvent(
 	eventDatetime: RichDate | null | undefined,
 	currentDate: Date
 ): number | null {
-	const eventDateStartOfDay = getRichDateInstant(eventDatetime);
-	if (!eventDateStartOfDay) return null;
-	eventDateStartOfDay.setHours(0, 0, 0, 0);
-
-	const today = new Date(currentDate);
-	today.setHours(0, 0, 0, 0);
-
-	const diffTime = eventDateStartOfDay.getTime() - today.getTime();
-	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-	if (diffDays >= 0 && diffDays <= 3) {
-		return diffDays;
-	}
-	return null;
+	const diffDays = getRichDateDaysUntil(eventDatetime, currentDate);
+	if (diffDays === null) return null;
+	return diffDays >= 0 && diffDays <= DAYS_UNTIL_PILL_WINDOW ? diffDays : null;
 }
 
 interface PageEventsProps {
@@ -91,19 +85,11 @@ export function PageEvents({ data }: PageEventsProps) {
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
 	const prefersReducedMotion = useReducedMotion();
 
-	// Seeded during render, then refreshed on mount: this page is statically
-	// prerendered, so the server-side value is the build time, not "now".
-	const [currentDate, setCurrentDate] = useState(() => new Date());
+	const currentDate = useNow(CLOCK_TICK_MS);
 	const [selectedMonth, setSelectedMonth] = useState<{
 		month: number;
 		year: number;
 	} | null>(null);
-
-	useEffect(() => {
-		setCurrentDate(new Date());
-		const timer = setInterval(() => setCurrentDate(new Date()), CLOCK_TICK_MS);
-		return () => clearInterval(timer);
-	}, []);
 
 	const availableMonths = useMemo(() => {
 		if (!groupedEvents) return [];
