@@ -2,8 +2,6 @@
 
 import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
-import { motion } from 'motion/react';
-import { useReveal } from '@/hooks/useReveal';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { pickPlural, interpolate } from '@/lib/dictionary';
@@ -86,7 +84,6 @@ export default function ProductCategoriesGrid({
 	priority = false,
 	heading,
 }: ProductCategoriesGridProps) {
-	const reveal = useReveal();
 	const locale = useLocale();
 	const t = useTranslations('products');
 
@@ -97,11 +94,7 @@ export default function ProductCategoriesGrid({
 	const showHeader = resolvedHeading != null || showViewAll;
 
 	return (
-		<motion.section
-			{...reveal}
-			initial={false}
-			transition={{ duration: 0.8, ease: [0, 0.5, 0.5, 1] }}
-		>
+		<section>
 			{showHeader && (
 				<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
 					{resolvedHeading != null ? (
@@ -137,6 +130,6 @@ export default function ProductCategoriesGrid({
 					/>
 				))}
 			</div>
-		</motion.section>
+		</section>
 	);
 }

@@ -4,6 +4,8 @@ import React, { useEffect, useLayoutEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { isLightThemePath, shouldHideGlobalNewsletter } from '@/lib/routes';
 import * as gtag from '@/lib/gtag';
+import { CartProvider } from '@/components/cart/CartProvider';
+import CartDrawer from '@/components/cart/CartDrawer';
 import AdaSkip from './AdaSkip';
 import { Footer } from './Footer';
 import { Header } from './Header';
@@ -52,26 +54,33 @@ export function Layout({ children, siteData }: LayoutProps) {
 		[footer, sharing?.siteTitle]
 	);
 
+	// The cart provider lives here rather than in a route layout because this is
+	// the component that owns the header (and so the cart trigger). Four routes
+	// render this chrome from outside the [locale] subtree — /email-signature,
+	// /events-crew and both not-found fallbacks — and every one of them needs the
+	// context. One mount here covers all of them, and wraps `children` too, so
+	// product pages can add to the same cart.
 	return (
-		<LazyMotion features={domAnimation}>
-			<AdaSkip />
-			<Header data={headerData} isLightHeader={isLightSection} />
-			<Main>
-				<div key={pathname} className="animate-page-in">
+		<CartProvider>
+			<LazyMotion features={domAnimation}>
+				<AdaSkip />
+				<Header data={headerData} isLightHeader={isLightSection} />
+				<Main key={pathname} className="animate-page-in">
 					{children}
-				</div>
-				{!hideNewsletter && (
-					<div data-hide-on-404 className="border-t border-foreground/36">
-						<Newsletter
-							data={newsletter}
-							setGlobalHeightVar={true}
-							className="p-x-max flex flex-wrap md:grid-cols-2 md:gap-6 py-6 w-full justify-between"
-						/>
-					</div>
-				)}
-			</Main>
-			<Footer data={footerData} />
-			{!toolbar?.hideToolbar && <ToolBar menu={toolbar?.toolbarMenu} />}
-		</LazyMotion>
+					{!hideNewsletter && (
+						<div data-hide-on-404 className="border-t border-foreground/36">
+							<Newsletter
+								data={newsletter}
+								setGlobalHeightVar={true}
+								className="p-x-max flex flex-wrap md:grid-cols-2 md:gap-6 py-6 w-full justify-between"
+							/>
+						</div>
+					)}
+				</Main>
+				<Footer data={footerData} />
+				{!toolbar?.hideToolbar && <ToolBar menu={toolbar?.toolbarMenu} />}
+				<CartDrawer settings={siteData?.cart} />
+			</LazyMotion>
+		</CartProvider>
 	);
 }

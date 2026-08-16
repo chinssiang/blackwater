@@ -8,6 +8,7 @@ import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
 import JsonLd from '@/components/JsonLd';
+import { withLiveCardPrices } from '@/lib/shopify/product';
 import { PageProductsAll } from './_components/PageProductsAll';
 
 const PAGE_SIZE = 24;
@@ -44,7 +45,14 @@ export default async function Page({
 	const totalPages = Math.max(1, Math.ceil((data.total ?? 0) / PAGE_SIZE));
 	if (page > totalPages) return <NotFoundContent locale={locale} />;
 
-	const dict = await getDictionary(locale);
+	// Independent: the dictionary is a local import, the card prices are a
+	// Storefront round trip. Awaiting them in sequence put the whole dictionary
+	// load in front of the network call for no reason.
+	const [dict, products] = await Promise.all([
+		getDictionary(locale),
+		withLiveCardPrices(data.products, locale),
+	]);
+
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
 		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale }) },
 		{ name: dict.breadcrumb.products, path: resolveHref({ documentType: 'pProductIndex', locale }) },
@@ -55,7 +63,7 @@ export default async function Page({
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
 			<PageProductsAll
-				data={data}
+				data={{ ...data, products }}
 				currentPage={page}
 				totalPages={totalPages}
 				total={data.total ?? 0}

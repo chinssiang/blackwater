@@ -4134,6 +4134,36 @@
   },
   {
     "type": "type",
+    "name": "settingsCart.reference",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "_ref": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          }
+        },
+        "_type": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string",
+            "value": "reference"
+          }
+        },
+        "_weak": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "boolean"
+          },
+          "optional": true
+        }
+      },
+      "dereferencesTo": "settingsCart"
+    }
+  },
+  {
+    "type": "type",
     "name": "pEventCategory.reference",
     "value": {
       "type": "object",
@@ -4346,11 +4376,7 @@
               },
               {
                 "type": "inline",
-                "name": "pProduct.reference"
-              },
-              {
-                "type": "inline",
-                "name": "pProductCollection.reference"
+                "name": "settingsCart.reference"
               },
               {
                 "type": "inline",
@@ -5108,6 +5134,79 @@
                 }
               },
               "optional": true
+            }
+          }
+        },
+        "optional": true
+      }
+    }
+  },
+  {
+    "name": "settingsCart",
+    "type": "document",
+    "attributes": {
+      "_id": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_type": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string",
+          "value": "settingsCart"
+        }
+      },
+      "_createdAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_updatedAt": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "_rev": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        }
+      },
+      "language": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "emptyHeading": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
+      "recommendedProducts": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "array",
+          "of": {
+            "type": "object",
+            "attributes": {
+              "_key": {
+                "type": "objectAttribute",
+                "value": {
+                  "type": "string"
+                }
+              }
+            },
+            "rest": {
+              "type": "inline",
+              "name": "pProduct.reference"
             }
           }
         },
@@ -6000,6 +6099,119 @@
     }
   },
   {
+    "name": "internationalizedArrayPortableTextSimpleValue",
+    "type": "type",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "_type": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string",
+            "value": "internationalizedArrayPortableTextSimpleValue"
+          }
+        },
+        "value": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "inline",
+            "name": "portableTextSimple"
+          },
+          "optional": true
+        },
+        "language": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          },
+          "optional": true
+        }
+      }
+    }
+  },
+  {
+    "name": "internationalizedArrayTextValue",
+    "type": "type",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "_type": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string",
+            "value": "internationalizedArrayTextValue"
+          }
+        },
+        "value": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          },
+          "optional": true
+        },
+        "language": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          },
+          "optional": true
+        }
+      }
+    }
+  },
+  {
+    "name": "internationalizedArrayStringValue",
+    "type": "type",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "_type": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string",
+            "value": "internationalizedArrayStringValue"
+          }
+        },
+        "value": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          },
+          "optional": true
+        },
+        "language": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          },
+          "optional": true
+        }
+      }
+    }
+  },
+  {
+    "name": "internationalizedArrayPortableTextSimple",
+    "type": "type",
+    "value": {
+      "type": "array",
+      "of": {
+        "type": "object",
+        "attributes": {
+          "_key": {
+            "type": "objectAttribute",
+            "value": {
+              "type": "string"
+            }
+          }
+        },
+        "rest": {
+          "type": "inline",
+          "name": "internationalizedArrayPortableTextSimpleValue"
+        }
+      }
+    }
+  },
+  {
     "name": "pHome",
     "type": "document",
     "attributes": {
@@ -6731,7 +6943,8 @@
       "title": {
         "type": "objectAttribute",
         "value": {
-          "type": "string"
+          "type": "inline",
+          "name": "internationalizedArrayString"
         },
         "optional": true
       },
@@ -6740,13 +6953,6 @@
         "value": {
           "type": "inline",
           "name": "slug"
-        },
-        "optional": true
-      },
-      "language": {
-        "type": "objectAttribute",
-        "value": {
-          "type": "string"
         },
         "optional": true
       },
@@ -6904,6 +7110,22 @@
         },
         "optional": true
       },
+      "shopify": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "object",
+          "attributes": {
+            "handle": {
+              "type": "objectAttribute",
+              "value": {
+                "type": "string"
+              },
+              "optional": true
+            }
+          }
+        },
+        "optional": true
+      },
       "price": {
         "type": "objectAttribute",
         "value": {
@@ -6938,7 +7160,8 @@
       "excerpt": {
         "type": "objectAttribute",
         "value": {
-          "type": "string"
+          "type": "inline",
+          "name": "internationalizedArrayText"
         },
         "optional": true
       },
@@ -6946,7 +7169,7 @@
         "type": "objectAttribute",
         "value": {
           "type": "inline",
-          "name": "portableTextSimple"
+          "name": "internationalizedArrayPortableTextSimple"
         },
         "optional": true
       },
@@ -6954,7 +7177,7 @@
         "type": "objectAttribute",
         "value": {
           "type": "inline",
-          "name": "portableTextSimple"
+          "name": "internationalizedArrayPortableTextSimple"
         },
         "optional": true
       },
@@ -6962,7 +7185,7 @@
         "type": "objectAttribute",
         "value": {
           "type": "inline",
-          "name": "portableTextSimple"
+          "name": "internationalizedArrayPortableTextSimple"
         },
         "optional": true
       },
@@ -6992,7 +7215,7 @@
               "type": "objectAttribute",
               "value": {
                 "type": "inline",
-                "name": "portableTextSimple"
+                "name": "internationalizedArrayPortableTextSimple"
               },
               "optional": true
             },
@@ -7024,7 +7247,8 @@
                         "text": {
                           "type": "objectAttribute",
                           "value": {
-                            "type": "string"
+                            "type": "inline",
+                            "name": "internationalizedArrayString"
                           },
                           "optional": true
                         },
@@ -7067,7 +7291,8 @@
               "title": {
                 "type": "objectAttribute",
                 "value": {
-                  "type": "string"
+                  "type": "inline",
+                  "name": "internationalizedArrayString"
                 },
                 "optional": true
               },
@@ -7092,7 +7317,7 @@
                 "type": "objectAttribute",
                 "value": {
                   "type": "inline",
-                  "name": "portableTextSimple"
+                  "name": "internationalizedArrayPortableTextSimple"
                 },
                 "optional": true
               },
@@ -7124,7 +7349,8 @@
                           "text": {
                             "type": "objectAttribute",
                             "value": {
-                              "type": "string"
+                              "type": "inline",
+                              "name": "internationalizedArrayString"
                             },
                             "optional": true
                           },
@@ -7206,78 +7432,71 @@
         },
         "optional": true
       },
-      "sharing": {
+      "disableIndex": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "boolean"
+        },
+        "optional": true
+      },
+      "seoTitle": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "seoDescription": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayText"
+        },
+        "optional": true
+      },
+      "shareGraphic": {
         "type": "objectAttribute",
         "value": {
           "type": "object",
           "attributes": {
-            "disableIndex": {
+            "asset": {
               "type": "objectAttribute",
               "value": {
-                "type": "boolean"
+                "type": "inline",
+                "name": "sanity.imageAsset.reference"
               },
               "optional": true
             },
-            "metaTitle": {
+            "media": {
               "type": "objectAttribute",
               "value": {
-                "type": "string"
+                "type": "unknown"
               },
               "optional": true
             },
-            "metaDesc": {
+            "hotspot": {
               "type": "objectAttribute",
               "value": {
-                "type": "string"
+                "type": "inline",
+                "name": "sanity.imageHotspot"
               },
               "optional": true
             },
-            "shareGraphic": {
+            "crop": {
               "type": "objectAttribute",
               "value": {
-                "type": "object",
-                "attributes": {
-                  "asset": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "inline",
-                      "name": "sanity.imageAsset.reference"
-                    },
-                    "optional": true
-                  },
-                  "media": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "unknown"
-                    },
-                    "optional": true
-                  },
-                  "hotspot": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "inline",
-                      "name": "sanity.imageHotspot"
-                    },
-                    "optional": true
-                  },
-                  "crop": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "inline",
-                      "name": "sanity.imageCrop"
-                    },
-                    "optional": true
-                  },
-                  "_type": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "string",
-                      "value": "image"
-                    }
-                  }
-                }
+                "type": "inline",
+                "name": "sanity.imageCrop"
               },
               "optional": true
+            },
+            "_type": {
+              "type": "objectAttribute",
+              "value": {
+                "type": "string",
+                "value": "image"
+              }
             }
           }
         },
@@ -8457,7 +8676,8 @@
       "title": {
         "type": "objectAttribute",
         "value": {
-          "type": "string"
+          "type": "inline",
+          "name": "internationalizedArrayString"
         },
         "optional": true
       },
@@ -8469,17 +8689,11 @@
         },
         "optional": true
       },
-      "language": {
-        "type": "objectAttribute",
-        "value": {
-          "type": "string"
-        },
-        "optional": true
-      },
       "description": {
         "type": "objectAttribute",
         "value": {
-          "type": "string"
+          "type": "inline",
+          "name": "internationalizedArrayText"
         },
         "optional": true
       },
@@ -8615,78 +8829,71 @@
         },
         "optional": true
       },
-      "sharing": {
+      "disableIndex": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "boolean"
+        },
+        "optional": true
+      },
+      "seoTitle": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayString"
+        },
+        "optional": true
+      },
+      "seoDescription": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "inline",
+          "name": "internationalizedArrayText"
+        },
+        "optional": true
+      },
+      "shareGraphic": {
         "type": "objectAttribute",
         "value": {
           "type": "object",
           "attributes": {
-            "disableIndex": {
+            "asset": {
               "type": "objectAttribute",
               "value": {
-                "type": "boolean"
+                "type": "inline",
+                "name": "sanity.imageAsset.reference"
               },
               "optional": true
             },
-            "metaTitle": {
+            "media": {
               "type": "objectAttribute",
               "value": {
-                "type": "string"
+                "type": "unknown"
               },
               "optional": true
             },
-            "metaDesc": {
+            "hotspot": {
               "type": "objectAttribute",
               "value": {
-                "type": "string"
+                "type": "inline",
+                "name": "sanity.imageHotspot"
               },
               "optional": true
             },
-            "shareGraphic": {
+            "crop": {
               "type": "objectAttribute",
               "value": {
-                "type": "object",
-                "attributes": {
-                  "asset": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "inline",
-                      "name": "sanity.imageAsset.reference"
-                    },
-                    "optional": true
-                  },
-                  "media": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "unknown"
-                    },
-                    "optional": true
-                  },
-                  "hotspot": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "inline",
-                      "name": "sanity.imageHotspot"
-                    },
-                    "optional": true
-                  },
-                  "crop": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "inline",
-                      "name": "sanity.imageCrop"
-                    },
-                    "optional": true
-                  },
-                  "_type": {
-                    "type": "objectAttribute",
-                    "value": {
-                      "type": "string",
-                      "value": "image"
-                    }
-                  }
-                }
+                "type": "inline",
+                "name": "sanity.imageCrop"
               },
               "optional": true
+            },
+            "_type": {
+              "type": "objectAttribute",
+              "value": {
+                "type": "string",
+                "value": "image"
+              }
             }
           }
         },
@@ -9646,66 +9853,6 @@
           "name": "color"
         },
         "optional": true
-      }
-    }
-  },
-  {
-    "name": "internationalizedArrayTextValue",
-    "type": "type",
-    "value": {
-      "type": "object",
-      "attributes": {
-        "_type": {
-          "type": "objectAttribute",
-          "value": {
-            "type": "string",
-            "value": "internationalizedArrayTextValue"
-          }
-        },
-        "value": {
-          "type": "objectAttribute",
-          "value": {
-            "type": "string"
-          },
-          "optional": true
-        },
-        "language": {
-          "type": "objectAttribute",
-          "value": {
-            "type": "string"
-          },
-          "optional": true
-        }
-      }
-    }
-  },
-  {
-    "name": "internationalizedArrayStringValue",
-    "type": "type",
-    "value": {
-      "type": "object",
-      "attributes": {
-        "_type": {
-          "type": "objectAttribute",
-          "value": {
-            "type": "string",
-            "value": "internationalizedArrayStringValue"
-          }
-        },
-        "value": {
-          "type": "objectAttribute",
-          "value": {
-            "type": "string"
-          },
-          "optional": true
-        },
-        "language": {
-          "type": "objectAttribute",
-          "value": {
-            "type": "string"
-          },
-          "optional": true
-        }
       }
     }
   },

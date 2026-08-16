@@ -5,12 +5,14 @@ import Link from 'next/link';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
 import Menu from '@/components/Menu';
 import MobileMenu from '@/components/MobileMenu';
+import CartButton from '@/components/cart/CartButton';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { LocationCurrentTime } from '@/components/LocationCurrentTime';
 import { cn } from '@/lib/utils';
 import { useWindowScroll } from '@/hooks/useWindowScroll';
 import { useLocale } from '@/components/LocaleProvider';
-import { resolveHref } from '@/lib/routes';
+import { usePathname } from 'next/navigation';
+import { isEventPath, resolveHref } from '@/lib/routes';
 
 type HeaderProps = GHeader & {
 	siteTitle?: string;
@@ -27,6 +29,7 @@ export function Header({
 }) {
 	const { siteTitle, menu, mobileMenu } = data || {};
 	const locale = useLocale();
+	const showLocalTime = isEventPath(usePathname());
 
 	return (
 		<header
@@ -53,11 +56,14 @@ export function Header({
 			<div className="ml-auto flex text-foreground gap-3">
 				<div className="hidden items-center gap-3 lg:flex">
 					<LanguageSwitcher />
-					<div className="t-b-2 flex items-center gap-1 uppercase">
-						<LocationCurrentTime />
-						<span>(TPE)</span>
-					</div>
+					{showLocalTime && (
+						<div className="t-b-2 flex items-center gap-1 uppercase">
+							<LocationCurrentTime />
+							<span>(TPE)</span>
+						</div>
+					)}
 				</div>
+				<CartButton />
 				<MobileMenu data={mobileMenu} siteTitle={siteTitle} />
 			</div>
 		</header>

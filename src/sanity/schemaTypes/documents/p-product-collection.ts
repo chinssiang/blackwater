@@ -1,28 +1,37 @@
-import sharing from '@/sanity/schemaTypes/objects/sharing';
-import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
+import { pickLocalizedValue } from '@/lib/i18n';
+import { requireSomeValue } from '@/sanity/schemaTypes/documents/p-product';
+import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
-import { LOCALE_SHORT_LABELS, isLocale } from '@/lib/i18n';
 import { StackIcon } from '@sanity/icons';
 import { defineArrayMember, defineField, defineType } from 'sanity';
 
+// Field-level localized like pProduct: one collection document carries every
+// language, so the product list is curated once and both locales render from
+// it. Only title/description vary by language.
 export const pProductCollection = defineType({
 	title: 'Product Collection',
 	name: 'pProductCollection',
 	type: 'document',
 	icon: StackIcon,
+	fieldsets: [
+		{
+			name: 'seo',
+			title: 'SEO + Social Sharing',
+			options: { collapsible: true, collapsed: true },
+		},
+	],
 	fields: [
 		defineField({
 			name: 'title',
-			type: 'string',
-			validation: (Rule) => [Rule.required()],
+			type: 'internationalizedArrayString',
+			validation: (Rule) => Rule.custom(requireSomeValue),
 		}),
-		slug(),
-		language(),
+		// isUniqueAcrossType, not the default: with no `language` field the
+		// default check short-circuits to `true` and accepts every duplicate.
+		slug({ isUnique: isUniqueAcrossType }),
 		defineField({
 			name: 'description',
-			type: 'text',
-			rows: 3,
+			type: 'internationalizedArrayText',
 			description: 'Short description shown on the collection section',
 		}),
 		customImage({ title: 'Cover Image', name: 'coverImage' }),
@@ -30,41 +39,58 @@ export const pProductCollection = defineType({
 			name: 'products',
 			title: 'Products',
 			type: 'array',
+			// No language filter on the picker: products are language-agnostic
+			// documents, so there is nothing to filter by.
 			of: [
 				defineArrayMember({
 					type: 'reference',
 					to: [{ type: 'pProduct' }],
-					options: {
-						filter: ({ document }) => {
-							const lang = (document?.language as string) || 'en';
-							return lang === 'en'
-								? {
-										filter: 'language == $lang || !defined(language)',
-										params: { lang },
-									}
-								: {
-										filter: 'language == $lang',
-										params: { lang },
-									};
-						},
-					},
 				}),
 			],
 			validation: (Rule) => Rule.unique(),
 		}),
-		sharing(),
+		// Field-level SEO, mirroring pProductCategory.
+		defineField({
+			name: 'disableIndex',
+			title: 'Disable Index',
+			type: 'boolean',
+			description: 'Instruct search engines not to index or follow this page',
+			initialValue: false,
+			fieldset: 'seo',
+		}),
+		defineField({
+			name: 'seoTitle',
+			title: 'SEO Title',
+			type: 'internationalizedArrayString',
+			description: 'Overrides the meta title per language. Falls back to Title.',
+			fieldset: 'seo',
+		}),
+		defineField({
+			name: 'seoDescription',
+			title: 'SEO Description',
+			type: 'internationalizedArrayText',
+			description:
+				'Overrides the meta description per language. Use no more than 160 characters. Falls back to Description.',
+			fieldset: 'seo',
+		}),
+		defineField({
+			name: 'shareGraphic',
+			title: 'Share Graphic',
+			type: 'image',
+			description:
+				'1200 x 630px. Falls back to Cover Image, then the site default.',
+			fieldset: 'seo',
+		}),
 	],
 	preview: {
 		select: {
 			title: 'title',
 			slug: 'slug.current',
-			language: 'language',
 			media: 'coverImage.image.asset',
 		},
-		prepare({ title = 'Untitled', slug, language, media }) {
-			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
+		prepare({ title, slug, media }) {
 			return {
-				title: tag ? `[${tag}] ${title}` : title,
+				title: pickLocalizedValue(title) || 'Untitled',
 				subtitle: slug ? `/${slug}` : '(no slug)',
 				media: media || StackIcon,
 			};

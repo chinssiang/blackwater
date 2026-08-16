@@ -4,8 +4,10 @@ import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductIndexQuery } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineMetadata, { normalizeLocales, omitPageMetadata } from '@/lib/defineMetadata';
 import { LOCALES, type Locale } from '@/lib/i18n';
+import { getDictionary } from '@/lib/dictionary.server';
+import { applyCardPrices, getCardCommerce } from '@/lib/shopify/product';
 import { PageProductIndex } from './_components/PageProductIndex';
 
 // Prerender both locale variants at build time so the heavy per-category
@@ -36,11 +38,57 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 	});
 }
 
+// Next's build-time type check (unlike CLI tsc) bails to `any` on this
+// query's generated union, so the callback params below are annotated with
+// indexed-access types instead of relying on inference.
+type IndexData = NonNullable<
+	Awaited<ReturnType<typeof getCachedProductIndexData>>['data']
+>;
+type IndexCollection = NonNullable<IndexData['collections']>[number];
+
 export default async function Page(props: Props) {
 	const { locale } = await props.params;
 	const { data } = await getCachedProductIndexData(locale);
 
 	if (!data) return <NotFoundContent locale={locale} />;
 
-	return <PageProductIndex data={data} />;
+	// One batched Shopify lookup covers the "all products" grid and every
+	// collection strip; each array is then re-priced from the same map.
+	const [cardCommerce, dict] = await Promise.all([
+		getCardCommerce(
+			[
+				...(data.allProductsList ?? []),
+				...(data.collections ?? []).flatMap(
+					(c: IndexCollection) => c?.products ?? []
+				),
+			].map((p: { shopifyHandle?: string | null }) => p.shopifyHandle),
+			locale as Locale
+		),
+		getDictionary(locale as Locale),
+	]);
+
+	const pricedData = {
+		...data,
+		allProductsList: applyCardPrices(
+			data.allProductsList,
+			cardCommerce,
+			locale as Locale,
+			dict.products.fromPrice
+		),
+		collections: (data.collections ?? []).map((collection: IndexCollection) =>
+			collection
+				? {
+						...collection,
+						products: applyCardPrices(
+							collection.products,
+							cardCommerce,
+							locale as Locale,
+							dict.products.fromPrice
+						),
+					}
+				: collection
+		),
+	};
+
+	return <PageProductIndex data={omitPageMetadata(pricedData)} />;
 }

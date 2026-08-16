@@ -65,6 +65,21 @@ export function isLightThemePath(pathname: string): boolean {
 	);
 }
 
+// Routes where the local-time readout is meaningful — event schedules are the
+// only place the Taipei clock earns its space in the header. Matches itself and
+// its descendants, same as LIGHT_THEME_PATHS. Note this deliberately does NOT
+// cover /events-crew: it is a separate top-level route, not a descendant, and
+// the exact-or-"${base}/" match below is what keeps it out.
+const EVENT_PATHS = ['/events'];
+
+export function isEventPath(pathname: string): boolean {
+	const { path } = stripLocaleFromPath(pathname);
+	const normalized = path.replace(/\/+$/, '') || '/';
+	return EVENT_PATHS.some(
+		(base) => normalized === base || normalized.startsWith(`${base}/`)
+	);
+}
+
 export function resolveHref({
 	documentType,
 	slug,

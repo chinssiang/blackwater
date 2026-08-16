@@ -167,7 +167,10 @@ export function PageEventCrew({
 								variant="ghost"
 								size="sm"
 								className={cn(
-									'uppercase t-l-2 cursor-pointer hover:opacity-60',
+									// text-[10px] is load-bearing: t-l-2 sets the size in
+								// @layer components, but Button's base text-sm is a
+								// utility and wins the cascade. Not a duplicate.
+								'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !prevHref }
 								)}
 								disabled={!prevHref}
@@ -183,7 +186,10 @@ export function PageEventCrew({
 								variant="ghost"
 								size="sm"
 								className={cn(
-									'uppercase t-l-2 cursor-pointer hover:opacity-60',
+									// text-[10px] is load-bearing: t-l-2 sets the size in
+								// @layer components, but Button's base text-sm is a
+								// utility and wins the cascade. Not a duplicate.
+								'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !nextHref }
 								)}
 								disabled={!nextHref}

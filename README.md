@@ -77,6 +77,95 @@ This setup seamlessly integrates with Vercel, which I highly recommend as your p
 
 For further details, refer to our [Next.js deployment documentation](https://nextjs.org/docs/deployment).
 
+## 🗄️ Sanity Datasets
+
+This project uses two datasets: **`dev`** (where content is authored) and **`prod`** (what the deployed site reads). They are separate copies, so they drift apart as soon as either one is edited — re-clone `dev` → `prod` before a release.
+
+### Cloning `dev` into `prod`
+
+`sanity dataset copy` is the one-command way to do this, but it requires the **advanced dataset management** feature. On our plan it fails with:
+
+```
+Bad Request - Your current plan does not include the advanced dataset management feature
+```
+
+So we clone with export → delete → create → import. Our plan also caps the project at **2 datasets**, so there's no room for a temporary third one — the target must be deleted before it can be recreated.
+
+> ⚠️ Step 3 permanently deletes the existing `prod`. Never skip the backups in step 2 — they are the only way back.
+
+**1. Check what you're about to overwrite.** Compare document counts and the most recent edit in each dataset, so you can confirm `prod` really is the stale one:
+
+```bash
+for ds in dev prod; do echo "=== $ds"; npx sanity documents query 'count(*[!(_id in path("drafts.**"))])' --dataset $ds --api-version 2025-08-15; npx sanity documents query '*[!(_id in path("drafts.**"))]|order(_updatedAt desc)[0]{_type,_updatedAt}' --dataset $ds --api-version 2025-08-15; done
+```
+
+**2. Back up both datasets** (`--overwrite` replaces an existing archive of the same name; assets are included, so expect ~35 MB and ~15s each):
+
+```bash
+npx sanity dataset export prod ~/sanity-backups/prod-pre-delete-$(date +%Y-%m-%d).tar.gz --overwrite
+npx sanity dataset export dev ~/sanity-backups/dev-$(date +%Y-%m-%d).tar.gz --overwrite
+```
+
+**3. Note the current visibility, then delete `prod`.** Visibility is **not** inherited by a recreated dataset, so read it first:
+
+```bash
+npx sanity dataset visibility get prod   # → public
+npx sanity dataset delete prod --force
+```
+
+**4. Recreate `prod` and import the `dev` export.** Pass the visibility from step 3:
+
+```bash
+npx sanity dataset create prod --visibility public
+npx sanity dataset import ~/sanity-backups/dev-$(date +%Y-%m-%d).tar.gz --dataset prod
+```
+
+The import prints its phases and ends with `Done! Imported N documents to dataset "prod"`. The asset phase is the slow one (~1 min). Pass the target as `--dataset` rather than a positional argument — the positional form still works but is deprecated and warns.
+
+**5. Verify the clone.** The strongest check is that the full set of document IDs is identical — `diff` should print nothing:
+
+```bash
+for ds in dev prod; do npx sanity documents query '*[]._id' --dataset $ds --api-version 2025-08-15 | grep -o '"[^"]*"' | tr -d '"' | sort > /tmp/ids-$ds.txt; done
+diff /tmp/ids-dev.txt /tmp/ids-prod.txt && echo "datasets match"
+```
+
+Then spot-check one document body (ignoring the fields that legitimately differ) and confirm assets resolve:
+
+```bash
+for ds in dev prod; do npx sanity documents get <SOME_DOC_ID> --dataset $ds | python3 -c "import sys,json;d=json.load(sys.stdin);d.pop('_updatedAt',None);d.pop('_rev',None);print(json.dumps(d,sort_keys=True))" > /tmp/doc-$ds.json; done
+diff /tmp/doc-dev.json /tmp/doc-prod.json && echo "document content matches"
+npx sanity documents query 'count(*[_type=="sanity.imageAsset" && defined(url)])' --dataset prod --api-version 2025-08-15
+```
+
+**6. Point the app at `prod`** — in `.env.local` for a local check, and in the Vercel project's environment variables for the deploy:
+
+```bash
+sed -i '' 's/^NEXT_PUBLIC_SANITY_DATASET="dev"/NEXT_PUBLIC_SANITY_DATASET="prod"/' .env.local
+```
+
+### Things that surprise people
+
+- **Document history is not preserved.** Import writes fresh `_rev`s, so the content is identical but each document's edit timeline restarts. Only `sanity dataset copy` (paid feature) keeps history.
+- **The export line count is lower than the document count.** `sanity.imageAsset` / `sanity.fileAsset` documents live in `assets.json` + `files/` rather than `data.ndjson`, so e.g. 720 documents export as 568 NDJSON lines + 151 assets. Nothing is missing.
+- **`import --replace` is not a mirror.** It overwrites documents with matching `_id`s but leaves behind anything in the target that no longer exists in the source. Deleting and recreating is what makes the two datasets identical.
+- **Inspect an archive** without importing it:
+
+  ```bash
+  tar -tzf ~/sanity-backups/dev-<date>.tar.gz | head
+  ```
+
+  Note the archive contains a top-level `<dataset>-export-<timestamp>/` folder, so extracting a single file needs that prefix (`tar -xzOf <archive> <folder>/data.ndjson`).
+
+### Restoring from a backup
+
+Same shape as the clone, using a backup archive as the source:
+
+```bash
+npx sanity dataset delete prod --force
+npx sanity dataset create prod --visibility public
+npx sanity dataset import ~/sanity-backups/prod-pre-delete-<date>.tar.gz --dataset prod
+```
+
 ## 💡 Extras/Tips
 
 ### Accessibility
