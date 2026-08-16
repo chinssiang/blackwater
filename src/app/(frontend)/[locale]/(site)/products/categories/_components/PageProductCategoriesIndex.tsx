@@ -7,9 +7,10 @@ import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { localizePath } from '@/lib/i18n';
 import type { PageProductCategoriesIndexQueryResult } from 'sanity.types';
+import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 
 type Props = {
-	data: NonNullable<PageProductCategoriesIndexQueryResult>;
+	data: WithoutPageMetadata<NonNullable<PageProductCategoriesIndexQueryResult>>;
 };
 
 export function PageProductCategoriesIndex({ data }: Props) {

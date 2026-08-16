@@ -4,9 +4,10 @@ import { BasketIcon } from '@sanity/icons';
 import { defineType, defineField, defineArrayMember } from 'sanity';
 
 // Localized at the document level (listed in i18n-types.ts), so there is one
-// Cart document per language. That is what lets the product picker below offer
-// only same-language products — and it is why the heading is a plain string
-// rather than an internationalizedArray.
+// Cart document per language — kept that way deliberately so each market can
+// be merchandised with different recommendations. The heading is a plain
+// string for the same reason. Products themselves are language-agnostic
+// documents, so both Cart documents pick from the same product list.
 export const settingsCart = defineType({
 	title: 'Cart',
 	name: 'settingsCart',
@@ -26,29 +27,15 @@ export const settingsCart = defineType({
 			type: 'array',
 			title: 'Recommended products',
 			description:
-				'Shown in the cart while it is empty, in this order. Leave empty to show nothing beyond the "your cart is empty" message. Only products in this document’s language are listed.',
+				'Shown in the cart while it is empty, in this order. Leave empty to show nothing beyond the "your cart is empty" message. The site renders each product in the visitor’s language automatically.',
+			// No language filter on the picker: products are language-agnostic
+			// documents, so there is nothing to filter by. (The old filter matched
+			// on a product `language` field that no longer exists — left in place
+			// it would list every product to the English cart and none to zh_tw.)
 			of: [
 				defineArrayMember({
 					type: 'reference',
 					to: [{ type: 'pProduct' }],
-					options: {
-						// Restrict picks to this document's language, so the cart never
-						// has to undo an editor's language choice at query time. The
-						// English branch also matches products with no language field
-						// yet, which keeps un-migrated ones pickable.
-						filter: ({ document }) => {
-							const lang = (document?.language as string) || 'en';
-							return lang === 'en'
-								? {
-										filter: 'language == $lang || !defined(language)',
-										params: { lang },
-									}
-								: {
-										filter: 'language == $lang',
-										params: { lang },
-									};
-						},
-					},
 				}),
 			],
 			validation: (Rule) => Rule.unique().max(4),

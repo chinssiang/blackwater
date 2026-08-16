@@ -7,7 +7,7 @@ import {
 	pageProductCollectionSingleQuery,
 	pageProductCollectionSlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineMetadata, { normalizeLocales, omitPageMetadata } from '@/lib/defineMetadata';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
@@ -71,7 +71,7 @@ export default async function Page({ params }: Props) {
 	return (
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
-			<PageProductCollection data={{ ...data, products }} />
+			<PageProductCollection data={omitPageMetadata({ ...data, products })} />
 		</>
 	);
 }

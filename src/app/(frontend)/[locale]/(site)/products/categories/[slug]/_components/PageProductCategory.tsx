@@ -6,9 +6,10 @@ import ProductPageHeader from '../../../_components/ProductPageHeader';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import type { PageProductCategorySingleQueryResult } from 'sanity.types';
+import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 
 type Props = {
-	data: NonNullable<PageProductCategorySingleQueryResult>;
+	data: WithoutPageMetadata<NonNullable<PageProductCategorySingleQueryResult>>;
 };
 
 export default function PageProductCategory({ data }: Props) {

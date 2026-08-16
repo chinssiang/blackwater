@@ -55,13 +55,18 @@ export async function generateMetadata(
 export default async function PageSlugRoute(props: MetadataProps) {
 	const params = await props.params;
 
-	const { data } = await getCachedPageData(params.slug, params.locale);
+	// Independent: the page document is a Sanity round trip, the dictionary a
+	// local import. Awaited in sequence the dictionary sat behind the network
+	// call for no reason — same shape as the product routes.
+	const [{ data }, dict] = await Promise.all([
+		getCachedPageData(params.slug, params.locale),
+		getDictionary(params.locale as Locale),
+	]);
 
 	const { sharing } = data || {};
 	if (!data || sharing.disableIndex === true) return <NotFoundContent locale={params.locale} />;
 
 	const faqJsonLd = defineFaqJsonLd(collectFaqItems(stegaClean(data.pageModules)));
-	const dict = await getDictionary(params.locale as Locale);
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
 		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: params.locale as Locale }) },
 		{ name: data.title, path: resolveHref({ documentType: 'pGeneral', slug: params.slug, locale: params.locale as Locale }) },

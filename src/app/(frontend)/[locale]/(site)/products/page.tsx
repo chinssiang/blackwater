@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductIndexQuery } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineMetadata, { normalizeLocales, omitPageMetadata } from '@/lib/defineMetadata';
 import { LOCALES, type Locale } from '@/lib/i18n';
 import { getDictionary } from '@/lib/dictionary.server';
 import { applyCardPrices, getCardCommerce } from '@/lib/shopify/product';
@@ -90,5 +90,5 @@ export default async function Page(props: Props) {
 		),
 	};
 
-	return <PageProductIndex data={pricedData} />;
+	return <PageProductIndex data={omitPageMetadata(pricedData)} />;
 }

@@ -7,7 +7,7 @@ import {
 	pageProductCategorySingleQuery,
 	pageProductCategorySlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata from '@/lib/defineMetadata';
+import defineMetadata, { omitPageMetadata } from '@/lib/defineMetadata';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
@@ -73,7 +73,7 @@ export default async function Page({ params }: Props) {
 	return (
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
-			<PageProductCategory data={{ ...data, products }} />
+			<PageProductCategory data={omitPageMetadata({ ...data, products })} />
 		</>
 	);
 }

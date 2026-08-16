@@ -7,9 +7,10 @@ import ProductPageHeader from '../../../_components/ProductPageHeader';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import type { PageProductCollectionSingleQueryResult } from 'sanity.types';
+import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 
 type Props = {
-	data: NonNullable<PageProductCollectionSingleQueryResult>;
+	data: WithoutPageMetadata<NonNullable<PageProductCollectionSingleQueryResult>>;
 };
 
 export default function PageProductCollection({ data }: Props) {

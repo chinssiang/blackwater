@@ -254,3 +254,57 @@ hand via the degraded input.
 **If Admin API access is ever needed again** (inventory quantities, draft products,
 scripted webhook registration), add a `src/lib/shopify/admin.ts` that mints and caches
 a client-credentials token. Nothing in this change stands in the way.
+
+---
+
+## Product-family field-level i18n merge (2026-08-13)
+
+One document per product/collection — prose in `internationalizedArray`s (incl.
+Portable Text), commerce identity stored once, Shopify-style. Replaces the
+document-level model whose duplicated invariant fields caused real bugs (the
+currencyless `1,480` price; Component SS T's zh doc carrying Communion T's handle).
+
+## Stage A: Schema + Studio (field-level product family)
+**Status**: Complete — `fieldTypes` gains `portableTextSimple` + built-in
+`languageFilter`; `pProduct`/`pProductCollection` drop `language()`+`sharing()`
+for i18n arrays + a category-style seo fieldset; slugs use `isUniqueAcrossType`;
+picker filters deleted (they matched a product `language` field that no longer
+exists); desk lists are plain documentTypeLists.
+
+## Stage B: Transition-tolerant queries + frontend
+**Status**: Complete — projections carry `select(defined(language) => …)` tails
+so un-merged data still renders (proven: full build + browse against old-shape
+dev data before migrating). Visibility/hreflang/sitemap now key off
+`title[].language`; the sitemap fix also restored the missing
+`/zh_tw/products/categories/*` URLs (pre-existing bug).
+
+## Stage C: Merge migration (dev)
+**Status**: Complete — `scripts/merge-product-i18n.mjs` (dry-run by default,
+`--execute` to write): merged 78 canonicals, repointed 2 referencing docs,
+deleted 74 zh docs + 76 `translation.metadata`, in one transaction. Re-run is a
+no-op. Dev dataset backed up first (`../../backups/dev-*.ndjson.gz`).
+
+## Stage D: Prod choreography
+**Status**: Not Started — at the next deploy:
+1. **Announce a content freeze on products/collections** and confirm no drafts
+   exist. This is not optional politeness: between deploy and migration the
+   schema uses `isUniqueAcrossType`, so every existing en/zh sibling pair
+   (~68 on prod) shares a slug and *fails* slug validation. An editor who edits
+   a product in that window cannot publish it, the edit persists as a draft,
+   and the migration's draft guard then refuses to run — the only way out is
+   discarding their work. The window also has the Studio listing each product
+   twice with no language tag, and `price` validation no longer waiving a
+   translation whose handle is inherited. Keep the window minutes, not hours.
+2. `npx sanity dataset export prod` (backup).
+3. Deploy this build (tolerant queries prerender correctly from old prod data).
+4. `set -a; . ./.env.local; set +a; SANITY_DATASET=prod node scripts/merge-product-i18n.mjs` (dry-run,
+   check the plan **and the "carried from zh siblings" list**), then `--execute`.
+   Guards abort on drafts (of any type, including ones referencing zh docs) and
+   on genuine field conflicts.
+5. Spot-check both locales + `/sitemap/products.xml`.
+
+## Stage E: Post-prod cleanup
+**Status**: Not Started — after Stage D only: strip the transition tails
+(`select(defined(language) => …)`, `shopifyHandleField`'s sibling coalesce,
+`productLocaleFilter`'s old-shape branches), then simplify `CLAUDE.md`'s
+transition notes and retire the merge script.

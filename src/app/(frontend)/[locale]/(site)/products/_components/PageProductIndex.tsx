@@ -12,10 +12,11 @@ import ImageBlock from '@/components/ImageBlock';
 import ProductCard from './ProductCard';
 import ProductCategoriesGrid from './ProductCategoriesGrid';
 import type { PageProductIndexQueryResult } from 'sanity.types';
+import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 import { Button } from '@/components/ui/Button';
 
 type Props = {
-	data: NonNullable<PageProductIndexQueryResult>;
+	data: WithoutPageMetadata<NonNullable<PageProductIndexQueryResult>>;
 };
 
 type Collection = NonNullable<

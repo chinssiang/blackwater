@@ -1,6 +1,14 @@
-import { apiVersion } from '@/sanity/env';
 import { StarIcon, TagsIcon, StackIcon, BasketIcon } from '@sanity/icons';
-import { client } from '@/sanity/lib/client';
+
+// Products and collections are field-level localized (one document carries all
+// languages), so both lists are plain documentTypeLists — no language filter,
+// no translation.metadata child resolution.
+//
+// `title[0].value`, not `title.0.value`: Sanity parses a bare `0` as a field
+// NAME, so the path fails to resolve and the ordering is silently dropped. The
+// bracket form is a real index segment. Index 0 is the first authored language
+// — English for everything except the handful of zh-only products.
+const orderByTitle = [{ field: 'title[0].value', direction: 'asc' }];
 
 const pageProductCollection = (S) => [
 	S.listItem()
@@ -9,47 +17,8 @@ const pageProductCollection = (S) => [
 		.child(
 			S.documentTypeList('pProductCollection')
 				.title('Collections')
-				.apiVersion(apiVersion)
-				.filter('_type == "pProductCollection" && language == "en"')
-				.defaultOrdering([{ field: 'title', direction: 'asc' }])
-				.child(async (docId) => {
-					// Count how many language versions are linked to this collection
-					const translationCount = await client.fetch(
-						'count(*[_type == "translation.metadata" && references($docId)][0].translations)',
-						{ docId }
-					);
-
-					// Single language (no metadata, or only one
-					// translation) → open the document directly
-					if (!translationCount || translationCount <= 1) {
-						return S.editor()
-							.id(docId)
-							.schemaType('pProductCollection')
-							.documentId(docId);
-					}
-
-					// Multiple languages → show the translation variants list
-					return S.documentList()
-						.title('Translations')
-						.apiVersion(apiVersion)
-						.filter(
-							'_type == "pProductCollection" && _id in *[_type == "translation.metadata" && references($docId)][0].translations[].value._ref'
-						)
-						.params({ docId })
-						.defaultOrdering([{ field: 'language', direction: 'asc' }]);
-				})
+				.defaultOrdering(orderByTitle)
 		),
-	// S.listItem()
-	// 	.title('Collections · 中文 (no English pair)')
-	// 	.icon(StackIcon)
-	// 	.child(
-	// 		S.documentList()
-	// 			.title('中文 — missing English version')
-	// 			.apiVersion(apiVersion)
-	// 			.filter(
-	// 				'_type == "pProductCollection" && language != "en" && count(*[_type == "translation.metadata" && references(^._id)][0].translations[value->language == "en"]) == 0'
-	// 			)
-	// 	),
 ];
 
 const pageProductCategory = (S) => {
@@ -91,52 +60,8 @@ export const pageProductItems = (S) => {
 			.child(
 				S.documentTypeList('pProduct')
 					.title('Products')
-					.apiVersion(apiVersion)
-					.filter('_type == "pProduct" && language == "en"')
-					.defaultOrdering([{ field: 'title', direction: 'asc' }])
-					.child(async (docId) => {
-						// Count how many language versions are linked to this product
-						const translationCount = await client.fetch(
-							'count(*[_type == "translation.metadata" && references($docId)][0].translations)',
-							{ docId }
-						);
-
-						// Single language (no metadata, or only one
-						// translation) → open the document directly
-						if (!translationCount || translationCount <= 1) {
-							return S.editor()
-								.id(docId)
-								.schemaType('pProduct')
-								.documentId(docId);
-						}
-
-						// Multiple languages → show the translation variants list
-						return S.documentList()
-							.title('Translations')
-							.apiVersion(apiVersion)
-							.filter(
-								'_type == "pProduct" && _id in *[_type == "translation.metadata" && references($docId)][0].translations[].value._ref'
-							)
-							.params({ docId })
-							.defaultOrdering([
-								{
-									field: 'language',
-									direction: 'asc',
-								},
-							]);
-					})
+					.defaultOrdering(orderByTitle)
 			),
-		// S.listItem()
-		// 	.title('中文 (no English pair)')
-		// 	.icon(StarIcon)
-		// 	.child(
-		// 		S.documentList()
-		// 			.title('中文 — missing English version')
-		// 			.apiVersion(apiVersion)
-		// 			.filter(
-		// 				'_type == "pProduct" && language != "en" && count(*[_type == "translation.metadata" && references(^._id)][0].translations[value->language == "en"]) == 0'
-		// 			)
-		// 	),
 		...pageProductCollection(S),
 		S.listItem()
 			.id('productTaxonomy')

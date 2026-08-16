@@ -52,12 +52,17 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
 
 export default async function PageEventSlugRoute(props: MetadataProps) {
 	const { slug, locale } = await props.params;
-	const { data } = await getCachedEventData(slug, locale);
+	// Independent: the event document is a Sanity round trip, the dictionary a
+	// local import. Awaited in sequence the dictionary sat behind the network
+	// call for no reason — same shape as the product routes.
+	const [{ data }, dict] = await Promise.all([
+		getCachedEventData(slug, locale),
+		getDictionary(locale as Locale),
+	]);
 
 	if (!data) return <NotFoundContent locale={locale} />;
 
 	const cleanData = stegaClean(data);
-	const dict = await getDictionary(locale as Locale);
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
 		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: locale as Locale }) },
 		{ name: dict.breadcrumb.events, path: resolveHref({ documentType: 'pEvents', locale: locale as Locale }) },

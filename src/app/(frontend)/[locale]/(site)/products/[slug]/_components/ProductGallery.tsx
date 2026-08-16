@@ -122,7 +122,7 @@ function CarouselDots({
 	}
 
 	return (
-		<div className="absolute inset-x-0 bottom-1 z-10 flex items-center justify-center gap-1">
+		<div className="absolute inset-x-0 bottom-1 z-10 flex items-center justify-center ">
 			{snaps.map((_, i) => (
 				<button
 					key={i}
@@ -133,9 +133,13 @@ function CarouselDots({
 					onClick={() => api?.scrollTo(i)}
 					aria-label={i === selected ? slide(i) : goTo(i)}
 					aria-current={i === selected ? 'true' : undefined}
-					className="flex size-8 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:size-11"
+					className="flex size-6 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:size-11"
 				>
-					{/* The dot is decoration; the button around it is the 44px target. */}
+					{/* The dot is decoration; the button around it is the hit target —
+					    44px on touch, and 24px on a mouse, which is the floor WCAG 2.2
+					    SC 2.5.8 sets. The row has no gap, so the buttons touch: at
+					    exactly 24px they pass on their own size and don't need the
+					    spacing exception, but anything smaller here would fail. */}
 					<span
 						aria-hidden
 						className={cn(
@@ -174,11 +178,17 @@ export default function ProductGallery({ images, product }: Props) {
 		});
 
 	if (images.length === 1) {
-		return <GallerySlide image={images[0]} alt={altFor(images[0], 0)} priority />;
+		return (
+			<GallerySlide image={images[0]} alt={altFor(images[0], 0)} priority />
+		);
 	}
 
 	return (
-		<Carousel className="absolute inset-0" opts={opts} aria-label={gallery.label}>
+		<Carousel
+			className="absolute inset-0"
+			opts={opts}
+			aria-label={gallery.label}
+		>
 			{/* ml-0 / pl-0 drop the primitive's inter-slide gutter: these slides are
 			    full-bleed within the frame, so a gutter would reveal the edge of the
 			    neighbouring image while dragging. */}
