@@ -13,7 +13,6 @@ import type {
 	RichDate,
 } from 'sanity.types';
 import { formatRichDate, isEventEnded } from '@/lib/event-date';
-import { useNow } from '@/hooks/useNow';
 import SanityImage from '@/components/SanityImage';
 import { useState, useEffect, useCallback } from 'react';
 
@@ -72,7 +71,14 @@ export function PageEventCrew({
 }: PageEventCrewProps) {
 	const router = useRouter();
 	const [scrolled, setScrolled] = useState(false);
-	const now = useNow(CLOCK_TICK_MS);
+	// This page renders per request, so the initial value is current on both
+	// sides; the interval is what keeps a long-open tab honest.
+	const [now, setNow] = useState(() => new Date());
+
+	useEffect(() => {
+		const timer = setInterval(() => setNow(new Date()), CLOCK_TICK_MS);
+		return () => clearInterval(timer);
+	}, []);
 
 	const setSelectedMemberSlug = useCallback(
 		(slug: string | null) => {

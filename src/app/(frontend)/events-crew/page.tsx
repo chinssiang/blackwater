@@ -11,7 +11,7 @@ import type {
 	EventCrewMonthsQueryResult,
 	EventCrewMembersQueryResult,
 } from 'sanity.types';
-import { fromZonedTime } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { getRichDateYearMonth } from '@/lib/event-date';
 import { PageEventCrew } from './_components/PageEventsCrew';
 
@@ -88,8 +88,13 @@ export default async function Page({
 	}
 
 	if (!activeKey && availableMonthKeys.length > 0) {
-		const now = new Date();
-		const currentKey = monthKey(now.getFullYear(), now.getMonth());
+		// Must be the Taipei month, since that is how the keys were bucketed --
+		// reading the runtime's month instead opens on the previous month for the
+		// first eight hours of every Taipei month on a UTC server.
+		const [year, month] = formatInTimeZone(new Date(), CREW_TIMEZONE, 'yyyy-MM')
+			.split('-')
+			.map(Number);
+		const currentKey = monthKey(year, month - 1);
 		const futureKey = availableMonthKeys.find((key) => key >= currentKey);
 		activeKey = futureKey || availableMonthKeys[availableMonthKeys.length - 1];
 	}

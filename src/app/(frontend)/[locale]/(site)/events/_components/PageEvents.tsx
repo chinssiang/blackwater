@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
 import { enUS, zhTW } from 'date-fns/locale';
@@ -13,7 +13,6 @@ import {
 	getRichDateYearMonth,
 	isEventEnded,
 } from '@/lib/event-date';
-import { useNow } from '@/hooks/useNow';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
 import { fadeAnim } from '@/lib/animate';
@@ -85,11 +84,19 @@ export function PageEvents({ data }: PageEventsProps) {
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
 	const prefersReducedMotion = useReducedMotion();
 
-	const currentDate = useNow(CLOCK_TICK_MS);
+	// The initialiser re-runs on the client during hydration, so `currentDate`
+	// holds the real clock from the first client render even though the
+	// prerendered HTML was built with the clock as of the last revalidation.
+	const [currentDate, setCurrentDate] = useState(() => new Date());
 	const [selectedMonth, setSelectedMonth] = useState<{
 		month: number;
 		year: number;
 	} | null>(null);
+
+	useEffect(() => {
+		const timer = setInterval(() => setCurrentDate(new Date()), CLOCK_TICK_MS);
+		return () => clearInterval(timer);
+	}, []);
 
 	const availableMonths = useMemo(() => {
 		if (!groupedEvents) return [];
@@ -393,7 +400,7 @@ export function PageEvents({ data }: PageEventsProps) {
 										'lg:justify-end gap-1 flex flex-wrap min-w-0 col-start-1 lg:col-start-[unset] mt-6 lg:mt-0'
 									}
 								>
-									{daysUntil !== null && daysUntil !== undefined && (
+									{!eventHasEnded && daysUntil !== null && (
 										<StatusItem
 											key={`in-${daysUntil}-day`}
 											data={{
