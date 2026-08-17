@@ -133,7 +133,10 @@ function CarouselDots({
 					onClick={() => api?.scrollTo(i)}
 					aria-label={i === selected ? slide(i) : goTo(i)}
 					aria-current={i === selected ? 'true' : undefined}
-					className="flex size-6 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:size-11"
+					// Same focus token as Button, for the same reason: `ring-ring/50`
+					// composited to 1.47:1 on the light product background, and these
+					// buttons clear the UA outline, so it was their only indicator.
+					className="flex size-6 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background pointer-coarse:size-11"
 				>
 					{/* The dot is decoration; the button around it is the hit target —
 					    44px on touch, and 24px on a mouse, which is the floor WCAG 2.2

@@ -55,7 +55,11 @@ export default function VariantPicker({
 		<div className="flex flex-col gap-5">
 			{realOptions.map((option) => (
 				<div key={option.name} role="group" aria-label={option.name}>
-					<p className="t-l-2 uppercase text-foreground/65">{option.name}</p>
+					{/* t-l-1 (12px), not t-l-2 (10px): this heads a primary purchase
+					    control, and at 10px it was the smallest label in the column —
+					    below "Why we chose it" and the other section labels beside it,
+					    which all use t-l-1. */}
+					<p className="t-l-1 uppercase text-foreground/65">{option.name}</p>
 					<div className="mt-2.5 flex flex-wrap gap-2">
 						{option.values.map((value) => {
 							const selected = selection[option.name] === value;
@@ -79,14 +83,19 @@ export default function VariantPicker({
 									}
 									onClick={() => onSelect(option.name, value)}
 									className={cn(
-										// `t-l-2` supplies the family, weight, line-height and
-										// tracking, but NOT the size: it lives in @layer
-										// components while Button's base `text-sm` is a utility,
-										// and utilities win the cascade regardless of order —
-										// tailwind-merge can't see the conflict either. The
-										// explicit text-[10px] is what actually sets 10px, so
-										// don't "tidy it away" as a duplicate of t-l-2.
-										't-l-2 text-[10px] uppercase',
+										// `t-l-2` supplies the family, weight and tracking, but NOT
+										// the size: it lives in @layer components while Button's
+										// base `text-sm` is a utility, and utilities win the
+										// cascade regardless of order — tailwind-merge can't see
+										// the conflict either. The explicit size class is what
+										// actually sets the size, so don't "tidy it away" as a
+										// duplicate of t-l-2.
+										//
+										// text-xs (12px), not the previous 10px: these are 44×44
+										// boxes, and 10px left the value adrift in the middle of
+										// one while being the smallest text on a page whose whole
+										// job is choosing between these values.
+										't-l-2 text-xs uppercase',
 										// 44×44 minimum touch target. min-height beats the size
 										// variant's h-10, and px-3.5 replaces its px-2.5.
 										'min-h-11 min-w-11 px-3.5',

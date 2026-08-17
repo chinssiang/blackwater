@@ -4,8 +4,17 @@ import { Slot } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
 
+// Focus indicator: `accent-foreground`, matching ProductCard — the one place
+// that already had an accessible focus ring — so the site has a single focus
+// vocabulary. It replaces `border-ring` + `ring-ring/50`, which failed WCAG 2.2
+// SC 2.4.11 outright: on the light product routes those composite to 2.32:1 and
+// 1.47:1 against `--background`, and on the `outline` variant the border merely
+// swapped #AEAEAE for #A1A1A1, so focusing a size chip was near-invisible.
+// `accent-foreground` clears it in both themes (6.4:1 light, 19:1 dark) because
+// it is the blue in `:root`/`.cart-surface` and near-white in `.dark`. Keep the
+// offset: on a filled button the ring would otherwise blend into the fill.
 const buttonVariants = cva(
-	"group/button cursor-pointer inline-flex shrink-0 items-center justify-center rounded border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+	"group/button cursor-pointer inline-flex shrink-0 items-center justify-center rounded border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 	{
 		variants: {
 			variant: {

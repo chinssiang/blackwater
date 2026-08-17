@@ -121,7 +121,8 @@ export default function BuyColumn({
 	const isSoldOut = Boolean(soldOut) || liveUnavailable;
 
 	const handleAddToCart = async () => {
-		if (!activeVariant) return;
+		// Guards the click that `aria-disabled` can no longer block on its own.
+		if (isAdding || !activeVariant) return;
 		setIsAdding(true);
 		const added = await addLine(activeVariant.gid);
 		setIsAdding(false);
@@ -137,11 +138,27 @@ export default function BuyColumn({
 
 	return (
 		<>
+			{/* `text-lg leading-none` overrides `t-spec`'s own 11px — the same
+			    component-vs-utility cascade VariantPicker documents, used on purpose
+			    here. At 11px the price measured smaller than the eyebrow above it
+			    (12px), the button label and the body copy, so the one number a
+			    shopper is looking for was the quietest text in the column. 18px puts
+			    it on the scale between body (14px) and the title (28px) at ratios of
+			    1.29 and 1.56. The typewriter face stays: that voice is what marks a
+			    price on this site.
+
+			    `mt-7` rather than `mt-5` is the break between the identity block
+			    (eyebrow + title) and the commerce block; everything below is spaced
+			    tighter so the two read as separate groups. Keep these in step with
+			    BuyColumnSkeleton, which mirrors this rhythm. */}
 			{displayPrice && (
-				<p className="reveal t-spec font-semibold mt-5 text-foreground/75">
+				<p className="reveal t-spec text-lg leading-none font-semibold mt-7 text-foreground">
 					{displayPrice}
+					{/* /60, not /45: /45 came to 3.10:1 against the light product
+					    background. /60 is 5.07:1, and against a now full-strength live
+					    price it still reads as clearly secondary. */}
 					{displayCompareAt && (
-						<s className="ml-2 font-normal text-foreground/45">
+						<s className="ml-2 font-normal text-foreground/60">
 							{displayCompareAt}
 						</s>
 					)}
@@ -149,7 +166,7 @@ export default function BuyColumn({
 			)}
 
 			{showVariantPicker && (
-				<div className="reveal mt-6">
+				<div className="reveal mt-5">
 					<VariantPicker
 						options={commerce.options}
 						variants={commerce.variants}
@@ -169,7 +186,7 @@ export default function BuyColumn({
 			    unreachable, and in that case the outbound link is the only buy path
 			    left. */}
 			{isSoldOut ? (
-				<div className="reveal mt-6">
+				<div className="reveal mt-5">
 					<Button
 						aria-disabled="true"
 						tabIndex={-1}
@@ -185,12 +202,20 @@ export default function BuyColumn({
 				</div>
 			) : (
 				(purchaseLink || commerce) && (
-					<div className="reveal mt-6">
+					<div className="reveal mt-5">
 						{commerce ? (
 							<Button
 								onClick={handleAddToCart}
-								disabled={isAdding || !activeVariant}
-								className="w-full uppercase lg:w-60 transition-[background-color,filter] hover:brightness-[0.97]"
+								// aria-disabled, not `disabled`: a focused element that
+								// becomes disabled hands focus back to <body>. On the happy
+								// path the drawer opens and takes focus, so it never showed
+								// — but when the add fails the drawer never opens, and the
+								// shopper was left focused on nothing with only a toast,
+								// having to tab from the top of the document to retry the
+								// button they were already on. handleAddToCart guards the
+								// click itself.
+								aria-disabled={isAdding || !activeVariant}
+								className="w-full uppercase lg:w-60 transition-[background-color,filter] hover:brightness-[0.97] aria-disabled:pointer-events-none aria-disabled:opacity-50"
 							>
 								{isAdding ? cartText.adding : cartText.addToCart}
 							</Button>
@@ -243,12 +268,15 @@ export default function BuyColumn({
 export function BuyColumnSkeleton() {
 	return (
 		<div aria-hidden className="animate-pulse">
-			<p className="t-spec mt-5">
+			{/* mt-7 / text-lg / mt-5 / mt-5 mirror the settled column exactly — see
+			    the note on the price there. Drift here is a layout shift at the
+			    moment the Storefront response lands. */}
+			<p className="t-spec text-lg leading-none mt-7">
 				<span className="inline-block w-24 rounded bg-foreground/10">
 					&nbsp;
 				</span>
 			</p>
-			<div className="mt-6">
+			<div className="mt-5">
 				<p className="t-l-2 uppercase">
 					<span className="inline-block w-8 rounded bg-foreground/10">
 						&nbsp;
@@ -263,7 +291,7 @@ export function BuyColumnSkeleton() {
 					))}
 				</div>
 			</div>
-			<div className="mt-6">
+			<div className="mt-5">
 				<span className="block h-9 w-full rounded-md bg-foreground/10 lg:w-60" />
 			</div>
 		</div>

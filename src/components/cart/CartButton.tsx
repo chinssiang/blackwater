@@ -35,7 +35,13 @@ export default function CartButton() {
 			}
 			// `relative` so the badge can hang off the label's top-right corner.
 			// The button box is exactly the label, so no extra wrapper is needed.
-			className="t-b-2 relative flex cursor-pointer items-center uppercase focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 max-lg:mr-3"
+			//
+			// …which made it a ~12px-tall tap target: `t-b-2` is 12px at line-height
+			// 1 with no padding, and this is the only way into the cart. The coarse
+			// bump is the same idiom the product breadcrumb uses. It grows the box
+			// downward from the header's centre line rather than shifting the label,
+			// because the header row centres its children.
+			className="t-b-2 relative flex cursor-pointer items-center uppercase focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 max-lg:mr-3 pointer-coarse:min-h-11"
 		>
 			{t.title}
 			{count > 0 && (

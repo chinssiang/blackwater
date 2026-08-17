@@ -11,6 +11,10 @@ import { interpolate } from '@/lib/dictionary';
 
 type FormState = 'idle' | 'submitting';
 
+// Matches the hard-coded input id below — this form renders at most once per
+// page (only under a sold-out product), so neither needs useId.
+const ERROR_ID = 'back-in-stock-email-error';
+
 type Props = {
 	productTitle: string;
 	productSlug: string;
@@ -81,6 +85,7 @@ export default function BackInStockForm({ productTitle, productSlug }: Props) {
 								onFocus={() => setIsFocused(true)}
 								onBlur={() => setIsFocused(false)}
 								aria-invalid={!!validationError}
+								aria-describedby={validationError ? ERROR_ID : undefined}
 								aria-label={interpolate(notify.ariaLabel, {
 									product: productTitle,
 								})}
@@ -109,6 +114,25 @@ export default function BackInStockForm({ productTitle, productSlug }: Props) {
 							{formState === 'submitting' ? notify.submitting : notify.submit}
 						</Button>
 					</div>
+					{/* FieldStatus above renders the message only as a tooltip hung off
+					    an icon, which reaches neither a screen reader (the tooltip
+					    describes the icon, not this input) nor a sighted user who isn't
+					    hovering. This is the message's real channel; the icon stays as
+					    inline reinforcement. Fixed here rather than in Field.tsx, which
+					    has three other consumers.
+
+					    `text-red-700`, not the `text-error` token: that token is
+					    red-600, which is 4.26:1 on the light product background — fine
+					    for the 20px icon it was written for, short of AA for 12px text. */}
+					{validationError && (
+						<p
+							id={ERROR_ID}
+							role="alert"
+							className="t-b-2 mt-2 text-red-700"
+						>
+							{validationError}
+						</p>
+					)}
 				</Field>
 			</form>
 		</div>

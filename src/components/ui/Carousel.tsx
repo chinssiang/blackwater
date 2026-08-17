@@ -208,12 +208,14 @@ function CarouselPrevious({
 			size={size}
 			className={cn(
 				'absolute touch-manipulation rounded-full',
+				// aria-disabled, not disabled — see the note on CarouselNext.
+				'aria-disabled:pointer-events-none aria-disabled:opacity-50',
 				orientation === 'horizontal'
 					? 'inset-y-0 -left-12 my-auto'
 					: '-top-12 left-1/2 -translate-x-1/2 rotate-90',
 				className
 			)}
-			disabled={!canScrollPrev}
+			aria-disabled={!canScrollPrev}
 			onClick={scrollPrev}
 			{...props}
 		>
@@ -242,12 +244,20 @@ function CarouselNext({
 			size={size}
 			className={cn(
 				'absolute touch-manipulation rounded-full',
+				// aria-disabled, not `disabled`: browsers move focus to <body> when the
+				// focused element becomes disabled, so with loop:false a keyboard user
+				// pressing Next onto the last slide was ejected from the carousel — and
+				// past the root, whose onKeyDownCapture owns the arrow keys, leaving no
+				// way back in. This keeps the button focusable and looking disabled;
+				// pointer-events-none stops the click, and embla's scrollNext is already
+				// a no-op at the end, so nothing needs a guard.
+				'aria-disabled:pointer-events-none aria-disabled:opacity-50',
 				orientation === 'horizontal'
 					? 'inset-y-0 -right-12 my-auto'
 					: '-bottom-12 left-1/2 -translate-x-1/2 rotate-90',
 				className
 			)}
-			disabled={!canScrollNext}
+			aria-disabled={!canScrollNext}
 			onClick={scrollNext}
 			{...props}
 		>

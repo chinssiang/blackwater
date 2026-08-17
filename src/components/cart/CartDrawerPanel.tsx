@@ -120,9 +120,13 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 				)}
 				<div className="mt-auto flex items-center gap-3">
 					<div className="flex items-center gap-2" aria-label={t.quantity}>
+						{/* `icon-xs` is 24px — exactly the SC 2.5.8 floor, and the one
+						    stepper on the site a shopper uses on a phone. The coarse
+						    bump matches what the gallery dots already do. */}
 						<Button
 							variant="outline"
 							size="icon-xs"
+							className="pointer-coarse:size-11"
 							aria-label={t.decrease}
 							onClick={() => step(-1)}
 						>
@@ -132,6 +136,7 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 						<Button
 							variant="outline"
 							size="icon-xs"
+							className="pointer-coarse:size-11"
 							disabled={quantity >= ceiling}
 							aria-label={t.increase}
 							onClick={() => step(1)}
@@ -146,7 +151,7 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 						aria-label={interpolate(t.removeAriaLabel, {
 							product: merchandise.productTitle,
 						})}
-						className="t-b-2 cursor-pointer uppercase underline underline-offset-4 disabled:opacity-50"
+						className="t-b-2 inline-flex cursor-pointer items-center uppercase underline underline-offset-4 disabled:opacity-50 pointer-coarse:min-h-11"
 					>
 						{t.remove}
 					</button>
@@ -250,9 +255,12 @@ export default function CartDrawerPanel({
 												/>
 											)}
 										</Dialog.Title>
+										{/* `justify-end` keeps the 16px icon flush with the header's
+										    right edge once the coarse-pointer bump grows the box to
+										    44px around it. */}
 										<Dialog.Close
 											aria-label={t.close}
-											className="t-b-2 flex cursor-pointer items-center gap-1 uppercase"
+											className="t-b-2 flex cursor-pointer items-center gap-1 uppercase pointer-coarse:size-11 pointer-coarse:justify-end"
 										>
 											<CloseIcon className="size-4" />
 										</Dialog.Close>

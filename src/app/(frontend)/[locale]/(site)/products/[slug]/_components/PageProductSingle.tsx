@@ -198,9 +198,13 @@ export default function PageProductSingle({
 					    Shopify — arrive here as a streamed server component. */}
 					{buySlot}
 
+					{/* mt-3, not mt-5: the size guide is a helper for the buy decision,
+					    so it hugs the button rather than floating between it and the
+					    editorial copy below. That closes the commerce group, which the
+					    72px break beneath then separates from the prose. */}
 					{sizeGuideControl && (
 						<div
-							className="reveal mt-5"
+							className="reveal mt-3"
 							style={{ '--reveal-delay': '0.28s' } as CSSProperties}
 						>
 							{sizeGuideControl}
