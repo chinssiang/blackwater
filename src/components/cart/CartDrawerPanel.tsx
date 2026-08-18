@@ -121,7 +121,7 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 				<div className="mt-auto flex items-center gap-3">
 					<div className="flex items-center gap-2" aria-label={t.quantity}>
 						<Button
-							variant="outline"
+							variant="ghost"
 							size="icon-xs"
 							aria-label={t.decrease}
 							onClick={() => step(-1)}
@@ -130,7 +130,7 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 						</Button>
 						<span className="t-b-2 min-w-4 text-center">{quantity}</span>
 						<Button
-							variant="outline"
+							variant="ghost"
 							size="icon-xs"
 							disabled={quantity >= ceiling}
 							aria-label={t.increase}
@@ -146,7 +146,7 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 						aria-label={interpolate(t.removeAriaLabel, {
 							product: merchandise.productTitle,
 						})}
-						className="t-b-2 cursor-pointer uppercase underline underline-offset-4 disabled:opacity-50"
+						className="t-b-2 cursor-pointer uppercase underline underline-offset-4 disabled:opacity-50 text-primary/50"
 					>
 						{t.remove}
 					</button>

@@ -4,7 +4,7 @@ import * as React from 'react';
 import useEmblaCarousel, {
 	type UseEmblaCarouselType,
 } from 'embla-carousel-react';
-import { ChevronLeftIcon, ChevronRightIcon } from 'lucide-react';
+import { ChevronLeftIcon, ChevronRightIcon } from '@/components/SvgIcons';
 
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
@@ -191,7 +191,7 @@ function CarouselItem({ className, ...props }: React.ComponentProps<'div'>) {
 
 function CarouselPrevious({
 	className,
-	variant = 'outline',
+	variant = 'ghost',
 	size = 'icon-sm',
 	label = 'Previous slide',
 	...props
@@ -225,7 +225,7 @@ function CarouselPrevious({
 
 function CarouselNext({
 	className,
-	variant = 'outline',
+	variant = 'ghost',
 	size = 'icon-sm',
 	label = 'Next slide',
 	...props

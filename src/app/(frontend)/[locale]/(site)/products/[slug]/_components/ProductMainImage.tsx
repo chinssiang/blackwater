@@ -8,7 +8,8 @@ import type { PageProductSingleQueryResult } from 'sanity.types';
 // If the two ever drift, the streamed swap becomes a layout shift.
 
 /** The product's `mainImage` as `pageProductSingleQuery` projects it. */
-export type ProductMainImageObj = NonNullable<PageProductSingleQueryResult>['mainImage'];
+export type ProductMainImageObj =
+	NonNullable<PageProductSingleQueryResult>['mainImage'];
 
 type Props = {
 	imageObj: ProductMainImageObj;
@@ -41,14 +42,13 @@ export default function ProductMainImage({ imageObj, alt, priority }: Props) {
 		// `img-object-contain` is absolutely positioned at 100%/100%, and
 		// percentages there resolve against the *padding* box — so padding on the
 		// parent never reaches the image.
-		<div className="absolute inset-6 lg:inset-10">
-			<ImageBlock
-				fill="contain"
-				imageObj={imageObj as any}
-				alt={alt}
-				sizes="(max-width: 1024px) 100vw, 58vw"
-				priority={priority}
-			/>
-		</div>
+
+		<ImageBlock
+			fill="contain"
+			imageObj={imageObj as any}
+			alt={alt}
+			sizes="(max-width: 1024px) 100vw, 58vw"
+			priority={priority}
+		/>
 	);
 }

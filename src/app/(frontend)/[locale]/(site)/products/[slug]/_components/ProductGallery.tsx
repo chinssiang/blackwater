@@ -53,7 +53,7 @@ function GallerySlide({
 		// Same positioned wrapper, and the same reason, as ProductMainImage: `fill`
 		// resolves inset:0 against the containing block's padding box, so padding
 		// on an ancestor would never inset the image.
-		<div className="absolute inset-6 lg:inset-10">
+		<div className="absolute inset-0 lg:inset-10">
 			<Image
 				src={image.url}
 				alt={alt}
@@ -69,7 +69,7 @@ function GallerySlide({
 
 // Above this count the dot row is replaced by a compact counter — see the note
 // at the switch below. Six 44px targets plus gaps still fit the narrowest frame.
-const MAX_DOTS = 6;
+const MAX_DOTS = 0;
 
 // Not exported into ui/Carousel.tsx: the carousel context deliberately exposes
 // only `api`, and this is its one consumer.
@@ -161,7 +161,7 @@ export default function ProductGallery({ images, product }: Props) {
 	// zero duration is the only way to honour the preference.
 	const opts = useMemo(
 		// loop: false keeps the arrows' disabled states meaningful at both ends.
-		() => ({ loop: false, duration: reduce ? 0 : 25 }),
+		() => ({ loop: true, duration: reduce ? 0 : 25 }),
 		[reduce]
 	);
 
