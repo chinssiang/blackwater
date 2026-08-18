@@ -95,6 +95,7 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 		void flush();
 	};
 
+	console.log('🚀 ~ LineItem ~ merchandise:', merchandise);
 	return (
 		<li className="flex gap-3 py-4">
 			{merchandise.imageUrl && (
@@ -107,7 +108,9 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 				/>
 			)}
 			<div className="flex min-w-0 flex-1 flex-col gap-1">
-				<p className="t-b-2 uppercase">{merchandise.productTitle}</p>
+				<p className="t-b-2 uppercase font-medium text-balance">
+					{merchandise.productTitle}
+				</p>
 				{variantLabel && (
 					<p className="t-b-2 text-muted-foreground uppercase">
 						{variantLabel}
@@ -301,7 +304,7 @@ export default function CartDrawerPanel({
 											</p>
 											{/* A link, not a form: the site's `form-action 'self'` CSP
 											    would block a cross-origin form submit. */}
-											<Button asChild size="xl" className="w-full">
+											<Button asChild size="xl" className="w-full uppercase">
 												<a href={shopifyCheckoutUrl(cart.checkoutUrl, locale)}>
 													{t.checkout}
 												</a>

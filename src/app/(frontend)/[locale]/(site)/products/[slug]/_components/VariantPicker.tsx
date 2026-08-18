@@ -4,10 +4,7 @@ import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui/Button';
 import { interpolate } from '@/lib/dictionary';
 import { cn } from '@/lib/utils';
-import type {
-	ShopifyProductOption,
-	ShopifyVariant,
-} from '@/lib/shopify/types';
+import type { ShopifyProductOption, ShopifyVariant } from '@/lib/shopify/types';
 
 type Props = {
 	options: ShopifyProductOption[];
@@ -79,24 +76,13 @@ export default function VariantPicker({
 									}
 									onClick={() => onSelect(option.name, value)}
 									className={cn(
-										// `t-l-2` supplies the family, weight, line-height and
-										// tracking, but NOT the size: it lives in @layer
-										// components while Button's base `text-sm` is a utility,
-										// and utilities win the cascade regardless of order —
-										// tailwind-merge can't see the conflict either. The
-										// explicit text-[10px] is what actually sets 10px, so
-										// don't "tidy it away" as a duplicate of t-l-2.
 										't-l-2 text-[10px] uppercase',
-										// 44×44 minimum touch target. min-height beats the size
-										// variant's h-10, and px-3.5 replaces its px-2.5.
 										'min-h-11 min-w-11 px-3.5',
-										// Unavailable values stay interactive (never disabled), so
-										// they must still meet AA text contrast — /60 clears it.
-										// The hover: pairing is required, not redundant: the
-										// `outline` variant ships `hover:text-foreground`, and a
-										// :hover rule outranks a plain class, so without it a
-										// sold-out size brightens to look available the moment
-										// the pointer touches it.
+										// A selected chip uses Button's `default` variant, whose hover is
+										// gated behind `[a]:` and so compiles to `:is(a):hover` — dead on a
+										// <button>. Without this, the chip you are pointing at is the one
+										// chip that gives no feedback.
+										selected && 'hover:bg-primary/80',
 										!available &&
 											!selected &&
 											'text-foreground/60 hover:text-foreground/60 line-through decoration-1'

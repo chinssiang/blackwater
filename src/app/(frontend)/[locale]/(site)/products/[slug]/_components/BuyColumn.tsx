@@ -190,7 +190,14 @@ export default function BuyColumn({
 							<Button
 								onClick={handleAddToCart}
 								disabled={isAdding || !activeVariant}
-								className="w-full uppercase lg:w-112 transition-[background-color,filter] hover:brightness-[0.97] h-14"
+								// Button's `default` variant carries its hover as
+								// `[a]:hover:bg-primary/80`, which Tailwind compiles to
+								// `:is(a):hover` — so it only ever applies when the variant is
+								// rendered through `asChild` as an anchor. This is a real
+								// <button>, so it had no hover state whatsoever. Restating the
+								// variant's own intended value un-gated is what gives it one;
+								// `transition-all` in the Button base animates it.
+								className="w-full uppercase lg:w-112 h-14 hover:bg-primary/80 active:bg-primary/70"
 							>
 								{isAdding ? cartText.adding : cartText.addToCart}
 							</Button>
@@ -208,7 +215,7 @@ export default function BuyColumn({
 									aria-label={interpolate(productText.buyAriaLabel, {
 										product: title ?? productText.thisProduct,
 									})}
-									className="group sm:max-w-112 transition-[background-color,filter] hover:brightness-[0.97] uppercase w-full h-14"
+									className="group sm:max-w-112 uppercase w-full h-14"
 								>
 									{productText.buyIt}
 									<span
