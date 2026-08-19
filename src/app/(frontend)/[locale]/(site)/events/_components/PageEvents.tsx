@@ -5,7 +5,8 @@ import CustomLink from '@/components/CustomLink';
 import { enUS, zhTW } from 'date-fns/locale';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
-import type { PEvent, RichDate } from 'sanity.types';
+import type { PEventsQueryResult, RichDate } from 'sanity.types';
+import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 import {
 	formatRichDate,
 	getRichDateDaysUntil,
@@ -68,10 +69,17 @@ function getDaysUntilEvent(
 	return diffDays >= 0 && diffDays <= DAYS_UNTIL_PILL_WINDOW ? diffDays : null;
 }
 
+// Typed off the QUERY result, not the raw `PEvent` document type: pEvent is
+// field-level localized, so on the document every prose field is an
+// internationalizedArray, while GROQ hands this component the single resolved
+// string for the current locale.
+type EventsData = NonNullable<PEventsQueryResult>;
+type EventListItem = EventsData['eventList'][number];
+
 interface PageEventsProps {
-	data: PEvent & {
+	data: WithoutPageMetadata<EventsData> & {
 		groupedEvents: {
-			[key: string]: PEvent[];
+			[key: string]: EventListItem[];
 		};
 	};
 }
@@ -115,7 +123,7 @@ export function PageEvents({ data }: PageEventsProps) {
 					year: yearMonth.year,
 					date: instant,
 					firstEventDatetime: firstEvent.eventDatetime,
-					events: events as PEvent[],
+					events,
 				};
 			})
 			.filter((item): item is NonNullable<typeof item> => item !== null)
