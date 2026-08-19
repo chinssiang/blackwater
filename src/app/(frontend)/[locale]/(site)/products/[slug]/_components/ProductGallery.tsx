@@ -53,17 +53,16 @@ function GallerySlide({
 		// Same positioned wrapper, and the same reason, as ProductMainImage: `fill`
 		// resolves inset:0 against the containing block's padding box, so padding
 		// on an ancestor would never inset the image.
-		<div className="absolute inset-0 lg:inset-10">
-			<Image
-				src={image.url}
-				alt={alt}
-				fill
-				sizes="(max-width: 1024px) 100vw, 58vw"
-				priority={priority}
-				loading={eager ? 'eager' : undefined}
-				className="object-contain"
-			/>
-		</div>
+
+		<Image
+			src={image.url}
+			alt={alt}
+			fill
+			sizes="(max-width: 1024px) 100vw, 58vw"
+			priority={priority}
+			loading={eager ? 'eager' : undefined}
+			className="object-contain"
+		/>
 	);
 }
 
