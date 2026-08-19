@@ -74,7 +74,7 @@ export default function HtmlShell({
 	return (
 		<html
 			lang={htmlLangFor(locale)}
-			className={`${fontABCDisplay.variable} ${baselTypewriter.variable} bg-background`}
+			className={`${fontABCDisplay.variable} ${baselTypewriter.variable} bg-background scrollbar-gutter-stable`}
 			data-scroll-behavior="smooth"
 			suppressHydrationWarning
 		>

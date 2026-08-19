@@ -1067,6 +1067,29 @@ export const pageProductSingleQuery = defineQuery(`
 	}
 `);
 
+// Shopify handle → Sanity slug, for the cart drawer's line-item links. Shopify
+// knows only its own handle; product routes are keyed on the Sanity slug, and
+// the two are deliberately independent. Resolved per cart response rather than
+// captured when the line is added, because an editor can rename a slug at any
+// time and a stored copy would then point at a 404.
+//
+// `productTitleVisible` is not optional here: pageProductSingleQuery carries it,
+// so a product untranslated in $locale 404s on that locale's route. Without the
+// same guard a zh-only line added on the zh_tw route would render a link into
+// that 404 once the shopper switched to English — the leak described above the
+// fragment. A line whose product is invisible in this locale simply resolves to
+// no slug, and the drawer renders its thumbnail unlinked.
+export const productSlugsByShopifyHandleQuery = defineQuery(`
+	*[_type == "pProduct"
+		&& defined(slug.current)
+		&& shopify.handle in $handles
+		&& ${productTitleVisible}
+	]{
+		"handle": shopify.handle,
+		"slug": slug.current
+	}
+`);
+
 // Server-side config for the back-in-stock notify API route: the single global
 // Klaviyo list all "notify when back in stock" signups subscribe to. Product
 // identity is carried per signup as Klaviyo event properties, not stored here.

@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as z from 'zod';
-import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
+import { client } from '@/sanity/lib/client';
+import { productSlugsByShopifyHandleQuery } from '@/sanity/lib/queries';
+import { DEFAULT_LOCALE, isLocale, type Locale } from '@/lib/i18n';
 import { isShopifyConfigured } from '@/lib/shopify/client';
 import {
 	addCartLines,
@@ -10,7 +12,11 @@ import {
 	removeCartLine,
 	updateCartLine,
 } from '@/lib/shopify/cart';
-import { MAX_LINE_QUANTITY, type ShopifyCart } from '@/lib/shopify/types';
+import {
+	MAX_LINE_QUANTITY,
+	type ShopifyCart,
+	type ShopifyCartResponse,
+} from '@/lib/shopify/types';
 
 // Cart endpoint for the on-site store. The cart id lives in an httpOnly cookie
 // rather than in client state: it is a capability (anyone holding it can read
@@ -106,8 +112,87 @@ function tooManyRequests() {
 	);
 }
 
-function cartResponse(cart: ShopifyCart | null) {
-	const res = NextResponse.json({ ok: true, cart });
+/**
+ * Bound on the slug lookup. The enrichment is decoration — it only decides
+ * whether a thumbnail is a link — but it sits in front of the response that
+ * carries the cart cookie, so an unresponsive Sanity must never be able to hold
+ * a freshly created cart's id hostage: without the Set-Cookie the shopper's new
+ * cart is orphaned and their item silently vanishes. The signal aborts the
+ * request rather than just abandoning the wait.
+ */
+const SLUG_LOOKUP_TIMEOUT_MS = 400;
+
+/**
+ * Attaches each line's Sanity product slug, so the drawer can link a line back
+ * to its product page. Shopify knows only its own handle; product routes are
+ * keyed on the Sanity slug, and the two are independent by design.
+ *
+ * Resolved per response rather than captured as a cart-line attribute when the
+ * line is added: an editor can rename a slug at any time, and a copy stored in
+ * Shopify would then point at a 404. Enriching every response (not just reads)
+ * is required, because the client replaces its snapshot wholesale — an
+ * unenriched mutation response would drop every link.
+ *
+ * Soft-fails in both directions: a Sanity error, or a lookup slower than
+ * SLUG_LOOKUP_TIMEOUT_MS, costs the links and nothing else.
+ */
+async function withProductSlugs(
+	cart: ShopifyCart,
+	locale: Locale
+): Promise<ShopifyCartResponse> {
+	const handles = [
+		...new Set(
+			cart.lines.map((l) => l.merchandise.productHandle).filter(Boolean)
+		),
+	];
+	if (handles.length === 0) return cart;
+
+	const slugs = new Map<string, string | null>();
+	try {
+		// Cached and tagged like every other Sanity read in the app: slugs change
+		// on an editor action, not per request, and this call would otherwise be a
+		// live round trip on every page load and every quantity step. The
+		// `pProduct` tag is what /api/revalidate-tag already fires on a product
+		// webhook, so an edit still lands without waiting out the TTL.
+		const rows = await client.fetch(
+			productSlugsByShopifyHandleQuery,
+			{ handles, locale },
+			{
+				stega: false,
+				signal: AbortSignal.timeout(SLUG_LOOKUP_TIMEOUT_MS),
+				next: { revalidate: 3600, tags: ['pProduct'] },
+			}
+		);
+		for (const row of rows) {
+			if (!row.handle || !row.slug) continue;
+			// Two product documents can claim one handle — `shopify.handle` carries
+			// no uniqueness rule (unlike the slug, which is isUniqueAcrossType), so
+			// a duplicate is an editor mistake we can see but cannot resolve:
+			// nothing here says which product the shopper actually bought. A
+			// contested handle gets no link rather than an arbitrary one.
+			slugs.set(row.handle, slugs.has(row.handle) ? null : row.slug);
+		}
+	} catch (err) {
+		console.error('[shopify-cart] product slug lookup failed', err);
+	}
+
+	return {
+		...cart,
+		lines: cart.lines.map((line) => ({
+			...line,
+			merchandise: {
+				...line.merchandise,
+				productSlug: slugs.get(line.merchandise.productHandle) ?? null,
+			},
+		})),
+	};
+}
+
+async function cartResponse(cart: ShopifyCart | null, locale: Locale) {
+	const res = NextResponse.json({
+		ok: true,
+		cart: cart && (await withProductSlugs(cart, locale)),
+	});
 	if (cart) {
 		res.cookies.set(CART_COOKIE, cart.id, {
 			httpOnly: true,
@@ -128,6 +213,11 @@ export async function GET(req: NextRequest) {
 	const cartId = req.cookies.get(CART_COOKIE)?.value;
 	if (!cartId) return NextResponse.json({ ok: true, cart: null });
 
+	// Reads carry the locale too (POST has it in the body): it decides which
+	// products are visible, and therefore which lines get a link.
+	const rawLocale = req.nextUrl.searchParams.get('locale');
+	const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
+
 	// Throttled only past this point: a request with no cart cookie never
 	// reaches Shopify, so it costs nothing and must not consume a visitor's
 	// budget on their first page load.
@@ -138,7 +228,7 @@ export async function GET(req: NextRequest) {
 	try {
 		// A cart that has expired out from under the cookie reads as null; clear
 		// the cookie so the next add starts fresh instead of retrying a dead id.
-		return cartResponse(await getCart(cartId));
+		return cartResponse(await getCart(cartId), locale);
 	} catch (err) {
 		console.error('[shopify-cart] GET failed', err);
 		return NextResponse.json(
@@ -193,7 +283,7 @@ export async function POST(req: NextRequest) {
 			// expiry check is a real path, not a guard: carts routinely die before
 			// the cookie does.
 			const existing = cartId ? await getCart(cartId) : null;
-			if (!existing) return cartResponse(await createCart(lines, locale));
+			if (!existing) return cartResponse(await createCart(lines, locale), locale);
 
 			// cartLinesAdd accumulates onto a line that already holds this variant,
 			// so the per-line ceiling has to be applied to the *result*. Validating
@@ -209,12 +299,13 @@ export async function POST(req: NextRequest) {
 				);
 				// Already at the ceiling — nothing to send, but still answer with the
 				// current cart so the client stays in sync.
-				if (next === line.quantity) return cartResponse(existing);
+				if (next === line.quantity) return cartResponse(existing, locale);
 				return cartResponse(
-					await updateCartLine(existing.id, line.id, next)
+					await updateCartLine(existing.id, line.id, next),
+					locale
 				);
 			}
-			return cartResponse(await addCartLines(existing.id, lines));
+			return cartResponse(await addCartLines(existing.id, lines), locale);
 		}
 
 		// update/remove address a line that must already exist. Without a live
@@ -223,10 +314,11 @@ export async function POST(req: NextRequest) {
 		if (!cartId) return noCart();
 
 		if (input.action === 'remove' || input.quantity === 0) {
-			return cartResponse(await removeCartLine(cartId, input.lineId));
+			return cartResponse(await removeCartLine(cartId, input.lineId), locale);
 		}
 		return cartResponse(
-			await updateCartLine(cartId, input.lineId, input.quantity)
+			await updateCartLine(cartId, input.lineId, input.quantity),
+			locale
 		);
 	} catch (err) {
 		// The cart died under the cookie — normal at ~10 days idle, not an

@@ -13,7 +13,7 @@ import {
 import { usePathname } from 'next/navigation';
 import { toast } from 'sonner';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import type { ShopifyCart } from '@/lib/shopify/types';
+import type { ShopifyCartResponse } from '@/lib/shopify/types';
 
 // Single source of cart state for the whole site. The cart itself lives in
 // Shopify and is addressed by an httpOnly cookie, so this holds only the last
@@ -28,7 +28,7 @@ import type { ShopifyCart } from '@/lib/shopify/types';
 // re-render every consumer on each `isPending` flip, which is what a single
 // object value did before.
 type CartState = {
-	cart: ShopifyCart | null;
+	cart: ShopifyCartResponse | null;
 	/** True while a cart request is in flight (initial load or a mutation). */
 	isPending: boolean;
 	/**
@@ -81,12 +81,12 @@ export function useCartActions(): CartActions {
 	return actions;
 }
 
-type CartResponse = { ok: boolean; cart: ShopifyCart | null };
+type CartResponse = { ok: boolean; cart: ShopifyCartResponse | null };
 
 export function CartProvider({ children }: { children: ReactNode }) {
 	const locale = useLocale();
 	const t = useTranslations('cart');
-	const [cart, setCart] = useState<ShopifyCart | null>(null);
+	const [cart, setCart] = useState<ShopifyCartResponse | null>(null);
 	const [isPending, setIsPending] = useState(false);
 	const [stockLimits, setStockLimits] = useState<Record<string, number>>({});
 	const [isOpen, setOpen] = useState(false);
@@ -109,7 +109,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 	// uncapped response, because every mutation returns *all* lines: updating one
 	// line would otherwise clear the ceiling learned for another and re-enable a
 	// stepper that is still at its limit.
-	const applyCart = useCallback((next: ShopifyCart | null) => {
+	const applyCart = useCallback((next: ShopifyCartResponse | null) => {
 		if (!mounted.current) return;
 		setCart(next);
 		setStockLimits((prev) => {
@@ -171,7 +171,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 		() =>
 			enqueue(async () => {
 				try {
-					const res = await fetch('/api/shopify/cart');
+					// The locale rides along on reads (mutations send it in the body):
+					// the server resolves each line's product link against it.
+					const res = await fetch(`/api/shopify/cart?locale=${locale}`);
 					if (!res.ok) return;
 					const data = (await res.json()) as CartResponse;
 					applyCart(data.cart);
@@ -180,7 +182,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 					// the next mutation surfaces the error itself.
 				}
 			}),
-		[enqueue, applyCart]
+		[enqueue, applyCart, locale]
 	);
 
 	// Hydrate after mount rather than on the server. Reading the cart cookie

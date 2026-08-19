@@ -600,6 +600,14 @@
 	top: calc(var(--height-header) + var(--height-announcement) + --value([*]));
 }
 
+/* Reserves the scrollbar's width on <html> so hiding it — which useScrollLock
+   does for the cart drawer and mobile menu — doesn't shift the page sideways.
+   Neither Tailwind v4 core nor the tailwind-scrollbar plugin ships a
+   scrollbar-gutter utility, so the class needs declaring here. */
+@utility scrollbar-gutter-stable {
+	scrollbar-gutter: stable;
+}
+
 @utility p-x-sm {
 	padding-inline: var(--padding-sm);
 }

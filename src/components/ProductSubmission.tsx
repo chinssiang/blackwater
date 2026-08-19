@@ -137,7 +137,9 @@ function ProductField({
 								type={type}
 								maxLength={maxLength}
 								autoComplete={autoComplete}
-								spellCheck={type === 'email' || name === 'productUrl' ? false : undefined}
+								spellCheck={
+									type === 'email' || name === 'productUrl' ? false : undefined
+								}
 								inputMode={name === 'productUrl' ? 'url' : undefined}
 								placeholder={placeholder}
 								aria-invalid={fieldState.invalid}
@@ -267,7 +269,11 @@ export function ProductSubmission() {
 			size="icon-lg"
 			aria-label={t.triggerLabel}
 			className={cn(
-				'pointer-events-auto relative size-12 border-0 bg-transparent text-white',
+				// bg-transparent: the SVG rect below paints this button, animating its
+				// corner radius. Any background on the button itself shows through at
+				// the corners while that spring runs, and destroys the rect's
+				// deliberate fill-primary/95 translucency.
+				'pointer-events-auto relative size-12 border-0 bg-transparent text-white hover:opacity-90',
 				showSuccess ? 'rounded-full' : 'rounded-xl'
 			)}
 		>

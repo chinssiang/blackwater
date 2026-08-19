@@ -27,7 +27,10 @@ const CART_FRAGMENT = `
 		nodes {
 			id
 			quantity
-			cost { totalAmount ${MONEY_FRAGMENT} }
+			cost {
+				totalAmount ${MONEY_FRAGMENT}
+				amountPerQuantity ${MONEY_FRAGMENT}
+			}
 			merchandise {
 				... on ProductVariant {
 					id
@@ -78,7 +81,7 @@ type GqlCart = {
 		nodes: Array<{
 			id: string;
 			quantity: number;
-			cost: { totalAmount: ShopifyMoney };
+			cost: { totalAmount: ShopifyMoney; amountPerQuantity: ShopifyMoney };
 			merchandise: {
 				id: string;
 				title: string;
@@ -121,6 +124,7 @@ function normalizeCart(
 					id: line.id,
 					quantity: line.quantity,
 					total: line.cost.totalAmount,
+					unitPrice: line.cost.amountPerQuantity,
 					atStockLimit: stockCapped.has(line.id),
 					merchandise: {
 						gid: line.merchandise.id,

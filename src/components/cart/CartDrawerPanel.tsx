@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { Dialog } from 'radix-ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { CloseIcon } from '@/components/SvgIcons';
@@ -10,11 +11,12 @@ import { Button } from '@/components/ui/Button';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
 import { cartOverlay, cartPanel } from '@/lib/animate';
+import { resolveHref } from '@/lib/routes';
 import {
 	formatShopifyPrice,
 	shopifyCheckoutUrl,
 	MAX_LINE_QUANTITY,
-	type ShopifyCartLine,
+	type ShopifyCartResponseLine,
 } from '@/lib/shopify/types';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import ProductCard from '@/app/(frontend)/[locale]/(site)/products/_components/ProductCard';
@@ -31,7 +33,7 @@ import { useCart } from './CartProvider';
 // chunk fetched on first cart open, not part of the shared bundle every route
 // pays for. CartDrawer owns the loading; see the note there.
 
-function LineItem({ line }: { line: ShopifyCartLine }) {
+function LineItem({ line }: { line: ShopifyCartResponseLine }) {
 	const locale = useLocale();
 	const t = useTranslations('cart');
 	const { updateLine, removeLine, isPending, stockLimits } = useCart();
@@ -95,18 +97,50 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 		void flush();
 	};
 
-	console.log('🚀 ~ LineItem ~ merchandise:', merchandise);
+	// Back to the product page. Null whenever the slug lookup came up empty (see
+	// the type note on `productSlug`), in which case the thumbnail renders as a
+	// plain image rather than a link to nowhere.
+	const productHref = merchandise.productSlug
+		? resolveHref({
+				documentType: 'pProduct',
+				slug: merchandise.productSlug,
+				locale,
+			})
+		: undefined;
+
+	// `||`, not `??`: Shopify allows empty alt text, and `??` would pass `''`
+	// straight through — leaving the link below with no accessible name, since the
+	// image is all it contains.
+	const thumbnail = merchandise.imageUrl && (
+		<Image
+			src={merchandise.imageUrl}
+			alt={merchandise.imageAlt || merchandise.productTitle}
+			width={90}
+			height={90}
+			className="shrink-0 rounded object-contain"
+		/>
+	);
+
 	return (
 		<li className="flex gap-3 py-4">
-			{merchandise.imageUrl && (
-				<Image
-					src={merchandise.imageUrl}
-					alt={merchandise.imageAlt ?? merchandise.productTitle}
-					width={90}
-					height={90}
-					className="shrink-0 rounded object-contain"
-				/>
-			)}
+			{thumbnail &&
+				(productHref ? (
+					// The drawer closes itself on navigation (CartProvider watches the
+					// pathname), so no onClick is needed here.
+					//
+					// prefetch={false}: a full cart would otherwise fire one route
+					// prefetch per line the moment it opens, competing with the cart's
+					// own request and the checkout the shopper is usually here for.
+					<Link
+						href={productHref}
+						prefetch={false}
+						className="shrink-0 rounded focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none"
+					>
+						{thumbnail}
+					</Link>
+				) : (
+					thumbnail
+				))}
 			<div className="flex min-w-0 flex-1 flex-col gap-1">
 				<p className="t-b-2 uppercase font-medium text-balance">
 					{merchandise.productTitle}
@@ -155,7 +189,14 @@ function LineItem({ line }: { line: ShopifyCartLine }) {
 					</button>
 				</div>
 			</div>
-			<p className="t-b-2 shrink-0">{formatShopifyPrice(line.total, locale)}</p>
+			{/* Per unit, not `line.total`: a price that multiplied as the stepper
+			    moved read as if the item itself had got more expensive. The quantity
+			    is right there, and the figure that grows is the subtotal below.
+			    `unitPrice` comes from the line's cost rather than the variant's list
+			    price, so a discounted line still adds up to the subtotal. */}
+			<p className="t-b-2 shrink-0">
+				{formatShopifyPrice(line.unitPrice, locale)}
+			</p>
 		</li>
 	);
 }

@@ -61,6 +61,13 @@ export type ShopifyCartLine = {
 	/** Line total (unit price × quantity), already discounted by Shopify. */
 	total: ShopifyMoney;
 	/**
+	 * Cost of ONE unit of this line (`CartLineCost.amountPerQuantity`) — what the
+	 * drawer displays. Taken from the line's cost rather than the variant's list
+	 * price (`merchandise.price`) so it carries any line-level discount and stays
+	 * consistent with `ShopifyCart.subtotal`; it does not move with quantity.
+	 */
+	unitPrice: ShopifyMoney;
+	/**
 	 * True when Shopify capped this line at the stock on hand rather than the
 	 * quantity we asked for. Only ever set on the response to the mutation that
 	 * was capped — the client remembers the ceiling, since a later read has no
@@ -90,6 +97,29 @@ export type ShopifyCart = {
 	subtotal: ShopifyMoney;
 	lines: ShopifyCartLine[];
 };
+
+/**
+ * What /api/shopify/cart serves: the Shopify cart plus, per line, the Sanity
+ * slug of the product's page — resolved from `productHandle`, because Shopify
+ * has no idea what our routes are.
+ *
+ * Deliberately separate from `ShopifyCart`: `cart.ts` talks only to Shopify, so
+ * anything calling `getCart()` directly has no slugs, and the domain type must
+ * not promise otherwise. `productSlug` is absent or null whenever the handle
+ * matches no product visible in the requested locale, or the lookup failed.
+ */
+export type ShopifyCartResponse = Omit<ShopifyCart, 'lines'> & {
+	lines: Array<
+		Omit<ShopifyCartLine, 'merchandise'> & {
+			merchandise: ShopifyCartLine['merchandise'] & {
+				productSlug?: string | null;
+			};
+		}
+	>;
+};
+
+/** One line of `ShopifyCartResponse`. */
+export type ShopifyCartResponseLine = ShopifyCartResponse['lines'][number];
 
 /**
  * Ceiling on a single cart line's quantity. Shared so the stepper, the
