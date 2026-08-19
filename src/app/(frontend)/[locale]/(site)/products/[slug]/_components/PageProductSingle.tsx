@@ -147,7 +147,7 @@ export default function PageProductSingle({
 		<>
 			<nav
 				aria-label="Breadcrumb"
-				className="px-max t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+				className="p-x-max t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
@@ -168,7 +168,7 @@ export default function PageProductSingle({
 					{gallerySlot}
 				</div>
 
-				<div className="px-max flex flex-col lg:col-span-5 lg:pl-0 lg:pt-2">
+				<div className="p-x-max flex flex-col lg:col-span-5 lg:pl-0 lg:pt-2">
 					{badge && badge.length > 0 && (
 						<div
 							className="reveal mb-4 flex flex-wrap gap-1.5"

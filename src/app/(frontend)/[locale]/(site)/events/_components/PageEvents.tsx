@@ -203,7 +203,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		: '';
 
 	return (
-		<div className="min-h-screen px-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
+		<div className="min-h-screen p-x-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
 			<h1 id="events-heading" className="sr-only">
 				{title}
 			</h1>

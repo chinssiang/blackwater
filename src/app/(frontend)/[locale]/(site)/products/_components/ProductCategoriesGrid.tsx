@@ -22,7 +22,7 @@ type ProductCategoriesGridProps = {
 	priority?: boolean;
 	heading?: string | null;
 	/**
-	 * Layout classes from the caller — in practice the page gutter (`mx-max`).
+	 * Layout classes from the caller — in practice the page gutter (`m-x-max`).
 	 * This component is used both as a page's own top-level section and nested
 	 * inside one, so it can't carry the gutter itself without double-insetting
 	 * the nested cases.

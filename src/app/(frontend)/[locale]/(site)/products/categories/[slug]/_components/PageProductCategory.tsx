@@ -23,7 +23,7 @@ export default function PageProductCategory({ data }: Props) {
 			{/* Breadcrumb */}
 			<nav
 				aria-label="Breadcrumb"
-				className="mx-max reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+				className="m-x-max reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
@@ -57,13 +57,13 @@ export default function PageProductCategory({ data }: Props) {
 			/>
 
 			{products && products.length > 0 ? (
-				<div className="mx-max grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
+				<div className="m-x-max grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
 					{products.map((product, index) => (
 						<ProductCard key={product._id} product={product} index={index} />
 					))}
 				</div>
 			) : (
-				<p className="mx-max t-b-1 max-w-[40ch] text-foreground/60">
+				<p className="m-x-max t-b-1 max-w-[40ch] text-foreground/60">
 					{t.emptyCategory}
 				</p>
 			)}

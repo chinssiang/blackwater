@@ -110,7 +110,7 @@ export function PageSizeGuide({ data }: PageSizeGuideProps) {
 	// of pixels down the page. Pinning row 1 to the title's own height sends the
 	// remainder to row 2, which is the tall row the nav sticks within.
 	return (
-		<div className="px-max min-h-[85vh] py-10 md:min-h-main lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10 lg:py-17.5">
+		<div className="p-x-max min-h-[85vh] py-10 md:min-h-main lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:grid-rows-[auto_1fr] lg:items-start lg:gap-x-10 lg:py-17.5">
 			<div className="lg:col-start-1 lg:row-start-1">
 				{title && <h1 className="t-l-1 uppercase">{title}</h1>}
 				{intro && (

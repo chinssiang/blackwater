@@ -26,7 +26,7 @@ export default function PageProductCollection({ data }: Props) {
 			{/* Breadcrumb */}
 			<nav
 				aria-label="Breadcrumb"
-				className="mx-max reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+				className="m-x-max reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
@@ -65,7 +65,7 @@ export default function PageProductCollection({ data }: Props) {
 
 			{/* Product grid */}
 			{products && products.length > 0 && (
-				<div className="mx-max mb-20 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 xl:grid-cols-4 2xl:gap-x-10">
+				<div className="m-x-max mb-20 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 xl:grid-cols-4 2xl:gap-x-10">
 					{products.map((product, index) => (
 						<ProductCard key={product._id} product={product} index={index} />
 					))}
@@ -74,7 +74,7 @@ export default function PageProductCollection({ data }: Props) {
 
 			{/* Categories section */}
 			{categories && categories.length > 0 && (
-				<div className="mx-max border-t border-foreground/10 pt-12 lg:pt-16">
+				<div className="m-x-max border-t border-foreground/10 pt-12 lg:pt-16">
 					<ProductCategoriesGrid categories={categories} showViewAll />
 				</div>
 			)}

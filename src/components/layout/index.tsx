@@ -72,7 +72,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 							<Newsletter
 								data={newsletter}
 								setGlobalHeightVar={true}
-								className="px-max flex flex-wrap md:grid-cols-2 md:gap-6 py-6 w-full justify-between"
+								className="p-x-max flex flex-wrap md:grid-cols-2 md:gap-6 py-6 w-full justify-between"
 							/>
 						</div>
 					)}

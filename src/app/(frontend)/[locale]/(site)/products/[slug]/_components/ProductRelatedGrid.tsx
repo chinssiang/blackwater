@@ -58,7 +58,7 @@ export default async function ProductRelatedGrid({
 	);
 
 	return (
-		<section className="mx-max border-t border-foreground/10 pt-12 lg:pt-16">
+		<section className="m-x-max border-t border-foreground/10 pt-12 lg:pt-16">
 			<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
 				<h2 className="t-l-2 uppercase text-foreground/70">
 					{categoryTitle

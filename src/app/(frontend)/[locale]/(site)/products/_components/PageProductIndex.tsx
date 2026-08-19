@@ -107,7 +107,7 @@ export function PageProductIndex({ data }: Props) {
 
 	return (
 		<>
-			<section className="px-max mb-14 lg:mb-24">
+			<section className="p-x-max mb-14 lg:mb-24">
 				{subtitle && (
 					<p className="t-l-2 mb-5 uppercase text-foreground/65 lg:mb-7">
 						{subtitle}
@@ -124,7 +124,7 @@ export function PageProductIndex({ data }: Props) {
 			</section>
 
 			<ProductCategoriesGrid
-				className="px-max"
+				className="p-x-max"
 				categories={categories ?? null}
 				showViewAll
 				priority
@@ -141,7 +141,7 @@ export function PageProductIndex({ data }: Props) {
 				return (
 					<section
 						key={collection._id}
-						className="mx-max reveal mt-14 lg:mt-24"
+						className="m-x-max reveal mt-14 lg:mt-24"
 						style={revealStagger(index)}
 					>
 						<CollectionMasthead collection={collection} />
@@ -162,7 +162,7 @@ export function PageProductIndex({ data }: Props) {
 			})}
 
 			{hasArrayValue(allProductsList) && (
-				<section className="mx-max reveal mt-14 lg:mt-24" style={REVEAL_SOFT}>
+				<section className="m-x-max reveal mt-14 lg:mt-24" style={REVEAL_SOFT}>
 					<div className="border-t border-foreground/15 pt-4">
 						<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 							{allProducts?.title && (

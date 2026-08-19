@@ -92,7 +92,7 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 					priority
 				/>
 			)}
-			<section className="px-max pt-16 pb-8 lg:pt-24 lg:pb-12">
+			<section className="p-x-max pt-16 pb-8 lg:pt-24 lg:pb-12">
 				<div className="max-w-3xl">
 					<h1 className="t-h-2 uppercase text-foreground text-balance mb-2">
 						{title}
@@ -160,7 +160,7 @@ function EventBody({
 	];
 
 	return (
-		<section className="flex flex-col lg:flex-row gap-10 lg:px-max">
+		<section className="flex flex-col lg:flex-row gap-10 lg:p-x-max">
 			{/* Left sticky meta — shared for both variants */}
 			<div className="lg:flex-1 lg:sticky lg:top-header h-fit space-y-8 px-contain lg:px-0">
 				{displayLocation && (
