@@ -107,7 +107,7 @@ export function PageProductIndex({ data }: Props) {
 
 	return (
 		<>
-			<section className="mb-14 lg:mb-24">
+			<section className="px-max mb-14 lg:mb-24">
 				{subtitle && (
 					<p className="t-l-2 mb-5 uppercase text-foreground/65 lg:mb-7">
 						{subtitle}
@@ -124,6 +124,7 @@ export function PageProductIndex({ data }: Props) {
 			</section>
 
 			<ProductCategoriesGrid
+				className="px-max"
 				categories={categories ?? null}
 				showViewAll
 				priority
@@ -140,7 +141,7 @@ export function PageProductIndex({ data }: Props) {
 				return (
 					<section
 						key={collection._id}
-						className="reveal mt-14 lg:mt-24"
+						className="mx-max reveal mt-14 lg:mt-24"
 						style={revealStagger(index)}
 					>
 						<CollectionMasthead collection={collection} />
@@ -161,10 +162,7 @@ export function PageProductIndex({ data }: Props) {
 			})}
 
 			{hasArrayValue(allProductsList) && (
-				<section
-					className="reveal mt-14 lg:mt-24"
-					style={REVEAL_SOFT}
-				>
+				<section className="mx-max reveal mt-14 lg:mt-24" style={REVEAL_SOFT}>
 					<div className="border-t border-foreground/15 pt-4">
 						<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 							{allProducts?.title && (
@@ -201,10 +199,7 @@ export function PageProductIndex({ data }: Props) {
 						<Button
 							asChild
 							size="lg"
-							// text-xs is load-bearing: t-l-1 sets the size in @layer
-						// components, but Button's base text-sm is a utility and wins
-						// the cascade. Not a duplicate.
-						className="t-l-1 text-xs whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11 px-6"
+							className="t-l-1 text-xs whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6"
 						>
 							<Link href={allProductsHref}>{t.moreProducts}</Link>
 						</Button>

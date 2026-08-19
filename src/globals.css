@@ -632,8 +632,20 @@
 	padding-inline: var(--padding-3xl);
 }
 
-@utility p-x-max {
+@utility px-max {
 	padding-inline: var(--padding-max);
+}
+
+/* The page gutter as margin rather than padding, for layouts that hand the
+   gutter to each top-level section instead of putting it on a shared ancestor
+   (see products/layout.tsx). Margin, not padding, because a section that paints
+   a full-width border or background — every `border-t` separator in the product
+   pages — draws it on the border box, which padding sits *inside*: `px-max`
+   there would run the rule to the window edge. Margin reproduces exactly what a
+   padded ancestor used to give every child, and a section that should bleed to
+   the window edge simply omits it. */
+@utility mx-max {
+	margin-inline: var(--padding-max);
 }
 
 @utility p-fill {
@@ -802,8 +814,7 @@ body:has([data-not-found]) footer {
    Browsers without @starting-style show the content immediately, un-faded. */
 @utility reveal {
 	transition: opacity var(--reveal-duration, 0.6s)
-		var(--reveal-ease, cubic-bezier(0, 0.71, 0.2, 1.01))
-		var(--reveal-delay, 0s);
+		var(--reveal-ease, cubic-bezier(0, 0.71, 0.2, 1.01)) var(--reveal-delay, 0s);
 
 	@starting-style {
 		opacity: 0;

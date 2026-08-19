@@ -78,11 +78,6 @@ export default function VariantPicker({
 									className={cn(
 										't-l-2 text-[10px] uppercase',
 										'min-h-11 min-w-11 px-3.5',
-										// A selected chip uses Button's `default` variant, whose hover is
-										// gated behind `[a]:` and so compiles to `:is(a):hover` — dead on a
-										// <button>. Without this, the chip you are pointing at is the one
-										// chip that gives no feedback.
-										selected && 'hover:bg-primary/80',
 										!available &&
 											!selected &&
 											'text-foreground/60 hover:text-foreground/60 line-through decoration-1'

@@ -140,7 +140,7 @@ export function PageEventCrew({
 					scrolled ? 'py-2' : 'py-4'
 				)}
 			>
-				<div className="flex items-end justify-between gap-4 p-x-max">
+				<div className="flex items-end justify-between gap-4 px-max">
 					<div className="space-y-2">
 						<span
 							className={cn(
@@ -168,9 +168,9 @@ export function PageEventCrew({
 								size="sm"
 								className={cn(
 									// text-[10px] is load-bearing: t-l-2 sets the size in
-								// @layer components, but Button's base text-sm is a
-								// utility and wins the cascade. Not a duplicate.
-								'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
+									// @layer components, but Button's base text-sm is a
+									// utility and wins the cascade. Not a duplicate.
+									'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !prevHref }
 								)}
 								disabled={!prevHref}
@@ -187,9 +187,9 @@ export function PageEventCrew({
 								size="sm"
 								className={cn(
 									// text-[10px] is load-bearing: t-l-2 sets the size in
-								// @layer components, but Button's base text-sm is a
-								// utility and wins the cascade. Not a duplicate.
-								'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
+									// @layer components, but Button's base text-sm is a
+									// utility and wins the cascade. Not a duplicate.
+									'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !nextHref }
 								)}
 								disabled={!nextHref}
@@ -204,7 +204,7 @@ export function PageEventCrew({
 				</div>
 				{/* Crew Filter */}
 				{uniqueMembers.length > 0 && (
-					<div className="flex items-center gap-1.5 lg:gap-2 mt-3 pt-3 border-t border-white/4 p-x-max mx-auto">
+					<div className="flex items-center gap-1.5 lg:gap-2 mt-3 pt-3 border-t border-white/4 px-max mx-auto">
 						<span className="t-l-2 text-muted-foreground uppercase shrink-0">
 							Filter
 						</span>
@@ -264,7 +264,7 @@ export function PageEventCrew({
 				)}
 			</div>
 			{hasArrayValue(events) ? (
-				<div className="p-x-max py-8 space-y-6">
+				<div className="px-max py-8 space-y-6">
 					{selectedMember && (
 						<p className="t-b-1 text-muted-foreground">
 							<span className="font-bold text-foreground">

@@ -203,7 +203,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		: '';
 
 	return (
-		<div className="min-h-screen p-x-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
+		<div className="min-h-screen px-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
 			<h1 id="events-heading" className="sr-only">
 				{title}
 			</h1>
@@ -231,9 +231,9 @@ export function PageEvents({ data }: PageEventsProps) {
 							variant="ghost"
 							size="sm"
 							// text-xs/font-normal are load-bearing: t-b-2 sets both in
-						// @layer components, but Button's base text-sm font-medium
-						// are utilities and win the cascade. Not duplicates.
-						className="uppercase t-b-2 text-xs font-normal cursor-pointer hover:opacity-60 min-h-11"
+							// @layer components, but Button's base text-sm font-medium
+							// are utilities and win the cascade. Not duplicates.
+							className="uppercase t-b-2 text-xs font-normal cursor-pointer hover:opacity-60 min-h-11"
 						>
 							<ArrowLeft />
 							{t.aria.previousMonth}
@@ -246,9 +246,9 @@ export function PageEvents({ data }: PageEventsProps) {
 							variant="ghost"
 							size="sm"
 							// text-xs/font-normal are load-bearing: t-b-2 sets both in
-						// @layer components, but Button's base text-sm font-medium
-						// are utilities and win the cascade. Not duplicates.
-						className="uppercase t-b-2 text-xs font-normal cursor-pointer hover:opacity-60 min-h-11"
+							// @layer components, but Button's base text-sm font-medium
+							// are utilities and win the cascade. Not duplicates.
+							className="uppercase t-b-2 text-xs font-normal cursor-pointer hover:opacity-60 min-h-11"
 						>
 							{t.aria.nextMonth}
 							<ArrowRight className="size-3.5" />

@@ -4,12 +4,18 @@ import { Slot } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
 
+// Every variant's hover is a colour change, so the transition lives once in the
+// base rather than per variant. easeOutQuint over 300ms rather than Tailwind's
+// 150ms default: the curve spends most of its change in the first third, so the
+// state still arrives quickly but settles instead of snapping — and the same
+// duration covers the focus ring growing in.
 const buttonVariants = cva(
-	"group/button cursor-pointer inline-flex shrink-0 items-center justify-center rounded border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+	"group/button cursor-pointer inline-flex shrink-0 items-center justify-center rounded border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 	{
 		variants: {
 			variant: {
-				default: 'bg-primary text-primary-foreground [a]:hover:bg-primary/80',
+				default:
+					'bg-primary text-primary-foreground hover:bg-primary/80 active:bg-primary/70',
 				outline:
 					'border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50',
 				secondary:

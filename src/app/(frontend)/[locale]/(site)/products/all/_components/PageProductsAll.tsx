@@ -72,7 +72,7 @@ export function PageProductsAll({
 			{/* Breadcrumb */}
 			<nav
 				aria-label="Breadcrumb"
-				className="reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+				className="mx-max reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
@@ -94,17 +94,24 @@ export function PageProductsAll({
 			/>
 
 			{products && products.length > 0 ? (
-				<div className="mb-20 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
+				<div className="mx-max mb-20 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
 					{products.map((product, index) => (
 						<ProductCard key={product._id} product={product} index={index} />
 					))}
 				</div>
 			) : (
-				<p className="t-b-1 max-w-[40ch] text-foreground/60">
+				<p className="mx-max t-b-1 max-w-[40ch] text-foreground/60">
 					{t.emptyAllProducts}
 				</p>
 			)}
 
+			{/* The one top-level section here with no `mx-max`, deliberately:
+			    Pagination is `mx-auto w-full` with centred content, so it spans the
+			    window but its links stay centred on the same axis the gutter would
+			    have centred them on. Adding the gutter means fighting both of those
+			    classes — `mx-max` loses the cascade to `mx-auto` (a custom @utility
+			    sorts before Tailwind's own), and a margin plus `w-full` overflows
+			    the viewport by the gutter's width. */}
 			{totalPages > 1 && (
 				<Pagination className="mb-20">
 					<PaginationContent>
@@ -147,7 +154,7 @@ export function PageProductsAll({
 			)}
 
 			{categories && categories.length > 0 && (
-				<div className="border-t border-foreground/10 pt-12 lg:pt-16">
+				<div className="mx-max border-t border-foreground/10 pt-12 lg:pt-16">
 					<ProductCategoriesGrid categories={categories} />
 				</div>
 			)}

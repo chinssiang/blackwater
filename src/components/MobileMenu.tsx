@@ -153,7 +153,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 
 								{/* Top bar: brand logo (left) + morphing close toggle (right),
 								    aligned to the real header so the logo reads as "stayed". */}
-								<div className="p-x-max h-header flex shrink-0 items-center">
+								<div className="px-max h-header flex shrink-0 items-center">
 									<Link
 										href={resolveHref({ documentType: 'pHome', locale })!}
 										aria-label={siteTitle}

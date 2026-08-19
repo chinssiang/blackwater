@@ -128,7 +128,7 @@ export default function ConsentBanner({
 					role="dialog"
 					aria-label={t('bannerTitle')}
 					aria-live="polite"
-					className="fixed inset-x-0 bottom-0 z-dialog border-t border-foreground/15 bg-background p-x-max py-5 shadow-lg"
+					className="fixed inset-x-0 bottom-0 z-dialog border-t border-foreground/15 bg-background px-max py-5 shadow-lg"
 				>
 					<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 						<div className="max-w-2xl">

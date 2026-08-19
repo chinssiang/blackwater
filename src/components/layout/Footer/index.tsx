@@ -36,7 +36,7 @@ export function Footer({ data }: { data: FooterProps }) {
 	return (
 		<footer
 			ref={footerRef}
-			className="reveal bg-background text-foreground pt-section lg:pb-14 p-x-max empty:hidden pb-[max(calc(var(--height-g-toolbar)+3.5rem),3.5rem)]"
+			className="reveal bg-background text-foreground pt-section lg:pb-14 px-max empty:hidden pb-[max(calc(var(--height-g-toolbar)+3.5rem),3.5rem)]"
 			style={{ '--reveal-duration': '0.4s' } as CSSProperties}
 		>
 			{hasMenus && (
