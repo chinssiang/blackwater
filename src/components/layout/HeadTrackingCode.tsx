@@ -1,53 +1,65 @@
+'use client';
+
+import { useEffect } from 'react';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import Script from 'next/script';
 import { hasArrayValue } from '@/lib/utils';
-import { toConsentModeSignals, type ConsentState } from '@/lib/consent';
+import { pushConsentDefault, pushConsentUpdate } from '@/lib/consent';
+import { useConsent } from '@/hooks/useConsent';
 
-type Integrations = {
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+// Exported so HtmlShell can narrow siteData down to this before crossing the
+// server/client boundary: everything passed to a client component is serialized
+// into the RSC payload, and the tags need three ids, not the whole site blob.
+export type TrackingIntegrations = {
 	gaIDs?: string[];
 	gtmIDs?: string[];
 	klaviyoCompanyId?: string;
 };
 
-type SiteData = {
-	integrations?: Integrations;
-};
-
 type HeadTrackingCodeProps = {
-	siteData?: SiteData;
-	consent?: ConsentState | null;
+	integrations?: TrackingIntegrations;
 };
 export default function HeadTrackingCode({
-	siteData,
-	consent,
+	integrations,
 }: HeadTrackingCodeProps) {
-	const { integrations } = siteData || {};
 	const { gaIDs, gtmIDs, klaviyoCompanyId } = integrations || {};
 
-	if (process.env.NODE_ENV !== 'production') {
-		return null;
+	// Read in the browser rather than from the cookie on the server — see the
+	// note on useConsent. The gate itself is unchanged (no decision, no scripts);
+	// it is just evaluated a tick later, so the tags mount after hydration rather
+	// than during HTML parse.
+	const consent = useConsent();
+
+	// Consent Mode wants one `default` ahead of everything else, and the GA/GTM
+	// children below carry their own inline `gtag('js'); gtag('config', id)`
+	// snippet which next/script appends — and an appended *inline* script runs
+	// synchronously — from a child effect, which fires before this component's
+	// effects. Render is therefore the only phase guaranteed to precede it, so
+	// the default is pushed here rather than from an effect. pushConsentDefault
+	// is a no-op after the first call, and dataLayer is a plain global queue, so
+	// a render React later discards costs nothing.
+	if (IS_PROD && consent) {
+		pushConsentDefault(consent);
 	}
 
-	// No decision yet → block all tracking. The banner will prompt.
-	if (!consent) {
+	// Re-assert the decision once the tags have initialized — on the first
+	// decision as well as on every later change. This is the correction path the
+	// old ConsentBanner.commit() provided: a gtag that booted from cache before
+	// the default was queued still ends up in the right state.
+	useEffect(() => {
+		if (!IS_PROD || !consent) return;
+		pushConsentUpdate(consent);
+	}, [consent]);
+
+	// Not production, or no decision yet → block all tracking. The banner prompts.
+	if (!IS_PROD || !consent) {
 		return null;
 	}
-
-	const signals = toConsentModeSignals(consent);
 
 	return (
 		<>
-			{/* Consent Mode v2 defaults. Rendered as a plain inline script in <head>
-			    so it executes during HTML parse — before the deferred GA/GTM tags
-			    initialize — and honors the visitor's stored decision. */}
-			<script
-				dangerouslySetInnerHTML={{
-					__html: `window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('consent','default',${JSON.stringify(
-						{ ...signals, wait_for_update: 500 }
-					)});`,
-				}}
-			/>
-
 			{consent.analytics && (
 				<>
 					{hasArrayValue(gaIDs) &&

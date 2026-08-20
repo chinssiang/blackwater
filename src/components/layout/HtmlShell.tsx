@@ -9,13 +9,14 @@ import { htmlLangFor, type Locale } from '@/lib/i18n';
 import { SanityLive } from '@/sanity/lib/live';
 import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
 import DraftModeToast from '@/components/DraftModeToast';
-import HeadTrackingCode from '@/components/layout/HeadTrackingCode';
+import HeadTrackingCode, {
+	type TrackingIntegrations,
+} from '@/components/layout/HeadTrackingCode';
 import ConsentBanner, {
 	type ConsentSettings,
 } from '@/components/consent/ConsentBanner';
 import JsonLd from '@/components/JsonLd';
 import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
-import type { ConsentState } from '@/lib/consent';
 import type { Dictionary } from '@/lib/dictionary';
 import '@/globals.css';
 
@@ -46,16 +47,20 @@ const baselTypewriter = localFont({
 export default function HtmlShell({
 	locale,
 	siteData,
-	consent,
 	consentFallback,
 	isDraftModeEnabled,
+	// Opt-in, and only the [locale] subtree opts in. The shells that render this
+	// from outside that subtree — /email-signature, /events-crew and the root
+	// 404 — have never loaded analytics, and an internal crew tool is not a
+	// place to start collecting pageviews.
+	enableTracking = false,
 	children,
 }: {
 	locale: Locale;
 	siteData: unknown;
-	consent?: ConsentState | null;
 	consentFallback: Dictionary['consent'];
 	isDraftModeEnabled: boolean;
+	enableTracking?: boolean;
 	children: React.ReactNode;
 }) {
 	const cleanData = stegaClean(siteData) as
@@ -64,6 +69,12 @@ export default function HtmlShell({
 				consent?: ConsentSettings;
 		  }
 		| undefined;
+	// Only the three ids the tags need, not all of siteData: HeadTrackingCode is
+	// a client component, so whatever it receives is serialized into the RSC
+	// payload. Read raw rather than from cleanData to keep the previous behavior.
+	const integrations = (
+		siteData as { integrations?: TrackingIntegrations } | undefined
+	)?.integrations;
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 	const siteJsonLd = defineSiteJsonLd({
 		sharing: cleanData?.sharing,
@@ -86,7 +97,7 @@ export default function HtmlShell({
 				/>
 				<meta httpEquiv="X-UA-Compatible" content="IE=edge" />
 				<link rel="preconnect" href="https://cdn.sanity.io" />
-				<HeadTrackingCode siteData={siteData as never} consent={consent} />
+				{enableTracking && <HeadTrackingCode integrations={integrations} />}
 				{siteJsonLd && <JsonLd data={siteJsonLd} />}
 				<ReactQueryProvider>
 					<ThemeProvider>
@@ -109,7 +120,6 @@ export default function HtmlShell({
 						<SpeedInsights />
 						<ConsentBanner
 							settings={cleanData?.consent ?? null}
-							initialConsent={consent ?? null}
 							fallback={consentFallback}
 						/>
 					</ThemeProvider>

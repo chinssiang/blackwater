@@ -56,13 +56,15 @@ function serializeConsent(categories: ConsentCategories): string {
 	return encodeURIComponent(JSON.stringify(state));
 }
 
-// Read the current decision on the client (e.g. on banner mount).
-export function readConsentClient(): ConsentState | null {
+// Read the raw cookie value on the client, unparsed. Raw rather than parsed
+// because useConsent has to tell "unchanged" from "changed" by comparing
+// snapshots, and a freshly parsed object is never === the last one.
+export function readConsentRawClient(): string | null {
 	if (typeof document === 'undefined') return null;
 	const match = document.cookie
 		.split('; ')
 		.find((row) => row.startsWith(`${CONSENT_COOKIE}=`));
-	return parseConsentCookie(match?.split('=').slice(1).join('='));
+	return match?.split('=').slice(1).join('=') ?? null;
 }
 
 // Persist a decision in the cookie (client-side).
@@ -89,19 +91,55 @@ export function toConsentModeSignals(
 	};
 }
 
-// Push a runtime consent update so an already-loaded gtag respects the new
-// decision before the server tree re-renders.
-export function pushConsentUpdate(categories: ConsentCategories): void {
-	if (typeof window === 'undefined') return;
+// Dispatched on the window after a decision is stored, so HeadTrackingCode can
+// mount the tracking scripts without a server round trip. The decision is read
+// in the browser (see the note there), so re-rendering the server tree — which
+// is what router.refresh() used to do — would tell it nothing.
+export const CONSENT_CHANGED_EVENT = 'bw-consent-changed';
+
+// Issue one gtag command, whether or not gtag.js has booted yet.
+//
+// The fallback matters: gtag.js identifies queued commands by the
+// `arguments`-object shape Google's documented snippet produces
+// (`function gtag(){dataLayer.push(arguments)}`). A plain array is not
+// recognized as a command and would be silently ignored — which for a consent
+// signal means every category behaves as granted.
+function gtagCommand(...args: unknown[]): void {
 	const w = window as unknown as {
 		dataLayer?: unknown[];
 		gtag?: (...args: unknown[]) => void;
 	};
-	w.dataLayer = w.dataLayer || [];
-	const gtag =
-		w.gtag ||
-		function gtag(...args: unknown[]) {
-			w.dataLayer!.push(args);
-		};
-	gtag('consent', 'update', toConsentModeSignals(categories));
+	const queue = (w.dataLayer = w.dataLayer || []);
+	if (w.gtag) {
+		w.gtag(...args);
+		return;
+	}
+	const push = function () {
+		queue.push(arguments);
+	} as (...a: unknown[]) => void;
+	push(...args);
+}
+
+// Seed Consent Mode v2 defaults from a stored decision. Must reach dataLayer
+// before gtag.js processes any `config`, so callers push it from render rather
+// than from an effect — see HeadTrackingCode. There is deliberately no
+// `wait_for_update`: the default already carries the visitor's real decision,
+// so there is nothing pending for gtag to wait on.
+//
+// Consent Mode honors exactly one `default` per page load, and it guards a
+// global (dataLayer) rather than anything React owns — so the once-guard lives
+// here, which also lets callers invoke this from render without a ref.
+// Later changes go through pushConsentUpdate.
+let defaultsSeeded = false;
+export function pushConsentDefault(categories: ConsentCategories): void {
+	if (typeof window === 'undefined' || defaultsSeeded) return;
+	defaultsSeeded = true;
+	gtagCommand('consent', 'default', toConsentModeSignals(categories));
+}
+
+// Re-assert the decision after the tags have initialized, so a gtag that booted
+// before the default was queued still ends up in the right state.
+export function pushConsentUpdate(categories: ConsentCategories): void {
+	if (typeof window === 'undefined') return;
+	gtagCommand('consent', 'update', toConsentModeSignals(categories));
 }
