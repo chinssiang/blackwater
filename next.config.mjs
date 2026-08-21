@@ -51,14 +51,27 @@ const nextConfig = {
 		root: projectRoot,
 	},
 	allowedDevOrigins: ['192.168.0.109'],
+	// NOTE on prerendering: every /[locale]/* route builds as `ƒ` (dynamic) and
+	// ships `cache-control: no-store`, because ConsentGate reads the consent
+	// cookie. A <Suspense> boundary alone does not buy prerendering — that needs
+	// `cacheComponents: true`, which was tried and reverted: it requires every
+	// uncached read to be inside <Suspense> (it failed at the root of the tree),
+	// and the alternative — moving Sanity reads into `'use cache'` — is blocked
+	// because next-sanity's `sanityFetch` (defineLive) calls `draftMode()`
+	// internally, and Dynamic APIs are illegal inside `use cache`. Landing this
+	// means replacing the defineLive fetch layer for published traffic. Worth 0
+	// Lighthouse points; it is a hosting-cost and TTFB win.
 	experimental: {
-		// Enables React 19.2's <ViewTransition> for native page-navigation crossfades.
-		viewTransition: true,
-		// `viewTransition` alone does not switch Next to its experimental React build
-		// (which is where the <ViewTransition> component actually lives in 16.2.x).
-		// `taint` is the most behavior-neutral flag that flips Next to react-experimental
-		// (it only exposes the taint APIs; no runtime/UI change). Required for the import above.
-		taint: true,
+		// NOTE: `viewTransition` + `taint` were removed deliberately. `viewTransition`
+		// makes React emit `<link rel="expect" href="#_R_" blocking="render">`, which
+		// forbids the browser from painting until the element carrying `id="_R_"` has
+		// parsed — on /products that sat 63% into a 532KB document, costing ~12.5s of
+		// LCP "element render delay". `taint` existed only to flip Next onto its
+		// react-dom-experimental build so `<ViewTransition>` would resolve. Nothing in
+		// src/ ever rendered `<ViewTransition>`, so both flags were pure cost. The
+		// page-navigation crossfade is CSS (`.animate-page-in` in globals.css, replayed
+		// by `key={pathname}` on <Main>) and does not need either flag.
+		//
 		// Both are umbrella barrels pulling far more into a chunk than the few
 		// primitives actually used. Rewriting every call site to `@radix-ui/react-*`
 		// would do the same job with a much larger diff.

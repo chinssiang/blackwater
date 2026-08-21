@@ -163,7 +163,14 @@
 		--secondary: oklch(0.97 0 0);
 		--secondary-foreground: oklch(0.205 0 0);
 		--muted: oklch(0.97 0 0);
-		--muted-foreground: oklch(0.556 0 0);
+		/* Darkened from oklch(0.556) = #7e7e7e. `--background` above is
+		   oklch(0.9612) = #f2f2f2, where #7e7e7e is only 3.63:1 — below AA — so
+		   every `text-muted-foreground` on the force-light routes (/products and
+		   /size-guide; see LIGHT_THEME_PATHS in src/lib/routes.ts) failed. A grey
+		   has to be at least as dark as #6f6f6f to clear 4.5:1 on this
+		   background; oklch(0.5) = #6b6b6b is ≈4.8:1. The .dark value is
+		   unaffected — oklch(0.708) on the dark background is already ≈7.7:1. */
+		--muted-foreground: oklch(0.5 0 0);
 		--accent: oklch(0.97 0 0);
 		--accent-foreground: oklch(48.49% 0.291 264.12);
 		--destructive: oklch(0.577 0.245 27.325);
@@ -312,7 +319,8 @@
 		--background: oklch(0.9612 0 0);
 		--foreground: oklch(0.145 0 0);
 		--muted: oklch(0.97 0 0);
-		--muted-foreground: oklch(0.556 0 0);
+		/* Keep in step with :root — same AA reason documented there. */
+		--muted-foreground: oklch(0.5 0 0);
 		--accent: oklch(0.97 0 0);
 		--accent-foreground: oklch(48.49% 0.291 264.12);
 		--primary: oklch(0.205 0 0);

@@ -105,6 +105,26 @@ export function PageProductIndex({ data }: Props) {
 	const t = useTranslations('products');
 	const allProductsHref = localizePath('/products/all', locale);
 
+	// Exactly one image on the page gets fetchpriority="high" — the first one in
+	// the viewport. Which block that is depends on the data, so derive it rather
+	// than hard-code it: a category tile only renders an image when the category
+	// has a cover (CategoryTile's `hasImage`), and a collection strip only renders
+	// when it has products. Order of appearance: category covers → first non-empty
+	// collection strip → the all-products grid.
+	// categories[0], not .some(): ProductCategoriesGrid grants priority to index 0
+	// only, and CategoryTile renders no image at all when its category has no
+	// cover. Testing "any category has a cover" would hand priority to a tile
+	// that renders nothing while suppressing it everywhere else — leaving the
+	// page with zero fetchpriority="high" images.
+	const categoriesHaveCover = Boolean(categories?.[0]?.coverImage?.image);
+	const firstCollectionIndex =
+		collections?.findIndex((c) => c && hasArrayValue(c.products)) ?? -1;
+	const lcpOwner: 'categories' | 'collection' | 'all' = categoriesHaveCover
+		? 'categories'
+		: firstCollectionIndex >= 0
+			? 'collection'
+			: 'all';
+
 	return (
 		<>
 			<section className="p-x-max mb-14 lg:mb-24">
@@ -127,7 +147,7 @@ export function PageProductIndex({ data }: Props) {
 				className="p-x-max"
 				categories={categories ?? null}
 				showViewAll
-				priority
+				priority={lcpOwner === 'categories'}
 			/>
 
 			{collections?.map((collection, index) => {
@@ -153,6 +173,11 @@ export function PageProductIndex({ data }: Props) {
 										key={product._id}
 										product={product}
 										index={productIndex}
+										priority={
+											lcpOwner === 'collection' &&
+											index === firstCollectionIndex &&
+											productIndex === 0
+										}
 									/>
 								))}
 							</div>
@@ -191,6 +216,7 @@ export function PageProductIndex({ data }: Props) {
 								key={product._id}
 								product={product}
 								index={productIndex}
+								priority={lcpOwner === 'all' && productIndex === 0}
 							/>
 						))}
 					</div>
