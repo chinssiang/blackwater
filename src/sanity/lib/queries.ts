@@ -547,8 +547,7 @@ export const siteDataQuery = defineQuery(`{
 		},
 		"integrations": *[_type == "settingsIntegration"][0]{
 			gaIDs,
-			gtmIDs,
-			klaviyoCompanyId
+			gtmIDs
 		},
 		"consent": *[_type == "settingsConsent"][0]{
 			enabled,
@@ -998,6 +997,16 @@ const productCategoriesFields = `
 	}
 `;
 
+// Card counts are deliberately small; the index is a shop window, not the
+// catalogue. `allProductsList` is 8 (not 24) because both the "All Products"
+// link and the "More Products" button below that grid go to the paginated
+// /products/all, and each collection strip is 4 — exactly one row of the widest
+// grid (2xl:grid-cols-4) — with the collection's own page holding the full set.
+// At 24 + 8-per-strip the index shipped 58 cards / 58 <img> / 1,429 DOM nodes in
+// a 532KB document 34,497px tall on mobile, which is what put Speed Index at
+// 20.9s. Keep the rationale out here: anything inside the template literal is
+// query payload sent to Sanity on every request and is baked into the generated
+// types.
 export const pageProductIndexQuery = defineQuery(`
 	${byLocale('pProductIndex')}[0]{
 		${baseFields},
@@ -1010,7 +1019,7 @@ export const pageProductIndexQuery = defineQuery(`
 			description
 		},
 		"allProductsList": *[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productTitleVisible}]
-			| order(_createdAt desc)[0...24]{
+			| order(_createdAt desc)[0...8]{
 			${productCardFields}
 		},
 		"collections": collections[]->{
@@ -1025,7 +1034,7 @@ export const pageProductIndexQuery = defineQuery(`
 				coverImage {
 					${imageBlockMetaFields}
 				},
-				"products": ${visibleProducts('products')}[0...8]{
+				"products": ${visibleProducts('products')}[0...4]{
 					${productCardFields}
 				}
 			}
