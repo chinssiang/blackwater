@@ -145,10 +145,9 @@ export default function PageProductSingle({
 
 	return (
 		<>
-			{/* Breadcrumb */}
 			<nav
 				aria-label="Breadcrumb"
-				className="t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+				className="p-x-max t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
@@ -165,16 +164,11 @@ export default function PageProductSingle({
 			</nav>
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
-				{/* Image — the frame stays here so the Sanity fallback and the
-				    streamed Shopify gallery occupy exactly the same box. Slides
-				    inside the gallery re-declare this aspect ratio; keep them in
-				    step. */}
-				<div className="bg-background relative aspect-4/3 overflow-hidden lg:col-span-7">
+				<div className="bg-background relative overflow-hidden lg:col-span-7">
 					{gallerySlot}
 				</div>
 
-				{/* Details */}
-				<div className="flex flex-col lg:col-span-5 lg:pt-2">
+				<div className="p-x-max flex flex-col lg:col-span-5 lg:pl-0 lg:pt-2">
 					{badge && badge.length > 0 && (
 						<div
 							className="reveal mb-4 flex flex-wrap gap-1.5"
@@ -188,9 +182,7 @@ export default function PageProductSingle({
 						</div>
 					)}
 
-					{eyebrow && (
-						<p className="t-l-1 text-foreground">{eyebrow}</p>
-					)}
+					{eyebrow && <p className="t-l-1 text-foreground">{eyebrow}</p>}
 
 					<h1 className="mt-3 text-balance t-h-1 uppercase">{title}</h1>
 
@@ -210,12 +202,14 @@ export default function PageProductSingle({
 					{content && content.length > 0 && (
 						<div
 							className="reveal mt-10 lg:max-w-[60ch] border-t border-foreground/10 pt-8"
-							style={{ ...REVEAL_SOFT, '--reveal-delay': '0.3s' } as CSSProperties}
+							style={
+								{ ...REVEAL_SOFT, '--reveal-delay': '0.3s' } as CSSProperties
+							}
 						>
 							<p className="t-l-1 mb-5 uppercase text-foreground/65">
 								{productText.whyWeChoseIt}
 							</p>
-							<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4]">
+							<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4] text-pretty">
 								<CustomPortableText blocks={content as any} />
 							</div>
 						</div>

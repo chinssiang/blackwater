@@ -53,23 +53,22 @@ function GallerySlide({
 		// Same positioned wrapper, and the same reason, as ProductMainImage: `fill`
 		// resolves inset:0 against the containing block's padding box, so padding
 		// on an ancestor would never inset the image.
-		<div className="absolute inset-6 lg:inset-10">
-			<Image
-				src={image.url}
-				alt={alt}
-				fill
-				sizes="(max-width: 1024px) 100vw, 58vw"
-				priority={priority}
-				loading={eager ? 'eager' : undefined}
-				className="object-contain"
-			/>
-		</div>
+
+		<Image
+			src={image.url}
+			alt={alt}
+			fill
+			sizes="(max-width: 1024px) 100vw, 58vw"
+			priority={priority}
+			loading={eager ? 'eager' : undefined}
+			className="object-contain"
+		/>
 	);
 }
 
 // Above this count the dot row is replaced by a compact counter — see the note
 // at the switch below. Six 44px targets plus gaps still fit the narrowest frame.
-const MAX_DOTS = 6;
+const MAX_DOTS = 0;
 
 // Not exported into ui/Carousel.tsx: the carousel context deliberately exposes
 // only `api`, and this is its one consumer.
@@ -161,7 +160,7 @@ export default function ProductGallery({ images, product }: Props) {
 	// zero duration is the only way to honour the preference.
 	const opts = useMemo(
 		// loop: false keeps the arrows' disabled states meaningful at both ends.
-		() => ({ loop: false, duration: reduce ? 0 : 25 }),
+		() => ({ loop: true, duration: reduce ? 0 : 25 }),
 		[reduce]
 	);
 
@@ -184,24 +183,15 @@ export default function ProductGallery({ images, product }: Props) {
 	}
 
 	return (
-		<Carousel
-			className="absolute inset-0"
-			opts={opts}
-			aria-label={gallery.label}
-		>
+		<Carousel opts={opts} aria-label={gallery.label}>
 			{/* ml-0 / pl-0 drop the primitive's inter-slide gutter: these slides are
 			    full-bleed within the frame, so a gutter would reveal the edge of the
 			    neighbouring image while dragging. */}
-			<CarouselContent className="ml-0">
+			<CarouselContent>
 				{images.map((image, i) => (
-					// aspect-4/3 is what gives the carousel its height — CarouselContent's
-					// embla viewport takes no className, and h-full on a slide would
-					// collapse against that auto-height viewport. Keep this ratio in step
-					// with the frame in PageProductSingle; if they drift the slide only
-					// letterboxes inside an overflow-hidden box, never shifting layout.
 					<CarouselItem
 						key={image.url}
-						className="relative aspect-4/3 pl-0"
+						className="relative aspect-4/3"
 						aria-label={interpolate(gallery.slide, {
 							index: i + 1,
 							count: images.length,
@@ -219,16 +209,13 @@ export default function ProductGallery({ images, product }: Props) {
 					</CarouselItem>
 				))}
 			</CarouselContent>
-			{/* `label` localizes the arrows' screen-reader text, which is otherwise
-			    English. left/right-3 pull them in from their default position
-			    outside the frame. */}
 			<CarouselPrevious
 				label={gallery.previous}
-				className="left-3 size-9 pointer-coarse:size-11"
+				className="left-[calc(var(--padding-max)-var(--spacing)*4)] size-9 pointer-coarse:size-11"
 			/>
 			<CarouselNext
 				label={gallery.next}
-				className="right-3 size-9 pointer-coarse:size-11"
+				className="right-[calc(var(--padding-max)-var(--spacing)*4)] size-9 pointer-coarse:size-11"
 			/>
 			<CarouselDots
 				goTo={(i) => interpolate(gallery.goTo, { index: i + 1 })}

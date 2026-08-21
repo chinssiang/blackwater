@@ -24,10 +24,16 @@ export default async function ProductsLayout({
 	const { data } = await getCachedSiteData(locale);
 
 	return (
-		<div className="p-x-max min-h-main py-10 lg:py-17.5 flex-col flex">
+		// No gutter here: each child section carries its own `m-x-max` instead, so a
+		// section that should reach the window edge — the product gallery's
+		// carousel, which scrolls slides in and out past the left edge — just omits
+		// it and is genuinely full-width, rather than cancelling an inherited
+		// padding with a negative margin that has to stay exactly in step with it.
+		// The cost is that a new top-level section is full-bleed until it opts in.
+		<div className="min-h-main py-10 lg:py-17.5 flex-col flex">
 			{children}
 			{data?.productSubmissionEmail && (
-				<div className="pointer-events-none sticky bottom-[calc(var(--height-g-toolbar)+1rem)] mt-auto flex justify-end lg:bottom-6 z-11 pt-section">
+				<div className="m-x-max pointer-events-none sticky bottom-[calc(var(--height-g-toolbar)+1rem)] mt-auto flex justify-end lg:bottom-6 z-11 pt-section">
 					<ProductSubmissionLazy />
 				</div>
 			)}

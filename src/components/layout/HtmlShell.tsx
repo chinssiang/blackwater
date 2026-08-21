@@ -1,21 +1,17 @@
+import { Suspense } from 'react';
+import DraftModeTools from '@/components/DraftModeTools';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { stegaClean } from '@sanity/client/stega';
-import { VisualEditing } from 'next-sanity/visual-editing';
 import localFont from 'next/font/local';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { htmlLangFor, type Locale } from '@/lib/i18n';
-import { SanityLive } from '@/sanity/lib/live';
 import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
-import DraftModeToast from '@/components/DraftModeToast';
-import HeadTrackingCode from '@/components/layout/HeadTrackingCode';
-import ConsentBanner, {
-	type ConsentSettings,
-} from '@/components/consent/ConsentBanner';
+import ConsentGate from '@/components/consent/ConsentGate';
+import type { ConsentSettings } from '@/components/consent/ConsentBanner';
 import JsonLd from '@/components/JsonLd';
 import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
-import type { ConsentState } from '@/lib/consent';
 import type { Dictionary } from '@/lib/dictionary';
 import '@/globals.css';
 
@@ -46,14 +42,12 @@ const baselTypewriter = localFont({
 export default function HtmlShell({
 	locale,
 	siteData,
-	consent,
 	consentFallback,
 	isDraftModeEnabled,
 	children,
 }: {
 	locale: Locale;
 	siteData: unknown;
-	consent?: ConsentState | null;
 	consentFallback: Dictionary['consent'];
 	isDraftModeEnabled: boolean;
 	children: React.ReactNode;
@@ -74,7 +68,7 @@ export default function HtmlShell({
 	return (
 		<html
 			lang={htmlLangFor(locale)}
-			className={`${fontABCDisplay.variable} ${baselTypewriter.variable} bg-background`}
+			className={`${fontABCDisplay.variable} ${baselTypewriter.variable} bg-background scrollbar-gutter-stable`}
 			data-scroll-behavior="smooth"
 			suppressHydrationWarning
 		>
@@ -86,32 +80,24 @@ export default function HtmlShell({
 				/>
 				<meta httpEquiv="X-UA-Compatible" content="IE=edge" />
 				<link rel="preconnect" href="https://cdn.sanity.io" />
-				<HeadTrackingCode siteData={siteData as never} consent={consent} />
+				{/* The only dynamic read in the tree (the consent cookie). Behind a
+				    <Suspense> boundary so the shell around it still prerenders — see
+				    ConsentGate. Streams in after the static HTML. */}
+				<Suspense fallback={null}>
+					<ConsentGate
+						siteData={siteData}
+						settings={cleanData?.consent ?? null}
+						fallback={consentFallback}
+					/>
+				</Suspense>
 				{siteJsonLd && <JsonLd data={siteJsonLd} />}
 				<ReactQueryProvider>
 					<ThemeProvider>
 						{children}
 						<Toaster />
-						{isDraftModeEnabled && (
-							<>
-								{/* Live Content API: only subscribe in draft mode. For
-								    published traffic, content stays fresh via the
-								    /api/revalidate-tag webhook. Rendering <SanityLive>
-								    for anonymous visitors on Next.js 16 + next-sanity 12
-								    triggers a prefetch/revalidate cascade (4–10x request
-								    overage). See https://www.sanity.io/docs/help/nextjs-16-sanitylive-status */}
-								<SanityLive refreshOnFocus />
-								<DraftModeToast />
-								<VisualEditing />
-							</>
-						)}
+						<DraftModeTools enabled={isDraftModeEnabled} />
 						<Analytics />
 						<SpeedInsights />
-						<ConsentBanner
-							settings={cleanData?.consent ?? null}
-							initialConsent={consent ?? null}
-							fallback={consentFallback}
-						/>
 					</ThemeProvider>
 				</ReactQueryProvider>
 			</body>

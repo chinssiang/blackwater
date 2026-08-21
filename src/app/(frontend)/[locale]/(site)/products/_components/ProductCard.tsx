@@ -24,6 +24,14 @@ type ProductCardProps = {
 		mainImage?: any;
 	};
 	index?: number;
+	/**
+	 * Marks this card's image as the LCP candidate: `fetchpriority="high"` and no
+	 * lazy-loading. Exactly one image per page should get it — the first one in
+	 * the viewport. Every card image is `loading="lazy"` without this, which is
+	 * what left /products with zero prioritized images and ~745ms of LCP load
+	 * delay. The caller decides which card qualifies (see PageProductIndex).
+	 */
+	priority?: boolean;
 };
 
 // Renders each category title as its own link to its category page, separated
@@ -51,7 +59,13 @@ function CategoryLinks({
 									locale,
 								})!
 							}
-							className="relative z-10 underline-offset-4 duration-200 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
+							// py-2 is the tap target, not decoration: `.t-spec` is
+							// 11px/1, so the bare inline box was 11px against WCAG's 24px
+							// minimum. Vertical padding on an inline element grows the hit
+							// area without disturbing the ", " separated line flow (inline
+							// boxes ignore vertical padding when sizing the line). py-1.5
+							// lands on 23px — one pixel short — so this is py-2 → 27px.
+							className="relative z-10 py-2 underline-offset-4 duration-200 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
 						>
 							{c.title}
 						</Link>
@@ -64,7 +78,11 @@ function CategoryLinks({
 	);
 }
 
-export default function ProductCard({ product, index = 0 }: ProductCardProps) {
+export default function ProductCard({
+	product,
+	index = 0,
+	priority = false,
+}: ProductCardProps) {
 	const locale = useLocale();
 	const t = useTranslations('products');
 	const categories = product.categories?.filter((c) => Boolean(c.title)) ?? [];
@@ -90,6 +108,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 						imageObj={product.mainImage}
 						alt={product.title ?? ''}
 						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw"
+						priority={priority}
 					/>
 				) : (
 					<div className="h-full w-full" />
@@ -115,14 +134,22 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 						hasCategories && (
 							<CategoryLinks
 								categories={categories}
-								className="t-spec flex-1 uppercase text-foreground"
+								// -my-2 py-2 matches the anchor's padding so the enlarged tap
+							// target stays inside this row's own box instead of
+							// overhanging into blank card space, where it would sit above
+							// the card's stretched overlay link and steal its clicks. The
+							// negative margin keeps the visual rhythm unchanged.
+							className="t-spec -my-2 flex-1 py-2 uppercase text-foreground"
 							/>
 						)
 					)}
 					{showCategoryTag && (
 						<CategoryLinks
 							categories={categories}
-							className="t-spec uppercase text-foreground/50"
+							// /60 not /50: on the force-light product routes the
+							// background is #f2f2f2, where foreground/50 lands on
+							// #7e7e7e = 3.63:1 and fails AA. /60 is #676767 = 5.0:1.
+							className="t-spec -my-2 py-2 uppercase text-foreground/60"
 						/>
 					)}
 				</div>

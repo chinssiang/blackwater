@@ -24,7 +24,7 @@ export function PageProductCategoriesIndex({ data }: Props) {
 			{/* Breadcrumb */}
 			<nav
 				aria-label="Breadcrumb"
-				className="reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+				className="m-x-max reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
@@ -53,6 +53,7 @@ export function PageProductCategoriesIndex({ data }: Props) {
 			/>
 
 			<ProductCategoriesGrid
+				className="m-x-max"
 				categories={categories ?? null}
 				heading={null}
 				priority

@@ -41,7 +41,7 @@ export default function ProductPageHeader({
 
 	return (
 		<header
-			className="reveal mb-12 lg:mb-20"
+			className="m-x-max reveal mb-12 lg:mb-20"
 			style={{ '--reveal-duration': '0.8s' } as CSSProperties}
 		>
 			{kicker && (

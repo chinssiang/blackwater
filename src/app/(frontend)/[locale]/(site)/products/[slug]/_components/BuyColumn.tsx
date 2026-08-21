@@ -174,7 +174,7 @@ export default function BuyColumn({
 						aria-disabled="true"
 						tabIndex={-1}
 						variant="outline"
-						className="w-full uppercase lg:w-60"
+						className="w-full uppercase lg:w-112 h-14"
 					>
 						{productText.soldOut}
 					</Button>
@@ -190,7 +190,7 @@ export default function BuyColumn({
 							<Button
 								onClick={handleAddToCart}
 								disabled={isAdding || !activeVariant}
-								className="w-full uppercase lg:w-60 transition-[background-color,filter] hover:brightness-[0.97]"
+								className="w-full uppercase lg:w-112 h-14"
 							>
 								{isAdding ? cartText.adding : cartText.addToCart}
 							</Button>
@@ -208,7 +208,7 @@ export default function BuyColumn({
 									aria-label={interpolate(productText.buyAriaLabel, {
 										product: title ?? productText.thisProduct,
 									})}
-									className="group lg:w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase w-full"
+									className="group sm:max-w-112 uppercase w-full h-14"
 								>
 									{productText.buyIt}
 									<span

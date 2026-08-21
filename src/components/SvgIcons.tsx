@@ -134,3 +134,35 @@ export function Plus({ className }: SvgIconsProps) {
 		</svg>
 	);
 }
+
+export function ChevronLeftIcon({ className }: SvgIconsProps) {
+	return (
+		<svg
+			className={cn(className)}
+			viewBox="0 0 6 9"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				d="M4.70703 8.35352L0.707031 4.35352L4.70703 0.353516"
+				stroke="currentColor"
+			/>
+		</svg>
+	);
+}
+
+export function ChevronRightIcon({ className }: SvgIconsProps) {
+	return (
+		<svg
+			className={cn(className)}
+			viewBox="0 0 6 9"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				d="M0.353516 8.35352L4.35352 4.35352L0.353516 0.353516"
+				stroke="currentColor"
+			/>
+		</svg>
+	);
+}

@@ -22,7 +22,7 @@ function NumberPrefix({ children }: { children: React.ReactNode }) {
 }
 
 export function Footer({ data }: { data: FooterProps }) {
-	const { menus, copyright } = data || {};
+	const { menus, copyright, siteTitle } = data || {};
 	const hasMenus = !!menus && menus.length > 0;
 	const footerRef = useRef<HTMLElement | null>(null);
 
@@ -50,7 +50,9 @@ export function Footer({ data }: { data: FooterProps }) {
 								<li key={item?._key ?? i}>
 									<CustomLink
 										link={item?.link}
-										className="flex gap-3 text-foreground transition-colors hover:text-foreground/80 md:gap-10 t-l-1 uppercase"
+										// py-1.5: `t-l-1` is 12px/1, so the row was a 12px
+										// tap target against the 24px minimum.
+										className="flex gap-3 py-1.5 text-foreground transition-colors hover:text-foreground/80 md:gap-10 t-l-1 uppercase"
 									>
 										<NumberPrefix>
 											{col + 1}.{i + 1}
@@ -76,7 +78,9 @@ export function Footer({ data }: { data: FooterProps }) {
 				</nav>
 			)}
 			<div className="flex justify-between mt-20 lg:mt-62 flex-col gap-4 md:flex-row items-start">
-				<Link href="/">
+				{/* The wordmark is the only content, so the link needs its own
+				    accessible name — an <svg> of bare <path>s exposes none. */}
+				<Link href="/" aria-label={siteTitle ? `${siteTitle} — home` : 'Home'}>
 					<WordmarkSvg className="h-3 w-auto" />
 				</Link>
 				{!hasMenus && (

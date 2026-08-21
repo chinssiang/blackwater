@@ -105,9 +105,29 @@ export function PageProductIndex({ data }: Props) {
 	const t = useTranslations('products');
 	const allProductsHref = localizePath('/products/all', locale);
 
+	// Exactly one image on the page gets fetchpriority="high" — the first one in
+	// the viewport. Which block that is depends on the data, so derive it rather
+	// than hard-code it: a category tile only renders an image when the category
+	// has a cover (CategoryTile's `hasImage`), and a collection strip only renders
+	// when it has products. Order of appearance: category covers → first non-empty
+	// collection strip → the all-products grid.
+	// categories[0], not .some(): ProductCategoriesGrid grants priority to index 0
+	// only, and CategoryTile renders no image at all when its category has no
+	// cover. Testing "any category has a cover" would hand priority to a tile
+	// that renders nothing while suppressing it everywhere else — leaving the
+	// page with zero fetchpriority="high" images.
+	const categoriesHaveCover = Boolean(categories?.[0]?.coverImage?.image);
+	const firstCollectionIndex =
+		collections?.findIndex((c) => c && hasArrayValue(c.products)) ?? -1;
+	const lcpOwner: 'categories' | 'collection' | 'all' = categoriesHaveCover
+		? 'categories'
+		: firstCollectionIndex >= 0
+			? 'collection'
+			: 'all';
+
 	return (
 		<>
-			<section className="mb-14 lg:mb-24">
+			<section className="p-x-max mb-14 lg:mb-24">
 				{subtitle && (
 					<p className="t-l-2 mb-5 uppercase text-foreground/65 lg:mb-7">
 						{subtitle}
@@ -124,9 +144,10 @@ export function PageProductIndex({ data }: Props) {
 			</section>
 
 			<ProductCategoriesGrid
+				className="p-x-max"
 				categories={categories ?? null}
 				showViewAll
-				priority
+				priority={lcpOwner === 'categories'}
 			/>
 
 			{collections?.map((collection, index) => {
@@ -140,7 +161,7 @@ export function PageProductIndex({ data }: Props) {
 				return (
 					<section
 						key={collection._id}
-						className="reveal mt-14 lg:mt-24"
+						className="m-x-max reveal mt-14 lg:mt-24"
 						style={revealStagger(index)}
 					>
 						<CollectionMasthead collection={collection} />
@@ -152,6 +173,11 @@ export function PageProductIndex({ data }: Props) {
 										key={product._id}
 										product={product}
 										index={productIndex}
+										priority={
+											lcpOwner === 'collection' &&
+											index === firstCollectionIndex &&
+											productIndex === 0
+										}
 									/>
 								))}
 							</div>
@@ -161,10 +187,7 @@ export function PageProductIndex({ data }: Props) {
 			})}
 
 			{hasArrayValue(allProductsList) && (
-				<section
-					className="reveal mt-14 lg:mt-24"
-					style={REVEAL_SOFT}
-				>
+				<section className="m-x-max reveal mt-14 lg:mt-24" style={REVEAL_SOFT}>
 					<div className="border-t border-foreground/15 pt-4">
 						<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 							{allProducts?.title && (
@@ -193,6 +216,7 @@ export function PageProductIndex({ data }: Props) {
 								key={product._id}
 								product={product}
 								index={productIndex}
+								priority={lcpOwner === 'all' && productIndex === 0}
 							/>
 						))}
 					</div>
@@ -201,10 +225,7 @@ export function PageProductIndex({ data }: Props) {
 						<Button
 							asChild
 							size="lg"
-							// text-xs is load-bearing: t-l-1 sets the size in @layer
-						// components, but Button's base text-sm is a utility and wins
-						// the cascade. Not a duplicate.
-						className="t-l-1 text-xs whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11 px-6"
+							className="t-l-1 text-xs whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6"
 						>
 							<Link href={allProductsHref}>{t.moreProducts}</Link>
 						</Button>

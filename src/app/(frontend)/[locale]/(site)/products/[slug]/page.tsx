@@ -112,12 +112,6 @@ export default async function Page({ params }: Props) {
 			}}
 			gallerySlot={
 				awaitsCommerce ? (
-					// The fallback is the Sanity mainImage but deliberately not
-					// `priority`: static generation emits fallback and resolved markup
-					// into the same HTML, and a high-priority image preload survives
-					// React's swap — so priority here would fetch this image on every
-					// page load only to discard it, competing with the Shopify image
-					// that actually paints.
 					<Suspense
 						fallback={
 							<ProductMainImage imageObj={data.mainImage} alt={imageAlt} />
@@ -132,11 +126,7 @@ export default async function Page({ params }: Props) {
 					</Suspense>
 				) : (
 					// Nothing to wait for, so this is the real LCP element.
-					<ProductMainImage
-						imageObj={data.mainImage}
-						alt={imageAlt}
-						priority
-					/>
+					<ProductMainImage imageObj={data.mainImage} alt={imageAlt} priority />
 				)
 			}
 			buySlot={

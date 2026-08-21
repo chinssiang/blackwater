@@ -580,8 +580,7 @@ export const siteDataQuery = defineQuery(`{
 		},
 		"integrations": *[_type == "settingsIntegration"][0]{
 			gaIDs,
-			gtmIDs,
-			klaviyoCompanyId
+			gtmIDs
 		},
 		"consent": *[_type == "settingsConsent"][0]{
 			enabled,
@@ -1017,6 +1016,16 @@ const productCategoriesFields = `
 	}
 `;
 
+// Card counts are deliberately small; the index is a shop window, not the
+// catalogue. `allProductsList` is 8 (not 24) because both the "All Products"
+// link and the "More Products" button below that grid go to the paginated
+// /products/all, and each collection strip is 4 — exactly one row of the widest
+// grid (2xl:grid-cols-4) — with the collection's own page holding the full set.
+// At 24 + 8-per-strip the index shipped 58 cards / 58 <img> / 1,429 DOM nodes in
+// a 532KB document 34,497px tall on mobile, which is what put Speed Index at
+// 20.9s. Keep the rationale out here: anything inside the template literal is
+// query payload sent to Sanity on every request and is baked into the generated
+// types.
 export const pageProductIndexQuery = defineQuery(`
 	${byLocale('pProductIndex')}[0]{
 		${baseFields},
@@ -1029,7 +1038,7 @@ export const pageProductIndexQuery = defineQuery(`
 			description
 		},
 		"allProductsList": *[_type == "pProduct" && ${productLocaleFilter('pProduct')} && ${productTitleVisible}]
-			| order(_createdAt desc)[0...24]{
+			| order(_createdAt desc)[0...8]{
 			${productCardFields}
 		},
 		"collections": collections[]->{
@@ -1044,7 +1053,7 @@ export const pageProductIndexQuery = defineQuery(`
 				coverImage {
 					${imageBlockMetaFields}
 				},
-				"products": ${visibleProducts('products')}[0...8]{
+				"products": ${visibleProducts('products')}[0...4]{
 					${productCardFields}
 				}
 			}
@@ -1083,6 +1092,29 @@ export const pageProductSingleQuery = defineQuery(`
 		] | order(_createdAt desc) [0...3] {
 			${productCardFields}
 		}
+	}
+`);
+
+// Shopify handle → Sanity slug, for the cart drawer's line-item links. Shopify
+// knows only its own handle; product routes are keyed on the Sanity slug, and
+// the two are deliberately independent. Resolved per cart response rather than
+// captured when the line is added, because an editor can rename a slug at any
+// time and a stored copy would then point at a 404.
+//
+// `productTitleVisible` is not optional here: pageProductSingleQuery carries it,
+// so a product untranslated in $locale 404s on that locale's route. Without the
+// same guard a zh-only line added on the zh_tw route would render a link into
+// that 404 once the shopper switched to English — the leak described above the
+// fragment. A line whose product is invisible in this locale simply resolves to
+// no slug, and the drawer renders its thumbnail unlinked.
+export const productSlugsByShopifyHandleQuery = defineQuery(`
+	*[_type == "pProduct"
+		&& defined(slug.current)
+		&& shopify.handle in $handles
+		&& ${productTitleVisible}
+	]{
+		"handle": shopify.handle,
+		"slug": slug.current
 	}
 `);
 

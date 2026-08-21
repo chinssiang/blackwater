@@ -102,7 +102,6 @@ export default function BackInStockForm({ productTitle, productSlug }: Props) {
 						<Button
 							type="submit"
 							disabled={formState === 'submitting'}
-							variant="outline"
 							size="lg"
 							className="min-w-24 uppercase"
 						>
