@@ -23,16 +23,6 @@ export const SITEMAP_PAGES_QUERY = defineQuery(`
 	}
 `);
 
-export const SITEMAP_EVENTS_QUERY = defineQuery(`
-	*[_type in ["pEvents", "pEvent"]
-		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
-		_type,
-		"slug": slug.current,
-		_updatedAt,
-		language
-	}
-`);
-
 // Which locales a field-level i18n array actually carries copy for.
 //
 // `defined(value)` is load-bearing: the internationalizedArray plugin is
@@ -65,6 +55,26 @@ export const SITEMAP_PRODUCTS_QUERY = defineQuery(`
 		"locales": select(
 			defined(language) => [language],
 			_type == "pProductCategory" => ${ALL_LOCALES_GROQ},
+			${localesWithValue('title')}
+		)
+	}
+`);
+
+// Both event types are field-level localized, so neither carries `language` —
+// `locales` is what tells sitemap.ts which URLs to emit. pEvent derives it from
+// title[].language, so a zh-only event contributes only its zh_tw URL; pEvents
+// is the index page, which renders an English fallback in every locale and so
+// advertises all of them (same reasoning as pProductCategory above). Reading
+// `language` here instead would silently drop every zh_tw event URL.
+export const SITEMAP_EVENTS_QUERY = defineQuery(`
+	*[_type in ["pEvents", "pEvent"]
+		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)
+		&& (disableIndex != true)] {
+		_type,
+		"slug": slug.current,
+		_updatedAt,
+		"locales": select(
+			_type == "pEvents" => ${ALL_LOCALES_GROQ},
 			${localesWithValue('title')}
 		)
 	}
@@ -337,18 +347,29 @@ const newsletterFormFields = `
 `;
 
 // ---------------------------------------------------------------------------
-// Product family (pProduct / pProductCollection): FIELD-level i18n.
+// FIELD-level i18n helpers, shared by the product family (pProduct /
+// pProductCollection / pProductCategory) and the event family (pEvent /
+// pEvents / pEventCategory).
 //
-// One document per product carries every language — prose lives in
-// internationalizedArrays, everything else (handle, price, refs, images)
-// exists once. This mirrors Shopify's own model, where a product is a single
-// entity and language is a query-time context.
+// One document carries every language — prose lives in internationalizedArrays,
+// everything else (handle, price, dates, venue, refs, images) exists once. For
+// products this mirrors Shopify's own model, where a product is a single entity
+// and language is a query-time context. For events it mirrors reality: an event
+// is one occurrence with one start time and one venue, which two documents could
+// (and did) disagree about.
 //
-// TRANSITION (delete after the prod merge migration has run): every projection
-// below carries a `select(defined(language) => <old field>)` tail, and the
-// visibility filters keep their old-shape branches, so a build prerendered
-// against un-migrated data still renders. Old-shape docs have `language`;
-// merged docs never do — that is the discriminator throughout.
+// TRANSITION (delete after the prod product merge has run): the PRODUCT
+// projections carry a `select(defined(language) => <old field>)` tail and the
+// product visibility filters keep an old-shape branch, so a build prerendered
+// against un-migrated product data still renders. Old-shape docs have
+// `language`; merged docs never do — that is the discriminator.
+//
+// The EVENT queries carry no such tails: events are migrated in the same deploy
+// as this code (scripts/merge-event-i18n.mjs), so there is no window in which
+// old-shape event documents meet new-shape queries. Where an event query reuses
+// a helper below that still has a tail, the tail is inert for it — a merged
+// event has no `language`, so `select(defined(language) => …)` yields null and
+// `coalesce` skips it — and it disappears for free when the product tails go.
 // ---------------------------------------------------------------------------
 
 // Localized string/text with old-shape fallback.
@@ -360,13 +381,17 @@ const locString = (field: string) =>
 // back is a block array the caller still has to project with `[]{ ... }`.
 const locPT = locString;
 
-// Visibility guard appended to product-family list filters: merged docs are
-// shown in a locale only when they carry a title in that locale or in English.
-// This preserves the doc-level behavior exactly — a zh-only product never
-// leaks onto English pages (it used to have no `en` document; now it has no
-// `en` title). Old-shape docs pass unconditionally; `productLocaleFilter`
-// still governs them.
-const productTitleVisible = `(defined(language) || defined(title[language == $locale][0].value) || defined(title[language == "en"][0].value))`;
+// Visibility guard for merged docs: shown in a locale only when they carry a
+// title in that locale or in English. This preserves the doc-level behavior
+// exactly — a zh-only doc never leaks onto English pages (it used to have no
+// `en` document; now it has no `en` title), while an en-only doc renders its
+// English fallback everywhere. Used as-is by the event queries.
+const titleVisible = `(defined(title[language == $locale][0].value) || defined(title[language == "en"][0].value))`;
+
+// The product variant: the same check, plus an unconditional pass for un-merged
+// docs, which `productLocaleFilter` still governs. Collapses into `titleVisible`
+// once the prod product merge has run and the tails come out.
+const productTitleVisible = `(defined(language) || ${titleVisible})`;
 
 // The same guard applied AFTER a dereference, for editor-curated reference
 // arrays (relatedProducts, collection products, cart recommendations). Those
@@ -412,24 +437,32 @@ const shopifyHandleField = `
 	)
 `;
 
-// SEO block for the product family, shaped exactly like baseFields' `sharing`
+// SEO block for field-level types, shaped exactly like baseFields' `sharing`
 // so defineMetadata needs no awareness of the field-level model. New docs use
 // the seo fieldset (seoTitle/seoDescription/shareGraphic/disableIndex); the
 // old-shape tails read the retired `sharing` object.
 //
-// Belongs only on a query's TOP-LEVEL document, never in `productCardFields`:
+// Belongs only on a query's TOP-LEVEL document, never in a card or list item:
 // nothing renders a card's SEO block, and each copy costs two `settingsGeneral`
 // subqueries (share graphic + site title). Inside a 45-card listing that was 90
 // subqueries and a full metadata block per card serialized to the client, all
 // of it unread.
 //
 // `descFallback` names the localized prose field the meta description falls back
-// to (excerpt for products, description for collections) — both schemas promise
-// that in the SEO Description field's help text, and pProductCategory already
-// implements it. It sits BEFORE the transition tail deliberately: on an
-// un-merged doc the i18n-array access yields null, so `sharing.metaDesc` still
-// wins there rather than being shadowed by an old-shape plain excerpt.
-const productSharingFields = (imageFallback: string, descFallback: string) => `
+// to (excerpt for products and events, description for collections) — every
+// schema promises that in the SEO Description field's help text, and
+// pProductCategory already implements it. It sits BEFORE the transition tail
+// deliberately: on an un-merged doc the i18n-array access yields null, so
+// `sharing.metaDesc` still wins there rather than being shadowed by an
+// old-shape plain excerpt.
+//
+// Both parameters are required and must be passed as string LITERALS: Sanity's
+// static query extractor evaluates this template without running JS, so neither
+// a ternary nor a default parameter value survives it (a default fails with
+// "Could not find binding for node"). Types with no image or description
+// fallback pass the literal 'noFallback' — an attribute no document has, so
+// GROQ resolves that coalesce arm to null and skips it.
+const i18nSharingFields = (imageFallback: string, descFallback: string) => `
 	"sharing": {
 		"disableIndex": coalesce(disableIndex, sharing.disableIndex),
 		"metaTitle": coalesce(seoTitle[language == $locale][0].value, seoTitle[language == "en"][0].value, select(defined(language) => sharing.metaTitle)),
@@ -699,83 +732,69 @@ export const pageNewsletterQuery = defineQuery(`
 	}
 `);
 
+// Status badges, shared by the listing and the detail page — both render the
+// same pill with the same link.
+const eventStatusListFields = `
+	statusList[]{
+		_key,
+		link {
+			${linkFields}
+		},
+		eventStatus-> {
+			_id,
+			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+			"slug": slug.current,
+			statusTextColor->{...color},
+			statusBgColor->{...color}
+		}
+	}
+`;
+
+// Event listing. One document per event now, so the old two-arm union (current
+// locale, plus English/undefined whose slug had no current-locale sibling) is
+// gone: there is nothing to deduplicate, and `titleVisible` alone decides
+// whether an event appears in this locale.
+//
+// `categories` is deliberately NOT projected: nothing on the listing renders it,
+// and it costs a reference deref plus a colour-document deref per event.
+const eventCardFields = `
+	_id,
+	_type,
+	"title": ${locString('title')},
+	"slug": slug.current,
+	"subtitle": ${locString('subtitle')},
+	eventDatetime,
+	endDatetime,
+	dateStatus,
+	"location": ${locString('location')},
+	locationLink,
+	locationRef->{
+		"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
+		mapLink,
+	},
+	${eventStatusListFields}
+`;
+
 export const pEventsQuery = defineQuery(`
-	${byLocale('pEvents')}[0]{
-		${baseFields},
-		${availableLocalesField},
-		"eventList": (
-			*[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff]{
-				${baseFields},
-				subtitle,
-				eventDatetime,
-				endDatetime,
-				dateStatus,
-				location,
-				locationLink,
-				locationRef->{
-					"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
-					mapLink,
-				},
-				categories[]-> {
-					_id,
-					title,
-					"slug": slug.current,
-					categoryColor->{...color}
-				},
-				statusList[]{
-					_key,
-					link {
-						${linkFields}
-					},
-					eventStatus-> {
-						_id,
-						"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-						"slug": slug.current,
-						statusTextColor->{...color},
-						statusBgColor->{...color}
-					}
-				}
-			}
-			+ *[
-				_type == "pEvent"
-				&& (language == "en" || !defined(language))
-				&& eventDatetime.utc >= $cutoff
-				&& !(slug.current in *[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff].slug.current)
-			]{
-				${baseFields},
-				subtitle,
-				eventDatetime,
-				endDatetime,
-				dateStatus,
-				location,
-				locationLink,
-				locationRef->{
-					"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
-					mapLink,
-				},
-				categories[]-> {
-					_id,
-					title,
-					"slug": slug.current,
-					categoryColor->{...color}
-				},
-				statusList[]{
-					_key,
-					link {
-						${linkFields}
-					},
-					eventStatus-> {
-						_id,
-						"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-						"slug": slug.current,
-						statusTextColor->{...color},
-						statusBgColor->{...color}
-					}
-				}
-			}
-		) | order(eventDatetime.utc asc),
+	*[_type == "pEvents"][0]{
+		_id,
+		_type,
+		"title": ${locString('title')},
+		"slug": slug.current,
+		${i18nSharingFields('noFallback', 'noFallback')},
+		"availableLocales": ${ALL_LOCALES_GROQ},
+		"eventList": *[_type == "pEvent" && eventDatetime.utc >= $cutoff && ${titleVisible}]{
+			${eventCardFields}
+		} | order(eventDatetime.utc asc),
 	}
 `);
+
+// /events-crew renders outside the [locale] segment, so these queries have no
+// $locale to resolve against. They pick zh_tw first, falling back to English —
+// the crew is Taiwan-based and the roster is written in Chinese. `locationRef`
+// already did this; the rest joined it when the event family became field-level.
+const crewString = (field: string) =>
+	`coalesce(${field}[language == "zh_tw"][0].value, ${field}[language == "en"][0].value)`;
 
 export const eventCrewMonthsQuery = defineQuery(`
 	*[_type == "pEvent" && defined(teamAssignments) && defined(eventDatetime.utc)] | order(eventDatetime.utc asc) {
@@ -803,29 +822,29 @@ export const eventCrewByMonthQuery = defineQuery(`
 		&& ($memberSlug == "" || $memberSlug in teamAssignments[].members[]->slug.current)
 	] | order(eventDatetime.utc asc) {
 		_id,
-		title,
+		"title": ${crewString('title')},
 		"sharing":{},
-		subtitle,
+		"subtitle": ${crewString('subtitle')},
 		eventDatetime,
 		endDatetime,
 		dateStatus,
-		location,
+		"location": ${crewString('location')},
 		locationLink,
 		locationRef->{
-			"name": coalesce(name[language == "zh_tw"][0].value, name[language == "en"][0].value),
+			"name": ${crewString('name')},
 			mapLink
 		},
-		teamNotes,
+		"teamNotes": ${crewString('teamNotes')},
 		categories[]-> {
 			_id,
-			title,
+			"title": ${crewString('title')},
 			"slug": slug.current,
 			categoryColor->{...color}
 		},
 		teamAssignments[] {
 			_key,
 			group,
-			note,
+			"note": ${crewString('note')},
 			role-> {
 				_id,
 				title,
@@ -976,7 +995,7 @@ const productStaticSectionFields = `
 
 const productBaseFields = `
 	${productCardFields},
-	${productSharingFields('mainImage.image', 'excerpt')},
+	${i18nSharingFields('mainImage.image', 'excerpt')},
 	soldOut,
 	"content": ${locPT('content')}[]{
 		${portableTextContentFields}
@@ -1117,7 +1136,7 @@ export const pageProductCollectionSingleQuery = defineQuery(`
 		_type,
 		"title": ${locString('title')},
 		"slug": slug.current,
-		${productSharingFields('coverImage.image', 'description')},
+		${i18nSharingFields('coverImage.image', 'description')},
 		${productAvailableLocalesField},
 		"description": ${locString('description')},
 		"products": ${visibleProducts('products')}{
@@ -1211,19 +1230,23 @@ export const pageEventSlugsQuery = defineQuery(`
 `);
 
 export const pageEventSingleQuery = defineQuery(`
-	*[_type == "pEvent" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
-		${baseFields},
-		${availableLocalesField},
+	*[_type == "pEvent" && slug.current == $slug && ${titleVisible}][0]{
+		_id,
+		_type,
+		"title": ${locString('title')},
+		"slug": slug.current,
+		${i18nSharingFields('heroImage.image', 'excerpt')},
+		"availableLocales": ${localesWithValue('title')},
 		format,
-		subtitle,
-		excerpt,
+		"subtitle": ${locString('subtitle')},
+		"excerpt": ${locString('excerpt')},
 		eventDatetime,
 		endDatetime,
 		dateStatus,
 		eventType,
 		distanceKm,
 		isFree,
-		location,
+		"location": ${locString('location')},
 		locationLink,
 		locationRef->{
 			"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
@@ -1232,33 +1255,32 @@ export const pageEventSingleQuery = defineQuery(`
 			geo
 		},
 		heroImage{${imageBlockMetaFields}},
-		highlights[]{label, value},
-		startEndLocation,
-		categories[]->{ _id, title, "slug": slug.current },
-		statusList[]{
-			_key,
-			link {
-				${linkFields}
-			},
-			eventStatus->{
-				_id,
-				"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-				statusTextColor->{...color},
-				statusBgColor->{...color}
-			}
+		highlights[]{
+			"label": ${locString('label')},
+			"value": ${locString('value')}
 		},
+		startEndLocation{
+			"name": ${locString('name')},
+			link
+		},
+		categories[]->{
+			_id,
+			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+			"slug": slug.current
+		},
+		${eventStatusListFields},
 		stations[]{
-			name,
-			distance,
-			locationName,
+			"name": ${locString('name')},
+			"distance": ${locString('distance')},
+			"locationName": ${locString('locationName')},
 			locationLink,
-			questTitle,
-			questInstructions,
+			"questTitle": ${locString('questTitle')},
+			"questInstructions": ${locString('questInstructions')},
 			questExampleImage{${imageBlockMetaFields}},
-			directionsIn,
-			directionsOut
+			"directionsIn": ${locString('directionsIn')},
+			"directionsOut": ${locString('directionsOut')}
 		},
-		content[]{
+		"content": ${locPT('content')}[]{
 			${portableTextContentFields}
 		}
 	}

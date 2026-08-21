@@ -1,8 +1,12 @@
-import sharing from '@/sanity/schemaTypes/objects/sharing';
-import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
+import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
+import { seoFieldset, seoFields } from '@/sanity/schemaTypes/objects/seo-fields';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
-import { pickLocalizedValue, LOCALE_SHORT_LABELS, isLocale } from '@/lib/i18n';
+import {
+	pickLocalizedValue,
+	requireSomeValue,
+	isEmptyI18nValue,
+	maxLengthPerLanguage,
+} from '@/lib/i18n';
 import { BookIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
 import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
@@ -21,16 +25,18 @@ export const pEvent = defineType({
 				'Optional — only fill in for multi-station events with stations',
 			options: { collapsible: true, collapsed: true },
 		},
+		seoFieldset,
 	],
 	fields: [
 		defineField({
 			name: 'title',
-			type: 'string',
-			validation: (Rule) => [Rule.required()],
+			type: 'internationalizedArrayString',
+			validation: (Rule) => Rule.custom(requireSomeValue),
 		}),
-		defineField({ name: 'subtitle', type: 'string' }),
-		slug(),
-		language(),
+		defineField({ name: 'subtitle', type: 'internationalizedArrayString' }),
+		// isUniqueAcrossType, not the default: with no `language` field the
+		// default check short-circuits to `true` and accepts every duplicate.
+		slug({ isUnique: isUniqueAcrossType }),
 		defineField({
 			name: 'format',
 			title: 'Event format',
@@ -112,11 +118,13 @@ export const pEvent = defineType({
 		defineField({
 			name: 'excerpt',
 			title: 'Excerpt',
-			type: 'text',
-			rows: 2,
+			type: 'internationalizedArrayText',
 			description:
 				'Short one-line summary (≤160 chars) used in listings and as a fallback structured-data description.',
-			validation: (Rule) => Rule.max(160).warning('Keep under ~160 chars.'),
+			validation: (Rule) =>
+				Rule.custom(
+					maxLengthPerLanguage(160, 'Keep under ~160 chars.')
+				).warning(),
 		}),
 		defineField({
 			name: 'locationRef',
@@ -129,14 +137,16 @@ export const pEvent = defineType({
 		defineField({
 			name: 'location',
 			title: 'One-off location name',
-			type: 'string',
+			type: 'internationalizedArrayString',
 			description:
 				'Only for venues that are not saved in Global → Locations. Prefer a saved location above so the address and map link stay consistent.',
 			hidden: ({ document }) => !!(document as any)?.locationRef,
 			validation: (Rule) =>
 				Rule.custom((value, context) => {
 					const hasRef = !!(context.document as any)?.locationRef;
-					if (!value && !hasRef) {
+					// `value` is an internationalizedArray, so a plain falsy test
+					// would pass on an array of empty per-language items.
+					if (isEmptyI18nValue(value) && !hasRef) {
 						return 'Location is required when no location reference is selected';
 					}
 					return true;
@@ -206,17 +216,23 @@ export const pEvent = defineType({
 					fields: [
 						defineField({
 							name: 'label',
-							type: 'string',
-							validation: (Rule) => Rule.required(),
+							type: 'internationalizedArrayString',
+							validation: (Rule) => Rule.custom(requireSomeValue),
 						}),
 						defineField({
 							name: 'value',
-							type: 'string',
-							validation: (Rule) => Rule.required(),
+							type: 'internationalizedArrayString',
+							validation: (Rule) => Rule.custom(requireSomeValue),
 						}),
 					],
 					preview: {
 						select: { title: 'label', subtitle: 'value' },
+						prepare({ title, subtitle }) {
+							return {
+								title: pickLocalizedValue(title) || 'Untitled',
+								subtitle: pickLocalizedValue(subtitle),
+							};
+						},
 					},
 				},
 			],
@@ -261,7 +277,7 @@ export const pEvent = defineType({
 						defineField({
 							name: 'note',
 							title: 'Note',
-							type: 'string',
+							type: 'internationalizedArrayString',
 							description: 'Optional inline note, e.g. "看當天人數"',
 						}),
 					],
@@ -305,8 +321,7 @@ export const pEvent = defineType({
 		defineField({
 			name: 'teamNotes',
 			title: 'Team Notes',
-			type: 'text',
-			rows: 2,
+			type: 'internationalizedArrayText',
 			description: 'Event-level notes, e.g. OOO status',
 		}),
 		defineField({
@@ -317,7 +332,11 @@ export const pEvent = defineType({
 			description: 'The store or meeting point where runners start and finish',
 			hidden: ({ document }) => (document as any)?.format !== 'multi-location',
 			fields: [
-				defineField({ name: 'name', type: 'string', title: 'Name' }),
+				defineField({
+					name: 'name',
+					type: 'internationalizedArrayString',
+					title: 'Name',
+				}),
 				defineField({ name: 'link', type: 'url', title: 'Google Maps Link' }),
 			],
 		}),
@@ -333,34 +352,32 @@ export const pEvent = defineType({
 		}),
 		defineField({
 			name: 'content',
-			type: 'portableText',
+			type: 'internationalizedArrayPortableText',
 		}),
-		sharing(),
+		...seoFields({ descFallback: 'Excerpt', imageFallback: 'Hero image' }),
 	],
 	preview: {
 		select: {
 			title: 'title',
 			location: 'location',
-			locationRefName: 'locationRef.name.0.value',
+			locationRefName: 'locationRef.name',
 			eventDatetime: 'eventDatetime.utc',
 			categories: 'categories.0.title',
-			language: 'language',
 		},
 		prepare({
-			title = 'Untitled',
+			title,
 			location,
 			locationRefName,
 			eventDatetime,
 			categories,
-			language,
 		}) {
-			const categoryTitle = categories ?? '';
-			const locationName = locationRefName || location || '';
+			const categoryTitle = pickLocalizedValue(categories) ?? '';
+			const locationName =
+				pickLocalizedValue(locationRefName) || pickLocalizedValue(location) || '';
 			const subtitle = `${locationName} - ${categoryTitle ? `[${categoryTitle}]` : ''}`;
-			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
 
 			return {
-				title: `${tag ? `[${tag}] ` : ''}${title}${eventDatetime ? ` - ${new Date(eventDatetime).toLocaleDateString('en-US')}` : ''}`,
+				title: `${pickLocalizedValue(title) || 'Untitled'}${eventDatetime ? ` - ${new Date(eventDatetime).toLocaleDateString('en-US')}` : ''}`,
 				subtitle: subtitle,
 				media: BookIcon,
 			};

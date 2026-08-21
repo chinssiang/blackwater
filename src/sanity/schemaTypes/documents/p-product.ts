@@ -1,4 +1,9 @@
-import { pickLocalizedValue, DEFAULT_LOCALE } from '@/lib/i18n';
+import {
+	pickLocalizedValue,
+	DEFAULT_LOCALE,
+	requireSomeValue,
+	maxLengthPerLanguage,
+} from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
 import { StarIcon, ImageIcon } from '@sanity/icons';
@@ -21,26 +26,6 @@ function linkedToShopify(context: ValidationContext): boolean {
 		| { shopify?: { handle?: string } }
 		| undefined;
 	return Boolean(doc?.shopify?.handle);
-}
-
-/**
- * Required-ness for internationalizedArray fields: the plugin stores
- * `[{_key, language, value}]`, so `Rule.required()` passes on an array of
- * empty items. "Has at least one non-empty value" is the real requirement —
- * deliberately not "has English": zh-only products exist and simply stay
- * hidden from the locales they carry no copy for.
- */
-export function requireSomeValue(value: unknown): true | string {
-	const items = Array.isArray(value) ? value : [];
-	return items.some(
-		(item) =>
-			item &&
-			typeof item === 'object' &&
-			'value' in item &&
-			Boolean((item as { value?: unknown }).value)
-	)
-		? true
-		: 'Required in at least one language';
 }
 
 export const pProduct = defineType({
@@ -173,14 +158,9 @@ export const pProduct = defineType({
 			type: 'internationalizedArrayText',
 			description: 'Short description shown on listing cards',
 			validation: (Rule) =>
-				Rule.custom((value: unknown) => {
-					const long = (Array.isArray(value) ? value : []).some(
-						(item) =>
-							typeof (item as { value?: unknown })?.value === 'string' &&
-							((item as { value: string }).value.length > 200)
-					);
-					return long ? 'Keep under 200 characters' : true;
-				}).warning(),
+				Rule.custom(
+					maxLengthPerLanguage(200, 'Keep under 200 characters')
+				).warning(),
 		}),
 		defineField({
 			name: 'content',

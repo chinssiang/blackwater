@@ -29,6 +29,53 @@ export function pickLocalizedValue(value: unknown): string | undefined {
 	return undefined;
 }
 
+/**
+ * Validators for internationalizedArray fields, which the plugin stores as
+ * `[{_key, language, value}]`. They live here, not beside their first caller, so
+ * schema files don't have to import one another to share them.
+ */
+
+/** True when any language carries a non-empty value. */
+function hasSomeI18nValue(value: unknown): boolean {
+	const items = Array.isArray(value) ? value : [];
+	return items.some(
+		(item) =>
+			item &&
+			typeof item === 'object' &&
+			'value' in item &&
+			Boolean((item as { value?: unknown }).value)
+	);
+}
+
+/**
+ * `Rule.required()` passes on an array of empty per-language items, so this is
+ * the real requirement. Deliberately not "has English": zh-only documents exist
+ * and simply stay hidden from the locales they carry no copy for.
+ */
+export function requireSomeValue(value: unknown): true | string {
+	return hasSomeI18nValue(value) ? true : 'Required in at least one language';
+}
+
+/** True when an internationalizedArray field carries no copy in any language. */
+export function isEmptyI18nValue(value: unknown): boolean {
+	return !hasSomeI18nValue(value);
+}
+
+/**
+ * `Rule.max(n)` can't reach inside the per-language items, so length caps go
+ * through this instead. Returns a validator, so pass it to `Rule.custom(...)`.
+ */
+export function maxLengthPerLanguage(limit: number, message: string) {
+	return (value: unknown): true | string => {
+		const items = Array.isArray(value) ? value : [];
+		const tooLong = items.some((item) => {
+			const itemValue = (item as { value?: unknown })?.value;
+			return typeof itemValue === 'string' && itemValue.length > limit;
+		});
+		return tooLong ? message : true;
+	};
+}
+
 export function isLocale(value: unknown): value is Locale {
 	return (
 		typeof value === 'string' && (LOCALES as readonly string[]).includes(value)

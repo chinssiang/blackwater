@@ -50,11 +50,16 @@ const commonPlugins = [
 	internationalizedArray({
 		languages: SANITY_LANGUAGES,
 		defaultLanguages: ['en'],
-		// 'portableTextSimple' is a registered alias type (objects/portable-text-
-		// simple.ts), which is what the plugin requires for non-primitive members.
-		// It generates internationalizedArrayPortableTextSimple, used by the
-		// product family's rich-text fields.
-		fieldTypes: ['string', 'text', 'portableTextSimple'],
+		// 'portableTextSimple' and 'portableText' are registered alias types
+		// (objects/portable-text-simple.ts, objects/portable-text.tsx), which is
+		// what the plugin requires for non-primitive members. They generate
+		// internationalizedArrayPortableTextSimple — the product family's
+		// rich-text fields — and internationalizedArrayPortableText, used by
+		// pEvent.content. The plugin builds both wrapper types generically from
+		// whatever named type it is handed, so the full portableText (headings,
+		// lists, images, iframes, CTA annotations) survives the wrapping intact;
+		// events keep the richer editor rather than being downgraded to simple.
+		fieldTypes: ['string', 'text', 'portableTextSimple', 'portableText'],
 		// Hide the plugin's "Add missing languages" button: combined with the
 		// language filter below it is a trap. The plugin decides whether to show
 		// it with checkAllLanguagesArePresent(filteredLanguages, value), which

@@ -50,6 +50,14 @@ const client = createClient({
 	apiVersion: '2025-02-19',
 	token: TOKEN,
 	useCdn: false,
+	// 'raw' is load-bearing. @sanity/client defaults to the `drafts` perspective,
+	// which overlays a draft onto its published id — so `_id in path("drafts.**")`
+	// matches nothing, the "publish or discard your drafts first" guard below
+	// silently passes, and every read returns DRAFT content that the merge would
+	// then publish. (Found while writing scripts/merge-event-i18n.mjs, where the
+	// dataset actually had stale drafts; back-ported here because this migration
+	// has not run against prod yet.)
+	perspective: 'raw',
 });
 
 const VALUE_TYPES = {
@@ -78,7 +86,7 @@ function wrap(kind, byLanguage) {
 }
 
 const isWrapped = (v) =>
-	Array.isArray(v) && v.every((x) => x && typeof x === 'object' && '_key' in x && 'language' in x && '_type' in x && String(x._type).startsWith('internationalizedArray'));
+	Array.isArray(v) && v.length > 0 && v.every((x) => x && typeof x === 'object' && '_key' in x && 'language' in x && '_type' in x && String(x._type).startsWith('internationalizedArray'));
 
 /**
  * Content the merge carried across from the zh sibling that a naive
@@ -416,6 +424,8 @@ function applySeo(merged, canonical, zh, cl, zl) {
 	if (seoDescription) merged.seoDescription = seoDescription;
 	if (canonical.sharing?.shareGraphic)
 		merged.shareGraphic = canonical.sharing.shareGraphic;
+	else if (zh?.sharing?.shareGraphic)
+		merged.shareGraphic = zh.sharing.shareGraphic;
 	if (canonical.sharing?.disableIndex !== undefined)
 		merged.disableIndex = canonical.sharing.disableIndex;
 }

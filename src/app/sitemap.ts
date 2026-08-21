@@ -20,8 +20,8 @@ type SitemapDoc = {
 	/** Document-level i18n types: the language of this document row. */
 	language?: string;
 	/**
-	 * Field-level i18n types (the product family): every locale this single
-	 * document is translated into, derived in GROQ from title[].language.
+	 * Field-level i18n types (the product and event families): every locale this
+	 * single document is translated into, derived in GROQ from title[].language.
 	 */
 	locales?: Array<string | null> | null;
 };

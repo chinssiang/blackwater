@@ -4,26 +4,25 @@ import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pEventsQuery } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineMetadata, {
+	normalizeLocales,
+	omitPageMetadata,
+} from '@/lib/defineMetadata';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
 import { buildEventName } from '@/lib/buildEventName';
 import { formatRichDate } from '@/lib/event-date';
 import JsonLd from '@/components/JsonLd';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
-import type { RichDate } from 'sanity.types';
+import type { PEventsQueryResult } from 'sanity.types';
 import { PageEvents } from './_components/PageEvents';
 
 const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 
-type EventListItem = {
-	title?: string;
-	subtitle?: string;
-	slug?: string;
-	location?: string;
-	locationRef?: { name?: string | null } | null;
-	eventDatetime?: RichDate | null;
-};
+// Derived, not hand-written: the ItemList reads a subset of the projected
+// fields, and pinning it to the query result means adding a field to
+// `eventCardFields` can never silently drift from what this consumes.
+type EventListItem = NonNullable<PEventsQueryResult>['eventList'][number];
 
 function defineEventsItemListJsonLd(
 	eventList: Array<EventListItem>,
@@ -79,12 +78,16 @@ function getEventsCutoff(): string {
 	return cutoff.toISOString();
 }
 
-const getCachedEventsData = cache(async (locale: string) =>
-	sanityFetch({
-		query: pEventsQuery,
-		params: { locale, cutoff: getEventsCutoff() },
-		tags: ['pEvents', 'pEvent'],
-	})
+// Annotated, not inferred: `pEventsQuery` is built from interpolated helpers, so
+// TypeScript cannot fold it into the string literal that indexes Sanity's
+// query→result map, and `data` would silently arrive as `any`.
+const getCachedEventsData = cache(
+	async (locale: string): Promise<{ data: PEventsQueryResult }> =>
+		sanityFetch({
+			query: pEventsQuery,
+			params: { locale, cutoff: getEventsCutoff() },
+			tags: ['pEvents', 'pEvent'],
+		})
 );
 
 type Props = { params: Promise<{ locale: string }> };
@@ -135,7 +138,7 @@ export default async function Page(props: Props) {
 	return (
 		<>
 			{itemListJsonLd && <JsonLd data={itemListJsonLd} />}
-			<PageEvents data={{ groupedEvents, ...data }} />
+			<PageEvents data={omitPageMetadata({ ...data, groupedEvents })} />
 		</>
 	);
 }

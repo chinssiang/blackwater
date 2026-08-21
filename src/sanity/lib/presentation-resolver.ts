@@ -53,6 +53,8 @@ export const mainDocuments = defineDocuments([
 	...withLocales('/products/:slug', 'pProduct', BY_SLUG),
 	...withLocales('/products/categories/:slug', 'pProductCategory', BY_SLUG),
 	...withLocales('/products/collections/:slug', 'pProductCollection', BY_SLUG),
+	...withLocales('/events', 'pEvents'),
+	...withLocales('/events/:slug', 'pEvent', BY_SLUG),
 ]);
 
 function locationsForAll(documentType: string, title: string, slug?: string | null) {
@@ -60,6 +62,33 @@ function locationsForAll(documentType: string, title: string, slug?: string | nu
 		title: locale === 'en' ? title : `${title} (${locale})`,
 		href: resolveHref({ documentType, slug, locale: locale as Locale }) || '',
 	}));
+}
+
+/**
+ * `defineLocations` for a FIELD-level localized type: one document serves every
+ * locale route, so it offers one location per locale rather than deriving one
+ * from `language`.
+ *
+ * `title` is an internationalizedArrayString, so it is selected under a
+ * NON-reserved key — Sanity's preview.select validator only checks the reserved
+ * title/subtitle/media keys, and would flag the raw array under `title` — then
+ * unwrapped in resolve.
+ */
+function fieldLevelLocations(documentType: string) {
+	return defineLocations({
+		select: { titleI18n: 'title', slug: 'slug.current' },
+		resolve: (doc) => ({
+			locations: LOCALES.map((locale) => ({
+				title: `${pickLocalizedValue(doc?.titleI18n) || 'Untitled'}${locale === 'en' ? '' : ` (${locale})`}`,
+				href:
+					resolveHref({
+						documentType,
+						slug: doc?.slug,
+						locale: locale as Locale,
+					}) || '',
+			})),
+		}),
+	});
 }
 
 export const locations = {
@@ -127,23 +156,13 @@ export const locations = {
 		tone: 'positive',
 		locations: locationsForAll('pProductIndex', 'Products'),
 	}),
-	pProduct: defineLocations({
-		// Same treatment as pProductCategory below: title is an
-		// internationalizedArrayString, selected under a non-reserved key and
-		// unwrapped in resolve. One document now serves both locale routes, so it
-		// offers a location for each rather than one derived from `language`.
-		select: { titleI18n: 'title', slug: 'slug.current' },
-		resolve: (doc) => ({
-			locations: LOCALES.map((locale) => ({
-				title: `${pickLocalizedValue(doc?.titleI18n) || 'Untitled'}${locale === 'en' ? '' : ` (${locale})`}`,
-				href: resolveHref({
-					documentType: 'pProduct',
-					slug: doc?.slug,
-					locale: locale as Locale,
-				}) || '',
-			})),
-		}),
+	pProduct: fieldLevelLocations('pProduct'),
+	pEvents: defineLocations({
+		message: 'This document is used to render the events index',
+		tone: 'positive',
+		locations: locationsForAll('pEvents', 'Events'),
 	}),
+	pEvent: fieldLevelLocations('pEvent'),
 	pProductCategory: defineLocations({
 		// title is an internationalizedArrayString. Select it under a NON-reserved
 		// key so Sanity's preview.select validator (which only checks reserved keys
@@ -161,17 +180,5 @@ export const locations = {
 			],
 		}),
 	}),
-	pProductCollection: defineLocations({
-		select: { titleI18n: 'title', slug: 'slug.current' },
-		resolve: (doc) => ({
-			locations: LOCALES.map((locale) => ({
-				title: `${pickLocalizedValue(doc?.titleI18n) || 'Untitled'}${locale === 'en' ? '' : ` (${locale})`}`,
-				href: resolveHref({
-					documentType: 'pProductCollection',
-					slug: doc?.slug,
-					locale: locale as Locale,
-				}) || '',
-			})),
-		}),
-	}),
+	pProductCollection: fieldLevelLocations('pProductCollection'),
 };

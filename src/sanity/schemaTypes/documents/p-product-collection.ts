@@ -1,5 +1,4 @@
-import { pickLocalizedValue } from '@/lib/i18n';
-import { requireSomeValue } from '@/sanity/schemaTypes/documents/p-product';
+import { pickLocalizedValue, requireSomeValue } from '@/lib/i18n';
 import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { StackIcon } from '@sanity/icons';

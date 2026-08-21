@@ -11,14 +11,21 @@ import {
 	isLocale,
 } from '@/lib/i18n';
 
+// `null` as well as `undefined` throughout: GROQ projects a missing field as
+// null, so a page that passes a properly typed query result — rather than the
+// `any` most of them still infer — would otherwise fail to compile here. Every
+// read below goes through `||`, which treats the two the same.
 type Props = {
+	// Nullable as a whole, not just per field: the body already destructures
+	// `data || {}`, so a missing document has always been supported at runtime —
+	// requiring an object only forced callers to invent an empty one.
 	data: {
 		sharing?: any;
-		title?: string;
-		isHomepage?: boolean;
-		_type?: string;
-		slug?: string;
-	};
+		title?: string | null;
+		isHomepage?: boolean | null;
+		_type?: string | null;
+		slug?: string | null;
+	} | null;
 	locale?: Locale;
 	availableLocales?: Locale[];
 };
