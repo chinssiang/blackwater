@@ -1,6 +1,5 @@
 import DraftModeTools from '@/components/DraftModeTools';
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import VercelAnalytics from '@/components/layout/VercelAnalytics';
 import { stegaClean } from '@sanity/client/stega';
 import localFont from 'next/font/local';
 import { Toaster } from 'sonner';
@@ -102,8 +101,7 @@ export default function HtmlShell({
 						{children}
 						<Toaster />
 						<DraftModeTools enabled={isDraftModeEnabled} />
-						<Analytics />
-						<SpeedInsights />
+						<VercelAnalytics />
 						<ConsentBanner
 							settings={cleanData?.consent ?? null}
 							fallback={consentFallback}

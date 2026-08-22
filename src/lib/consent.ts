@@ -67,11 +67,81 @@ export function readConsentRawClient(): string | null {
 	return match?.split('=').slice(1).join('=') ?? null;
 }
 
+// The domain to scope the consent cookie to, or null to leave it host-only.
+//
+// Without a Domain the cookie is host-only, so a decision made on the apex does
+// not apply on www (or vice versa) and the visitor is prompted twice. Stripping
+// a leading `www.` yields the registrable domain for this site's shape, and a
+// Domain cookie is visible to that domain and its subdomains. Deliberately
+// conservative: localhost, IP literals and single-label hosts get null, because
+// browsers reject Domain attributes there and a rejected Set-Cookie would lose
+// the decision entirely.
+function consentCookieDomain(): string | null {
+	const host = window.location.hostname;
+	if (
+		host === 'localhost' ||
+		host.endsWith('.localhost') ||
+		/^\[?[\d.:]+\]?$/.test(host) ||
+		!host.includes('.')
+	) {
+		return null;
+	}
+	return host.startsWith('www.') ? host.slice(4) : host;
+}
+
 // Persist a decision in the cookie (client-side).
 export function writeConsentClient(categories: ConsentCategories): void {
 	if (typeof document === 'undefined') return;
 	const secure = window.location.protocol === 'https:' ? '; Secure' : '';
-	document.cookie = `${CONSENT_COOKIE}=${serializeConsent(categories)}; Path=/; Max-Age=${CONSENT_MAX_AGE}; SameSite=Lax${secure}`;
+	const domain = consentCookieDomain();
+	const domainAttr = domain ? `; Domain=${domain}` : '';
+	document.cookie = `${CONSENT_COOKIE}=${serializeConsent(categories)}; Path=/; Max-Age=${CONSENT_MAX_AGE}; SameSite=Lax${domainAttr}${secure}`;
+}
+
+// Cookies Google's tags set, by name or prefix: _ga (client id), _ga_<ID>
+// (session state), _gid, _gcl_au / _gac_* (Ads click ids).
+const TRACKING_COOKIE_PREFIXES = ['_ga', '_gid', '_gat', '_gcl_au', '_gac_'];
+
+/**
+ * Expire Google's cookies after consent is withdrawn.
+ *
+ * `gtag('consent','update',{analytics_storage:'denied'})` stops new writes but
+ * does not delete what is already stored — so without this a visitor who
+ * accepted and later declined kept their `_ga` client id for up to two years,
+ * which is the withdrawal case regulators actually look at.
+ *
+ * A cookie can only be expired by a Set-Cookie whose name, Path and Domain all
+ * match, and gtag writes `_ga` against the registrable domain — which the page
+ * cannot read back. So every plausible scoping is attempted; the ones that do
+ * not match are inert.
+ */
+export function clearTrackingCookies(): void {
+	if (typeof document === 'undefined') return;
+	const names = new Set(
+		document.cookie
+			.split('; ')
+			.map((row) => row.split('=')[0])
+			.filter((name) =>
+				TRACKING_COOKIE_PREFIXES.some((prefix) => name.startsWith(prefix))
+			)
+	);
+	if (names.size === 0) return;
+
+	const host = window.location.hostname;
+	const registrable = host.startsWith('www.') ? host.slice(4) : host;
+	const scopes = [
+		'',
+		`; Domain=${host}`,
+		`; Domain=.${host}`,
+		...(registrable !== host
+			? [`; Domain=${registrable}`, `; Domain=.${registrable}`]
+			: []),
+	];
+	for (const name of names) {
+		for (const scope of scopes) {
+			document.cookie = `${name}=; Path=/; Max-Age=0${scope}`;
+		}
+	}
 }
 
 // Map our categories to Google Consent Mode v2 signals. Necessary buckets stay

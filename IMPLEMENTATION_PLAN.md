@@ -399,7 +399,7 @@ build pass.
 - Gate GTM on analytics OR marketing; gate Vercel Analytics on a decision.
 - Share the consent cookie across apex/www.
 - Fix the stale "gates Klaviyo onsite tracking" editor description.
-**Status**: Not Started
+**Status**: Complete
 
 ## Stage 8: Should-fix — routing, metadata, dead code
 **Goal**: No indexable duplicates, no link-picker dead ends, no stale copies.
