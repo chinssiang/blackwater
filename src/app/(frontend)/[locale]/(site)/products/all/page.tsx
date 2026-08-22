@@ -4,7 +4,7 @@ import { cache } from 'react';
 import { type Locale, LOCALES, localizePath } from '@/lib/i18n';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductsAllQuery } from '@/sanity/lib/queries';
-import defineMetadata from '@/lib/defineMetadata';
+import defineMetadata, { notFoundMetadata } from '@/lib/defineMetadata';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
@@ -41,6 +41,15 @@ export async function generateMetadata({
 	]);
 	const dict = await getDictionary(locale);
 	const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
+
+	// Beyond the last page the component below renders NotFoundContent at HTTP
+	// 200, so this must de-index rather than emit a canonical that legitimises an
+	// unbounded ?page= space. Same cache() call and arguments as the component,
+	// so this costs no extra fetch.
+	const start = (page - 1) * PAGE_SIZE;
+	const { data: pageData } = await getCachedData(locale, start, start + PAGE_SIZE);
+	const totalPages = Math.max(1, Math.ceil((pageData?.total ?? 0) / PAGE_SIZE));
+	if (!pageData || page > totalPages) return notFoundMetadata();
 
 	const base = defineMetadata({
 		data: {

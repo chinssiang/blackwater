@@ -74,16 +74,22 @@ export default async function sitemap({
 
 	try {
 		const docs =
-			(await client.fetch<SitemapDoc[]>(
-				query,
-				{},
-				{
-					next: {
-						revalidate: false,
-						tags: SITEMAP_TAGS[resolvedId] ?? [],
-					},
-				}
-			)) ?? [];
+			(await client
+				// useCdn: false because this read is tag-cached under revalidate:false.
+				// Through the CDN, the re-fetch a tag invalidation triggers can return
+				// data up to ~60s stale and then persist until the next invalidation —
+				// the case src/sanity/lib/client.ts's own comment warns about.
+				.withConfig({ useCdn: false })
+				.fetch<SitemapDoc[]>(
+					query,
+					{},
+					{
+						next: {
+							revalidate: false,
+							tags: SITEMAP_TAGS[resolvedId] ?? [],
+						},
+					}
+				)) ?? [];
 
 		// Group documents by their URL identity (type + slug).
 		// Each group may contain multiple rows — one per locale.

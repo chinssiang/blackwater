@@ -17,7 +17,17 @@ const bodySchema = z.object({
 	// GID. Recorded so restock campaigns can segment on something sturdier than
 	// a display title an editor can rename.
 	variantGid: z.string().trim().max(200).nullish(),
-	variantOptions: z.record(z.string(), z.string()).nullish(),
+	// Bounded like every sibling field: this is forwarded verbatim to Klaviyo
+	// (as VariantOptions, and joined into VariantLabel), so an unbounded record
+	// would let a scripted client pollute the metric with junk properties or
+	// push the event past Klaviyo's payload limits. A real Shopify product has
+	// at most a handful of options.
+	variantOptions: z
+		.record(z.string().max(50), z.string().max(100))
+		.refine((v) => Object.keys(v).length <= 10, {
+			message: 'Too many variant options.',
+		})
+		.nullish(),
 });
 
 // Best-effort per-IP throttle. In-memory, so it's per server instance — not

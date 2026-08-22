@@ -95,6 +95,16 @@ export function writeConsentClient(categories: ConsentCategories): void {
 	const secure = window.location.protocol === 'https:' ? '; Secure' : '';
 	const domain = consentCookieDomain();
 	const domainAttr = domain ? `; Domain=${domain}` : '';
+	// Expire the host-only variant first. A cookie's identity is (name, domain,
+	// path), so on a subdomain the pre-existing host-only cookie
+	// (domain "www.example.com") is NOT replaced by a Domain=example.com write —
+	// both are then sent, and readConsentRawClient takes the first, which per
+	// RFC 6265 §5.4 is the older host-only one. Without this the decision below
+	// would be written and immediately shadowed by the stale value, so changing
+	// or withdrawing consent would silently do nothing.
+	if (domain) {
+		document.cookie = `${CONSENT_COOKIE}=; Path=/; Max-Age=0`;
+	}
 	document.cookie = `${CONSENT_COOKIE}=${serializeConsent(categories)}; Path=/; Max-Age=${CONSENT_MAX_AGE}; SameSite=Lax${domainAttr}${secure}`;
 }
 

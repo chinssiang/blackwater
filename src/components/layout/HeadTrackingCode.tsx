@@ -131,13 +131,17 @@ export default function HeadTrackingCode({
 
 	return (
 		<>
-			{/* Inside the consent gate on purpose: a preconnect performs DNS + TCP +
-			    TLS to Google, which discloses the visitor's IP before any tag runs.
-			    Warming it unconditionally would contradict the gating the rest of
-			    this component does — and warming it with no id configured would
-			    disclose it for a request that never follows. */}
-			{loadGtm && (gaID || gtmID) && (
+			{/* One preconnect per host, each gated on exactly the condition that
+			    loads from that host. A preconnect performs DNS + TCP + TLS, which
+			    discloses the visitor's IP — so warming a host no tag will fetch from
+			    is the same leak the gating exists to prevent. GA fetches from
+			    google-analytics.com; GTM's container fetches from googletagmanager.com,
+			    so neither gate can stand in for the other. */}
+			{consent.analytics && gaID && (
 				<link rel="preconnect" href="https://www.google-analytics.com" />
+			)}
+			{loadGtm && gtmID && (
+				<link rel="preconnect" href="https://www.googletagmanager.com" />
 			)}
 			{consent.analytics && gaID && <GoogleAnalytics gaId={gaID} />}
 			{loadGtm && gtmID && <GoogleTagManager gtmId={gtmID} />}
