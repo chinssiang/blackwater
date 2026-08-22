@@ -29,9 +29,10 @@ export type EventNameParts = {
  * locale-aware date. Shared by the events ItemList (index) and the Event
  * JSON-LD (detail) so the carousel item and its target page agree.
  *
- * Inputs are expected to be already locale-resolved (pEvent is document-level
- * i18n; locationRef.name is coalesced per locale upstream), so the only
- * locale-dependent formatting here is the date — there is no hardcoded text.
+ * Inputs are expected to be already locale-resolved (pEvent is field-level
+ * i18n, so title/subtitle are coalesced per locale in GROQ, as is
+ * locationRef.name), so the only locale-dependent formatting here is the date
+ * — there is no hardcoded text.
  */
 export function buildEventName(parts: EventNameParts, locale: Locale): string {
 	const { title, subtitle, location, eventDatetime, timezone } = parts;

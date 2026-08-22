@@ -313,9 +313,10 @@ export function PageEvents({ data }: PageEventsProps) {
 							locationLink,
 						} = item || {};
 
-						const locationRef = (item as any)?.locationRef as
-							| { name?: string | null; mapLink?: string | null }
-							| undefined;
+						// The generated query type already carries locationRef; the cast
+						// this replaces would have hidden it if eventCardFields ever
+						// dropped the deref.
+						const locationRef = item?.locationRef;
 						const displayLocation = locationRef?.name || location;
 						const displayLocationLink = locationRef?.mapLink || locationLink;
 

@@ -163,22 +163,9 @@ export const locations = {
 		locations: locationsForAll('pEvents', 'Events'),
 	}),
 	pEvent: fieldLevelLocations('pEvent'),
-	pProductCategory: defineLocations({
-		// title is an internationalizedArrayString. Select it under a NON-reserved
-		// key so Sanity's preview.select validator (which only checks reserved keys
-		// title/subtitle/media) doesn't flag the raw array; unwrap it in resolve.
-		select: { titleI18n: 'title', slug: 'slug.current' },
-		resolve: (doc) => ({
-			locations: [
-				{
-					title: pickLocalizedValue(doc?.titleI18n) || 'Untitled',
-					href: resolveHref({
-						documentType: 'pProductCategory',
-						slug: doc?.slug,
-					}) || '',
-				},
-			],
-		}),
-	}),
+	// Same helper as its field-level siblings. Hand-rolled, this emitted a single
+	// location with no locale — so editors got no /zh_tw/products/categories/…
+	// entry even though that URL renders.
+	pProductCategory: fieldLevelLocations('pProductCategory'),
 	pProductCollection: fieldLevelLocations('pProductCollection'),
 };

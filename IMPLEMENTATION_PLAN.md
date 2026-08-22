@@ -411,5 +411,10 @@ build pass.
   to the GROQ literal, blog types dropped from the picker.
 - Delete the stale duplicate `defineEventJsonLd`; drop the `as any` cast in
   PageEvents; fix the stale i18n comment in buildEventName.
-- Shopify webhook: topic allowlist.
-**Status**: Not Started
+- Shopify webhook: topic allowlist (done in Stage 5).
+**Status**: Complete
+
+Not done, deliberately — see the summary: fallback-locale pages still render an
+English fallback at /zh_tw/... while advertising no zh alternate. Making the
+canonical point at the owning locale is a real SEO decision (it hides the
+fallback page from search entirely), so it wants a call rather than a default.

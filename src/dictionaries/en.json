@@ -43,6 +43,8 @@
 		"categoriesTitle": "Categories",
 		"collectionsTitle": "Collections",
 		"categoriesDescription": "Browse our product categories.",
+		"collectionsDescription": "Browse our product collections.",
+		"allProductsDescription": "Every product the club has vetted, in one list.",
 		"allCategories": "All categories",
 		"allCollection": "All {collection}",
 		"whyUseIt": "Why do we use it?",

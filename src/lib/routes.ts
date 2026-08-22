@@ -15,6 +15,9 @@ export const DOCUMENT_ROUTES = [
 	{ type: 'pHome', path: '/', slug: false },
 	{ type: 'pGeneral', path: '/', slug: true },
 	{ type: 'pProductIndex', path: '/products', slug: false },
+	// Synthetic route (no backing document) — lets the paginated all-products
+	// listing reuse resolveHref/defineMetadata for canonical + hreflang.
+	{ type: 'pProductsAllIndex', path: '/products/all', slug: false },
 	{ type: 'pProduct', path: '/products/', slug: true },
 	// Synthetic route (no backing document) — lets the categories index page
 	// reuse resolveHref/defineMetadata for canonical + hreflang.
@@ -138,6 +141,7 @@ export const resolvedHrefGroq = `select(
 					_type == "pContact" => "/contact",
 					_type == "pFaq" => "/faq",
 					_type == "pSizeGuide" => "/size-guide",
+					_type == "pNewsletter" => "/newsletter",
 					defined(slug.current) => "/" + slug.current,
 					null
 				)
