@@ -15,7 +15,9 @@ import type { PortableTextSimple } from 'sanity.types';
 type FormState = 'idle' | 'submitting' | 'success';
 
 type NewsletterData = {
-	klaviyoListID?: string | null;
+	/** Resolved by the query, not read from one document's raw field — see the
+	 *  note on `newsletterFormFields` in queries.ts. */
+	signupEnabled?: boolean | null;
 	heading?: string | null;
 	subheading?: string | null;
 	submitButtonText?: string | null;
@@ -41,7 +43,7 @@ export function Newsletter({
 	placement?: 'footer' | 'page';
 }) {
 	const {
-		klaviyoListID,
+		signupEnabled,
 		heading,
 		subheading,
 		submitButtonText,
@@ -92,7 +94,10 @@ export function Newsletter({
 		return () => observer.disconnect();
 	}, [formState]);
 
-	if (!klaviyoListID) return null;
+	// Nothing to render when no locale has a Klaviyo list configured: the route
+	// would answer 500 for every submission. Deliberately NOT a check on this
+	// locale's own list id — see `newsletterFormFields` in queries.ts.
+	if (!signupEnabled) return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -109,8 +114,8 @@ export function Newsletter({
 			const res = await fetch('/api/newsletter/subscribe', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				// The Klaviyo list is resolved server-side per locale; klaviyoListID
-				// here only gates whether the form renders at all.
+				// The Klaviyo list is resolved server-side from `locale`; the client
+				// only says which locale it is rendering in.
 				body: JSON.stringify({ email, locale, placement }),
 			});
 
@@ -125,6 +130,15 @@ export function Newsletter({
 				});
 				setFormState('idle');
 			} else {
+				// The visitor-facing copy stays generic, but the route's own reason
+				// (unconfigured list, Klaviyo rejection) is the only signal a
+				// per-locale misconfiguration ever produces — so don't swallow it.
+				console.error(
+					'[newsletter] subscribe failed',
+					locale,
+					res.status,
+					await res.text()
+				);
 				toast.error(errorHeading || t.errorHeading, {
 					description: errorBody || t.errorBody,
 				});

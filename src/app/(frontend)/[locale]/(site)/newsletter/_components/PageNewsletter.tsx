@@ -3,7 +3,7 @@ import { Newsletter } from '@/components/layout/Newsletter';
 import type { PortableTextSimple } from 'sanity.types';
 
 interface NewsletterFormData {
-	klaviyoListID?: string | null;
+	signupEnabled?: boolean | null;
 	heading?: string | null;
 	subheading?: string | null;
 	submitButtonText?: string | null;

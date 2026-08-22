@@ -326,7 +326,21 @@ const availableLocalesField = `
 // Reusable projection for the gNewsletter signup form. Shared by siteDataQuery
 // (footer form) and pageNewsletterQuery (dedicated /newsletter page).
 const newsletterFormFields = `
-	klaviyoListID,
+	// Whether a signup can actually complete, resolved exactly the way
+	// newsletterConfigQuery resolves the list: this locale's document if it
+	// carries one, otherwise any locale that does. gNewsletter is
+	// document-localized, so fallback is whole-document — a zh_tw document that
+	// exists but has no klaviyoListID does NOT inherit the English one, and the
+	// form used to gate itself on that raw field. The result was a /zh_tw footer
+	// with no form at all while /api/newsletter/subscribe could have subscribed
+	// against the English list perfectly well.
+	// The id itself stays out of the projection on purpose: the client no longer
+	// chooses the list, and this object is handed to <Layout>, i.e. serialized
+	// into the RSC payload of every page on the site.
+	"signupEnabled": defined(coalesce(
+		klaviyoListID,
+		*[_type == "gNewsletter" && defined(klaviyoListID)][0].klaviyoListID
+	)),
 	heading,
 	subheading,
 	submitButtonText,

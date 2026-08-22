@@ -94,7 +94,11 @@ export async function POST(req: NextRequest) {
 			{ locale },
 			{ stega: false }
 		);
-		listId = config?.listId;
+		// Trimmed: this is a hand-pasted id, and a stray newline turns every
+		// submission for that locale into a Klaviyo 404 the visitor sees as a
+		// generic failure. A whitespace-only value falls through to the guard
+		// below rather than being sent.
+		listId = config?.listId?.trim();
 	} catch (err) {
 		console.error('[newsletter] failed to fetch config', err);
 		return NextResponse.json(
@@ -103,7 +107,12 @@ export async function POST(req: NextRequest) {
 		);
 	}
 	if (!listId) {
-		console.error('[newsletter] gNewsletter.klaviyoListID is not configured');
+		// The locale matters: gNewsletter is document-localized, so this fires
+		// when neither this locale's document nor any other carries a list.
+		console.error(
+			'[newsletter] no gNewsletter.klaviyoListID configured for locale',
+			locale
+		);
 		return NextResponse.json(
 			{ ok: false, message: 'Newsletter signup is not configured.' },
 			{ status: 500 }
@@ -150,7 +159,12 @@ export async function POST(req: NextRequest) {
 
 		if (!res.ok) {
 			const body = await res.text();
-			console.error('[newsletter] Klaviyo error', res.status, body);
+			console.error(
+				'[newsletter] Klaviyo error',
+				res.status,
+				`locale=${locale} list=${listId}`,
+				body
+			);
 			return NextResponse.json(
 				{ ok: false, message: 'Subscription failed.' },
 				{ status: 502 }
