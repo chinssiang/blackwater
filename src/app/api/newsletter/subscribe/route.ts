@@ -94,8 +94,9 @@ export async function POST(req: NextRequest) {
 			{ locale },
 			{ stega: false }
 		);
-		// Hand-pasted id: a stray newline 404s every submission for this locale.
-		listId = config?.listId?.trim();
+		// No normalizing here: the gate reads the same expression, and anything
+		// this trimmed away it would still consider configured.
+		listId = config.listId;
 	} catch (err) {
 		console.error('[newsletter] failed to fetch config', err);
 		return NextResponse.json(

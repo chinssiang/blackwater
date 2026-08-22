@@ -324,15 +324,20 @@ const availableLocalesField = `
 `;
 
 // The Klaviyo list a signup goes to: this locale's gNewsletter document if it
-// carries one, else the English fallback. gNewsletter is document-localized, so
-// fallback is whole-document — a zh_tw document that exists but has no
-// klaviyoListID does NOT inherit the English one — which is why the form's gate
-// reads this expression and not its own document's field. Written once because
-// the two disagreeing IS the bug: gating on the raw field left /zh_tw with no
-// footer form at all while the route would have subscribed against `en` fine.
+// carries one, else the next document `byLocale` prefers (English, then a
+// language-less legacy singleton). Both the form's `signupEnabled` gate and
+// /api/newsletter/subscribe read THIS expression, so they cannot disagree about
+// whether a signup is possible — gating the form on its own document's field
+// instead is what left /zh_tw with no footer form at all.
+//
+// `!= ""` is load-bearing: GROQ's `defined("")` is true, so without it a blank
+// id would both satisfy the gate and shadow the working English fallback. A
+// whitespace-only id still slips through (GROQ has no trim) and reaches Klaviyo
+// as a bad list — catching that belongs in schema validation, not here, so that
+// the editor who pasted it is the one who hears about it.
 const newsletterListId = `${byLocale(
 	'gNewsletter'
-)}[defined(klaviyoListID)][0].klaviyoListID`;
+)}[defined(klaviyoListID) && klaviyoListID != ""][0].klaviyoListID`;
 
 // Reusable projection for the gNewsletter signup form. Shared by siteDataQuery
 // (footer form) and pageNewsletterQuery (dedicated /newsletter page).

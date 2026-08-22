@@ -14,11 +14,11 @@ import type { SiteDataQueryResult } from 'sanity.types';
 
 type FormState = 'idle' | 'submitting' | 'success';
 
-/** The `newsletterFormFields` projection. Derived rather than restated so a
- *  change to that projection cannot leave a stale mirror compiling clean. */
-export type NewsletterData = Partial<
-	NonNullable<SiteDataQueryResult['newsletter']>
->;
+/** The `newsletterFormFields` projection, including its `| null`. Derived
+ *  rather than restated, and deliberately NOT wrapped in `Partial` — with the
+ *  keys required, a projection that drops `signupEnabled` fails to compile
+ *  instead of silently hiding the form. */
+export type NewsletterData = SiteDataQueryResult['newsletter'];
 
 export function Newsletter({
 	data,
@@ -34,18 +34,6 @@ export function Newsletter({
 	 *  both attributed to the footer. */
 	placement?: 'footer' | 'page';
 }) {
-	const {
-		signupEnabled,
-		heading,
-		subheading,
-		submitButtonText,
-		disclaimer,
-		successHeading,
-		successBody,
-		errorHeading,
-		errorBody,
-	} = data || {};
-
 	const t = useTranslations('newsletter');
 	const locale = useLocale();
 
@@ -87,7 +75,18 @@ export function Newsletter({
 	}, [formState]);
 
 	// Not this locale's own list id — see `newsletterFormFields` in queries.ts.
-	if (!signupEnabled) return null;
+	if (!data?.signupEnabled) return null;
+
+	const {
+		heading,
+		subheading,
+		submitButtonText,
+		disclaimer,
+		successHeading,
+		successBody,
+		errorHeading,
+		errorBody,
+	} = data;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -122,15 +121,9 @@ export function Newsletter({
 					description: errorBody || t.errorBody,
 				});
 				setFormState('idle');
-				// Logged after the toast so draining the body doesn't delay it. The
-				// route's reason is the only signal a misconfigured list produces.
-				const detail = await res.text();
-				console.error(
-					'[newsletter] subscribe failed',
-					locale,
-					res.status,
-					detail
-				);
+				// Status only: the body is one of a few constant sentences, and the
+				// route logs the real cause (locale, list, Klaviyo's reply) server-side.
+				console.error('[newsletter] subscribe failed', locale, res.status);
 			}
 		} catch {
 			toast.error(errorHeading || t.errorHeading, {
