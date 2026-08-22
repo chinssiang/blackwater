@@ -87,6 +87,8 @@
 			"errorHeading": "發生錯誤",
 			"errorBody": "請稍後再試一次。",
 			"invalidEmail": "請輸入有效的電子郵件地址。",
+			"rateLimitedHeading": "嘗試次數過多",
+			"rateLimitedBody": "請稍候幾分鐘後再試。",
 			"ariaLabel": "當 {product} 補貨時通知我"
 		},
 		"gallery": {
@@ -165,8 +167,12 @@
 		"submit": "訂閱",
 		"submitting": "訂閱中…",
 		"invalidEmail": "請輸入有效的電子郵件地址。",
+		"successHeading": "訂閱成功",
+		"successBody": "感謝訂閱 — 請至信箱確認。",
 		"errorHeading": "發生錯誤",
-		"errorBody": "請再試一次。"
+		"errorBody": "請再試一次。",
+		"rateLimitedHeading": "嘗試次數過多",
+		"rateLimitedBody": "請稍候幾分鐘後再試。"
 	},
 	"consent": {
 		"bannerTitle": "我們重視您的隱私",

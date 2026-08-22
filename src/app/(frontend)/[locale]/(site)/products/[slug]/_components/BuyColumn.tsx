@@ -129,11 +129,22 @@ export default function BuyColumn({
 	};
 
 	// Carried into the Klaviyo back-in-stock event so restock campaigns can
-	// segment by the exact variant requested.
+	// segment by the exact variant requested. Three cases, and the third is the
+	// one that matters: a shopper can ask for a combination Shopify has no
+	// variant for (Sand/M never created — the case VariantPicker deliberately
+	// keeps reachable). There is no variant to name then, so the requested
+	// option values are what carries the intent.
+	const selectionLabel = Object.values(selection).filter(Boolean).join(' / ');
 	const backInStockTitle =
 		selectedVariant && selectedVariant.title !== 'Default Title'
 			? `${title ?? ''} — ${selectedVariant.title}`
-			: (title ?? '');
+			: unmatchedSelection && selectionLabel
+				? `${title ?? ''} — ${selectionLabel}`
+				: (title ?? '');
+	// The GID is the only stable, renameable-proof variant identifier; null for
+	// an unmatched combination, which is precisely why the options go too.
+	const backInStockVariantGid = selectedVariant?.gid ?? null;
+	const backInStockOptions = showVariantPicker ? selection : null;
 
 	return (
 		<>
@@ -178,10 +189,17 @@ export default function BuyColumn({
 					>
 						{productText.soldOut}
 					</Button>
-					<BackInStockForm
-						productTitle={backInStockTitle}
-						productSlug={slug ?? ''}
-					/>
+					{/* Both are required server-side (min(1)), so rendering the form
+					    without them would only produce a guaranteed 400 that surfaces
+					    as a generic error toast. */}
+					{slug && backInStockTitle && (
+						<BackInStockForm
+							productTitle={backInStockTitle}
+							productSlug={slug}
+							variantGid={backInStockVariantGid}
+							variantOptions={backInStockOptions}
+						/>
+					)}
 				</div>
 			) : (
 				(purchaseLink || commerce) && (

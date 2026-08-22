@@ -389,7 +389,7 @@ build pass.
 - Back-in-stock sends the variant GID + the requested option values (so a
   never-stocked combination is still segmentable).
 - `custom_source` reflects the actual form placement.
-**Status**: Not Started
+**Status**: Complete
 
 ## Stage 7: Should-fix — consent completeness
 **Goal**: The banner's promises match what the page does.

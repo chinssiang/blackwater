@@ -9,7 +9,15 @@ import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
 // client supplies email + locale only.
 const bodySchema = z.object({
 	email: z.string().trim().email().max(320),
+	// Where the form was rendered, for Klaviyo attribution. Constrained to a
+	// literal union so it can't become an arbitrary label.
+	placement: z.enum(['footer', 'page']).nullish(),
 });
+
+const CUSTOM_SOURCE: Record<'footer' | 'page', string> = {
+	footer: 'Newsletter Footer',
+	page: 'Newsletter Page',
+};
 
 // Best-effort per-IP throttle. In-memory, so it's per server instance — not
 // airtight, but enough to stop naive scripted abuse of an endpoint that writes
@@ -64,7 +72,7 @@ export async function POST(req: NextRequest) {
 			{ status: 400 }
 		);
 	}
-	const { email } = parsed.data;
+	const { email, placement } = parsed.data;
 	const rawLocale = (body as { locale?: unknown }).locale;
 	const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
 
@@ -117,7 +125,7 @@ export async function POST(req: NextRequest) {
 					data: {
 						type: 'profile-subscription-bulk-create-job',
 						attributes: {
-							custom_source: 'Newsletter Footer',
+							custom_source: CUSTOM_SOURCE[placement ?? 'footer'],
 							profiles: {
 								data: [
 									{

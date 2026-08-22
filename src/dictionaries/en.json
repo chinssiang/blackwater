@@ -93,6 +93,8 @@
 			"errorHeading": "Something went wrong",
 			"errorBody": "Please try again in a moment.",
 			"invalidEmail": "Please enter a valid email address.",
+			"rateLimitedHeading": "Too many attempts",
+			"rateLimitedBody": "Please wait a few minutes and try again.",
 			"ariaLabel": "Get notified when {product} is back in stock"
 		},
 		"gallery": {
@@ -171,8 +173,12 @@
 		"submit": "Subscribe",
 		"submitting": "Subscribing…",
 		"invalidEmail": "Please enter a valid email address.",
+		"successHeading": "You're subscribed",
+		"successBody": "Thanks — check your inbox to confirm.",
 		"errorHeading": "Something went wrong",
-		"errorBody": "Please try again."
+		"errorBody": "Please try again.",
+		"rateLimitedHeading": "Too many attempts",
+		"rateLimitedBody": "Please wait a few minutes and try again."
 	},
 	"consent": {
 		"bannerTitle": "We value your privacy",
