@@ -150,11 +150,9 @@ export function PageEventCrew({
 						>
 							Crew briefing
 						</span>
+						{/* Size is deliberately scroll-invariant; only the kicker responds. */}
 						<h1
-							className={cn(
-								'font-bold tracking-tight animate-fade-in transition-all duration-300',
-								scrolled ? 't-h-3' : 't-h-3'
-							)}
+							className="t-h-3 font-bold tracking-tight animate-fade-in"
 							style={{ animationDelay: '0.15s' }}
 						>
 							{monthDisplay}

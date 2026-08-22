@@ -1,10 +1,8 @@
 import { formatInTimeZone } from 'date-fns-tz';
-import { enUS, zhTW } from 'date-fns/locale';
 import type { Locale } from '@/lib/i18n';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 
 const FALLBACK_TIMEZONE = 'Asia/Taipei';
-
-const DATE_FNS_LOCALES = { en: enUS, zh_tw: zhTW } as const;
 
 // Concise, locale-aware date used inside structured-data names (no time).
 const NAME_DATE_FORMAT: Record<Locale, string> = {

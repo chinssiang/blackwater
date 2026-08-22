@@ -24,9 +24,9 @@ import CartCountBadge from './CartCountBadge';
 import { useCart } from './CartProvider';
 
 // Right-side cart panel. Built on raw Radix Dialog + Motion to match
-// MobileMenu (the app's established overlay idiom) rather than ui/Sheet, whose
-// CSS-driven animations and hard-coded z-index don't line up with the rest of
-// the site.
+// MobileMenu — the app's established overlay idiom. (An unused shadcn-style
+// ui/Sheet wrapper once existed as the alternative; it animated differently
+// and has since been deleted.)
 //
 // Split out from CartDrawer so this module — Radix Dialog, Motion, and the whole
 // ProductCard → ImageBlock → SanityImage tree behind the empty state — is a

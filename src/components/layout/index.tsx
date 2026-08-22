@@ -3,6 +3,7 @@
 import React, { useLayoutEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { isLightThemePath, shouldHideGlobalNewsletter } from '@/lib/routes';
+import type { LayoutData } from '@/sanity/lib/siteData';
 import { CartProvider } from '@/components/cart/CartProvider';
 import CartDrawer from '@/components/cart/CartDrawer';
 import AdaSkip from './AdaSkip';
@@ -22,10 +23,12 @@ import { LazyMotion, domAnimation } from 'motion/react';
 
 type LayoutProps = {
 	children: React.ReactNode;
-	siteData: any;
+	/** Narrowed by `pickLayoutData` — see the note there on why not the whole
+	 *  siteData blob. */
+	siteData: LayoutData;
 };
 export function Layout({ children, siteData }: LayoutProps) {
-	const { header, footer, newsletter, sharing, mobileMenu, toolbar } =
+	const { header, footer, newsletter, siteTitle, mobileMenu, toolbar } =
 		siteData || {};
 	const pathname = usePathname();
 	const isLightSection = isLightThemePath(pathname);
@@ -46,13 +49,13 @@ export function Layout({ children, siteData }: LayoutProps) {
 	}, [toolbar?.hideToolbar]);
 
 	const headerData = useMemo(
-		() => ({ ...header, siteTitle: sharing?.siteTitle, mobileMenu }),
-		[header, sharing?.siteTitle, mobileMenu]
+		() => ({ ...header, siteTitle, mobileMenu }),
+		[header, siteTitle, mobileMenu]
 	);
 
 	const footerData = useMemo(
-		() => ({ ...footer, siteTitle: sharing?.siteTitle }),
-		[footer, sharing?.siteTitle]
+		() => ({ ...footer, siteTitle }),
+		[footer, siteTitle]
 	);
 
 	// The cart provider lives here rather than in a route layout because this is

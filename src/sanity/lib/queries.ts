@@ -3,11 +3,12 @@ import { resolvedHrefGroq } from '@/lib/routes';
 import { LOCALES } from '@/lib/i18n';
 
 // Every locale, as a GROQ array literal. Spelled out rather than derived from
-// LOCALES because Sanity's static query extractor cannot evaluate function
-// calls inside a query template literal (same constraint as `resolvedHrefGroq`
-// — see CLAUDE.md's Routing section). The assignment below is a compile-time
-// guard: adding a locale to LOCALES breaks the build here until this literal is
-// updated, rather than silently dropping that locale from the sitemap.
+// LOCALES because the extractor substitutes syntax instead of executing JS:
+// arrow-function calls with a concise body resolve fine (see `locString` below),
+// but `LOCALES.map(...).join(...)` does not — same constraint as
+// `resolvedHrefGroq`. The assignment below is a compile-time guard: adding a
+// locale to LOCALES breaks the build here until this literal is updated, rather
+// than silently dropping that locale from the sitemap.
 const ALL_LOCALES_GROQ = '["en", "zh_tw"]';
 const _localesCovered: typeof LOCALES = ['en', 'zh_tw'] as const;
 void _localesCovered;
@@ -648,8 +649,7 @@ export const pageContactQuery = defineQuery(`
 			successMessage,
 			errorMessage,
 			sendToEmail,
-			emailSubject,
-			formFailureNotificationEmail
+			emailSubject
 		},
 		legalConsent[]{
 			${portableTextContentFields}
@@ -823,81 +823,6 @@ export const eventCrewByMonthQuery = defineQuery(`
 				"slug": slug.current,
 				avatar
 			}
-		}
-	}
-`);
-
-const blogPostBaseFields = `
-	${baseFields},
-	author->{name},
-	categories[]-> {
-		_id,
-		title,
-		"slug": slug.current,
-		categoryColor->{...color}
-	}
-`;
-
-export const blogPostCardFields = `${blogPostBaseFields}, excerpt`;
-
-export const blogPostFullFields = `
-	${blogPostBaseFields},
-	content[]{
-		${portableTextContentFields}
-	},
-	"relatedBlogs": relatedBlogs[]->{
-		${blogPostCardFields}
-	}
-`;
-
-export const articleListAllQuery = `
-	"articleList": *[_type == "pBlog"] | order(_updatedAt desc) [0...12] {
-		${blogPostCardFields}
-	}
-`;
-
-const blogIndexBaseQuery = `
-	${baseFields},
-	"slug": "blog",
-	itemsPerPage,
-	paginationMethod,
-	loadMoreButtonLabel,
-	infiniteScrollCompleteLabel,
-	"itemsTotalCount": count(*[_type == "pBlog"])
-`;
-
-export const pageBlogIndexQuery = defineQuery(`
-	${byLocale('pBlogIndex')}[0]{
-		${blogIndexBaseQuery}
-	}
-`);
-
-export const pageBlogIndexWithArticleDataSSGQuery = defineQuery(`
-	${byLocale('pBlogIndex')}[0]{
-		${blogIndexBaseQuery},
-		${articleListAllQuery}
-	}
-`);
-
-export const pageBlogPaginationMethodQuery = defineQuery(`
-	{
-		"articleTotalNumber": count(*[_type == "pBlog"]),
-		"itemsPerPage": *[_type == "pBlogIndex"][0].itemsPerPage
-	}`);
-
-export const pageBlogSlugsQuery = defineQuery(`
-  *[_type == "pBlog" && defined(slug.current)]
-  {"slug": slug.current}
-`);
-
-export const pageBlogSingleQuery = defineQuery(`
-	*[_type == "pBlog" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
-		${blogPostFullFields},
-		"defaultRelatedBlogs": *[_type == "pBlog"
-			&& count(categories[@._ref in ^.^.categories[]._ref ]) > 0
-			&& _id != ^._id
-		] | order(publishedAt desc, _createdAt desc) [0...2] {
-			${blogPostCardFields}
 		}
 	}
 `);

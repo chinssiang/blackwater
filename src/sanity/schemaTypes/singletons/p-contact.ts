@@ -45,14 +45,7 @@ export const pContact = defineType({
 					name: 'emailSubject',
 					type: 'string',
 				},
-				{
-					title: 'Form Failure Notification Email',
-					name: 'formFailureNotificationEmail',
-					description:
-						'A failure notification is sent when the form fails to submit. The notification includes all information that users have submitted. Use comma to separate emails.',
-					type: 'string',
-				},
-			],
+				],
 		},
 		{
 			name: 'legalConsent',

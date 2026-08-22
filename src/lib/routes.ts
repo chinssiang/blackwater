@@ -109,21 +109,15 @@ export function resolveHref({
 	return localizePath(path, locale ?? DEFAULT_LOCALE);
 }
 
-export function buildDocumentHrefGroq(slugField = 'slug.current') {
-	const cases = DOCUMENT_ROUTES.map(({ type, path, slug }) =>
-		slug
-			? `_type == "${type}" => "${path}" + ${slugField}`
-			: `_type == "${type}" => "${path}"`
-	);
-
-	cases.push(`defined(${slugField}) => "/" + ${slugField}`, 'null');
-
-	return `select(${cases.join(',')})`;
-}
-
 // NOTE: This GROQ fragment must be kept in sync with DOCUMENT_ROUTES above.
-// It cannot use buildDocumentHrefGroq() here because Sanity's static query
-// extractor cannot evaluate function calls inside template literal interpolations.
+//
+// Why it is hand-written: Sanity's query extractor *substitutes syntax* rather
+// than executing JS. Calls to arrow functions with a concise body do resolve
+// (that is how locString/byLocale/i18nSharingFields in queries.ts work, and
+// their expansions are visible in sanity.types.ts) — but `.map()`/`.join()`,
+// block bodies, `+` concatenation and ternaries do not. Deriving this select()
+// needs iteration, so it cannot be generated inside the literal.
+//
 // Uses $locale param (passed by every query that includes this via linkFields).
 // For the default locale (en) the prefix is empty; for others it is "/<locale>".
 export const resolvedHrefGroq = `select(

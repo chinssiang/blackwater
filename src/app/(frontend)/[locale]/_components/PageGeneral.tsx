@@ -3,7 +3,7 @@ import PageModules from '@/components/PageModules';
 import { getDictionary } from '@/lib/dictionary.server';
 import type { Locale } from '@/lib/i18n';
 import { format } from 'date-fns';
-import { enUS, zhTW } from 'date-fns/locale';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 
 interface PageGeneralData {
 	title?: string;
@@ -20,7 +20,7 @@ interface PageGeneralProps {
 export default async function PageGeneral({ data, locale }: PageGeneralProps) {
 	const { title, content, pageModules, _updatedAt } = data || {};
 	const dict = await getDictionary(locale);
-	const dateFnsLocale = locale === 'zh_tw' ? zhTW : enUS;
+	const dateFnsLocale = DATE_FNS_LOCALES[locale];
 
 	return (
 		<>
