@@ -109,6 +109,13 @@ export function Newsletter({
 			if (res.ok) {
 				setEmail('');
 				setFormState('success');
+			} else if (res.status === 400) {
+				// The route's zod `.email()` is stricter than validateEmail — a CJK or
+				// accented local part passes here and is rejected there. Show it as a
+				// field error, not a generic toast: otherwise the visitor never learns
+				// the address is the problem and retries until the throttle stops them.
+				setValidationError(t.invalidEmail);
+				setFormState('idle');
 			} else if (res.status === 429) {
 				// Distinct from a generic failure: retrying immediately cannot work,
 				// so saying "please try again" would send the visitor in a loop.
