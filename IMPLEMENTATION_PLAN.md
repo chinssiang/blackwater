@@ -422,7 +422,18 @@ build pass.
 - Shopify webhook: topic allowlist (done in Stage 5).
 **Status**: Complete
 
-Not done, deliberately — see the summary: fallback-locale pages still render an
-English fallback at /zh_tw/... while advertising no zh alternate. Making the
-canonical point at the owning locale is a real SEO decision (it hides the
-fallback page from search entirely), so it wants a call rather than a default.
+## Stage 9: Fallback-locale canonicals + ungate Vercel Analytics
+**Goal**: A page rendering another locale's content must not compete with it.
+- `defineMetadata` canonicals to the locale that owns the content whenever the
+  requested locale has no translation. Composes with the hreflang map, which
+  already omits the fallback locale — declaring hreflang="zh-TW" for a page
+  serving English would be a false claim.
+- Vercel Analytics/Speed Insights ungated: verified in their dist bundles that
+  neither touches cookie/localStorage/sessionStorage/indexedDB, so there is no
+  ePrivacy 5(3) storage trigger; and gating Speed Insights would bias Core Web
+  Vitals to a consenting-only subset.
+**Verified in a production build**: en-only product canonicals /zh_tw/... → the
+en URL and still renders; fully translated product keeps per-locale
+self-canonical + full hreflang; dataLayer order is consent/default (exactly
+once, first) → js → config → consent/update → pageview.
+**Status**: Complete

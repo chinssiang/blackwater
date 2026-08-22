@@ -105,10 +105,26 @@ export default function defineMetadata({
 
 	const disableIndex = sharing?.disableIndex;
 
+	// Which locale actually owns this content. When the requested locale has no
+	// translation the page still renders — an English fallback is friendlier than
+	// a 404 — but then this URL and the owning locale's URL serve *identical*
+	// bytes, so they are true duplicates and only one may be canonical.
+	//
+	// Canonical rather than noindex: it consolidates ranking signals onto the URL
+	// that owns the content, and if Google disagrees it still indexes something
+	// sensible. It also composes with the hreflang map below, which already omits
+	// the fallback locale — declaring hreflang="zh-TW" for a page serving English
+	// would be a false claim about that URL.
+	const canonicalLocale = availableLocales.includes(locale)
+		? locale
+		: availableLocales.includes(DEFAULT_LOCALE)
+			? DEFAULT_LOCALE
+			: (availableLocales[0] ?? locale);
+
 	const pageRoute = resolveHref({
 		documentType: _type ?? null,
 		slug: slug ?? null,
-		locale,
+		locale: canonicalLocale,
 	});
 
 	const canonicalUrl = pageRoute

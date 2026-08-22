@@ -1,5 +1,6 @@
 import DraftModeTools from '@/components/DraftModeTools';
-import VercelAnalytics from '@/components/layout/VercelAnalytics';
+import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { stegaClean } from '@sanity/client/stega';
 import localFont from 'next/font/local';
 import { Toaster } from 'sonner';
@@ -101,7 +102,17 @@ export default function HtmlShell({
 						{children}
 						<Toaster />
 						<DraftModeTools enabled={isDraftModeEnabled} />
-						<VercelAnalytics />
+						{/* Deliberately NOT consent-gated, unlike GA/GTM. Neither package
+						    touches document.cookie, localStorage, sessionStorage or
+						    indexedDB (verified in their dist bundles) — they beacon to the
+						    first-party /_vercel/insights and /_vercel/speed endpoints. With
+						    no storage on the visitor's device there is no ePrivacy 5(3)
+						    consent trigger, and aggregate audience/performance measurement
+						    rests on legitimate interest. Gating Speed Insights would also
+						    make it useless: Core Web Vitals from a consenting-only subset
+						    is a biased sample of the very thing it exists to measure. */}
+						<Analytics />
+						<SpeedInsights />
 						<ConsentBanner
 							settings={cleanData?.consent ?? null}
 							fallback={consentFallback}
