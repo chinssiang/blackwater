@@ -65,6 +65,24 @@ export function normalizeLocales(raw: unknown): Locale[] {
 	return filtered.length > 0 ? filtered : [DEFAULT_LOCALE];
 }
 
+/**
+ * Metadata for a soft 404 — a route that renders <NotFoundContent /> inline and
+ * therefore answers HTTP 200. Without this, `defineMetadata` sees no `sharing`
+ * object, reads `disableIndex` as undefined and advertises `index: true`, so a
+ * "Page not found" body gets indexed. Callers use this on every branch that
+ * renders NotFoundContent instead of real data.
+ */
+export function notFoundMetadata(): Metadata {
+	return {
+		title: 'Page not found',
+		robots: {
+			index: false,
+			follow: false,
+			googleBot: { index: false, follow: false },
+		},
+	};
+}
+
 export default function defineMetadata({
 	data,
 	locale = DEFAULT_LOCALE,

@@ -371,3 +371,45 @@ scripted freely, and stops rejecting valid emails.
 **Success criteria / verify**: grep shows no `'/events/'` left in routes.ts; typegen +
 build pass.
 **Status**: Complete
+
+## Stage 5: Should-fix — revalidation & caching
+**Goal**: Publishes take effect on the first request; no unbounded cache growth.
+- `revalidateTag(tag, 'max')` → `{ expire: 0 }` in both webhook routes (was
+  stale-while-revalidate, so every publish was one request behind).
+- `[...rest]` soft-404: `robots: noindex` so 200-response not-founds stop being indexed.
+- `generateStaticParams` slug fetches: pass real tags (were defaulting to `sanity`,
+  which nothing invalidates — a stale slug list can skip prerendering new docs).
+- `sitemap.ts`: route the raw client fetch through tags instead of no-cache.
+**Status**: Not Started
+
+## Stage 6: Should-fix — Klaviyo UX & payloads
+**Goal**: Errors are distinguishable; success always renders; variant identity survives.
+- Both clients read the response body and surface 429 / config errors distinctly.
+- Newsletter success panel falls back to dictionary copy when Sanity fields are blank.
+- Back-in-stock sends the variant GID + the requested option values (so a
+  never-stocked combination is still segmentable).
+- `custom_source` reflects the actual form placement.
+**Status**: Not Started
+
+## Stage 7: Should-fix — consent completeness
+**Goal**: The banner's promises match what the page does.
+- Expire `_ga*`/`_gid`/`_gcl_au` on withdrawal.
+- stegaClean the GA/GTM ids; render only the first id per vendor (extra ids were
+  silently dropped by next/script's id-keyed dedupe) and warn in dev.
+- Gate GTM on analytics OR marketing; gate Vercel Analytics on a decision.
+- Share the consent cookie across apex/www.
+- Fix the stale "gates Klaviyo onsite tracking" editor description.
+**Status**: Not Started
+
+## Stage 8: Should-fix — routing, metadata, dead code
+**Goal**: No indexable duplicates, no link-picker dead ends, no stale copies.
+- Localized metadata + canonical for `/products/all` and `/products/collections`.
+- Sitemap `x-default` only when the default locale actually renders.
+- Fallback-locale pages canonical to the locale that owns the content.
+- `pProductCategory` Presentation locations via `fieldLevelLocations`.
+- Link-picker drift: `pFaq`/`pNewsletter` added to `internalLink.to[]`, `pNewsletter`
+  to the GROQ literal, blog types dropped from the picker.
+- Delete the stale duplicate `defineEventJsonLd`; drop the `as any` cast in
+  PageEvents; fix the stale i18n comment in buildEventName.
+- Shopify webhook: topic allowlist.
+**Status**: Not Started

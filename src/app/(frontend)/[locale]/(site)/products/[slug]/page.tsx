@@ -7,7 +7,7 @@ import {
 	pageProductSingleQuery,
 	pageProductSlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineMetadata, { normalizeLocales, notFoundMetadata } from '@/lib/defineMetadata';
 import { type Locale } from '@/lib/i18n';
 import { isShopifyConfigured } from '@/lib/shopify/client';
 import PageProductSingle from './_components/PageProductSingle';
@@ -26,6 +26,10 @@ export async function generateStaticParams() {
 		query: pageProductSlugsQuery,
 		perspective: 'published',
 		stega: false,
+		// Without a tag this list caches forever under the catch-all 'sanity'
+		// tag, which nothing invalidates — so a build could reuse a stale slug
+		// list and skip prerendering a newly published document.
+		tags: ['pProduct'],
 	});
 	return data ?? [];
 }
@@ -44,6 +48,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const { slug, locale } = await params;
 	const { data } = await getCachedProductData(slug, locale);
 	const cleanData = stegaClean(data);
+	// Missing/untranslated document → the page renders NotFoundContent at HTTP
+	// 200, so de-index it rather than letting defineMetadata default to index.
+	if (!cleanData) return notFoundMetadata();
 	return defineMetadata({
 		data: cleanData,
 		locale: locale as Locale,

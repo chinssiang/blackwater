@@ -40,9 +40,14 @@ export async function POST(req: NextRequest) {
 			return new Response('Bad Request', { status: 400 });
 		}
 
-		revalidateTag(body._type, 'max');
+		// `{ expire: 0 }`, not 'max': a named profile is stale-while-revalidate,
+		// so the first request after a publish still served the old HTML and only
+		// kicked off a background regeneration — an editor refreshing right after
+		// publishing reliably saw stale content once. expire: 0 takes Next's
+		// immediate-expiry path instead.
+		revalidateTag(body._type, { expire: 0 });
 		if (body.slug) {
-			revalidateTag(`${body._type}:${body.slug}`, 'max');
+			revalidateTag(`${body._type}:${body.slug}`, { expire: 0 });
 		}
 		return NextResponse.json({
 			status: 200,

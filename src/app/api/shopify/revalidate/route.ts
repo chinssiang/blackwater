@@ -32,6 +32,15 @@ import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
+// Topics this route knows how to act on. Anything else is acknowledged and
+// ignored rather than triggering a broad invalidation.
+const HANDLED_TOPICS = new Set([
+	'products/update',
+	'products/create',
+	'products/delete',
+	'inventory_levels/update',
+]);
+
 function isValidSignature(
 	rawBody: string,
 	header: string | null,
@@ -71,6 +80,13 @@ export async function POST(req: NextRequest) {
 		return new Response('Bad Request', { status: 400 });
 	}
 
+	// Allowlist: a correctly-signed webhook for some unrelated topic (orders,
+	// customers) would otherwise trigger a full `shopify` invalidation of every
+	// product fetch on the site. Signature proves origin, not relevance.
+	if (!HANDLED_TOPICS.has(topic)) {
+		return NextResponse.json({ revalidated: false, topic, ignored: true });
+	}
+
 	let handle: string | null = null;
 	if (topic === 'products/update' || topic === 'products/create') {
 		try {
@@ -84,10 +100,13 @@ export async function POST(req: NextRequest) {
 	// Deletes and inventory changes carry no handle, so they fall through to
 	// the broad tag every Shopify fetch is labeled with. Re-delivered webhooks
 	// just revalidate again — idempotent.
+	// `{ expire: 0 }`, not 'max' — see the note in /api/revalidate-tag: a named
+	// profile only marks the entry stale, so the first shopper after a price
+	// change still got the old price from cache.
 	if (handle) {
-		revalidateTag(`shopify:product:${handle}`, 'max');
+		revalidateTag(`shopify:product:${handle}`, { expire: 0 });
 	} else {
-		revalidateTag('shopify', 'max');
+		revalidateTag('shopify', { expire: 0 });
 	}
 
 	return NextResponse.json({

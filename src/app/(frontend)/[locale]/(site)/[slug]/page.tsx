@@ -21,6 +21,10 @@ export async function generateStaticParams() {
 		query: pageGeneralSlugsQuery,
 		perspective: 'published',
 		stega: false,
+		// Without a tag this list caches forever under the catch-all 'sanity'
+		// tag, which nothing invalidates — so a build could reuse a stale slug
+		// list and skip prerendering a newly published document.
+		tags: ['pGeneral'],
 	});
 
 	return data;

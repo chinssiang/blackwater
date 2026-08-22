@@ -7,7 +7,7 @@ import {
 	pageEventSingleQuery,
 	pageEventSlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineMetadata, { normalizeLocales, notFoundMetadata } from '@/lib/defineMetadata';
 import defineEventJsonLd from '@/lib/defineEventJsonLd';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
@@ -21,6 +21,10 @@ export async function generateStaticParams() {
 		query: pageEventSlugsQuery,
 		perspective: 'published',
 		stega: false,
+		// Without a tag this list caches forever under the catch-all 'sanity'
+		// tag, which nothing invalidates — so a build could reuse a stale slug
+		// list and skip prerendering a newly published document.
+		tags: ['pEvent'],
 	});
 
 	return data;
@@ -52,6 +56,9 @@ export async function generateMetadata(props: MetadataProps): Promise<Metadata> 
 	const { slug, locale } = await props.params;
 	const { data } = await getCachedEventData(slug, locale);
 	const cleanData = stegaClean(data);
+	// Missing/untranslated document → the page renders NotFoundContent at HTTP
+	// 200, so de-index it rather than letting defineMetadata default to index.
+	if (!cleanData) return notFoundMetadata();
 	return defineMetadata({
 		data: cleanData,
 		locale: locale as Locale,
