@@ -308,3 +308,66 @@ no-op. Dev dataset backed up first (`../../backups/dev-*.ndjson.gz`).
 (`select(defined(language) => …)`, `shopifyHandleField`'s sibling coalesce,
 `productLocaleFilter`'s old-shape branches), then simplify `CLAUDE.md`'s
 transition notes and retire the merge script.
+
+---
+
+# Audit Must-Fix Plan (2026-08-22)
+
+Fixes for the eight must-fix findings from the full-site audit (revalidation tags,
+Klaviyo, consent, routing, schema). Design decision for finding 1: **per-page tags**
+(each page's `tags` array lists every type its GROQ query dereferences), not
+webhook-side expansion — it matches the existing pattern (`products/[slug]` already
+tags `pProductCategory` + `gSizeChart`), keeps the dependency declared beside the
+query that creates it, and needs zero webhook changes.
+
+## Stage 1: Revalidation tag coverage
+**Goal**: Every Sanity edit that can change a prerendered page invalidates it.
+**Changes**:
+- Home + `[slug]` general: add `gFaq`, `settingsBrandColors` (faqList derefs
+  `questions[]->`; sectionAppearance derefs `backgroundColor->`/`textColor->`).
+- `/events`: add `gLocation`, `pEventStatus`, `pEventCategory`, `settingsBrandColors`.
+- `/events/[slug]`: same four.
+- `/events-crew` (both fetches): add `gLocation`, `pEventCategory`, `settingsBrandColors`.
+- Product pages using `productCardFields` (index, all, categories, collections): add `pBrand`.
+- `/products/[slug]`: add `gTag`, `pBrand`.
+- `SITE_DATA_TAGS`: add `pGeneral`, `pProduct`, `pEvent` (nav labels fall back to
+  `internalLink->title`; cart recommendations deref `pProduct`).
+**Success criteria / verify**: `npm run lint` + `npm run build` pass; grep confirms each
+page's tags are a superset of its query's dereferenced types.
+**Status**: Complete
+
+## Stage 2: Klaviyo newsletter hardening
+**Goal**: `/api/newsletter/subscribe` can no longer write to arbitrary lists, can't be
+scripted freely, and stops rejecting valid emails.
+**Changes**:
+- Resolve the list ID server-side from `gNewsletter.klaviyoListID` (`stega: false`),
+  mirroring `back-in-stock`; stop accepting `listId` from the client (client stops
+  sending it).
+- Add the same in-memory per-IP throttle the other write routes use.
+- Guard `req.json()` (400 on malformed body).
+- Fix `validateEmail` regex: allow `+` etc. in the local part and TLDs > 3 chars.
+**Success criteria / verify**: build passes; regex unit-checked against
+`user+tag@gmail.com`, `you@example.info`, and rejects `foo@bar`, `foo`.
+**Status**: Complete
+
+## Stage 3: Consent invariant + CSP
+**Goal**: One gtag talker, gated by consent; GA4 works for EEA visitors.
+**Changes**:
+- Move the SPA `gtag.pageview` effect from `Layout` into `HeadTrackingCode`, gated on
+  `IS_PROD && consent.analytics`, iterating every `gaID` (fixes withdrawal leak and the
+  `[0]`-only pageviews).
+- Add `https://region1.google-analytics.com` to CSP `connect-src`.
+**Success criteria / verify**: grep shows no `gtag` usage outside `HeadTrackingCode`/
+`lib/gtag`; build passes.
+**Status**: Complete
+
+## Stage 4: Route + schema one-liners
+**Goal**: `/events` stops redirecting; category slugs are actually unique.
+**Changes**:
+- `routes.ts`: `pEvents` path `/events/` → `/events` in both `DOCUMENT_ROUTES` and the
+  `resolvedHrefGroq` literal.
+- `p-product-category.ts`: `slug()` → `slug({ isUnique: isUniqueAcrossType })`.
+- `npm run typegen` (schema + query literals changed).
+**Success criteria / verify**: grep shows no `'/events/'` left in routes.ts; typegen +
+build pass.
+**Status**: Complete
