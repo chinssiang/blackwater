@@ -12,6 +12,22 @@ const bodySchema = z.object({
 	email: z.string().trim().email().max(320),
 	productSlug: z.string().trim().min(1).max(200),
 	productTitle: z.string().trim().min(1).max(300),
+	// Variant identity, both optional: a product with a single default variant
+	// has neither, and a combination Shopify never stocked has options but no
+	// GID. Recorded so restock campaigns can segment on something sturdier than
+	// a display title an editor can rename.
+	variantGid: z.string().trim().max(200).nullish(),
+	// Bounded like every sibling field: this is forwarded verbatim to Klaviyo
+	// (as VariantOptions, and joined into VariantLabel), so an unbounded record
+	// would let a scripted client pollute the metric with junk properties or
+	// push the event past Klaviyo's payload limits. A real Shopify product has
+	// at most a handful of options.
+	variantOptions: z
+		.record(z.string().max(50), z.string().max(100))
+		.refine((v) => Object.keys(v).length <= 10, {
+			message: 'Too many variant options.',
+		})
+		.nullish(),
 });
 
 // Best-effort per-IP throttle. In-memory, so it's per server instance — not
@@ -67,7 +83,8 @@ export async function POST(req: NextRequest) {
 			{ status: 400 }
 		);
 	}
-	const { email, productSlug, productTitle } = parsed.data;
+	const { email, productSlug, productTitle, variantGid, variantOptions } =
+		parsed.data;
 	const rawLocale = (body as { locale?: unknown }).locale;
 	const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
 
@@ -185,6 +202,19 @@ export async function POST(req: NextRequest) {
 							ProductName: productTitle,
 							ProductSlug: productSlug,
 							...(productUrl ? { ProductURL: productUrl } : {}),
+							...(variantGid ? { VariantGID: variantGid } : {}),
+							...(variantOptions && Object.keys(variantOptions).length > 0
+								? {
+										VariantOptions: variantOptions,
+										// Flat string too: Klaviyo segment builders compare
+										// scalars far more comfortably than nested objects.
+										VariantLabel: Object.values(variantOptions).join(' / '),
+										// A request for a combination that has no variant is a
+										// demand signal for something never stocked, which is a
+										// different campaign from "this sold out".
+										VariantExists: Boolean(variantGid),
+									}
+								: {}),
 						},
 						metric: {
 							data: {

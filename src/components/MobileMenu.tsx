@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Dialog } from 'radix-ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { SiteDataQueryResult } from 'sanity.types';
 import CustomLink from '@/components/CustomLink';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { LocationCurrentTime } from '@/components/LocationCurrentTime';
+import { LocationCurrentTime } from '@/components/LocationCurrentTimeLazy';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
 import { CloseIcon, MenuIcon } from '@/components/SvgIcons';
 import { buttonVariants } from '@/components/ui/Button';
@@ -86,7 +86,6 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 	const [open, setOpen] = useState(false);
 	const t = useTranslations('nav');
 	const locale = useLocale();
-	const showLocalTime = isEventPath(usePathname());
 
 	// Lock body/html scroll while the menu is open so only the menu's own
 	// scroll container can scroll; restore it on close (and on unmount).
@@ -208,19 +207,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 										exit="hide"
 										custom={reduce}
 									>
-										<motion.div
-											variants={mobileMenuItem}
-											custom={reduce}
-											className="t-b-2 flex items-center gap-4 justify-between uppercase"
-										>
-											{showLocalTime && (
-												<div className="flex items-center gap-2">
-													<LocationCurrentTime />
-													<span>(TPE)</span>
-												</div>
-											)}
-											<LanguageSwitcher onSelect={() => setOpen(false)} />
-										</motion.div>
+										<LanguageSwitcher onSelect={() => setOpen(false)} />
 
 										{hasCta && ctaLink && (
 											<motion.div variants={mobileMenuItem} custom={reduce}>

@@ -28,9 +28,13 @@ type SitemapDoc = {
 
 /** Locales a row represents, whichever i18n model its type uses. */
 function docLocales(doc: SitemapDoc): Locale[] {
+	// An array — even an empty one — is the authoritative answer for a
+	// field-level type: empty means "translated into nothing", so this document
+	// contributes no URLs. Falling through to DEFAULT_LOCALE here published a
+	// titleless product as an English URL, defeating the `defined(value)` guard
+	// the sitemap query applies for exactly this reason.
 	if (Array.isArray(doc.locales)) {
-		const filtered = doc.locales.filter(isLocale);
-		if (filtered.length > 0) return filtered;
+		return doc.locales.filter(isLocale);
 	}
 	return [isLocale(doc.language) ? doc.language : DEFAULT_LOCALE];
 }
@@ -39,6 +43,20 @@ const QUERIES: Record<string, string> = {
 	pages: SITEMAP_PAGES_QUERY,
 	events: SITEMAP_EVENTS_QUERY,
 	products: SITEMAP_PRODUCTS_QUERY,
+};
+
+// Tags per sitemap, so a publish invalidates the sitemap that lists that type.
+// Without a cache config `client.fetch` defaults to no-store, which made all
+// three sitemaps hit Sanity on every crawler request, outside the tag scheme.
+const SITEMAP_TAGS: Record<string, string[]> = {
+	pages: ['pHome', 'pGeneral', 'pContact', 'pFaq', 'pSizeGuide'],
+	events: ['pEvents', 'pEvent'],
+	products: [
+		'pProductIndex',
+		'pProduct',
+		'pProductCategory',
+		'pProductCollection',
+	],
 };
 
 export async function generateSitemaps() {
@@ -55,7 +73,23 @@ export default async function sitemap({
 	if (!query) return [];
 
 	try {
-		const docs = (await client.fetch<SitemapDoc[]>(query)) ?? [];
+		const docs =
+			(await client
+				// useCdn: false because this read is tag-cached under revalidate:false.
+				// Through the CDN, the re-fetch a tag invalidation triggers can return
+				// data up to ~60s stale and then persist until the next invalidation —
+				// the case src/sanity/lib/client.ts's own comment warns about.
+				.withConfig({ useCdn: false })
+				.fetch<SitemapDoc[]>(
+					query,
+					{},
+					{
+						next: {
+							revalidate: false,
+							tags: SITEMAP_TAGS[resolvedId] ?? [],
+						},
+					}
+				)) ?? [];
 
 		// Group documents by their URL identity (type + slug).
 		// Each group may contain multiple rows — one per locale.
@@ -89,9 +123,21 @@ export default async function sitemap({
 						process.env.SITE_URL
 					).toString();
 			}
-			const defaultHref = resolveHref({ documentType: _type, slug, locale: DEFAULT_LOCALE });
-			if (defaultHref)
-				languages['x-default'] = new URL(defaultHref, process.env.SITE_URL).toString();
+			// x-default only when the default locale actually renders this page.
+			// Emitted unconditionally, a zh-only product advertised its English URL
+			// as the default — and that URL is a not-found page.
+			if (availableLocales.includes(DEFAULT_LOCALE)) {
+				const defaultHref = resolveHref({
+					documentType: _type,
+					slug,
+					locale: DEFAULT_LOCALE,
+				});
+				if (defaultHref)
+					languages['x-default'] = new URL(
+						defaultHref,
+						process.env.SITE_URL
+					).toString();
+			}
 
 			// Emit one sitemap entry per available locale
 			for (const locale of availableLocales) {

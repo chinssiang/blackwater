@@ -7,9 +7,8 @@ import Menu from '@/components/Menu';
 import MobileMenu from '@/components/MobileMenu';
 import CartButton from '@/components/cart/CartButton';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { LocationCurrentTime } from '@/components/LocationCurrentTime';
+import { LocationCurrentTime } from '@/components/LocationCurrentTimeLazy';
 import { cn } from '@/lib/utils';
-import { useWindowScroll } from '@/hooks/useWindowScroll';
 import { useLocale } from '@/components/LocaleProvider';
 import { usePathname } from 'next/navigation';
 import { isEventPath, resolveHref } from '@/lib/routes';
@@ -29,7 +28,6 @@ export function Header({
 }) {
 	const { siteTitle, menu, mobileMenu } = data || {};
 	const locale = useLocale();
-	const showLocalTime = isEventPath(usePathname());
 
 	return (
 		<header
@@ -54,15 +52,8 @@ export function Header({
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
 			<div className="ml-auto flex text-foreground gap-3">
-				<div className="hidden items-center gap-3 lg:flex">
-					<LanguageSwitcher />
-					{showLocalTime && (
-						<div className="t-b-2 flex items-center gap-1 uppercase">
-							<LocationCurrentTime />
-							<span>(TPE)</span>
-						</div>
-					)}
-				</div>
+				<LanguageSwitcher className="max-lg:hidden" />
+
 				<CartButton />
 				<MobileMenu data={mobileMenu} siteTitle={siteTitle} />
 			</div>

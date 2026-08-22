@@ -1,5 +1,5 @@
 import { pickLocalizedValue } from '@/lib/i18n';
-import { slug } from '@/sanity/schemaTypes/objects/slug';
+import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { TagsIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
@@ -27,7 +27,9 @@ export const pProductCategory = defineType({
 			title: 'Description',
 			type: 'internationalizedArrayText',
 		}),
-		slug(),
+		// isUniqueAcrossType, not the default: with no `language` field the
+		// default check short-circuits to "unique" for every value.
+		slug({ isUnique: isUniqueAcrossType }),
 		customImage({
 			title: 'Cover Image',
 			name: 'coverImage',

@@ -52,6 +52,10 @@ export const externalLinkDefaults = (
 	isNewTab: !href.startsWith('#'),
 });
 
+// Must stay in step with `internalLink.to[]` in objects/link.ts: a type listed
+// here but not there is offered in the picker and then rejected by reference
+// validation. The blog types were listed here while their routes are commented
+// out of DOCUMENT_ROUTES, so they resolved to no URL.
 const pageDocumentOrder = [
 	'pHome',
 	'pGeneral',
@@ -62,10 +66,9 @@ const pageDocumentOrder = [
 	'pEvents',
 	'pEvent',
 	'pContact',
-	'pBlogIndex',
-	'pBlog',
 	'pFaq',
 	'pSizeGuide',
+	'pNewsletter',
 ];
 
 type PageFetch = {

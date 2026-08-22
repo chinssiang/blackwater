@@ -29,7 +29,13 @@ export function PageNewsletter({ data }: PageNewsletterProps) {
 	return (
 		<div className="p-x-max min-h-main py-10 lg:py-17.5 flex items-center justify-center">
 			{title && <h1 className="sr-only">{title}</h1>}
-			{newsletter && <Newsletter data={newsletter} className="space-y-3" />}
+			{newsletter && (
+				<Newsletter
+					data={newsletter}
+					className="space-y-3"
+					placement="page"
+				/>
+			)}
 		</div>
 	);
 }

@@ -46,6 +46,11 @@ export function link({
 					{ type: 'pGeneral' },
 					{ type: 'pContact' },
 					{ type: 'pSizeGuide' },
+					// pFaq was offered by the Studio link picker but missing here, so
+					// selecting an FAQ page failed reference validation; pNewsletter is
+					// routable and was absent from both.
+					{ type: 'pFaq' },
+					{ type: 'pNewsletter' },
 					{ type: 'pProductIndex' },
 					{ type: 'pProduct' },
 					{ type: 'pProductCategory' },

@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import CustomPortableText from '@/components/CustomPortableText';
-import { useTranslations } from '@/components/LocaleProvider';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import type { PortableTextSimple } from 'sanity.types';
 
 type FormState = 'idle' | 'submitting' | 'success';
@@ -30,10 +30,15 @@ export function Newsletter({
 	data,
 	className,
 	setGlobalHeightVar = false,
+	placement = 'footer',
 }: {
 	data: NewsletterData;
 	className?: string;
 	setGlobalHeightVar?: boolean;
+	/** Reported to Klaviyo as custom_source. This one component serves both the
+	 *  global footer and the dedicated /newsletter page, which were previously
+	 *  both attributed to the footer. */
+	placement?: 'footer' | 'page';
 }) {
 	const {
 		klaviyoListID,
@@ -48,6 +53,7 @@ export function Newsletter({
 	} = data || {};
 
 	const t = useTranslations('newsletter');
+	const locale = useLocale();
 
 	const [email, setEmail] = useState('');
 	const [formState, setFormState] = useState<FormState>('idle');
@@ -103,12 +109,21 @@ export function Newsletter({
 			const res = await fetch('/api/newsletter/subscribe', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, listId: klaviyoListID }),
+				// The Klaviyo list is resolved server-side per locale; klaviyoListID
+				// here only gates whether the form renders at all.
+				body: JSON.stringify({ email, locale, placement }),
 			});
 
 			if (res.ok) {
 				setEmail('');
 				setFormState('success');
+			} else if (res.status === 429) {
+				// Distinct from a generic failure: retrying immediately cannot work,
+				// so saying "please try again" would send the visitor in a loop.
+				toast.error(t.rateLimitedHeading, {
+					description: t.rateLimitedBody,
+				});
+				setFormState('idle');
 			} else {
 				toast.error(errorHeading || t.errorHeading, {
 					description: errorBody || t.errorBody,
@@ -145,12 +160,15 @@ export function Newsletter({
 					role="status"
 					aria-live="polite"
 				>
-					{successHeading && (
-						<p className="t-b-1 font-medium">{successHeading}</p>
-					)}
-					{successBody && (
-						<p className="t-b-2 mt-1 text-pretty">{successBody}</p>
-					)}
+					{/* Dictionary fallback, matching the error path: both Sanity fields
+					    are optional, and without a fallback a successful subscribe
+					    swapped the form out for an empty box. */}
+					<p className="t-b-1 font-medium">
+						{successHeading || t.successHeading}
+					</p>
+					<p className="t-b-2 mt-1 text-pretty">
+						{successBody || t.successBody}
+					</p>
 				</motion.div>
 			) : (
 				<div className="space-y-4 w-full md:flex-1 md:max-w-[500px]">

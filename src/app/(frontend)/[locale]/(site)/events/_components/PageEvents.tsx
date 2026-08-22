@@ -2,7 +2,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
-import { enUS, zhTW } from 'date-fns/locale';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
 import type { PEventsQueryResult, RichDate } from 'sanity.types';
@@ -24,7 +23,8 @@ import {
 import { cn, hasArrayValue } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
-import { localizePath, type Locale } from '@/lib/i18n';
+import { localizePath } from '@/lib/i18n';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
 const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
@@ -44,14 +44,6 @@ const eventRowAnim = {
 // (full-row, location, status). Inset so the ring draws inside its container.
 const OVERLAY_LINK_FOCUS =
 	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
-
-const DATE_FNS_LOCALES: Record<
-	Locale,
-	Locale extends 'zh_tw' ? typeof zhTW : typeof enUS
-> = {
-	en: enUS,
-	zh_tw: zhTW,
-} as Record<Locale, typeof enUS | typeof zhTW>;
 
 // How often the ended/days-until state is re-evaluated once mounted, so a row
 // dims at its end time without the visitor reloading.
@@ -237,11 +229,7 @@ export function PageEvents({ data }: PageEventsProps) {
 							disabled={!hasPrevious}
 							aria-label={t.aria.previousMonth}
 							variant="ghost"
-							size="sm"
-							// text-xs/font-normal are load-bearing: t-b-2 sets both in
-							// @layer components, but Button's base text-sm font-medium
-							// are utilities and win the cascade. Not duplicates.
-							className="uppercase t-b-2 text-xs font-normal cursor-pointer hover:opacity-60 min-h-11"
+							className="uppercase text-xs font-normal cursor-pointer hover:opacity-60"
 						>
 							<ArrowLeft />
 							{t.aria.previousMonth}
@@ -252,11 +240,7 @@ export function PageEvents({ data }: PageEventsProps) {
 							disabled={!hasNext}
 							aria-label={t.aria.nextMonth}
 							variant="ghost"
-							size="sm"
-							// text-xs/font-normal are load-bearing: t-b-2 sets both in
-							// @layer components, but Button's base text-sm font-medium
-							// are utilities and win the cascade. Not duplicates.
-							className="uppercase t-b-2 text-xs font-normal cursor-pointer hover:opacity-60 min-h-11"
+							className="uppercase text-xs font-normal cursor-pointer hover:opacity-60"
 						>
 							{t.aria.nextMonth}
 							<ArrowRight className="size-3.5" />
@@ -313,9 +297,10 @@ export function PageEvents({ data }: PageEventsProps) {
 							locationLink,
 						} = item || {};
 
-						const locationRef = (item as any)?.locationRef as
-							| { name?: string | null; mapLink?: string | null }
-							| undefined;
+						// The generated query type already carries locationRef; the cast
+						// this replaces would have hidden it if eventCardFields ever
+						// dropped the deref.
+						const locationRef = item?.locationRef;
 						const displayLocation = locationRef?.name || location;
 						const displayLocationLink = locationRef?.mapLink || locationLink;
 

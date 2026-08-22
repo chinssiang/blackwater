@@ -15,6 +15,9 @@ export const DOCUMENT_ROUTES = [
 	{ type: 'pHome', path: '/', slug: false },
 	{ type: 'pGeneral', path: '/', slug: true },
 	{ type: 'pProductIndex', path: '/products', slug: false },
+	// Synthetic route (no backing document) — lets the paginated all-products
+	// listing reuse resolveHref/defineMetadata for canonical + hreflang.
+	{ type: 'pProductsAllIndex', path: '/products/all', slug: false },
 	{ type: 'pProduct', path: '/products/', slug: true },
 	// Synthetic route (no backing document) — lets the categories index page
 	// reuse resolveHref/defineMetadata for canonical + hreflang.
@@ -32,7 +35,7 @@ export const DOCUMENT_ROUTES = [
 		slug: false,
 	},
 	{ type: 'pProductCollection', path: '/products/collections/', slug: true },
-	{ type: 'pEvents', path: '/events/', slug: false },
+	{ type: 'pEvents', path: '/events', slug: false },
 	{ type: 'pEvent', path: '/events/', slug: true },
 	{ type: 'pContact', path: '/contact', slug: false },
 	{ type: 'pFaq', path: '/faq', slug: false },
@@ -106,21 +109,15 @@ export function resolveHref({
 	return localizePath(path, locale ?? DEFAULT_LOCALE);
 }
 
-export function buildDocumentHrefGroq(slugField = 'slug.current') {
-	const cases = DOCUMENT_ROUTES.map(({ type, path, slug }) =>
-		slug
-			? `_type == "${type}" => "${path}" + ${slugField}`
-			: `_type == "${type}" => "${path}"`
-	);
-
-	cases.push(`defined(${slugField}) => "/" + ${slugField}`, 'null');
-
-	return `select(${cases.join(',')})`;
-}
-
 // NOTE: This GROQ fragment must be kept in sync with DOCUMENT_ROUTES above.
-// It cannot use buildDocumentHrefGroq() here because Sanity's static query
-// extractor cannot evaluate function calls inside template literal interpolations.
+//
+// Why it is hand-written: Sanity's query extractor *substitutes syntax* rather
+// than executing JS. Calls to arrow functions with a concise body do resolve
+// (that is how locString/byLocale/i18nSharingFields in queries.ts work, and
+// their expansions are visible in sanity.types.ts) — but `.map()`/`.join()`,
+// block bodies, `+` concatenation and ternaries do not. Deriving this select()
+// needs iteration, so it cannot be generated inside the literal.
+//
 // Uses $locale param (passed by every query that includes this via linkFields).
 // For the default locale (en) the prefix is empty; for others it is "/<locale>".
 export const resolvedHrefGroq = `select(
@@ -133,11 +130,12 @@ export const resolvedHrefGroq = `select(
 					_type == "pProduct" => "/products/" + slug.current,
 					_type == "pProductCategory" => "/products/categories/" + slug.current,
 					_type == "pProductCollection" => "/products/collections/" + slug.current,
-					_type == "pEvents" => "/events/",
+					_type == "pEvents" => "/events",
 					_type == "pEvent" => "/events/" + slug.current,
 					_type == "pContact" => "/contact",
 					_type == "pFaq" => "/faq",
 					_type == "pSizeGuide" => "/size-guide",
+					_type == "pNewsletter" => "/newsletter",
 					defined(slug.current) => "/" + slug.current,
 					null
 				)

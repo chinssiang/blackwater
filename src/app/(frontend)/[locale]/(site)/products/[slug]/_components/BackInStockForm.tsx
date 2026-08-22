@@ -14,9 +14,19 @@ type FormState = 'idle' | 'submitting';
 type Props = {
 	productTitle: string;
 	productSlug: string;
+	/** Shopify variant GID, when the selection resolves to a real variant. */
+	variantGid?: string | null;
+	/** The option values the shopper asked for — the only record of intent when
+	 *  the combination has no variant. */
+	variantOptions?: Record<string, string> | null;
 };
 
-export default function BackInStockForm({ productTitle, productSlug }: Props) {
+export default function BackInStockForm({
+	productTitle,
+	productSlug,
+	variantGid,
+	variantOptions,
+}: Props) {
 	const locale = useLocale();
 	const notify = useTranslations('products').notify;
 
@@ -40,13 +50,26 @@ export default function BackInStockForm({ productTitle, productSlug }: Props) {
 			const res = await fetch('/api/products/back-in-stock', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, productSlug, productTitle, locale }),
+				body: JSON.stringify({
+					email,
+					productSlug,
+					productTitle,
+					locale,
+					variantGid,
+					variantOptions,
+				}),
 			});
 
 			if (res.ok) {
 				setEmail('');
 				toast.success(notify.successHeading, {
 					description: notify.successBody,
+				});
+				setFormState('idle');
+			} else if (res.status === 429) {
+				// Distinct from a generic failure: retrying immediately cannot work.
+				toast.error(notify.rateLimitedHeading, {
+					description: notify.rateLimitedBody,
 				});
 				setFormState('idle');
 			} else {

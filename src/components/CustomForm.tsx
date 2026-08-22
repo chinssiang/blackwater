@@ -12,7 +12,7 @@ import {
 	ControllerFieldState,
 } from 'react-hook-form';
 import * as z from 'zod';
-import { cn, hasArrayValue, formatObjectToHtml } from '@/lib/utils';
+import { cn, hasArrayValue } from '@/lib/utils';
 
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
@@ -117,7 +117,6 @@ interface CustomFormData {
 	errorMessage: string | null;
 	sendToEmail: string | null;
 	emailSubject: string | null;
-	formFailureNotificationEmail: string | null;
 }
 
 interface CustomFormProps {
@@ -125,33 +124,6 @@ interface CustomFormProps {
 	data?: CustomFormData | null;
 	className?: string;
 	fieldGapX?: number;
-}
-
-interface EmailData {
-	email: string;
-	emailSubject: string;
-	emailHtmlContent: string;
-}
-
-interface SendEmailParams {
-	apiUrl: string;
-	emailData: EmailData;
-}
-
-interface SendErrorNotificationParams {
-	emailTo: string;
-	bodyData: {
-		sendToEmail?: string;
-		emailSubject?: string;
-		formData: FieldValues;
-	};
-	errorInfo: string;
-}
-
-interface EmailResult {
-	success: boolean;
-	attempts: number;
-	lastError?: Error;
 }
 
 interface FieldComponentTypeProps {
@@ -341,7 +313,6 @@ export function CustomForm({
 		errorMessage,
 		sendToEmail,
 		emailSubject,
-		formFailureNotificationEmail,
 	} = data || {};
 
 	const [formState, setFormState] = useState<FormState>(FORM_STATES.IDLE);
@@ -383,14 +354,7 @@ export function CustomForm({
 			});
 
 			if (!response.ok) {
-				const errorText = await response.text();
-				sendErrorNotificationEmail({
-					emailTo: formFailureNotificationEmail || '',
-					bodyData: bodyData,
-					errorInfo: errorText,
-				});
-				setFormState(FORM_STATES.ERROR);
-				throw new Error(errorText);
+				throw new Error(await response.text());
 			}
 			form.reset();
 
@@ -400,11 +364,6 @@ export function CustomForm({
 				console.error('Form submission error:', error);
 			}
 			setFormState(FORM_STATES.ERROR);
-			sendErrorNotificationEmail({
-				emailTo: formFailureNotificationEmail || '',
-				bodyData: bodyData,
-				errorInfo: error instanceof Error ? error.message : String(error),
-			});
 		}
 	};
 
@@ -471,109 +430,4 @@ export function CustomForm({
 			</Button>
 		</form>
 	);
-}
-
-/**
- * Sends an error notification email with form data and error information.
- * Attempts multiple backup email endpoints if primary fails.
- * @param {string} params.emailTo - Recipient email address
- * @param {Object} params.formData - Form data to include in email
- * @param {string} params.errorInfo - Error information to include in email
- * @returns {Promise<{success: boolean, attempts: number, lastError?: Error}>}
- */
-async function sendErrorNotificationEmail({
-	emailTo,
-	bodyData,
-	errorInfo,
-}: SendErrorNotificationParams): Promise<EmailResult> {
-	const { sendToEmail, emailSubject, formData } = bodyData;
-	const emailData: EmailData = {
-		email: emailTo,
-		emailSubject: emailSubject || 'Form Submission Error',
-		emailHtmlContent: `
-			<p>
-				Your form failed to send. Please notify your website administrator. A backup is provided below.
-			</p>
-			<p>
-				<strong>Error Details: </strong><br>
-				Page URL: ${window.location.href}<br>
-				Timestamp: ${new Date().toISOString()}<br>
-				${formatObjectToHtml(errorInfo)}
-			</p>
-      <p>
-				<strong>Form Data: </strong><br>
-				Send to: ${sendToEmail}<br>
-				Subject: ${emailSubject}<br>
-				${formatObjectToHtml(formData)}
-			</p>`,
-	};
-
-	async function sendEmail({
-		apiUrl,
-		emailData,
-	}: SendEmailParams): Promise<boolean> {
-		const controller = new AbortController();
-		const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
-
-		try {
-			const response = await fetch(apiUrl, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(emailData),
-				signal: controller.signal,
-			});
-
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(
-					`HTTP error! status: ${response.status}, body: ${errorText}`
-				);
-			}
-
-			return true;
-		} catch (error) {
-			if (process.env.NODE_ENV !== 'production') {
-				console.error(`Email sending failed for ${apiUrl}:`, error);
-			}
-			return false;
-		} finally {
-			clearTimeout(timeout);
-		}
-	}
-
-	const emailApiUrls: string[] = [
-		'/api/send-notification-email',
-		'/api/send-backup-email',
-		'/api/send-backup-email?useTransporter2=true',
-	];
-
-	let attempts = 0;
-	let lastError: Error | null = null;
-
-	for (const apiUrl of emailApiUrls) {
-		attempts++;
-
-		try {
-			const success = await sendEmail({ apiUrl, emailData });
-			if (success) {
-				return { success: true, attempts };
-			}
-		} catch (error) {
-			lastError = error instanceof Error ? error : new Error(String(error));
-			console.error(`Attempt ${attempts} failed:`, error);
-		}
-
-		// Add delay between retries
-		if (attempts < emailApiUrls.length) {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-		}
-	}
-
-	return {
-		success: false,
-		attempts,
-		lastError: lastError || undefined,
-	};
 }

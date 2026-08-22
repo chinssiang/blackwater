@@ -11,7 +11,7 @@ import { type Locale } from '@/lib/i18n';
 import PageHome from '../_components/PageHome';
 
 const getCachedHomeData = cache(async (locale: string) =>
-	sanityFetch({ query: pageHomeQuery, params: { locale }, tags: ['pHome'] })
+	sanityFetch({ query: pageHomeQuery, params: { locale }, tags: ['pHome', 'gFaq', 'settingsBrandColors'] })
 );
 
 type Props = { params: Promise<{ locale: string }> };

@@ -21,7 +21,14 @@ const getCachedProductIndexData = cache(async (locale: string) =>
 	sanityFetch({
 		query: pageProductIndexQuery,
 		params: { locale },
-		tags: ['pProductIndex', 'pProduct', 'pProductCategory', 'pProductCollection'],
+		// pBrand: productCardFields derefs brands[]->.
+		tags: [
+			'pProductIndex',
+			'pProduct',
+			'pProductCategory',
+			'pProductCollection',
+			'pBrand',
+		],
 	})
 );
 

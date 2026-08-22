@@ -285,7 +285,11 @@ deleted 74 zh docs + 76 `translation.metadata`, in one transaction. Re-run is a
 no-op. Dev dataset backed up first (`../../backups/dev-*.ndjson.gz`).
 
 ## Stage D: Prod choreography
-**Status**: Not Started — at the next deploy:
+**Status**: Complete — both datasets migrated (verified 2026-08-22: zero
+*published* documents in prod or dev carry `language` for the product or event
+families). Four un-migrated **drafts** remain in dev only (`pEvent` 144-rr,
+148-rr, 140-rr and `pEventCategory` tr) — stale leftovers from before the event
+merge; publish or discard them. Original runbook, kept for reference:
 1. **Announce a content freeze on products/collections** and confirm no drafts
    exist. This is not optional politeness: between deploy and migration the
    schema uses `isUniqueAcrossType`, so every existing en/zh sibling pair
@@ -304,7 +308,132 @@ no-op. Dev dataset backed up first (`../../backups/dev-*.ndjson.gz`).
 5. Spot-check both locales + `/sitemap/products.xml`.
 
 ## Stage E: Post-prod cleanup
-**Status**: Not Started — after Stage D only: strip the transition tails
+**Status**: Complete — tails stripped in `2288ab7` and merged 2026-08-22. The
+`defined(language)` occurrences that remain in `queries.ts` are all
+document-level types (`byLocale`, `availableLocalesField`, `pGeneral`, `pBlog`,
+the `pProductIndex` sitemap arm) and are correct. Original scope: strip the
+transition tails
 (`select(defined(language) => …)`, `shopifyHandleField`'s sibling coalesce,
 `productLocaleFilter`'s old-shape branches), then simplify `CLAUDE.md`'s
 transition notes and retire the merge script.
+
+---
+
+# Audit Must-Fix Plan (2026-08-22)
+
+Fixes for the eight must-fix findings from the full-site audit (revalidation tags,
+Klaviyo, consent, routing, schema). Design decision for finding 1: **per-page tags**
+(each page's `tags` array lists every type its GROQ query dereferences), not
+webhook-side expansion — it matches the existing pattern (`products/[slug]` already
+tags `pProductCategory` + `gSizeChart`), keeps the dependency declared beside the
+query that creates it, and needs zero webhook changes.
+
+## Stage 1: Revalidation tag coverage
+**Goal**: Every Sanity edit that can change a prerendered page invalidates it.
+**Changes**:
+- Home + `[slug]` general: add `gFaq`, `settingsBrandColors` (faqList derefs
+  `questions[]->`; sectionAppearance derefs `backgroundColor->`/`textColor->`).
+- `/events`: add `gLocation`, `pEventStatus`, `pEventCategory`, `settingsBrandColors`.
+- `/events/[slug]`: same four.
+- `/events-crew` (both fetches): add `gLocation`, `pEventCategory`, `settingsBrandColors`.
+- Product pages using `productCardFields` (index, all, categories, collections): add `pBrand`.
+- `/products/[slug]`: add `gTag`, `pBrand`.
+- `SITE_DATA_TAGS`: add `pGeneral`, `pProduct`, `pEvent` (nav labels fall back to
+  `internalLink->title`; cart recommendations deref `pProduct`).
+**Success criteria / verify**: `npm run lint` + `npm run build` pass; grep confirms each
+page's tags are a superset of its query's dereferenced types.
+**Status**: Complete
+
+## Stage 2: Klaviyo newsletter hardening
+**Goal**: `/api/newsletter/subscribe` can no longer write to arbitrary lists, can't be
+scripted freely, and stops rejecting valid emails.
+**Changes**:
+- Resolve the list ID server-side from `gNewsletter.klaviyoListID` (`stega: false`),
+  mirroring `back-in-stock`; stop accepting `listId` from the client (client stops
+  sending it).
+- Add the same in-memory per-IP throttle the other write routes use.
+- Guard `req.json()` (400 on malformed body).
+- Fix `validateEmail` regex: allow `+` etc. in the local part and TLDs > 3 chars.
+**Success criteria / verify**: build passes; regex unit-checked against
+`user+tag@gmail.com`, `you@example.info`, and rejects `foo@bar`, `foo`.
+**Status**: Complete
+
+## Stage 3: Consent invariant + CSP
+**Goal**: One gtag talker, gated by consent; GA4 works for EEA visitors.
+**Changes**:
+- Move the SPA `gtag.pageview` effect from `Layout` into `HeadTrackingCode`, gated on
+  `IS_PROD && consent.analytics`, iterating every `gaID` (fixes withdrawal leak and the
+  `[0]`-only pageviews).
+- Add `https://region1.google-analytics.com` to CSP `connect-src`.
+**Success criteria / verify**: grep shows no `gtag` usage outside `HeadTrackingCode`/
+`lib/gtag`; build passes.
+**Status**: Complete
+
+## Stage 4: Route + schema one-liners
+**Goal**: `/events` stops redirecting; category slugs are actually unique.
+**Changes**:
+- `routes.ts`: `pEvents` path `/events/` → `/events` in both `DOCUMENT_ROUTES` and the
+  `resolvedHrefGroq` literal.
+- `p-product-category.ts`: `slug()` → `slug({ isUnique: isUniqueAcrossType })`.
+- `npm run typegen` (schema + query literals changed).
+**Success criteria / verify**: grep shows no `'/events/'` left in routes.ts; typegen +
+build pass.
+**Status**: Complete
+
+## Stage 5: Should-fix — revalidation & caching
+**Goal**: Publishes take effect on the first request; no unbounded cache growth.
+- `revalidateTag(tag, 'max')` → `{ expire: 0 }` in both webhook routes (was
+  stale-while-revalidate, so every publish was one request behind).
+- `[...rest]` soft-404: `robots: noindex` so 200-response not-founds stop being indexed.
+- `generateStaticParams` slug fetches: pass real tags (were defaulting to `sanity`,
+  which nothing invalidates — a stale slug list can skip prerendering new docs).
+- `sitemap.ts`: route the raw client fetch through tags instead of no-cache.
+**Status**: Not Started
+
+## Stage 6: Should-fix — Klaviyo UX & payloads
+**Goal**: Errors are distinguishable; success always renders; variant identity survives.
+- Both clients read the response body and surface 429 / config errors distinctly.
+- Newsletter success panel falls back to dictionary copy when Sanity fields are blank.
+- Back-in-stock sends the variant GID + the requested option values (so a
+  never-stocked combination is still segmentable).
+- `custom_source` reflects the actual form placement.
+**Status**: Complete
+
+## Stage 7: Should-fix — consent completeness
+**Goal**: The banner's promises match what the page does.
+- Expire `_ga*`/`_gid`/`_gcl_au` on withdrawal.
+- stegaClean the GA/GTM ids; render only the first id per vendor (extra ids were
+  silently dropped by next/script's id-keyed dedupe) and warn in dev.
+- Gate GTM on analytics OR marketing; gate Vercel Analytics on a decision.
+- Share the consent cookie across apex/www.
+- Fix the stale "gates Klaviyo onsite tracking" editor description.
+**Status**: Complete
+
+## Stage 8: Should-fix — routing, metadata, dead code
+**Goal**: No indexable duplicates, no link-picker dead ends, no stale copies.
+- Localized metadata + canonical for `/products/all` and `/products/collections`.
+- Sitemap `x-default` only when the default locale actually renders.
+- Fallback-locale pages canonical to the locale that owns the content.
+- `pProductCategory` Presentation locations via `fieldLevelLocations`.
+- Link-picker drift: `pFaq`/`pNewsletter` added to `internalLink.to[]`, `pNewsletter`
+  to the GROQ literal, blog types dropped from the picker.
+- Delete the stale duplicate `defineEventJsonLd`; drop the `as any` cast in
+  PageEvents; fix the stale i18n comment in buildEventName.
+- Shopify webhook: topic allowlist (done in Stage 5).
+**Status**: Complete
+
+## Stage 9: Fallback-locale canonicals + ungate Vercel Analytics
+**Goal**: A page rendering another locale's content must not compete with it.
+- `defineMetadata` canonicals to the locale that owns the content whenever the
+  requested locale has no translation. Composes with the hreflang map, which
+  already omits the fallback locale — declaring hreflang="zh-TW" for a page
+  serving English would be a false claim.
+- Vercel Analytics/Speed Insights ungated: verified in their dist bundles that
+  neither touches cookie/localStorage/sessionStorage/indexedDB, so there is no
+  ePrivacy 5(3) storage trigger; and gating Speed Insights would bias Core Web
+  Vitals to a consenting-only subset.
+**Verified in a production build**: en-only product canonicals /zh_tw/... → the
+en URL and still renders; fully translated product keeps per-locale
+self-canonical + full hreflang; dataLayer order is consent/default (exactly
+once, first) → js → config → consent/update → pageview.
+**Status**: Complete

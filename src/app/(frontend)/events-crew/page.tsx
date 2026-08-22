@@ -105,7 +105,16 @@ export default async function Page({
 	if (activeKey) {
 		const [year, month] = activeKey.split('_').map(Number);
 		const { startDate, endDate } = getMonthDateRange(year, month);
-		const tags = ['pEvent', 'gTeamMember', 'pEventRole'];
+		// The month query derefs locationRef-> (gLocation) and categories[]->
+		// with categoryColor-> (pEventCategory, settingsBrandColors).
+		const tags = [
+			'pEvent',
+			'gTeamMember',
+			'pEventRole',
+			'gLocation',
+			'pEventCategory',
+			'settingsBrandColors',
+		];
 		const [{ data: eventsData }, { data: membersData }] = await Promise.all([
 			sanityFetch({
 				query: eventCrewByMonthQuery,
@@ -115,7 +124,9 @@ export default async function Page({
 			sanityFetch({
 				query: eventCrewMembersQuery,
 				params: { startDate, endDate },
-				tags: ['gTeamMember'],
+				// pEvent: membership is computed from pEvent.teamAssignments, so a
+				// roster edit must refresh the member filter too.
+				tags: ['gTeamMember', 'pEvent'],
 			}),
 		]);
 		events = eventsData ?? [];

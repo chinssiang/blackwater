@@ -7,7 +7,10 @@ import {
 	pageGeneralQuery,
 	pageGeneralSlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineMetadata, {
+	normalizeLocales,
+	notFoundMetadata,
+} from '@/lib/defineMetadata';
 import defineFaqJsonLd, { collectFaqItems } from '@/lib/defineFaqJsonLd';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
@@ -21,6 +24,10 @@ export async function generateStaticParams() {
 		query: pageGeneralSlugsQuery,
 		perspective: 'published',
 		stega: false,
+		// Without a tag this list caches forever under the catch-all 'sanity'
+		// tag, which nothing invalidates — so a build could reuse a stale slug
+		// list and skip prerendering a newly published document.
+		tags: ['pGeneral'],
 	});
 
 	return data;
@@ -35,7 +42,9 @@ const getCachedPageData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageGeneralQuery,
 		params: { slug, locale },
-		tags: [`pGeneral:${slug}`],
+		// gFaq: faqList modules deref questions[]->; settingsBrandColors:
+		// sectionAppearance derefs backgroundColor->/textColor->.
+		tags: [`pGeneral:${slug}`, 'gFaq', 'settingsBrandColors'],
 	})
 );
 
@@ -45,6 +54,9 @@ export async function generateMetadata(
 	const { slug, locale } = await props.params;
 	const { data } = await getCachedPageData(slug, locale);
 	const cleanData = stegaClean(data);
+	// This route, not [...rest], is what an unknown single-segment path lands on
+	// (/nope, not /a/b/c), so it is the common soft-404 and needs de-indexing.
+	if (!cleanData) return notFoundMetadata();
 	return defineMetadata({
 		data: cleanData,
 		locale: locale as Locale,

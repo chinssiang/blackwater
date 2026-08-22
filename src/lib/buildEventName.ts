@@ -1,10 +1,8 @@
 import { formatInTimeZone } from 'date-fns-tz';
-import { enUS, zhTW } from 'date-fns/locale';
 import type { Locale } from '@/lib/i18n';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 
 const FALLBACK_TIMEZONE = 'Asia/Taipei';
-
-const DATE_FNS_LOCALES = { en: enUS, zh_tw: zhTW } as const;
 
 // Concise, locale-aware date used inside structured-data names (no time).
 const NAME_DATE_FORMAT: Record<Locale, string> = {
@@ -29,9 +27,10 @@ export type EventNameParts = {
  * locale-aware date. Shared by the events ItemList (index) and the Event
  * JSON-LD (detail) so the carousel item and its target page agree.
  *
- * Inputs are expected to be already locale-resolved (pEvent is document-level
- * i18n; locationRef.name is coalesced per locale upstream), so the only
- * locale-dependent formatting here is the date — there is no hardcoded text.
+ * Inputs are expected to be already locale-resolved (pEvent is field-level
+ * i18n, so title/subtitle are coalesced per locale in GROQ, as is
+ * locationRef.name), so the only locale-dependent formatting here is the date
+ * — there is no hardcoded text.
  */
 export function buildEventName(parts: EventNameParts, locale: Locale): string {
 	const { title, subtitle, location, eventDatetime, timezone } = parts;

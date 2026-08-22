@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
 import { cache } from 'react';
-import { type Locale, localizePath } from '@/lib/i18n';
+import { type Locale, LOCALES, localizePath } from '@/lib/i18n';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductsAllQuery } from '@/sanity/lib/queries';
+import defineMetadata, { notFoundMetadata } from '@/lib/defineMetadata';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
@@ -17,13 +18,65 @@ const getCachedData = cache((locale: Locale, start: number, end: number) =>
 	sanityFetch({
 		query: pageProductsAllQuery,
 		params: { locale, start, end },
-		tags: ['pProduct', 'pProductCategory'],
+		// pBrand: productCardFields derefs brands[]->.
+		tags: ['pProduct', 'pProductCategory', 'pBrand'],
 	})
 );
 
-export const metadata: Metadata = {
-	title: 'All Products',
-};
+// Was a static English-only `metadata` export: no canonical, no hreflang, and
+// identical for every ?page=N — so each paginated URL was a separately
+// indexable duplicate serving an English title on the zh route. Paginated pages
+// self-canonicalize (Google's guidance): page 2 is its own page, not a
+// near-duplicate of page 1, so its canonical carries the ?page= parameter.
+export async function generateMetadata({
+	params,
+	searchParams,
+}: {
+	params: Promise<{ locale: Locale }>;
+	searchParams: Promise<{ page?: string }>;
+}): Promise<Metadata> {
+	const [{ locale }, { page: pageParam }] = await Promise.all([
+		params,
+		searchParams,
+	]);
+	const dict = await getDictionary(locale);
+	const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1);
+
+	// Beyond the last page the component below renders NotFoundContent at HTTP
+	// 200, so this must de-index rather than emit a canonical that legitimises an
+	// unbounded ?page= space. Same cache() call and arguments as the component,
+	// so this costs no extra fetch.
+	const start = (page - 1) * PAGE_SIZE;
+	const { data: pageData } = await getCachedData(locale, start, start + PAGE_SIZE);
+	const totalPages = Math.max(1, Math.ceil((pageData?.total ?? 0) / PAGE_SIZE));
+	if (!pageData || page > totalPages) return notFoundMetadata();
+
+	const base = defineMetadata({
+		data: {
+			_type: 'pProductsAllIndex',
+			title: dict.products.allProducts,
+			sharing: { metaDesc: dict.products.allProductsDescription },
+		},
+		locale,
+		availableLocales: [...LOCALES],
+	});
+
+	if (page === 1) return base;
+
+	const pagedPath = `${localizePath('/products/all', locale)}?page=${page}`;
+	return {
+		...base,
+		title: `${dict.products.allProducts} — ${page}`,
+		alternates: {
+			// Only the canonical is per-page. The hreflang map keeps pointing at the
+			// unparameterized URLs: alternates describe the same content in another
+			// language, and page N's counterpart is page N there too — but nothing
+			// guarantees the two locales paginate identically, since a product
+			// untranslated in one locale shifts every later page.
+			canonical: `${process.env.SITE_URL}${pagedPath}`,
+		},
+	};
+}
 
 export default async function Page({
 	params,

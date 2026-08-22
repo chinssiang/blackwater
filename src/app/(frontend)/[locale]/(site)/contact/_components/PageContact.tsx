@@ -32,7 +32,6 @@ interface PageContactData {
 		errorMessage: string | null;
 		sendToEmail: string | null;
 		emailSubject: string | null;
-		formFailureNotificationEmail: string | null;
 	} | null;
 	legalConsent?: any;
 }

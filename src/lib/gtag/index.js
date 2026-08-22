@@ -6,8 +6,3 @@ export const pageview = (url, gaID) => {
 		});
 	}
 };
-
-// log specific events
-export const event = ({ action, params }) => {
-	window?.gtag('event', action, params);
-};

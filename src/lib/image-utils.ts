@@ -7,11 +7,6 @@ interface BuildImageOptions {
 	quality?: number;
 }
 
-interface BuildImageSrcSetOptions extends BuildImageOptions {
-	srcSizes: number[];
-	aspectRatio?: number;
-}
-
 interface SanityRgb {
 	r: number;
 	g: number;
@@ -55,34 +50,6 @@ export function buildImageSrc(
 	} catch (error) {
 		console.error('Error building image source:', error);
 		return '';
-	}
-}
-
-export function buildImageSrcSet(
-	image: any,
-	{ srcSizes, aspectRatio = 1, format, quality = 80 }: BuildImageSrcSetOptions
-): string | false {
-	if (!image || !srcSizes || srcSizes.length === 0) {
-		return false;
-	}
-
-	try {
-		const sizes = srcSizes
-			.map((width) => {
-				const height = aspectRatio
-					? Math.round((width * aspectRatio) / 100)
-					: undefined;
-
-				const imgSrc = buildImageSrc(image, { width, height, format, quality });
-
-				return imgSrc ? `${imgSrc} ${width}w` : '';
-			})
-			.filter(Boolean);
-
-		return sizes.length ? sizes.join(',') : false;
-	} catch (error) {
-		console.error('Error building image srcset:', error);
-		return false;
 	}
 }
 

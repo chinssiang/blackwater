@@ -3,7 +3,7 @@ import { Layout } from '@/components/layout';
 import HtmlShell from '@/components/layout/HtmlShell';
 import { sanityFetch } from '@/sanity/lib/live';
 import { page404Query } from '@/sanity/lib/queries';
-import { getCachedSiteData } from '@/sanity/lib/siteData';
+import { getCachedSiteData, pickLayoutData } from '@/sanity/lib/siteData';
 import { getDictionary } from '@/lib/dictionary.server';
 import { DEFAULT_LOCALE } from '@/lib/i18n';
 import { PageNotFound } from './(frontend)/[locale]/_components/PageNotFound';
@@ -30,7 +30,7 @@ export default async function NotFound() {
 			isDraftModeEnabled={false}
 		>
 			<LocaleProvider locale={DEFAULT_LOCALE} dictionary={dictionary}>
-				<Layout siteData={siteData}>
+				<Layout siteData={pickLayoutData(siteData)}>
 					<div data-not-found="">
 						<PageNotFound data={data} />
 					</div>
