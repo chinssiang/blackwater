@@ -60,7 +60,10 @@ export const getCachedSiteData = cache((locale: string) =>
 export type LayoutData = {
 	header: any;
 	footer: any;
-	newsletter: any;
+	// Not `any`, unlike its neighbours: <Newsletter> derives its prop type from
+	// this same projection, so typing the slice is what makes a dropped or
+	// renamed field a compile error on the footer path too.
+	newsletter: SiteDataQueryResult['newsletter'];
 	mobileMenu: any;
 	toolbar: any;
 	cart: any;

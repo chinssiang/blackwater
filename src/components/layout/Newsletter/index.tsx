@@ -10,21 +10,15 @@ import { Input } from '@/components/ui/Input';
 import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import CustomPortableText from '@/components/CustomPortableText';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import type { PortableTextSimple } from 'sanity.types';
+import type { SiteDataQueryResult } from 'sanity.types';
 
 type FormState = 'idle' | 'submitting' | 'success';
 
-type NewsletterData = {
-	klaviyoListID?: string | null;
-	heading?: string | null;
-	subheading?: string | null;
-	submitButtonText?: string | null;
-	disclaimer?: PortableTextSimple | null;
-	successHeading?: string | null;
-	successBody?: string | null;
-	errorHeading?: string | null;
-	errorBody?: string | null;
-};
+/** The `newsletterFormFields` projection, including its `| null`. Derived
+ *  rather than restated, and deliberately NOT wrapped in `Partial` — with the
+ *  keys required, a projection that drops `signupEnabled` fails to compile
+ *  instead of silently hiding the form. */
+export type NewsletterData = SiteDataQueryResult['newsletter'];
 
 export function Newsletter({
 	data,
@@ -40,18 +34,6 @@ export function Newsletter({
 	 *  both attributed to the footer. */
 	placement?: 'footer' | 'page';
 }) {
-	const {
-		klaviyoListID,
-		heading,
-		subheading,
-		submitButtonText,
-		disclaimer,
-		successHeading,
-		successBody,
-		errorHeading,
-		errorBody,
-	} = data || {};
-
 	const t = useTranslations('newsletter');
 	const locale = useLocale();
 
@@ -92,7 +74,19 @@ export function Newsletter({
 		return () => observer.disconnect();
 	}, [formState]);
 
-	if (!klaviyoListID) return null;
+	// Not this locale's own list id — see `newsletterFormFields` in queries.ts.
+	if (!data?.signupEnabled) return null;
+
+	const {
+		heading,
+		subheading,
+		submitButtonText,
+		disclaimer,
+		successHeading,
+		successBody,
+		errorHeading,
+		errorBody,
+	} = data;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -109,14 +103,19 @@ export function Newsletter({
 			const res = await fetch('/api/newsletter/subscribe', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				// The Klaviyo list is resolved server-side per locale; klaviyoListID
-				// here only gates whether the form renders at all.
 				body: JSON.stringify({ email, locale, placement }),
 			});
 
 			if (res.ok) {
 				setEmail('');
 				setFormState('success');
+			} else if (res.status === 400) {
+				// The route's zod `.email()` is stricter than validateEmail — a CJK or
+				// accented local part passes here and is rejected there. Show it as a
+				// field error, not a generic toast: otherwise the visitor never learns
+				// the address is the problem and retries until the throttle stops them.
+				setValidationError(t.invalidEmail);
+				setFormState('idle');
 			} else if (res.status === 429) {
 				// Distinct from a generic failure: retrying immediately cannot work,
 				// so saying "please try again" would send the visitor in a loop.
@@ -129,6 +128,9 @@ export function Newsletter({
 					description: errorBody || t.errorBody,
 				});
 				setFormState('idle');
+				// Status only: the body is one of a few constant sentences, and the
+				// route logs the real cause (locale, list, Klaviyo's reply) server-side.
+				console.error('[newsletter] subscribe failed', locale, res.status);
 			}
 		} catch {
 			toast.error(errorHeading || t.errorHeading, {

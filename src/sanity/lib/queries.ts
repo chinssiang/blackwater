@@ -323,10 +323,29 @@ const availableLocalesField = `
 ].language
 `;
 
+// The Klaviyo list a signup goes to: this locale's gNewsletter document if it
+// carries one, else the next document `byLocale` prefers (English, then a
+// language-less legacy singleton). Both the form's `signupEnabled` gate and
+// /api/newsletter/subscribe read THIS expression, so they cannot disagree about
+// whether a signup is possible — gating the form on its own document's field
+// instead is what left /zh_tw with no footer form at all.
+//
+// `!= ""` is load-bearing: GROQ's `defined("")` is true, so without it a blank
+// id would both satisfy the gate and shadow the working English fallback. A
+// whitespace-only id still slips through (GROQ has no trim) and reaches Klaviyo
+// as a bad list — catching that belongs in schema validation, not here, so that
+// the editor who pasted it is the one who hears about it.
+const newsletterListId = `${byLocale(
+	'gNewsletter'
+)}[defined(klaviyoListID) && klaviyoListID != ""][0].klaviyoListID`;
+
 // Reusable projection for the gNewsletter signup form. Shared by siteDataQuery
 // (footer form) and pageNewsletterQuery (dedicated /newsletter page).
+// The list id itself deliberately stays out: the client no longer chooses the
+// list, and this object is handed to <Layout>, i.e. serialized into every page's
+// RSC payload.
 const newsletterFormFields = `
-	klaviyoListID,
+	"signupEnabled": defined(${newsletterListId}),
 	heading,
 	subheading,
 	submitButtonText,
@@ -1011,10 +1030,10 @@ export const backInStockConfigQuery = defineQuery(`
 `);
 
 // Server-side list resolution for /api/newsletter/subscribe — same reasoning as
-// backInStockConfigQuery: the client never chooses the Klaviyo list. gNewsletter
-// is document-localized, so the list is resolved per locale (English fallback).
+// backInStockConfigQuery: the client never chooses the Klaviyo list. Same
+// expression as the form's `signupEnabled` gate, so the two cannot drift.
 export const newsletterConfigQuery = defineQuery(`
-	${byLocale('gNewsletter')}[defined(klaviyoListID)][0]{ "listId": klaviyoListID }
+	{ "listId": ${newsletterListId} }
 `);
 
 export const pageProductCollectionSlugsQuery = defineQuery(`
