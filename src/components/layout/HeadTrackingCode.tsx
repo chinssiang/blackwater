@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import { hasArrayValue } from '@/lib/utils';
+import * as gtag from '@/lib/gtag';
 import { pushConsentDefault, pushConsentUpdate } from '@/lib/consent';
 import { useConsent } from '@/hooks/useConsent';
 
@@ -59,6 +61,19 @@ export default function HeadTrackingCode({
 		if (!IS_PROD || !consent) return;
 		pushConsentUpdate(consent);
 	}, [consent]);
+
+	// SPA pageviews. This used to live in <Layout> outside the consent gate,
+	// which kept reporting after a visitor withdrew consent (window.gtag
+	// survives the revoke) and only ever tracked gaIDs[0]. Here it fires only
+	// while analytics consent stands, for every configured GA property.
+	const pathname = usePathname();
+	const analyticsGranted = Boolean(consent?.analytics);
+	useEffect(() => {
+		if (!IS_PROD || !analyticsGranted || !hasArrayValue(gaIDs)) return;
+		for (const id of gaIDs) {
+			gtag.pageview(pathname, id);
+		}
+	}, [pathname, analyticsGranted, gaIDs]);
 
 	// Not production, or no decision yet → block all tracking. The banner prompts.
 	if (!IS_PROD || !consent) {

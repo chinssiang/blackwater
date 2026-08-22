@@ -18,7 +18,7 @@ const csp = [
 	// drawer's line-item thumbnails.
 	"img-src 'self' data: blob: https://cdn.sanity.io https://cdn.shopify.com https://www.google-analytics.com https://www.googletagmanager.com",
 	"font-src 'self'",
-	"connect-src 'self' https://*.sanity.io https://www.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://vitals.vercel-insights.com",
+	"connect-src 'self' https://*.sanity.io https://*.google-analytics.com https://analytics.google.com https://stats.g.doubleclick.net https://va.vercel-scripts.com https://vitals.vercel-insights.com",
 	"frame-src 'self' https://*.sanity.io",
 	"object-src 'none'",
 	"base-uri 'self'",

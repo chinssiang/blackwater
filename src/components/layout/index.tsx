@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useEffect, useLayoutEffect, useMemo } from 'react';
+import React, { useLayoutEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { isLightThemePath, shouldHideGlobalNewsletter } from '@/lib/routes';
-import * as gtag from '@/lib/gtag';
 import { CartProvider } from '@/components/cart/CartProvider';
 import CartDrawer from '@/components/cart/CartDrawer';
 import AdaSkip from './AdaSkip';
@@ -29,15 +28,10 @@ export function Layout({ children, siteData }: LayoutProps) {
 	const { header, footer, newsletter, sharing, mobileMenu, toolbar } =
 		siteData || {};
 	const pathname = usePathname();
-	const gaID = siteData?.integrations?.gaIDs?.[0];
 	const isLightSection = isLightThemePath(pathname);
 	const hideNewsletter = shouldHideGlobalNewsletter(pathname);
-
-	useEffect(() => {
-		if (gaID) {
-			gtag.pageview(pathname, gaID);
-		}
-	}, [gaID, pathname]);
+	// SPA pageview tracking lives in HeadTrackingCode — the one component
+	// allowed to talk to gtag, so it stays behind the consent gate.
 
 	useLayoutEffect(() => {
 		const root = document.documentElement;
