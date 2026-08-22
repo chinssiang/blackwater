@@ -262,7 +262,10 @@ export function appendReferralParams(url: string, params: ReferralParams): strin
  * @returns True if the string is a valid email, otherwise false.
  */
 export function validateEmail(string: string): boolean {
-	const regex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
+	// Deliberately loose: one @, no whitespace, a dot in the domain with a 2+
+	// char TLD. The old pattern rejected real addresses (`user+tag@gmail.com`,
+	// 4+ char TLDs like .info); anything subtler is the mail provider's job.
+	const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
 	return regex.test(string);
 }

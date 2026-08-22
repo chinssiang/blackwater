@@ -1,29 +1,103 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { validateEmail } from '@/lib/utils';
+import * as z from 'zod';
+import { client } from '@/sanity/lib/client';
+import { newsletterConfigQuery } from '@/sanity/lib/queries';
+import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
+
+// The Klaviyo list is resolved server-side (from the locale's gNewsletter doc)
+// so this endpoint can't be used to push signups onto an arbitrary list. The
+// client supplies email + locale only.
+const bodySchema = z.object({
+	email: z.string().trim().email().max(320),
+});
+
+// Best-effort per-IP throttle. In-memory, so it's per server instance — not
+// airtight, but enough to stop naive scripted abuse of an endpoint that writes
+// to Klaviyo.
+const RATE_LIMIT = 5;
+const RATE_WINDOW_MS = 10 * 60 * 1000;
+const submissionTimes = new Map<string, number[]>();
+
+function isRateLimited(ip: string): boolean {
+	if (submissionTimes.size > 10_000) submissionTimes.clear();
+	const now = Date.now();
+	const recent = (submissionTimes.get(ip) ?? []).filter(
+		(t) => now - t < RATE_WINDOW_MS
+	);
+	if (recent.length >= RATE_LIMIT) {
+		submissionTimes.set(ip, recent);
+		return true;
+	}
+	recent.push(now);
+	submissionTimes.set(ip, recent);
+	return false;
+}
+
+const KLAVIYO_REVISION = '2024-10-15';
 
 export async function POST(req: NextRequest) {
-	const body = await req.json();
-	const { email, listId } = body as { email?: string; listId?: string };
+	const ip =
+		req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
+		req.headers.get('x-real-ip') ||
+		'unknown';
+	if (isRateLimited(ip)) {
+		return NextResponse.json(
+			{ ok: false, message: 'Too many requests. Try again later.' },
+			{ status: 429 }
+		);
+	}
 
-	if (!email || !validateEmail(email)) {
+	let body: unknown;
+	try {
+		body = await req.json();
+	} catch {
+		return NextResponse.json(
+			{ ok: false, message: 'Invalid request body.' },
+			{ status: 400 }
+		);
+	}
+
+	const parsed = bodySchema.safeParse(body);
+	if (!parsed.success) {
 		return NextResponse.json(
 			{ ok: false, message: 'Invalid email address.' },
 			{ status: 400 }
 		);
 	}
-
-	if (!listId) {
-		return NextResponse.json(
-			{ ok: false, message: 'Missing list ID.' },
-			{ status: 400 }
-		);
-	}
+	const { email } = parsed.data;
+	const rawLocale = (body as { locale?: unknown }).locale;
+	const locale = isLocale(rawLocale) ? rawLocale : DEFAULT_LOCALE;
 
 	const apiKey = process.env.KLAVIYO_PRIVATE_API_KEY;
 	if (!apiKey) {
 		console.error('[newsletter] KLAVIYO_PRIVATE_API_KEY is not set');
 		return NextResponse.json(
 			{ ok: false, message: 'Server configuration error.' },
+			{ status: 500 }
+		);
+	}
+
+	// Read server-side (stega off) so the client can't override the list and a
+	// draft-mode render can't leak stega characters into the id.
+	let listId: string | null | undefined;
+	try {
+		const config = await client.fetch(
+			newsletterConfigQuery,
+			{ locale },
+			{ stega: false }
+		);
+		listId = config?.listId;
+	} catch (err) {
+		console.error('[newsletter] failed to fetch config', err);
+		return NextResponse.json(
+			{ ok: false, message: 'Server configuration error.' },
+			{ status: 500 }
+		);
+	}
+	if (!listId) {
+		console.error('[newsletter] gNewsletter.klaviyoListID is not configured');
+		return NextResponse.json(
+			{ ok: false, message: 'Newsletter signup is not configured.' },
 			{ status: 500 }
 		);
 	}
@@ -35,7 +109,7 @@ export async function POST(req: NextRequest) {
 				method: 'POST',
 				headers: {
 					Authorization: `Klaviyo-API-Key ${apiKey}`,
-					revision: '2024-10-15',
+					revision: KLAVIYO_REVISION,
 					'Content-Type': 'application/json',
 					accept: 'application/json',
 				},
@@ -69,7 +143,10 @@ export async function POST(req: NextRequest) {
 		if (!res.ok) {
 			const body = await res.text();
 			console.error('[newsletter] Klaviyo error', res.status, body);
-			return NextResponse.json({ ok: false }, { status: 502 });
+			return NextResponse.json(
+				{ ok: false, message: 'Subscription failed.' },
+				{ status: 502 }
+			);
 		}
 
 		return Response.json({ ok: true });

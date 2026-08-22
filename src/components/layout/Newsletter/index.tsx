@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import CustomPortableText from '@/components/CustomPortableText';
-import { useTranslations } from '@/components/LocaleProvider';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import type { PortableTextSimple } from 'sanity.types';
 
 type FormState = 'idle' | 'submitting' | 'success';
@@ -48,6 +48,7 @@ export function Newsletter({
 	} = data || {};
 
 	const t = useTranslations('newsletter');
+	const locale = useLocale();
 
 	const [email, setEmail] = useState('');
 	const [formState, setFormState] = useState<FormState>('idle');
@@ -103,7 +104,9 @@ export function Newsletter({
 			const res = await fetch('/api/newsletter/subscribe', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, listId: klaviyoListID }),
+				// The Klaviyo list is resolved server-side per locale; klaviyoListID
+				// here only gates whether the form renders at all.
+				body: JSON.stringify({ email, locale }),
 			});
 
 			if (res.ok) {

@@ -1125,6 +1125,13 @@ export const backInStockConfigQuery = defineQuery(`
 	*[_type == "settingsIntegration"][0]{ "listId": klaviyoBackInStockListId }
 `);
 
+// Server-side list resolution for /api/newsletter/subscribe — same reasoning as
+// backInStockConfigQuery: the client never chooses the Klaviyo list. gNewsletter
+// is document-localized, so the list is resolved per locale (English fallback).
+export const newsletterConfigQuery = defineQuery(`
+	${byLocale('gNewsletter')}[defined(klaviyoListID)][0]{ "listId": klaviyoListID }
+`);
+
 export const pageProductCollectionSlugsQuery = defineQuery(`
 	*[_type == "pProductCollection" && defined(slug.current)]
 	{"slug": slug.current}
