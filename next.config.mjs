@@ -51,16 +51,16 @@ const nextConfig = {
 		root: projectRoot,
 	},
 	allowedDevOrigins: ['192.168.0.109'],
-	// NOTE on prerendering: every /[locale]/* route builds as `ƒ` (dynamic) and
-	// ships `cache-control: no-store`, because ConsentGate reads the consent
-	// cookie. A <Suspense> boundary alone does not buy prerendering — that needs
-	// `cacheComponents: true`, which was tried and reverted: it requires every
-	// uncached read to be inside <Suspense> (it failed at the root of the tree),
-	// and the alternative — moving Sanity reads into `'use cache'` — is blocked
-	// because next-sanity's `sanityFetch` (defineLive) calls `draftMode()`
-	// internally, and Dynamic APIs are illegal inside `use cache`. Landing this
-	// means replacing the defineLive fetch layer for published traffic. Worth 0
-	// Lighthouse points; it is a hosting-cost and TTFB win.
+	// NOTE on prerendering: every /[locale]/* route builds as `●` (prerendered)
+	// because nothing in that subtree reads a Dynamic API — the consent decision
+	// comes from the browser (src/hooks/useConsent.ts). Keep it that way: a
+	// server-side cookie read cannot be rescued by wrapping it in <Suspense>,
+	// which was tried. Making a boundary enough would need
+	// `cacheComponents: true`, tried and reverted: it requires every uncached
+	// read to be inside <Suspense> (it failed at the root of the tree), and the
+	// alternative — moving Sanity reads into `'use cache'` — is blocked because
+	// next-sanity's `sanityFetch` (defineLive) calls `draftMode()` internally,
+	// and Dynamic APIs are illegal inside `use cache`.
 	experimental: {
 		// NOTE: `viewTransition` + `taint` were removed deliberately. `viewTransition`
 		// makes React emit `<link rel="expect" href="#_R_" blocking="render">`, which

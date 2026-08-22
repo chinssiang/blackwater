@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import DraftModeTools from '@/components/DraftModeTools';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -8,8 +7,12 @@ import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { htmlLangFor, type Locale } from '@/lib/i18n';
 import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
-import ConsentGate from '@/components/consent/ConsentGate';
-import type { ConsentSettings } from '@/components/consent/ConsentBanner';
+import HeadTrackingCode, {
+	type TrackingIntegrations,
+} from '@/components/layout/HeadTrackingCode';
+import ConsentBanner, {
+	type ConsentSettings,
+} from '@/components/consent/ConsentBanner';
 import JsonLd from '@/components/JsonLd';
 import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
 import type { Dictionary } from '@/lib/dictionary';
@@ -44,12 +47,18 @@ export default function HtmlShell({
 	siteData,
 	consentFallback,
 	isDraftModeEnabled,
+	// Opt-in, and only the [locale] subtree opts in. The shells that render this
+	// from outside that subtree — /email-signature, /events-crew and the root
+	// 404 — have never loaded analytics, and an internal crew tool is not a
+	// place to start collecting pageviews.
+	enableTracking = false,
 	children,
 }: {
 	locale: Locale;
 	siteData: unknown;
 	consentFallback: Dictionary['consent'];
 	isDraftModeEnabled: boolean;
+	enableTracking?: boolean;
 	children: React.ReactNode;
 }) {
 	const cleanData = stegaClean(siteData) as
@@ -58,6 +67,12 @@ export default function HtmlShell({
 				consent?: ConsentSettings;
 		  }
 		| undefined;
+	// Only the three ids the tags need, not all of siteData: HeadTrackingCode is
+	// a client component, so whatever it receives is serialized into the RSC
+	// payload. Read raw rather than from cleanData to keep the previous behavior.
+	const integrations = (
+		siteData as { integrations?: TrackingIntegrations } | undefined
+	)?.integrations;
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 	const siteJsonLd = defineSiteJsonLd({
 		sharing: cleanData?.sharing,
@@ -80,16 +95,7 @@ export default function HtmlShell({
 				/>
 				<meta httpEquiv="X-UA-Compatible" content="IE=edge" />
 				<link rel="preconnect" href="https://cdn.sanity.io" />
-				{/* The only dynamic read in the tree (the consent cookie). Behind a
-				    <Suspense> boundary so the shell around it still prerenders — see
-				    ConsentGate. Streams in after the static HTML. */}
-				<Suspense fallback={null}>
-					<ConsentGate
-						siteData={siteData}
-						settings={cleanData?.consent ?? null}
-						fallback={consentFallback}
-					/>
-				</Suspense>
+				{enableTracking && <HeadTrackingCode integrations={integrations} />}
 				{siteJsonLd && <JsonLd data={siteJsonLd} />}
 				<ReactQueryProvider>
 					<ThemeProvider>
@@ -98,6 +104,10 @@ export default function HtmlShell({
 						<DraftModeTools enabled={isDraftModeEnabled} />
 						<Analytics />
 						<SpeedInsights />
+						<ConsentBanner
+							settings={cleanData?.consent ?? null}
+							fallback={consentFallback}
+						/>
 					</ThemeProvider>
 				</ReactQueryProvider>
 			</body>

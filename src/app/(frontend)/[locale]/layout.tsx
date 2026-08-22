@@ -40,8 +40,8 @@ export default async function LocaleLayout({
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
 	// NOTE: deliberately no cookies() here. Reading a Dynamic API in this root
 	// layout opted every /[locale]/* route out of static generation (measured:
-	// all `ƒ` + cache-control: no-store). The consent cookie is now read in
-	// ConsentGate, a <Suspense>-wrapped leaf inside HtmlShell.
+	// all `ƒ` + cache-control: no-store; without it the whole subtree is `●`). The
+	// consent decision is read in the browser instead — see src/hooks/useConsent.
 	const [{ data }, dictionary] = await Promise.all([
 		getCachedSiteData(locale),
 		getDictionary(locale as Locale),
@@ -53,6 +53,7 @@ export default async function LocaleLayout({
 			siteData={data}
 			consentFallback={dictionary.consent}
 			isDraftModeEnabled={isDraftModeEnabled}
+			enableTracking
 		>
 			<LocaleProvider locale={locale as Locale} dictionary={dictionary}>
 				{children}
