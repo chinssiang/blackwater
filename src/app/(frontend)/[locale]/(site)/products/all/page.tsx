@@ -17,7 +17,8 @@ const getCachedData = cache((locale: Locale, start: number, end: number) =>
 	sanityFetch({
 		query: pageProductsAllQuery,
 		params: { locale, start, end },
-		tags: ['pProduct', 'pProductCategory'],
+		// pBrand: productCardFields derefs brands[]->.
+		tags: ['pProduct', 'pProductCategory', 'pBrand'],
 	})
 );
 

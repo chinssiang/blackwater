@@ -33,7 +33,8 @@ const getCachedCategoryData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageProductCategorySingleQuery,
 		params: { slug, locale },
-		tags: ['pProductCategory', 'pProduct'],
+		// pBrand: productCardFields derefs brands[]->.
+		tags: ['pProductCategory', 'pProduct', 'pBrand'],
 	})
 );
 

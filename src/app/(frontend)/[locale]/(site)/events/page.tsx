@@ -86,7 +86,15 @@ const getCachedEventsData = cache(
 		sanityFetch({
 			query: pEventsQuery,
 			params: { locale, cutoff: getEventsCutoff() },
-			tags: ['pEvents', 'pEvent'],
+			// The card query derefs locationRef-> (gLocation) and statusList's
+			// eventStatus-> plus its color refs (pEventStatus, settingsBrandColors).
+			tags: [
+				'pEvents',
+				'pEvent',
+				'gLocation',
+				'pEventStatus',
+				'settingsBrandColors',
+			],
 		})
 );
 

@@ -35,7 +35,16 @@ const getCachedEventData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageEventSingleQuery,
 		params: { slug, locale },
-		tags: [`pEvent:${slug}`],
+		// The detail query derefs locationRef-> (gLocation), categories[]->
+		// (pEventCategory) and statusList's eventStatus-> plus its color refs
+		// (pEventStatus, settingsBrandColors).
+		tags: [
+			`pEvent:${slug}`,
+			'gLocation',
+			'pEventCategory',
+			'pEventStatus',
+			'settingsBrandColors',
+		],
 	})
 );
 

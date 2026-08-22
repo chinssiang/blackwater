@@ -34,7 +34,9 @@ const getCachedProductData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageProductSingleQuery,
 		params: { slug, locale },
-		tags: ['pProduct', 'pProductCategory', 'gSizeChart'],
+		// gTag: metadata lists deref @-> into gTag; pBrand: productCardFields
+		// derefs brands[]->.
+		tags: ['pProduct', 'pProductCategory', 'gSizeChart', 'gTag', 'pBrand'],
 	})
 );
 

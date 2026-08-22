@@ -35,7 +35,9 @@ const getCachedPageData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageGeneralQuery,
 		params: { slug, locale },
-		tags: [`pGeneral:${slug}`],
+		// gFaq: faqList modules deref questions[]->; settingsBrandColors:
+		// sectionAppearance derefs backgroundColor->/textColor->.
+		tags: [`pGeneral:${slug}`, 'gFaq', 'settingsBrandColors'],
 	})
 );
 

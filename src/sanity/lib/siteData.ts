@@ -16,6 +16,14 @@ export const SITE_DATA_TAGS = [
 	'settingsCart',
 	'settingsBrandColors',
 	'pProductIndex',
+	// Menu labels fall back to internalLink->title, so renaming a linked page
+	// must refresh the chrome; the cart's recommendedProducts embed the full
+	// productCardFields (pProduct, categories[]->, brands[]->).
+	'pGeneral',
+	'pEvent',
+	'pProduct',
+	'pProductCategory',
+	'pBrand',
 ] as const;
 
 // Deliberately Sanity-only. This runs for every page that renders the site
