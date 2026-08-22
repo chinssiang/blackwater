@@ -7,7 +7,10 @@ import {
 	pageGeneralQuery,
 	pageGeneralSlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import defineMetadata, {
+	normalizeLocales,
+	notFoundMetadata,
+} from '@/lib/defineMetadata';
 import defineFaqJsonLd, { collectFaqItems } from '@/lib/defineFaqJsonLd';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
@@ -51,6 +54,9 @@ export async function generateMetadata(
 	const { slug, locale } = await props.params;
 	const { data } = await getCachedPageData(slug, locale);
 	const cleanData = stegaClean(data);
+	// This route, not [...rest], is what an unknown single-segment path lands on
+	// (/nope, not /a/b/c), so it is the common soft-404 and needs de-indexing.
+	if (!cleanData) return notFoundMetadata();
 	return defineMetadata({
 		data: cleanData,
 		locale: locale as Locale,
