@@ -285,7 +285,11 @@ deleted 74 zh docs + 76 `translation.metadata`, in one transaction. Re-run is a
 no-op. Dev dataset backed up first (`../../backups/dev-*.ndjson.gz`).
 
 ## Stage D: Prod choreography
-**Status**: Not Started — at the next deploy:
+**Status**: Complete — both datasets migrated (verified 2026-08-22: zero
+*published* documents in prod or dev carry `language` for the product or event
+families). Four un-migrated **drafts** remain in dev only (`pEvent` 144-rr,
+148-rr, 140-rr and `pEventCategory` tr) — stale leftovers from before the event
+merge; publish or discard them. Original runbook, kept for reference:
 1. **Announce a content freeze on products/collections** and confirm no drafts
    exist. This is not optional politeness: between deploy and migration the
    schema uses `isUniqueAcrossType`, so every existing en/zh sibling pair
@@ -304,7 +308,11 @@ no-op. Dev dataset backed up first (`../../backups/dev-*.ndjson.gz`).
 5. Spot-check both locales + `/sitemap/products.xml`.
 
 ## Stage E: Post-prod cleanup
-**Status**: Not Started — after Stage D only: strip the transition tails
+**Status**: Complete — tails stripped in `2288ab7` and merged 2026-08-22. The
+`defined(language)` occurrences that remain in `queries.ts` are all
+document-level types (`byLocale`, `availableLocalesField`, `pGeneral`, `pBlog`,
+the `pProductIndex` sitemap arm) and are correct. Original scope: strip the
+transition tails
 (`select(defined(language) => …)`, `shopifyHandleField`'s sibling coalesce,
 `productLocaleFilter`'s old-shape branches), then simplify `CLAUDE.md`'s
 transition notes and retire the merge script.
