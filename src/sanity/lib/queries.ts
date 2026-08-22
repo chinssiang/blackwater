@@ -323,24 +323,24 @@ const availableLocalesField = `
 ].language
 `;
 
+// The Klaviyo list a signup goes to: this locale's gNewsletter document if it
+// carries one, else the English fallback. gNewsletter is document-localized, so
+// fallback is whole-document — a zh_tw document that exists but has no
+// klaviyoListID does NOT inherit the English one — which is why the form's gate
+// reads this expression and not its own document's field. Written once because
+// the two disagreeing IS the bug: gating on the raw field left /zh_tw with no
+// footer form at all while the route would have subscribed against `en` fine.
+const newsletterListId = `${byLocale(
+	'gNewsletter'
+)}[defined(klaviyoListID)][0].klaviyoListID`;
+
 // Reusable projection for the gNewsletter signup form. Shared by siteDataQuery
 // (footer form) and pageNewsletterQuery (dedicated /newsletter page).
+// The list id itself deliberately stays out: the client no longer chooses the
+// list, and this object is handed to <Layout>, i.e. serialized into every page's
+// RSC payload.
 const newsletterFormFields = `
-	// Whether a signup can actually complete, resolved exactly the way
-	// newsletterConfigQuery resolves the list: this locale's document if it
-	// carries one, otherwise any locale that does. gNewsletter is
-	// document-localized, so fallback is whole-document — a zh_tw document that
-	// exists but has no klaviyoListID does NOT inherit the English one, and the
-	// form used to gate itself on that raw field. The result was a /zh_tw footer
-	// with no form at all while /api/newsletter/subscribe could have subscribed
-	// against the English list perfectly well.
-	// The id itself stays out of the projection on purpose: the client no longer
-	// chooses the list, and this object is handed to <Layout>, i.e. serialized
-	// into the RSC payload of every page on the site.
-	"signupEnabled": defined(coalesce(
-		klaviyoListID,
-		*[_type == "gNewsletter" && defined(klaviyoListID)][0].klaviyoListID
-	)),
+	"signupEnabled": defined(${newsletterListId}),
 	heading,
 	subheading,
 	submitButtonText,
@@ -1025,10 +1025,10 @@ export const backInStockConfigQuery = defineQuery(`
 `);
 
 // Server-side list resolution for /api/newsletter/subscribe — same reasoning as
-// backInStockConfigQuery: the client never chooses the Klaviyo list. gNewsletter
-// is document-localized, so the list is resolved per locale (English fallback).
+// backInStockConfigQuery: the client never chooses the Klaviyo list. Same
+// expression as the form's `signupEnabled` gate, so the two cannot drift.
 export const newsletterConfigQuery = defineQuery(`
-	${byLocale('gNewsletter')}[defined(klaviyoListID)][0]{ "listId": klaviyoListID }
+	{ "listId": ${newsletterListId} }
 `);
 
 export const pageProductCollectionSlugsQuery = defineQuery(`

@@ -94,10 +94,7 @@ export async function POST(req: NextRequest) {
 			{ locale },
 			{ stega: false }
 		);
-		// Trimmed: this is a hand-pasted id, and a stray newline turns every
-		// submission for that locale into a Klaviyo 404 the visitor sees as a
-		// generic failure. A whitespace-only value falls through to the guard
-		// below rather than being sent.
+		// Hand-pasted id: a stray newline 404s every submission for this locale.
 		listId = config?.listId?.trim();
 	} catch (err) {
 		console.error('[newsletter] failed to fetch config', err);
@@ -107,10 +104,8 @@ export async function POST(req: NextRequest) {
 		);
 	}
 	if (!listId) {
-		// The locale matters: gNewsletter is document-localized, so this fires
-		// when neither this locale's document nor any other carries a list.
 		console.error(
-			'[newsletter] no gNewsletter.klaviyoListID configured for locale',
+			'[newsletter] no gNewsletter.klaviyoListID for locale',
 			locale
 		);
 		return NextResponse.json(
@@ -162,7 +157,8 @@ export async function POST(req: NextRequest) {
 			console.error(
 				'[newsletter] Klaviyo error',
 				res.status,
-				`locale=${locale} list=${listId}`,
+				locale,
+				listId,
 				body
 			);
 			return NextResponse.json(

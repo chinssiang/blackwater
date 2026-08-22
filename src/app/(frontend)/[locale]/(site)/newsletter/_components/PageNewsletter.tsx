@@ -1,22 +1,12 @@
 'use client';
-import { Newsletter } from '@/components/layout/Newsletter';
-import type { PortableTextSimple } from 'sanity.types';
-
-interface NewsletterFormData {
-	signupEnabled?: boolean | null;
-	heading?: string | null;
-	subheading?: string | null;
-	submitButtonText?: string | null;
-	disclaimer?: PortableTextSimple | null;
-	successHeading?: string | null;
-	successBody?: string | null;
-	errorHeading?: string | null;
-	errorBody?: string | null;
-}
+import {
+	Newsletter,
+	type NewsletterData,
+} from '@/components/layout/Newsletter';
 
 interface PageNewsletterData {
 	title?: string | null;
-	newsletter?: NewsletterFormData | null;
+	newsletter?: NewsletterData | null;
 }
 
 interface PageNewsletterProps {

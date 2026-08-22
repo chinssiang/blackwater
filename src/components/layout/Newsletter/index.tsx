@@ -10,23 +10,15 @@ import { Input } from '@/components/ui/Input';
 import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import CustomPortableText from '@/components/CustomPortableText';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import type { PortableTextSimple } from 'sanity.types';
+import type { SiteDataQueryResult } from 'sanity.types';
 
 type FormState = 'idle' | 'submitting' | 'success';
 
-type NewsletterData = {
-	/** Resolved by the query, not read from one document's raw field — see the
-	 *  note on `newsletterFormFields` in queries.ts. */
-	signupEnabled?: boolean | null;
-	heading?: string | null;
-	subheading?: string | null;
-	submitButtonText?: string | null;
-	disclaimer?: PortableTextSimple | null;
-	successHeading?: string | null;
-	successBody?: string | null;
-	errorHeading?: string | null;
-	errorBody?: string | null;
-};
+/** The `newsletterFormFields` projection. Derived rather than restated so a
+ *  change to that projection cannot leave a stale mirror compiling clean. */
+export type NewsletterData = Partial<
+	NonNullable<SiteDataQueryResult['newsletter']>
+>;
 
 export function Newsletter({
 	data,
@@ -94,9 +86,7 @@ export function Newsletter({
 		return () => observer.disconnect();
 	}, [formState]);
 
-	// Nothing to render when no locale has a Klaviyo list configured: the route
-	// would answer 500 for every submission. Deliberately NOT a check on this
-	// locale's own list id — see `newsletterFormFields` in queries.ts.
+	// Not this locale's own list id — see `newsletterFormFields` in queries.ts.
 	if (!signupEnabled) return null;
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -114,8 +104,6 @@ export function Newsletter({
 			const res = await fetch('/api/newsletter/subscribe', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				// The Klaviyo list is resolved server-side from `locale`; the client
-				// only says which locale it is rendering in.
 				body: JSON.stringify({ email, locale, placement }),
 			});
 
@@ -130,19 +118,19 @@ export function Newsletter({
 				});
 				setFormState('idle');
 			} else {
-				// The visitor-facing copy stays generic, but the route's own reason
-				// (unconfigured list, Klaviyo rejection) is the only signal a
-				// per-locale misconfiguration ever produces — so don't swallow it.
-				console.error(
-					'[newsletter] subscribe failed',
-					locale,
-					res.status,
-					await res.text()
-				);
 				toast.error(errorHeading || t.errorHeading, {
 					description: errorBody || t.errorBody,
 				});
 				setFormState('idle');
+				// Logged after the toast so draining the body doesn't delay it. The
+				// route's reason is the only signal a misconfigured list produces.
+				const detail = await res.text();
+				console.error(
+					'[newsletter] subscribe failed',
+					locale,
+					res.status,
+					detail
+				);
 			}
 		} catch {
 			toast.error(errorHeading || t.errorHeading, {
