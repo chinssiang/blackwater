@@ -7,7 +7,8 @@
 import {
 	DEFAULT_LOCALE,
 	localizePath,
-	stripLocaleFromPath,
+	stripLocaleFromHref,
+	stripLocaleFromPathname,
 	type Locale,
 } from '@/lib/i18n';
 
@@ -45,11 +46,43 @@ export const DOCUMENT_ROUTES = [
 	// { type: 'pBlog', path: '/blog/', slug: true },
 ];
 
+// Reduces a locale-stripped path to the form route comparisons use: no query,
+// no fragment, no trailing slash. An authored href may carry "?"/"#" that a
+// pathname never does, so "/size-guide#tops" has to compare as "/size-guide"
+// or a link is never active on the page it points at.
+function toComparablePath(path: string): string {
+	const trimmed = path.replace(/[?#].*$/, '').replace(/\/+$/, '');
+	return trimmed === '' ? '/' : trimmed;
+}
+
+// The route predicates below all compare a usePathname() value, which the
+// header re-derives for every menu item off one unchanging pathname. Cache the
+// last answer: the function is pure, so a stale entry can only ever be the
+// right answer for that same input.
+let pathnameCache: { pathname: string; normalized: string } | undefined;
+
+function normalizeRoutePath(pathname: string): string {
+	if (pathnameCache?.pathname !== pathname) {
+		pathnameCache = {
+			pathname,
+			normalized: toComparablePath(stripLocaleFromPathname(pathname).path),
+		};
+	}
+	return pathnameCache.normalized;
+}
+
+// The href counterpart. Deliberately NOT normalizeRoutePath: a link target is
+// authored, so a leading "/en/" is a real path segment (a pGeneral page slugged
+// "en") and collapsing it would make the Home link active on that page while
+// its own link never matched.
+function normalizeHrefPath(href: string): string {
+	return toComparablePath(stripLocaleFromHref(href).path);
+}
+
 const HIDE_GLOBAL_NEWSLETTER_PATHS = ['/events-crew', '/newsletter'];
 
 export function shouldHideGlobalNewsletter(pathname: string): boolean {
-	const { path } = stripLocaleFromPath(pathname);
-	const normalized = path.replace(/\/+$/, '') || '/';
+	const normalized = normalizeRoutePath(pathname);
 	return HIDE_GLOBAL_NEWSLETTER_PATHS.includes(normalized);
 }
 
@@ -61,24 +94,8 @@ export function shouldHideGlobalNewsletter(pathname: string): boolean {
 const LIGHT_THEME_PATHS = ['/products', '/size-guide'];
 
 export function isLightThemePath(pathname: string): boolean {
-	const { path } = stripLocaleFromPath(pathname);
-	const normalized = path.replace(/\/+$/, '') || '/';
+	const normalized = normalizeRoutePath(pathname);
 	return LIGHT_THEME_PATHS.some(
-		(base) => normalized === base || normalized.startsWith(`${base}/`)
-	);
-}
-
-// Routes where the local-time readout is meaningful — event schedules are the
-// only place the Taipei clock earns its space in the header. Matches itself and
-// its descendants, same as LIGHT_THEME_PATHS. Note this deliberately does NOT
-// cover /events-crew: it is a separate top-level route, not a descendant, and
-// the exact-or-"${base}/" match below is what keeps it out.
-const EVENT_PATHS = ['/events'];
-
-export function isEventPath(pathname: string): boolean {
-	const { path } = stripLocaleFromPath(pathname);
-	const normalized = path.replace(/\/+$/, '') || '/';
-	return EVENT_PATHS.some(
 		(base) => normalized === base || normalized.startsWith(`${base}/`)
 	);
 }
@@ -146,38 +163,29 @@ export const resolvedHrefGroq = `select(
 
 /**
  * Checks if a link should be considered active based on the current path and target URL.
- * @param args - Object containing the current pathName, target url, and an optional flag for exact (child) matching.
+ * @param args - Object containing the current pathName and the target url.
  * @returns True if the link is active, otherwise false.
  */
 export const checkIfLinkIsActive = ({
 	pathName,
 	url,
-	isChild,
 }: {
 	pathName: string;
 	url: string;
-	isChild?: boolean;
 }): boolean => {
 	if (!pathName || !url) return false;
 
-	// Strip the locale prefix and any trailing slash so comparisons are
-	// consistent regardless of locale or how the href was authored
-	// (e.g. "/events/" from GROQ vs "/events" from usePathname).
-	const normalize = (value: string): string => {
-		const { path } = stripLocaleFromPath(value);
-		const trimmed = path.replace(/\/+$/, '');
-		return trimmed === '' ? '/' : trimmed;
-	};
-
-	const current = normalize(pathName);
-	const target = normalize(url);
+	// One side is a pathname and the other an href, so they normalize
+	// differently — see the two helpers above. Both shed the trailing slash, so
+	// "/events/" from GROQ still matches "/events" from usePathname.
+	const current = normalizeRoutePath(pathName);
+	const target = normalizeHrefPath(url);
 
 	// The home link is only active on the home page itself; otherwise every
 	// route would match it as a descendant.
 	if (target === '/') return current === '/';
 
-	// Child links match their own page exactly; section/parent links also stay
-	// active on descendant routes (e.g. /products/foo keeps /products active).
-	if (isChild) return current === target;
+	// Section/parent links stay active on descendant routes as well
+	// (e.g. /products/foo keeps /products active).
 	return current === target || current.startsWith(`${target}/`);
 };

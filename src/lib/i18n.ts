@@ -102,18 +102,44 @@ export function ogLocaleFor(locale: Locale): string {
 	return locale === 'zh_tw' ? 'zh_TW' : 'en_US';
 }
 
-export function stripLocaleFromPath(path: string): {
-	locale: Locale;
-	path: string;
-} {
+type StrippedLocale = { locale: Locale; path: string };
+
+function stripLocale(path: string, includeDefault: boolean): StrippedLocale {
 	for (const locale of LOCALES) {
-		if (locale === DEFAULT_LOCALE) continue;
+		if (locale === DEFAULT_LOCALE && !includeDefault) continue;
 		const prefix = `/${locale}`;
 		if (path === prefix) return { locale, path: '/' };
 		if (path.startsWith(`${prefix}/`))
 			return { locale, path: path.slice(prefix.length) };
 	}
 	return { locale: DEFAULT_LOCALE, path };
+}
+
+// The two callers below differ on ONE axis — where the string came from — and
+// that is the whole reason both exist. Pick by the source of your input, never
+// by which name reads better:
+//
+//   href     -> stripLocaleFromHref      (authored or resolved link target)
+//   pathname -> stripLocaleFromPathname  (anything out of usePathname())
+//
+// They disagree only about the DEFAULT locale prefix, which is exactly where
+// getting it wrong is invisible: public URLs never carry "/en", so in an href
+// "/en/..." is a real path segment and must survive — but proxy.ts rewrites the
+// public "/products/x" onto the internal "/en/products/x", so a prerender's
+// pathname DOES carry "/en" while the browser's never does. Stripping only
+// non-default locales from a pathname left the two sides disagreeing and the
+// build baked the prerender's answer into the HTML: that is how /products
+// shipped dark and flipped to light on hydration, and how every English page
+// shipped a "/zh_tw/en/..." language-switcher href.
+
+/** For an authored or resolved href. Keeps a leading "/en/" as a real segment. */
+export function stripLocaleFromHref(path: string): StrippedLocale {
+	return stripLocale(path, false);
+}
+
+/** For a usePathname() value. Strips every locale prefix, default included. */
+export function stripLocaleFromPathname(path: string): StrippedLocale {
+	return stripLocale(path, true);
 }
 
 // Routes that exist only at the default locale (no /[locale] variant). The
@@ -125,7 +151,7 @@ export const LOCALE_EXEMPT_PREFIXES = [
 ] as const;
 
 export function isLocaleExemptPath(path: string): boolean {
-	const { path: stripped } = stripLocaleFromPath(path);
+	const { path: stripped } = stripLocaleFromPathname(path);
 	return LOCALE_EXEMPT_PREFIXES.some(
 		(prefix) => stripped === prefix || stripped.startsWith(`${prefix}/`)
 	);

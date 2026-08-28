@@ -7,14 +7,12 @@ import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { SiteDataQueryResult } from 'sanity.types';
 import CustomLink from '@/components/CustomLink';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { LocationCurrentTime } from '@/components/LocationCurrentTimeLazy';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
 import { CloseIcon, MenuIcon } from '@/components/SvgIcons';
 import { buttonVariants } from '@/components/ui/Button';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { mobileMenuItem, mobileMenuList, mobileMenuPanel } from '@/lib/animate';
-import { usePathname } from 'next/navigation';
-import { isEventPath, resolveHref } from '@/lib/routes';
+import { resolveHref } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { useScrollLock } from '@/hooks/useScrollLock';
 

@@ -7,11 +7,9 @@ import Menu from '@/components/Menu';
 import MobileMenu from '@/components/MobileMenu';
 import CartButton from '@/components/cart/CartButton';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { LocationCurrentTime } from '@/components/LocationCurrentTimeLazy';
 import { cn } from '@/lib/utils';
 import { useLocale } from '@/components/LocaleProvider';
-import { usePathname } from 'next/navigation';
-import { isEventPath, resolveHref } from '@/lib/routes';
+import { resolveHref } from '@/lib/routes';
 
 type HeaderProps = GHeader & {
 	siteTitle?: string;
