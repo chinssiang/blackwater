@@ -289,11 +289,24 @@ const gSizeChartFields = `
 	"note": ${locString('note')}
 `;
 
-const faqListField = `
+// A faqBlock names EITHER a set or its own hand-picked questions, and `items`
+// stays flat either way — both <FaqBlock> and collectFaqItems consume a flat
+// array, so the discriminator never escapes GROQ.
+//
+// `select()` picks the reference ARRAY and the deref/projection is applied once
+// outside it, rather than repeating gFaqItemFields in both arms — that fragment
+// expands to ~5KB of GROQ, which every page query carrying a faqBlock would
+// otherwise ship twice. Not `coalesce`: a hidden field keeps its data, so a
+// stale `questions` array would win over the set the editor actually chose.
+//
+// The set arm is the fallback, not `picked`: a module written through the API
+// with no `source` still renders its set. See gFaqList's header for why the list
+// is a document rather than an inline array.
+const faqBlockField = `
 	_type,
 	_key,
 	heading,
-	"items": questions[]->{
+	"items": select(source == "picked" => questions, faqSet->questions)[]->{
 		${gFaqItemFields}
 	},
 	sectionAppearance {
@@ -307,8 +320,8 @@ const pageModuleFields = `
 	_type == 'freeform' => {
 		${freeformField}
 	},
-	_type == 'faqList' => {
-		${faqListField}
+	_type == 'faqBlock' => {
+		${faqBlockField}
 	},
 `;
 
@@ -695,7 +708,7 @@ export const pageFaqQuery = defineQuery(`
 		${baseFields},
 		${availableLocalesField},
 		intro,
-		"items": questions[]->{
+		"items": faqSet->questions[]->{
 			${gFaqItemFields}
 		}
 	}

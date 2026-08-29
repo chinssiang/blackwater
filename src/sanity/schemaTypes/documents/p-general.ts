@@ -22,7 +22,7 @@ export const pGeneral = defineType({
 			type: 'array',
 			description:
 				'Optional modules rendered below the main content — e.g. an FAQ section.',
-			of: [{ type: 'freeform' }, { type: 'faqList' }],
+			of: [{ type: 'freeform' }, { type: 'faqBlock' }],
 		},
 		sharing(),
 	],

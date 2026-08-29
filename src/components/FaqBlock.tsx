@@ -17,7 +17,7 @@ export type FaqItem = {
 	answerText?: string | null;
 };
 
-type FaqListProps = {
+type FaqBlockProps = {
 	data: {
 		heading?: string;
 		items?: FaqItem[];
@@ -26,7 +26,7 @@ type FaqListProps = {
 	className?: string;
 };
 
-export default function FaqList({ data, className }: FaqListProps) {
+export default function FaqBlock({ data, className }: FaqBlockProps) {
 	const { heading, items, sectionAppearance } = data || {};
 
 	const visible = (items ?? []).filter(

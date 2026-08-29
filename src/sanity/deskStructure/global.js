@@ -76,6 +76,23 @@ export const globalMenu = (S) => {
 						)
 						.icon(HelpCircleIcon),
 					S.listItem()
+						.title('FAQ Sets')
+						.child(
+							S.documentTypeList('gFaqList')
+								.title('FAQ Sets')
+								.filter(`_type == "gFaqList"`)
+								.apiVersion(apiVersion)
+								.defaultOrdering([{ field: 'title', direction: 'asc' }])
+								.child((documentId) =>
+									S.document().documentId(documentId).schemaType('gFaqList')
+								)
+								.canHandleIntent(
+									(intent, { type }) =>
+										['create', 'edit'].includes(intent) && type === 'gFaqList'
+								)
+						)
+						.icon(HelpCircleIcon),
+					S.listItem()
 						.title('Size Charts')
 						.child(
 							S.documentTypeList('gSizeChart')

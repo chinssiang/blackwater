@@ -9,6 +9,7 @@ import { pBlogIndex } from './documents/p-blog-index';
 import { gTeamMember } from './documents/g-team-member';
 import { gLocation } from './documents/g-location';
 import { gFaq } from './documents/g-faq';
+import { gFaqList } from './documents/g-faq-list';
 import { gSizeChart } from './documents/g-size-chart';
 import { gTag } from './documents/g-tag';
 import { pEvent } from './documents/p-event';
@@ -31,7 +32,7 @@ import { socialLink } from './objects/social-link';
 import { gAnnouncement } from './singletons/g-announcement';
 import { eventStation } from './objects/event-station';
 import { freeform } from './objects/freeform';
-import { faqList } from './objects/faq';
+import { faqBlock } from './objects/faq-block';
 import { gAuthor } from './singletons/g-author';
 import { gFooter } from './singletons/g-footer';
 import { gHeader } from './singletons/g-header';
@@ -79,6 +80,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	gTeamMember,
 	gLocation,
 	gFaq,
+	gFaqList,
 	gSizeChart,
 	pEventCategory,
 	pEvents,
@@ -95,7 +97,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	gTag,
 	eventStation,
 	freeform,
-	faqList,
+	faqBlock,
 	formField,
 	link(),
 	navDropdown,

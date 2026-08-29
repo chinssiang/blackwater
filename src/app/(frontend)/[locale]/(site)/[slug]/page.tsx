@@ -42,9 +42,10 @@ const getCachedPageData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageGeneralQuery,
 		params: { slug, locale },
-		// gFaq: faqList modules deref questions[]->; settingsBrandColors:
-		// sectionAppearance derefs backgroundColor->/textColor->.
-		tags: [`pGeneral:${slug}`, 'gFaq', 'settingsBrandColors'],
+		// gFaqList + gFaq: faqBlock modules deref faqSet->questions[]->, so both
+		// the set and the entries it names have to invalidate this page.
+		// settingsBrandColors: sectionAppearance derefs backgroundColor->/textColor->.
+		tags: [`pGeneral:${slug}`, 'gFaq', 'gFaqList', 'settingsBrandColors'],
 	})
 );
 

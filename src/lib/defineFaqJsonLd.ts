@@ -5,13 +5,13 @@ type FaqItem = { question?: string | null; answerText?: string | null };
 
 type ModuleLike = { _type?: string; items?: FaqItem[] | null };
 
-// Flatten the FAQ entries selected across all `faqList` page modules on a page.
+// Flatten the FAQ entries selected across all `faqBlock` page modules on a page.
 export function collectFaqItems(
 	modules: ModuleLike[] | null | undefined
 ): FaqItem[] {
 	if (!Array.isArray(modules)) return [];
 	return modules
-		.filter((m) => m?._type === 'faqList' && Array.isArray(m.items))
+		.filter((m) => m?._type === 'faqBlock' && Array.isArray(m.items))
 		.flatMap((m) => m.items ?? []);
 }
 

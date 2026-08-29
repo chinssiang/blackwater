@@ -28,7 +28,9 @@ const getCachedFaqData = cache(
 		sanityFetch({
 			query: pageFaqQuery,
 			params: { locale },
-			tags: ['pFaq', 'gFaq'],
+			// gFaqList as well as gFaq: the query now dereferences the SET, so an
+			// edit to a set's membership or order must invalidate this page too.
+			tags: ['pFaq', 'gFaq', 'gFaqList'],
 		})
 );
 
@@ -70,7 +72,7 @@ export default async function Page(props: Props) {
 			    stripped here, the same treatment the product listing pages give
 			    their results. `answerText` goes too: it is a flat plain-text copy
 			    of every answer, consumed only by defineFaqJsonLd above, while
-			    FaqList renders the `answer` blocks themselves. */}
+			    FaqBlock renders the `answer` blocks themselves. */}
 			<PageFaq
 				data={{
 					...omitPageMetadata(data),

@@ -47,6 +47,7 @@
  * Take a dataset export first — this rewrites and deletes documents.
  */
 import { createClient } from '@sanity/client';
+import { faqPreview } from './faq-preview.mjs';
 
 const EXECUTE = process.argv.includes('--execute');
 const DATASET = process.env.SANITY_DATASET || 'dev';
@@ -124,8 +125,8 @@ function repointRefs(node, idMap) {
 			value.forEach(walk);
 			if (!repointedHere) return;
 			// Dedupe arrays of references that now collapse onto one target — an
-			// editor who listed both language siblings in one faqList would
-			// otherwise end up with the same entry twice, which pFaq/faqList both
+			// editor who listed both language siblings in one faqBlock would
+			// otherwise end up with the same entry twice, which pFaq/faqBlock both
 			// reject (see the Rule.unique() note in p-faq.ts).
 			if (
 				value.length > 1 &&
@@ -164,7 +165,7 @@ function repointRefs(node, idMap) {
  *
  * Shared by both write paths, and it stops at the system fields deliberately:
  * the canonicals additionally shed `order`/`language`, but a repointed document
- * must not — a pGeneral carrying a faqList module has a `language` of its own.
+ * must not — a pGeneral carrying a faqBlock module has a `language` of its own.
  */
 function stripSystemFields(doc) {
 	delete doc._rev;
@@ -194,31 +195,6 @@ function byOrderThenId(a, b) {
 	// this tiebreak is the same answer on every machine and dataset copy.
 	return a._id < b._id ? -1 : a._id > b._id ? 1 : 0;
 }
-
-// Unwraps either shape: a pre-merge plain string, or a merged i18n array
-// ([{language, value}]). The array case is not hypothetical — a mixed run puts
-// merged documents into this printout, and it is the printout, not the counts,
-// that the operator is told to read before --execute.
-//
-// `language` is the locale of the list being printed, and it is preferred over
-// array order: an entry translated only into zh_tw would otherwise print its
-// Chinese wording in the English page's list, showing the operator text that
-// will not appear on the page they are checking. Falls back to any value so a
-// half-translated entry still prints something identifiable.
-const preview = (q, language) => {
-	const raw = Array.isArray(q)
-		? (
-				q.find((entry) => entry?.language === language && entry?.value) ??
-				q.find((entry) => entry?.value)
-			)?.value
-		: q;
-	return (
-		String(raw ?? '')
-			.replace(/\s+/g, ' ')
-			.trim()
-			.slice(0, 60) || '(no question)'
-	);
-};
 
 async function main() {
 	console.log(
@@ -398,10 +374,7 @@ async function main() {
 		console.log(`\n  pFaq "${page._id}" (${locale}) — ${refs.length} question(s), in this order:`);
 		sequence.forEach(({ doc }, i) => {
 			console.log(
-				`    ${String(i + 1).padStart(2)}. [order ${doc.order ?? '—'}] ${preview(
-					doc.question,
-					locale
-				)}`
+				`    ${String(i + 1).padStart(2)}. [order ${doc.order ?? '—'}] ${faqPreview(doc.question, locale)}`
 			);
 		});
 	}
@@ -441,6 +414,12 @@ async function main() {
 	const tx = client.transaction();
 	merged.forEach((doc) => tx.createOrReplace(doc));
 	repointed.forEach((doc) => tx.createOrReplace(doc));
+	// `pFaq.questions` is no longer in the schema — scripts/create-faq-sets.mjs
+	// lifts these lists into a gFaqList set and unsets the field. It is written
+	// here only as the handoff between the two scripts, so between them the
+	// Studio shows it as an unknown field. Scaffolding, not schema drift: the two
+	// steps stay separate so there is a human checkpoint between two irreversible
+	// data migrations.
 	pFaqPatches.forEach(({ id, refs }) =>
 		tx.patch(id, (p) => p.set({ questions: refs }))
 	);
@@ -465,6 +444,23 @@ async function main() {
 		return;
 	}
 	console.log('Post-check clean.');
+
+	// NOT optional, and not obvious: pageFaqQuery reads `faqSet->questions[]->`,
+	// while this script writes `pFaq.questions`. Between here and create-faq-sets
+	// the FAQ pages render their title and intro and NO questions — and nothing
+	// reports it, because `faqSet` validates empty as a warning, so the documents
+	// still publish cleanly. Stopping here looks like success from every angle an
+	// operator would check, which is exactly why this prints loudly.
+	const withoutSet = await client.fetch(
+		`count(*[_type == "pFaq" && !defined(faqSet)])`
+	);
+	if (withoutSet > 0) {
+		console.log(
+			`\n  ⚠ NEXT STEP REQUIRED — ${withoutSet} pFaq document(s) have no faqSet.\n` +
+				'    /faq and /zh_tw/faq render NO questions until you run:\n' +
+				`      ${DATASET === 'dev' ? '' : `SANITY_DATASET=${DATASET} `}node scripts/create-faq-sets.mjs --execute`
+		);
+	}
 }
 
 main().catch((err) => {

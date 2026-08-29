@@ -141,6 +141,17 @@ export const locations = {
 		tone: 'caution',
 		locations: locationsForAll('pFaq', 'FAQ'),
 	}),
+	// Points at /faq only. A set can also be rendered by a faqBlock module on any
+	// page, and the reference runs the other way, so those are not derivable from
+	// the record form of `locations` this file exports. They ARE derivable from
+	// the DocumentLocationResolver *function* form, which can run `*[references($id)]`
+	// through `documentStore.listenQuery` — worth doing as its own change, since
+	// gFaq and gSizeChart below make exactly the same compromise.
+	gFaqList: defineLocations({
+		message: 'FAQ sets are rendered by the FAQ page and by FAQ page modules',
+		tone: 'caution',
+		locations: locationsForAll('pFaq', 'FAQ'),
+	}),
 	pSizeGuide: defineLocations({
 		message: 'This document is used to render the size guide page',
 		tone: 'positive',

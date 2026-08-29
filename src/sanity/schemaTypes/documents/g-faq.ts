@@ -8,10 +8,10 @@ import { pickValueForLocale, requireSomeValue } from '@/lib/i18n';
 // Only the wording varies, so the two prose fields are inline internationalized
 // arrays and everything else exists once, the same model as gSizeChart.
 //
-// Order is NOT a property of the entry. The FAQ page renders `pFaq.questions` in
-// array order, and the `faqList` module renders its own selection in its own
-// order, so an entry can sit in different places on different pages without a
-// number to keep in sync.
+// Order is NOT a property of the entry either. Which questions belong together
+// and in what order lives in gFaqList — a named set — and pages point at a set
+// rather than curating their own list, so an entry can sit in different places
+// on different pages without a number to keep in sync.
 export const gFaq = defineType({
 	title: 'FAQ',
 	name: 'gFaq',

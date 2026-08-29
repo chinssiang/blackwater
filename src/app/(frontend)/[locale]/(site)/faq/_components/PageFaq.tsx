@@ -1,5 +1,5 @@
 'use client';
-import FaqList, { type FaqItem } from '@/components/FaqList';
+import FaqBlock, { type FaqItem } from '@/components/FaqBlock';
 
 interface PageFaqData {
 	title?: string | null;
@@ -20,7 +20,7 @@ export function PageFaq({ data }: PageFaqProps) {
 				{title && <h1 className="t-h-3 uppercase">{title}</h1>}
 				{intro && <p className="mt-2 whitespace-pre-line">{intro}</p>}
 			</div>
-			<FaqList
+			<FaqBlock
 				data={{ items, sectionAppearance: { maxWidth: 'none' } }}
 				className="mt-10"
 			/>
