@@ -22,6 +22,8 @@ export const faqList = defineType({
 			type: 'array',
 			description: 'Pick which FAQ entries to show here. Manage entries in Global → FAQ.',
 			of: [{ type: 'reference', to: [{ type: 'gFaq' }] }],
+			// unique() is load-bearing here for the same reason it is on
+			// pFaq.questions — see the note there.
 			validation: (Rule) => Rule.min(1).unique(),
 		}),
 		defineField({

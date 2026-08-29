@@ -26,8 +26,10 @@
 	},
 	"include": [
 		".next/types/**/*.ts",
-		"/next-env.d.ts",
+		"next-env.d.ts",
 		".next/dev/types/**/*.ts",
+		"**/*.ts",
+		"**/*.tsx",
 		"**/*.mts",
 		"src/app/sitemap.ts",
 		"sanity.types.ts"

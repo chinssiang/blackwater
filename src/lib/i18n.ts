@@ -30,6 +30,25 @@ export function pickLocalizedValue(value: unknown): string | undefined {
 }
 
 /**
+ * One NAMED locale's value out of an internationalizedArray, where
+ * `pickLocalizedValue` above takes whichever comes first.
+ *
+ * Exists for Studio previews, which show the English wording as the title and
+ * the Chinese as the subtitle — a document-list affordance for a bilingual team
+ * that neither locale-agnostic pick can express. Keeping the `'zh_tw'` literal
+ * behind a signature here rather than in each schema file is the point: it was
+ * already open-coded identically in gFaq and gLocation.
+ */
+export function pickValueForLocale(
+	value: unknown,
+	language: Locale
+): string | undefined {
+	if (!Array.isArray(value)) return undefined;
+	const entry = value.find((item) => item?.language === language);
+	return typeof entry?.value === 'string' ? entry.value || undefined : undefined;
+}
+
+/**
  * Validators for internationalizedArray fields, which the plugin stores as
  * `[{_key, language, value}]`. They live here, not beside their first caller, so
  * schema files don't have to import one another to share them.

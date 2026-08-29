@@ -240,15 +240,35 @@ const freeformField = `
 	}
 `;
 
-// Projects a gFaq entry. Each gFaq is a single-locale document (document-level
-// i18n), so no coalesce is needed — referencing pages resolve same-locale docs.
+// Localized string/text: current locale, falling back to English.
+//
+// Defined here rather than with the other field-level i18n helpers further down
+// because `gFaqItemFields` below calls it at module init, and a `const` declared
+// after that point would be in its temporal dead zone. Hoisting it by making it
+// a `function` declaration is NOT an option: the Sanity query extractor
+// resolves arrow calls with a CONCISE body and rejects a block body outright
+// ("Unsupported expression type: BlockStatement"), which silently drops every
+// query in this file from typegen — same constraint that keeps `resolvedHrefGroq`
+// hand-written.
+const locString = (field: string) =>
+	`coalesce(${field}[language == $locale][0].value, ${field}[language == "en"][0].value)`;
+
+// Localized Portable Text. Resolution is identical to `locString` — the alias
+// exists only to mark, at the call site, that what comes back is a block array
+// the caller still has to project with `[]{ ... }`.
+const locPT = locString;
+
+// Projects a gFaq entry. One document per question carries every language in
+// inline internationalizedArrays, so both prose fields resolve through the
+// current locale with an English fallback — an entry translated into only one
+// language still renders rather than leaving a blank accordion row.
 // `answer` is rich text (for rendering); `answerText` is flattened plain text
 // for FAQPage JSON-LD.
 const gFaqItemFields = `
 	_id,
-	question,
-	"answer": answer[]{ ${portableTextContentFields} },
-	"answerText": pt::text(answer)
+	"question": ${locString('question')},
+	"answer": ${locPT('answer')}[]{ ${portableTextContentFields} },
+	"answerText": pt::text(${locPT('answer')})
 `;
 
 // gSizeChart is deliberately NOT document-localized — the measurements are
@@ -263,10 +283,10 @@ const gSizeChartFields = `
 	sizes,
 	rows[]{
 		_key,
-		"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
+		"label": ${locString('label')},
 		values[]{ _key, size, min, max }
 	},
-	"note": coalesce(note[language == $locale][0].value, note[language == "en"][0].value)
+	"note": ${locString('note')}
 `;
 
 const faqListField = `
@@ -360,8 +380,8 @@ const newsletterFormFields = `
 
 // ---------------------------------------------------------------------------
 // FIELD-level i18n helpers, shared by the product family (pProduct /
-// pProductCollection / pProductCategory) and the event family (pEvent /
-// pEvents / pEventCategory).
+// pProductCollection / pProductCategory), the event family (pEvent /
+// pEvents / pEventCategory) and gFaq.
 //
 // One document carries every language — prose lives in internationalizedArrays,
 // everything else (handle, price, dates, venue, refs, images) exists once. For
@@ -378,14 +398,8 @@ const newsletterFormFields = `
 // these helpers.
 // ---------------------------------------------------------------------------
 
-// Localized string/text: current locale, falling back to English.
-const locString = (field: string) =>
-	`coalesce(${field}[language == $locale][0].value, ${field}[language == "en"][0].value)`;
-
-// Localized Portable Text. Resolution is identical to `locString` — the alias
-// exists only to mark, at the call site, that what comes back is a block array
-// the caller still has to project with `[]{ ... }`.
-const locPT = locString;
+// `locString` and `locPT` belong to this section but are DEFINED FURTHER UP,
+// just above `gFaqItemFields` — see the note there.
 
 // Visibility guard for merged docs: shown in a locale only when they carry a
 // title in that locale or in English. This preserves the doc-level behavior
@@ -681,7 +695,7 @@ export const pageFaqQuery = defineQuery(`
 		${baseFields},
 		${availableLocalesField},
 		intro,
-		"items": *[_type == "gFaq" && language == $locale] | order(order asc){
+		"items": questions[]->{
 			${gFaqItemFields}
 		}
 	}
