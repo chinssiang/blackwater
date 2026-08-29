@@ -1,66 +1,21 @@
 import { MetadataRoute } from 'next';
 import { client } from '@/sanity/lib/client';
 import {
-	SITEMAP_PAGES_QUERY,
-	SITEMAP_EVENTS_QUERY,
-	SITEMAP_PRODUCTS_QUERY,
-} from '@/sanity/lib/queries';
-import { resolveHref } from '@/lib/routes';
-import {
-	type Locale,
-	DEFAULT_LOCALE,
-	htmlLangFor,
-	isLocale,
-} from '@/lib/i18n';
-
-type SitemapDoc = {
-	_type: string;
-	slug: string | null;
-	_updatedAt: string;
-	/** Document-level i18n types: the language of this document row. */
-	language?: string;
-	/**
-	 * Field-level i18n types (the product and event families): every locale this
-	 * single document is translated into, derived in GROQ from title[].language.
-	 */
-	locales?: Array<string | null> | null;
-};
-
-/** Locales a row represents, whichever i18n model its type uses. */
-function docLocales(doc: SitemapDoc): Locale[] {
-	// An array — even an empty one — is the authoritative answer for a
-	// field-level type: empty means "translated into nothing", so this document
-	// contributes no URLs. Falling through to DEFAULT_LOCALE here published a
-	// titleless product as an English URL, defeating the `defined(value)` guard
-	// the sitemap query applies for exactly this reason.
-	if (Array.isArray(doc.locales)) {
-		return doc.locales.filter(isLocale);
-	}
-	return [isLocale(doc.language) ? doc.language : DEFAULT_LOCALE];
-}
-
-const QUERIES: Record<string, string> = {
-	pages: SITEMAP_PAGES_QUERY,
-	events: SITEMAP_EVENTS_QUERY,
-	products: SITEMAP_PRODUCTS_QUERY,
-};
-
-// Tags per sitemap, so a publish invalidates the sitemap that lists that type.
-// Without a cache config `client.fetch` defaults to no-store, which made all
-// three sitemaps hit Sanity on every crawler request, outside the tag scheme.
-const SITEMAP_TAGS: Record<string, string[]> = {
-	pages: ['pHome', 'pGeneral', 'pContact', 'pFaq', 'pSizeGuide'],
-	events: ['pEvents', 'pEvent'],
-	products: [
-		'pProductIndex',
-		'pProduct',
-		'pProductCategory',
-		'pProductCollection',
-	],
-};
+	QUERIES,
+	SITEMAP_IDS,
+	SITEMAP_TAGS,
+	SYNTHETIC_ROUTES,
+	docLocales,
+	isSitemapId,
+	lastModifiedFor,
+	localizedEntries,
+	newestOf,
+	type SitemapDoc,
+} from '@/lib/sitemaps';
+import { type Locale, LOCALES } from '@/lib/i18n';
 
 export async function generateSitemaps() {
-	return [{ id: 'pages' }, { id: 'events' }, { id: 'products' }];
+	return SITEMAP_IDS.map((id) => ({ id }));
 }
 
 export default async function sitemap({
@@ -69,8 +24,7 @@ export default async function sitemap({
 	id: Promise<string>;
 }): Promise<MetadataRoute.Sitemap> {
 	const resolvedId = await id;
-	const query = QUERIES[resolvedId];
-	if (!query) return [];
+	if (!isSitemapId(resolvedId)) return [];
 
 	try {
 		const docs =
@@ -81,15 +35,21 @@ export default async function sitemap({
 				// the case src/sanity/lib/client.ts's own comment warns about.
 				.withConfig({ useCdn: false })
 				.fetch<SitemapDoc[]>(
-					query,
+					QUERIES[resolvedId],
 					{},
 					{
 						next: {
 							revalidate: false,
-							tags: SITEMAP_TAGS[resolvedId] ?? [],
+							tags: SITEMAP_TAGS[resolvedId],
 						},
 					}
 				)) ?? [];
+
+		// One walk of each row's contentUpdatedAt, reused by the grouping loop
+		// below and by every synthetic route's newestOf.
+		const dates = new Map<SitemapDoc, Date>();
+		for (const doc of docs) dates.set(doc, lastModifiedFor(doc));
+		const dateOf = (doc: SitemapDoc) => dates.get(doc) ?? lastModifiedFor(doc);
 
 		// Group documents by their URL identity (type + slug).
 		// Each group may contain multiple rows — one per locale.
@@ -106,55 +66,38 @@ export default async function sitemap({
 		for (const group of grouped.values()) {
 			const { _type, slug } = group[0];
 
-			// Determine which locales this group's page exists in — one row per
-			// locale for document-level types, one row carrying all locales for
-			// field-level ones.
-			const availableLocales: Locale[] = [
-				...new Set(group.flatMap(docLocales)),
-			];
+			// Which locales this group's page exists in — one row per locale for
+			// document-level types, one row carrying all locales for field-level
+			// ones.
+			const locales: Locale[] = [...new Set(group.flatMap(docLocales))];
 
-			// Build reusable hreflang map for all entries in this group
-			const languages: Record<string, string> = {};
-			for (const l of availableLocales) {
-				const href = resolveHref({ documentType: _type, slug, locale: l });
-				if (href)
-					languages[htmlLangFor(l)] = new URL(
-						href,
-						process.env.SITE_URL
-					).toString();
-			}
-			// x-default only when the default locale actually renders this page.
-			// Emitted unconditionally, a zh-only product advertised its English URL
-			// as the default — and that URL is a not-found page.
-			if (availableLocales.includes(DEFAULT_LOCALE)) {
-				const defaultHref = resolveHref({
+			entries.push(
+				...localizedEntries({
 					documentType: _type,
 					slug,
-					locale: DEFAULT_LOCALE,
-				});
-				if (defaultHref)
-					languages['x-default'] = new URL(
-						defaultHref,
-						process.env.SITE_URL
-					).toString();
-			}
+					locales,
+					lastModified: (locale) =>
+						dateOf(
+							group.find((d) => docLocales(d).includes(locale)) ?? group[0]
+						),
+				})
+			);
+		}
 
-			// Emit one sitemap entry per available locale
-			for (const locale of availableLocales) {
-				const href = resolveHref({ documentType: _type, slug, locale });
-				if (!href) continue;
-
-				const row =
-					group.find((d) => docLocales(d).includes(locale)) ?? group[0];
-
-				entries.push({
-					url: new URL(href, process.env.SITE_URL).toString(),
-					lastModified: new Date(row._updatedAt),
-					changeFrequency: 'weekly' as const,
-					priority: 0.8,
-					alternates: { languages },
-				});
-			}
+		for (const route of SYNTHETIC_ROUTES) {
+			if (route.sitemap !== resolvedId) continue;
+			entries.push(
+				...localizedEntries({
+					documentType: route.documentType,
+					slug: null,
+					// Every locale, matching the `availableLocales: [...LOCALES]` these
+					// pages hand to defineMetadata — the sitemap and the page's own
+					// hreflang must not disagree about where it exists.
+					locales: [...LOCALES],
+					lastModified: (locale) =>
+						newestOf(docs, route.lists, locale, dateOf),
+				})
+			);
 		}
 
 		return entries;

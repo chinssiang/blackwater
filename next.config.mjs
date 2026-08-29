@@ -101,15 +101,43 @@ const nextConfig = {
 			},
 		],
 	},
-	// async redirects() {
-	// 	return localePrefixes.flatMap((prefix) =>
-	// 		[].map(([source, destination]) => ({
+	// The ONLY redirects() in this config — keep it that way. A second one is a
+	// duplicate object key: the later definition silently wins and the other's
+	// redirects vanish with a green build. Content redirects belong in the array
+	// below, per locale prefix:
+	//
+	// 	...localePrefixes.flatMap((prefix) =>
+	// 		[['/old', '/new']].map(([source, destination]) => ({
 	// 			source: `${prefix}${source}`,
 	// 			destination: `${prefix}${destination}`,
 	// 			permanent: true,
 	// 		}))
-	// 	);
-	// },
+	// 	),
+	async redirects() {
+		// Nothing answers /sitemap.xml — the location crawlers try first and the
+		// one most people submit to Search Console. app/sitemap.ts uses
+		// generateSitemaps(), so its output lives at /sitemap/<id>.xml while the
+		// bare path stays unrouted, and unrouted paths fall through to the
+		// [locale] catch-all, which renders the 404 page. Search Console read that
+		// as "your sitemap appears to be an HTML page".
+		//
+		// A route handler at app/sitemap.xml/route.ts cannot fix it: Next still
+		// reserves /sitemap.xml for app/sitemap.ts and fails the build with
+		// "Conflicting route and metadata". Redirect instead — crawlers follow
+		// redirects on sitemap URLs.
+		//
+		// The extensionless spellings are here because they are worse than a 404:
+		// the catch-all answers them 200 with HTML, which is exactly the condition
+		// that produces the Search Console error, so a mistyped submission stays
+		// broken silently. This covers the sitemap paths only; the catch-all's
+		// soft-200 on every other unmatched path is a separate, deliberate
+		// trade-off documented in CLAUDE.md.
+		return ['/sitemap.xml', '/sitemap', '/sitemap_index'].map((source) => ({
+			source,
+			destination: '/sitemap_index.xml',
+			permanent: true,
+		}));
+	},
 	async headers() {
 		return [
 			{

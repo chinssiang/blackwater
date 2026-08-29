@@ -14,13 +14,58 @@ const _localesCovered: typeof LOCALES = ['en', 'zh_tw'] as const;
 void _localesCovered;
 export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 
+// Which faqBlock modules render their SET rather than their hand-picked list.
+// Mirrors the `select(source == "picked" => ..., faqSet->questions)` in
+// faqBlockField: the set arm is the fallback, so a module written through the
+// API with no `source` counts as a set. Written with coalesce rather than a
+// bare `source != "picked"` so it does not lean on GROQ's null-comparison
+// semantics for the unset case.
+//
+// The discriminator is load-bearing, not tidiness: a hidden field keeps its
+// data, so a module switched from picked to set still carries its orphaned
+// `questions` array. Read unconditionally, an edit to one of those unrendered
+// entries would move the page's lastmod.
+const faqBlockUsesSet = `coalesce(source, "set") != "picked"`;
+
+// `contentUpdatedAt` collects the `_updatedAt` of every document a page RENDERS
+// but does not own, so sitemap.ts can advertise the newest of the two as
+// lastmod. All three sitemap queries carry one; this is the shared reasoning.
+//
+// A document's own timestamp only moves when that document is edited, while
+// these pages are largely made of other documents — /faq's entire body is
+// `faqSet->questions[]->`, /size-guide's is `chart->`. So rewriting an answer or
+// a measurement changed the page while pFaq/pSizeGuide sat still, and the
+// sitemap kept telling crawlers there was nothing new to fetch. Same gap on any
+// pHome/pGeneral carrying a faqBlock module, through either of its two sources.
+//
+// Whatever a query dereferences here must ALSO be in that sitemap's
+// SITEMAP_TAGS: the fetch is `revalidate: false`, so an untagged type never
+// recomputes the sitemap and the freshly-correct expression never runs.
+//
+// Deliberately NOT included: list membership (a category page's products, an
+// index's entries) and site-wide presentational settings like brand colors.
+// Both are real render inputs, but they would bump every sibling page's lastmod
+// on any single edit, which is the same crying-wolf failure in the other
+// direction.
+//
+// GROQ flattens chained array traversals, so each line below yields either a
+// scalar or a FLAT array — the only nesting is the literal's own, which is why
+// sitemap.ts needs exactly one level of unwrapping.
 export const SITEMAP_PAGES_QUERY = defineQuery(`
-	*[_type in ["pHome", "pGeneral", "pContact", "pFaq", "pSizeGuide"]
+	*[_type in ["pHome", "pGeneral", "pContact", "pFaq", "pSizeGuide", "pNewsletter"]
 		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
 		_type,
 		"slug": slug.current,
 		_updatedAt,
-		language
+		language,
+		"contentUpdatedAt": [
+			faqSet->_updatedAt,
+			faqSet->questions[]->_updatedAt,
+			pageModules[_type == "faqBlock" && ${faqBlockUsesSet}].faqSet->_updatedAt,
+			pageModules[_type == "faqBlock" && ${faqBlockUsesSet}].faqSet->questions[]->_updatedAt,
+			pageModules[_type == "faqBlock" && source == "picked"].questions[]->_updatedAt,
+			sections[].charts[].chart->_updatedAt
+		]
 	}
 `);
 
@@ -53,6 +98,14 @@ export const SITEMAP_PRODUCTS_QUERY = defineQuery(`
 		_type,
 		"slug": slug.current,
 		_updatedAt,
+		"contentUpdatedAt": [
+			sizeChart->_updatedAt,
+			categories[]->_updatedAt,
+			collections[]->_updatedAt,
+			brands[]->_updatedAt,
+			whenReachForIt.list[_type == "reference"]->_updatedAt,
+			metadata[].list[_type == "reference"]->_updatedAt
+		],
 		"locales": select(
 			defined(language) => [language],
 			_type == "pProductCategory" => ${ALL_LOCALES_GROQ},
@@ -74,6 +127,11 @@ export const SITEMAP_EVENTS_QUERY = defineQuery(`
 		_type,
 		"slug": slug.current,
 		_updatedAt,
+		"contentUpdatedAt": [
+			locationRef->_updatedAt,
+			categories[]->_updatedAt,
+			statusList[].eventStatus->_updatedAt
+		],
 		"locales": select(
 			_type == "pEvents" => ${ALL_LOCALES_GROQ},
 			${localesWithValue('title')}
