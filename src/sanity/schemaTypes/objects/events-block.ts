@@ -10,11 +10,16 @@ import { defineType, defineField } from 'sanity';
 // morning after each one runs, and pHome/pGeneral are document-localized, so it
 // would be wrong once per language.
 //
-// The window and the count are applied in React (selectUpcomingEvents in
-// src/lib/event-date.ts), not in GROQ: "not ended yet" depends on the event's own
-// timezone and on an end-of-day fallback when endDatetime is blank, which GROQ
-// cannot express. The query only takes a coarse lower bound to keep the payload
-// small.
+// The window and the count are applied in React, not in GROQ — see
+// selectUpcomingEvents in src/lib/event-date.ts for why.
+
+// Declared once so the preview cannot describe a window by a label the picker no
+// longer offers.
+const TIME_WINDOWS = [
+	{ title: 'Next 7 days', value: 'week' },
+	{ title: 'Next 30 days', value: 'month' },
+	{ title: 'All upcoming', value: 'all' },
+] as const;
 
 export const eventsBlock = defineType({
 	name: 'eventsBlock',
@@ -33,14 +38,7 @@ export const eventsBlock = defineType({
 			name: 'timeWindow',
 			title: 'Show events',
 			type: 'string',
-			options: {
-				list: [
-					{ title: 'Next 7 days', value: 'week' },
-					{ title: 'Next 30 days', value: 'month' },
-					{ title: 'All upcoming', value: 'all' },
-				],
-				layout: 'radio',
-			},
+			options: { list: [...TIME_WINDOWS], layout: 'radio' },
 			initialValue: 'all',
 			description:
 				'A narrow window can be empty -- in a week with no events the whole section disappears from the page rather than rendering an empty heading. Use "All upcoming" if the section must always be visible.',
@@ -77,14 +75,11 @@ export const eventsBlock = defineType({
 		},
 		prepare({ heading, timeWindow, limit }) {
 			const windowLabel =
-				timeWindow === 'week'
-					? 'Next 7 days'
-					: timeWindow === 'month'
-						? 'Next 30 days'
-						: 'All upcoming';
+				TIME_WINDOWS.find((w) => w.value === timeWindow)?.title ??
+				'All upcoming';
 			return {
 				title: heading || 'Upcoming events',
-				subtitle: `${windowLabel} · up to ${limit ?? 5}`,
+				subtitle: limit ? `${windowLabel} · up to ${limit}` : windowLabel,
 			};
 		},
 	},

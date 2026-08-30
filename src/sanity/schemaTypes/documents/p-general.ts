@@ -21,7 +21,7 @@ export const pGeneral = defineType({
 			name: 'pageModules',
 			type: 'array',
 			description:
-				'Optional modules rendered below the main content — e.g. an FAQ section.',
+				'Optional sections rendered below the main content, in this order.',
 			of: [
 				{ type: 'freeform' },
 				{ type: 'faqBlock' },
@@ -41,7 +41,10 @@ export const pGeneral = defineType({
 			return {
 				title,
 				subtitle: slug?.current
-					? localizePath(`/${slug.current}`, isLocale(language) ? language : DEFAULT_LOCALE)
+					? localizePath(
+							`/${slug.current}`,
+							isLocale(language) ? language : DEFAULT_LOCALE
+						)
 					: 'Missing page slug',
 			};
 		},

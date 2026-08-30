@@ -14,7 +14,7 @@ interface SanityRgb {
 	a: number;
 }
 
-interface SanityColor {
+export interface SanityColor {
 	hex: string;
 	rgb: SanityRgb;
 }

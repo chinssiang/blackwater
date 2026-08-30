@@ -179,7 +179,7 @@ export function isValidUrl(urlString: string): boolean {
 
 // --- TAILWIND UTILITIES ---
 
-type SpacingValue = keyof typeof SPACING_CLASSES.pt; // Union of allowed numeric keys (0, 1, ..., 96)
+export type SpacingValue = keyof typeof SPACING_CLASSES.pt; // Union of allowed numeric keys (0, 1, ..., 96)
 type SpacingPrefix = keyof typeof SPACING_CLASSES; // Union of allowed prefix keys (pt, pb, mt, mb, sm:pt, etc.)
 
 // The original SPACING_CLASSES constant is kept as a non-exported const
@@ -211,6 +211,12 @@ type SpacingType =
 	| 'paddingBottomDesktop'
 	| 'marginTopDesktop'
 	| 'marginBottomDesktop';
+
+// Shared keyboard-focus treatment for absolutely-positioned overlay links (a
+// stretched row link, a pill link, a map link). Inset so the ring draws inside
+// its container rather than being clipped by it.
+export const OVERLAY_LINK_FOCUS =
+	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
 
 /**
  * Gets the corresponding Tailwind CSS class for a spacing utility.

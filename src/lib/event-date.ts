@@ -90,7 +90,8 @@ export function isEventEnded(
 	now: Date
 ): boolean {
 	const end =
-		getRichDateInstant(endDatetime) ?? getRichDateEndOfDayInstant(eventDatetime);
+		getRichDateInstant(endDatetime) ??
+		getRichDateEndOfDayInstant(eventDatetime);
 	if (!end) return false;
 	return end < now;
 }
@@ -124,38 +125,43 @@ export function getRichDateDaysUntil(
 	return Math.round((toUtcDays(instant) - toUtcDays(now)) / 86_400_000);
 }
 
-/** How many days ahead each `eventsBlock` time window reaches. */
-const WINDOW_DAYS: Record<string, number> = {
-	week: 7,
-	month: 30,
-};
-
-/** Fallbacks for an eventsBlock whose editor never touched the field. */
+/** Rendered when an eventsBlock's editor never set a count. */
 const DEFAULT_EVENT_LIMIT = 5;
+
+/**
+ * The lower bound to pass `upcomingEventsQuery` as `$upcomingFrom`.
+ *
+ * Day-granular so the Data Cache key rolls over once a day rather than once per
+ * request, and set a day EARLY on purpose: it is only a payload guard, and
+ * `selectUpcomingEvents` below makes the real cut. The slack keeps a Taipei
+ * morning event from being filtered out by a bound resolved in the runtime's
+ * timezone, and keeps nothing hinging on a string comparison between two ISO
+ * timestamps of differing millisecond precision.
+ */
+export function getUpcomingFrom(): string {
+	const from = new Date();
+	from.setDate(from.getDate() - 1);
+	from.setHours(0, 0, 0, 0);
+	return from.toISOString();
+}
 
 /**
  * The events an `eventsBlock` should render: not yet over, inside the chosen
  * window, capped at `limit`.
  *
- * This is where "upcoming" is actually decided. The GROQ bound that fetched
- * these is only a coarse payload guard — it compares `eventDatetime.utc` against
- * a day-granular string, which knows nothing about the event's own timezone and
- * nothing about `endDatetime`. Both matter: `isEventEnded` keeps an event with no
- * end time alive until the end of its start day *there*, so a 7am run does not
- * vanish from the home page at 7:01am.
+ * `isEventEnded` rather than a naive start-time comparison is the point — an
+ * event with no `endDatetime` stays live until the end of its start day in its
+ * own timezone, so a 7am run does not vanish from the page at 7:01am.
  *
- * The window is counted in whole calendar days via `getRichDateDaysUntil` rather
- * than by subtracting instants, so "next 7 days" means the seven days an attendee
- * standing in the event's timezone would count. Inclusive at both ends: day 0
- * (today) and day 7 are in, day 8 is out.
+ * `windowDays` is resolved in GROQ (see `eventsBlockField`), so a negative or
+ * missing value means "all upcoming". The window is counted in whole calendar
+ * days via `getRichDateDaysUntil` rather than by subtracting instants, so
+ * "next 7 days" means the seven days an attendee standing in the event's
+ * timezone would count — inclusive at both ends.
  *
- * An unrecognised `timeWindow` — including one still carrying stega characters
- * from draft mode if a caller forgets to clean it — falls through to "all
- * upcoming". Erring toward showing more is the safe direction: the alternative
- * is a section that silently disappears.
- *
- * `now` is a parameter rather than an internal `new Date()` for the same reason
- * it is on `isEventEnded` — the function stays pure and testable.
+ * Input is GROQ-ordered ascending and both predicates are monotone in that
+ * order, so this stops as soon as `limit` rows are collected instead of
+ * filtering all of them and discarding the tail.
  */
 export function selectUpcomingEvents<
 	T extends {
@@ -166,24 +172,28 @@ export function selectUpcomingEvents<
 	events: readonly T[] | null | undefined,
 	{
 		now,
-		timeWindow,
+		windowDays,
 		limit,
-	}: { now: Date; timeWindow?: string | null; limit?: number | null }
+	}: { now: Date; windowDays?: number | null; limit?: number | null }
 ): T[] {
 	if (!events?.length) return [];
 
-	const windowDays = timeWindow ? WINDOW_DAYS[timeWindow] : undefined;
+	// `?? `, not `||`: a stored 0 means the editor asked for none.
+	const cap = limit ?? DEFAULT_EVENT_LIMIT;
+	const bounded = typeof windowDays === 'number' && windowDays >= 0;
 
-	const upcoming = events.filter((event) => {
-		if (isEventEnded(event.eventDatetime, event.endDatetime, now)) return false;
-		if (windowDays === undefined) return true;
-		const daysUntil = getRichDateDaysUntil(event.eventDatetime, now);
-		// An undated event cannot be placed in a window, so a narrowed window
-		// excludes it — it is still returned by "all upcoming", where isEventEnded
-		// has already let it through.
-		return daysUntil !== null && daysUntil <= windowDays;
-	});
-
-	// `?? DEFAULT`, not `|| DEFAULT`: a stored 0 means the editor asked for none.
-	return upcoming.slice(0, limit ?? DEFAULT_EVENT_LIMIT);
+	const upcoming: T[] = [];
+	for (const event of events) {
+		if (upcoming.length >= cap) break;
+		if (isEventEnded(event.eventDatetime, event.endDatetime, now)) continue;
+		if (bounded) {
+			const daysUntil = getRichDateDaysUntil(event.eventDatetime, now);
+			// An undated event cannot be placed in a window, so a narrowed window
+			// excludes it — "all upcoming" still returns it, isEventEnded having
+			// already let it through.
+			if (daysUntil === null || daysUntil > windowDays) continue;
+		}
+		upcoming.push(event);
+	}
+	return upcoming;
 }

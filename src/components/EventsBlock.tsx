@@ -1,49 +1,61 @@
-import { stegaClean } from '@sanity/client/stega';
+import { cache } from 'react';
+import Link from 'next/link';
+import type { UpcomingEventsQueryResult } from 'sanity.types';
 import CustomLink from '@/components/CustomLink';
+import SectionShell, {
+	type SectionAppearance,
+} from '@/components/SectionShell';
 import { ArrowRight, ArrowUpRight } from '@/components/SvgIcons';
+import { sanityFetch } from '@/sanity/lib/live';
+import {
+	upcomingEventsQuery,
+	UPCOMING_EVENTS_TAGS,
+} from '@/sanity/lib/queries';
 import { getDictionary } from '@/lib/dictionary.server';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
-import { formatRichDate, selectUpcomingEvents } from '@/lib/event-date';
+import {
+	formatRichDate,
+	getUpcomingFrom,
+	selectUpcomingEvents,
+} from '@/lib/event-date';
 import {
 	buildRgbaCssString,
 	ensureAccessibleTextColor,
+	type SanityColor,
 } from '@/lib/image-utils';
 import { revealStagger } from '@/lib/animate';
 import { resolveHref } from '@/lib/routes';
+import { cn, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import type { Locale } from '@/lib/i18n';
-import { cn, getSpacingClass } from '@/lib/utils';
-import Link from 'next/link';
 
-// Server Component on purpose: the whole thing is a read of already-fetched data
-// plus a date comparison, and rendering it on the server keeps the JS off the
-// page. The events index needs a client clock because a visitor may sit on it
-// while events tick over; a home-page strip does not — its host route carries
-// `export const revalidate = 3600`, which is what keeps the wall-clock decision
-// from being frozen at build time.
+// The events index needs a client clock because a visitor can sit on it while
+// events tick over. A home-page strip does not: its host route carries
+// `export const revalidate = 3600`, so the wall-clock decision is re-made on the
+// server hourly and nothing is corrected after hydration.
 
-type MaxWidthType = 'none' | 'xl' | 'l' | 'm' | 's' | 'xs';
+// Derived from the query result rather than hand-written, so adding a field to
+// eventCardFields can never drift from what this consumes — the convention
+// events/page.tsx states for the same fragment.
+type EventRow = UpcomingEventsQueryResult[number];
 
-type EventRow = {
-	_id?: string;
-	title?: string | null;
-	subtitle?: string | null;
-	slug?: string | null;
-	eventDatetime?: any;
-	endDatetime?: any;
-	dateStatus?: string | null;
-	location?: string | null;
-	locationLink?: string | null;
-	locationRef?: { name?: string | null; mapLink?: string | null } | null;
-	statusList?: any[] | null;
-};
+// Annotated, not inferred: upcomingEventsQuery is built from interpolated
+// helpers, so TypeScript cannot fold it into the string literal that indexes
+// Sanity's query→result map, and `data` would silently arrive as `any`.
+const getCachedUpcomingEvents = cache(
+	async (locale: string): Promise<{ data: UpcomingEventsQueryResult }> =>
+		sanityFetch({
+			query: upcomingEventsQuery,
+			params: { locale, upcomingFrom: getUpcomingFrom() },
+			tags: [...UPCOMING_EVENTS_TAGS],
+		})
+);
 
 type EventsBlockProps = {
 	data: {
 		heading?: string;
-		timeWindow?: string | null;
+		windowDays?: number | null;
 		limit?: number | null;
-		events?: EventRow[] | null;
-		sectionAppearance?: any;
+		sectionAppearance?: SectionAppearance;
 	};
 	locale: Locale;
 	className?: string;
@@ -54,14 +66,12 @@ export default async function EventsBlock({
 	locale,
 	className,
 }: EventsBlockProps) {
-	const { heading, events, timeWindow, limit, sectionAppearance } = data || {};
+	const { heading, windowDays, limit, sectionAppearance } = data || {};
 
+	const { data: events } = await getCachedUpcomingEvents(locale);
 	const rows = selectUpcomingEvents(events, {
 		now: new Date(),
-		// stegaClean before comparing: in draft mode Sanity encodes invisible
-		// metadata into every string, so a raw `timeWindow` matches no case and the
-		// window silently widens to "all upcoming".
-		timeWindow: stegaClean(timeWindow) ?? undefined,
+		windowDays,
 		limit,
 	});
 
@@ -70,70 +80,16 @@ export default async function EventsBlock({
 	// editors that a narrow window can do this.
 	if (rows.length === 0) return null;
 
-	const dict = await getDictionary(locale);
-	const t = dict.events;
+	const t = (await getDictionary(locale)).events;
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
 
-	const {
-		backgroundColor,
-		textColor,
-		textAlign = 'text-left',
-		maxWidth = 'none',
-		spacingTop,
-		spacingBottom,
-		spacingTopDesktop,
-		spacingBottomDesktop,
-	} = (sectionAppearance as {
-		backgroundColor?: any;
-		textColor?: any;
-		textAlign?: string;
-		maxWidth?: MaxWidthType;
-		spacingTop?: any;
-		spacingBottom?: any;
-		spacingTopDesktop?: any;
-		spacingBottomDesktop?: any;
-	}) || {};
-
-	const hasBackground = !!backgroundColor;
-
-	const spacingClasses = [
-		getSpacingClass('marginTop', spacingTop, hasBackground),
-		getSpacingClass('marginBottom', spacingBottom, hasBackground),
-		getSpacingClass('marginTopDesktop', spacingTopDesktop, hasBackground),
-		getSpacingClass('marginBottomDesktop', spacingBottomDesktop, hasBackground),
-	].filter(Boolean);
-
-	// Freeform's key set, not FaqBlock's: sectionAppearance only ever emits
-	// none|xl|l|m|s|xs, so FaqBlock's `lg`/`md` keys are unreachable.
-	const maxWidthClasses =
-		(
-			{
-				none: 'w-full',
-				xl: 'max-w-7xl',
-				l: 'max-w-5xl',
-				m: 'max-w-3xl',
-				s: 'max-w-xl',
-				xs: 'max-w-xs',
-			} as const
-		)[maxWidth] || 'w-full';
-
 	return (
-		<section
-			className={cn(
-				'px-contain mx-auto',
-				textAlign,
-				maxWidthClasses,
-				...spacingClasses,
-				className
-			)}
-			style={{
-				color: buildRgbaCssString(textColor) || 'inherit',
-				backgroundColor: buildRgbaCssString(backgroundColor) || undefined,
-			}}
+		<SectionShell
+			appearance={sectionAppearance}
+			heading={heading}
+			className={className}
 		>
-			{heading && <h2 className="t-h-3 mb-6 uppercase">{heading}</h2>}
-
-			<ul className="border-t border-foreground/20">
+			<ul className="border-foreground/20 border-t">
 				{rows.map((event, index) => {
 					const {
 						_id,
@@ -152,26 +108,18 @@ export default async function EventsBlock({
 					// the one-off fallback the schema hides once a venue is referenced.
 					const displayLocation = locationRef?.name || location;
 					const displayLocationLink = locationRef?.mapLink || locationLink;
-
-					// stegaClean so draft mode cannot turn 'confirmed' into a miss and
-					// print the encoded string where the date belongs.
-					const cleanDateStatus = stegaClean(dateStatus);
-					const showDate =
-						(!cleanDateStatus || cleanDateStatus === 'confirmed') &&
-						eventDatetime;
-
 					const href = slug
 						? resolveHref({ documentType: 'pEvent', slug, locale })
 						: null;
 
 					return (
 						<li
-							key={_id ?? `event-${index}`}
-							className="reveal group relative flex flex-col gap-1 border-b border-foreground/20 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
+							key={_id}
+							className="reveal group border-foreground/20 relative flex flex-col gap-1 border-b py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
 							style={revealStagger(index)}
 						>
 							<div className="min-w-0 flex-1">
-								<p className="t-b-1 font-bold text-balance uppercase">
+								<p className="t-b-1 text-balance uppercase">
 									{title}
 									{href && (
 										<ArrowUpRight className="ml-1 inline size-[0.9em] transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
@@ -185,9 +133,9 @@ export default async function EventsBlock({
 							</div>
 
 							<p className="t-spec shrink-0 uppercase">
-								{showDate
+								{(!dateStatus || dateStatus === 'confirmed') && eventDatetime
 									? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
-									: cleanDateStatus || t.status.tba}
+									: dateStatus || t.status.tba}
 							</p>
 
 							{displayLocation && (
@@ -200,7 +148,10 @@ export default async function EventsBlock({
 											aria-label={displayLocation}
 											// Above the row's stretched link (z-10) so the map link
 											// stays individually clickable.
-											className="relative z-10 underline-offset-4 hover:underline"
+											className={cn(
+												'relative z-10 underline-offset-4 hover:underline',
+												OVERLAY_LINK_FOCUS
+											)}
 										>
 											{displayLocation}
 										</a>
@@ -212,8 +163,8 @@ export default async function EventsBlock({
 
 							{statusList && statusList.length > 0 && (
 								<span className="relative z-10 flex shrink-0 flex-wrap gap-1">
-									{statusList.map((item: any) => (
-										<StatusItem key={item?._key} data={item} />
+									{statusList.map((item) => (
+										<StatusItem key={item._key} data={item as StatusListItem} />
 									))}
 								</span>
 							)}
@@ -224,7 +175,7 @@ export default async function EventsBlock({
 							{href && (
 								<Link
 									href={href}
-									className="absolute inset-0 z-0 focus-visible:ring-accent-foreground focus-visible:ring-offset-background focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+									className={cn('absolute inset-0 z-0', OVERLAY_LINK_FOCUS)}
 								>
 									<span className="sr-only">{title}</span>
 								</Link>
@@ -233,7 +184,7 @@ export default async function EventsBlock({
 					);
 				})}
 			</ul>
-		</section>
+		</SectionShell>
 	);
 }
 
@@ -241,10 +192,30 @@ export default async function EventsBlock({
 // documents, with ensureAccessibleTextColor deciding the foreground against the
 // authored background; the var() fallbacks keep it legible when a status has no
 // colours set.
-function StatusItem({ data }: { data: any }) {
+// Typed structurally rather than off the query result: typegen widens the two
+// brand-colour derefs to `{} | Color | null` and the link's resolved `href` to
+// `unknown` (resolvedHrefGroq is a select() it cannot narrow), so the generated
+// shape does not fit its own consumers. PageEvents' copy sidesteps this with
+// `data: any`; naming the fields keeps the looseness to the two values that
+// actually need it.
+type StatusListItem = {
+	_key: string;
+	link?: { href?: unknown; isNewTab?: boolean | null } | null;
+	eventStatus?: {
+		title?: string | null;
+		statusTextColor?: SanityColor | null;
+		statusBgColor?: SanityColor | null;
+	} | null;
+};
+
+function StatusItem({ data }: { data: StatusListItem }) {
 	const { link, eventStatus } = data || {};
 	if (!eventStatus) return null;
 	const { title, statusTextColor, statusBgColor } = eventStatus;
+	// Narrowed rather than cast: `href` comes back as `unknown` because
+	// resolvedHrefGroq is a select() typegen cannot fold, and a status whose link
+	// resolves to nothing should render as a plain pill.
+	const linkHref = typeof link?.href === 'string' ? link.href : null;
 
 	return (
 		<span
@@ -257,13 +228,13 @@ function StatusItem({ data }: { data: any }) {
 			}}
 		>
 			{title}
-			{link?.href && (
+			{linkHref && (
 				<>
 					<ArrowRight className="size-3" />
 					<CustomLink
-						className="p-fill rounded-4xl"
-						link={link}
-						aria-label={title}
+						className={cn('p-fill rounded-4xl', OVERLAY_LINK_FOCUS)}
+						link={{ href: linkHref, isNewTab: link?.isNewTab ?? false }}
+						aria-label={title ?? undefined}
 					/>
 				</>
 			)}

@@ -20,7 +20,7 @@ import {
 	buildRgbaCssString,
 	ensureAccessibleTextColor,
 } from '@/lib/image-utils';
-import { cn, hasArrayValue } from '@/lib/utils';
+import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
 import { localizePath } from '@/lib/i18n';
@@ -39,11 +39,6 @@ const eventRowAnim = {
 	hide: { opacity: 0, y: 12 },
 	show: { opacity: 1, y: 0 },
 };
-
-// Shared keyboard-focus treatment for the absolutely-positioned overlay links
-// (full-row, location, status). Inset so the ring draws inside its container.
-const OVERLAY_LINK_FOCUS =
-	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
 
 // How often the ended/days-until state is re-evaluated once mounted, so a row
 // dims at its end time without the visitor reloading.

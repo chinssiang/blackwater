@@ -12,11 +12,8 @@ import { defineArrayMember, defineType, defineField } from 'sanity';
 // arm, neither is per-locale: products are field-level localized, so one
 // reference array serves both languages.
 
-// Reads the `source` discriminant off the enclosing module. `parent`, not
-// `document`: inside pageModules[] the document is the PAGE, so a predicate
-// keyed off it would read the wrong object entirely. Shared by the `hidden` and
-// `validation` of both source-dependent fields, which have to agree -- a field
-// is exempt from validation on exactly the condition that hides it.
+// Same helper as faq-block.ts -- see the note there for why it reads `parent`
+// rather than `document`, and why `hidden` and `validation` must agree.
 const sourceOf = (owner: { parent?: unknown }) =>
 	(owner.parent as { source?: string } | undefined)?.source;
 

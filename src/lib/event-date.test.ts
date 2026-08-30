@@ -63,29 +63,22 @@ describe('selectUpcomingEvents', () => {
 		const today = event('2026-08-30T07:00');
 		const soon = event('2026-09-02T09:00');
 		expect(
-			selectUpcomingEvents([past, today, soon], { now: NOW, timeWindow: 'all' })
+			selectUpcomingEvents([past, today, soon], { now: NOW, windowDays: -1 })
 		).toEqual([today, soon]);
-	});
-
-	it('keeps a multi-day event whose end time is still ahead', () => {
-		const running = event('2026-08-28T07:00', '2026-08-31T18:00');
-		expect(
-			selectUpcomingEvents([running], { now: NOW, timeWindow: 'all' })
-		).toEqual([running]);
 	});
 
 	it('counts the week window in whole calendar days, inclusive of day 7', () => {
 		const day7 = event('2026-09-06T09:00');
 		const day8 = event('2026-09-07T09:00');
 		expect(
-			selectUpcomingEvents([day7, day8], { now: NOW, timeWindow: 'week' })
+			selectUpcomingEvents([day7, day8], { now: NOW, windowDays: 7 })
 		).toEqual([day7]);
 	});
 
 	it('includes an event later today in a narrowed window (day 0)', () => {
 		const laterToday = event('2026-08-30T20:00');
 		expect(
-			selectUpcomingEvents([laterToday], { now: NOW, timeWindow: 'week' })
+			selectUpcomingEvents([laterToday], { now: NOW, windowDays: 7 })
 		).toEqual([laterToday]);
 	});
 
@@ -95,33 +88,35 @@ describe('selectUpcomingEvents', () => {
 		expect(
 			selectUpcomingEvents([inRange, outOfRange], {
 				now: NOW,
-				timeWindow: 'month',
+				windowDays: 30,
 			})
 		).toEqual([inRange]);
 	});
 
-	it('treats an unrecognised or missing window as "all upcoming"', () => {
+	it('treats a missing or negative window as "all upcoming"', () => {
+		// GROQ projects -1 for "all"; a module written through the API may carry
+		// neither. Erring toward showing more is the safe direction — the
+		// alternative is a section that silently disappears.
 		const far = event('2027-06-01T09:00');
 		expect(selectUpcomingEvents([far], { now: NOW })).toEqual([far]);
-		expect(
-			// A stega-polluted value from draft mode lands here too.
-			selectUpcomingEvents([far], { now: NOW, timeWindow: 'week​xyz' })
-		).toEqual([far]);
+		expect(selectUpcomingEvents([far], { now: NOW, windowDays: -1 })).toEqual([
+			far,
+		]);
 	});
 
 	it('excludes an undated event from a narrowed window but not from "all"', () => {
 		const undated = { eventDatetime: null, endDatetime: null };
 		expect(
-			selectUpcomingEvents([undated], { now: NOW, timeWindow: 'week' })
+			selectUpcomingEvents([undated], { now: NOW, windowDays: 7 })
 		).toEqual([]);
 		expect(
-			selectUpcomingEvents([undated], { now: NOW, timeWindow: 'all' })
+			selectUpcomingEvents([undated], { now: NOW, windowDays: -1 })
 		).toEqual([undated]);
 	});
 
 	it('defaults to five when no limit is stored, and honours a stored zero', () => {
 		const many = Array.from({ length: 8 }, (_, i) =>
-			event(`2026-09-0${i + 1}T09:00`)
+			event(`2026-09-${String(i + 1).padStart(2, '0')}T09:00`)
 		);
 		expect(selectUpcomingEvents(many, { now: NOW })).toHaveLength(5);
 		expect(selectUpcomingEvents(many, { now: NOW, limit: 3 })).toHaveLength(3);

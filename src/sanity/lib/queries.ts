@@ -285,6 +285,17 @@ const portableTextContentFields = `
 	}
 `;
 
+// The `sectionAppearance { ..., backgroundColor->color, textColor->color }`
+// projection below is repeated verbatim in all four page-module fragments, and
+// it has to stay that way. Hoisting it into its own const — the obvious dedup —
+// adds one level of interpolation to a chain (pageHomeQuery → pageModuleFields →
+// the module fragment → here) that already reaches portableTextContentFields →
+// linkFields → resolvedHrefGroq, and the Sanity query extractor then dies with
+// "Maximum call stack size exceeded" on pageHomeQuery and pageGeneralQuery
+// specifically. Those two lose their generated result types while every other
+// query still resolves, so the failure is quiet: `npm run typegen` reports
+// success and only the error line above the summary names it.
+
 const freeformField = `
 	_type,
 	_key,
@@ -573,77 +584,59 @@ const productCardFields = `
 	}
 `;
 
-// Status badges, shared by the listing and the detail page — both render the
-// same pill with the same link.
-const eventStatusListFields = `
-	statusList[]{
-		_key,
-		link {
-			${linkFields}
-		},
-		eventStatus-> {
-			_id,
-			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-			"slug": slug.current,
-			statusTextColor->{...color},
-			statusBgColor->{...color}
-		}
-	}
-`;
+// Placed here, not up with freeformField/faqBlockField, because productsBlockField
+// interpolates productCardFields, titleVisible and visibleProducts: every fragment
+// in this file is evaluated at module init, so a const used above its declaration
+// is a use-before-declare the compiler rejects (TS2448). Same constraint
+// locString's note describes.
+// Every document type the page-module fragments dereference, so the two routes
+// that render pageModules cannot drift from what the fragments actually touch.
+//
+// Worth seeing plainly: these are attached to the whole page fetch, so they fan
+// out to every pGeneral page whether or not it carries the module. Publishing one
+// product expires all of them — /api/revalidate-tag uses `expire: 0`, so that is
+// immediate. That is the price of resolving a module's references inside the page
+// query; it is the same trade faqBlock already makes with gFaq/gFaqList, one
+// higher-churn type. Event tags are NOT here: <EventsBlock> owns its own fetch
+// (upcomingEventsQuery) and carries them itself.
+export const PAGE_MODULE_TAGS = [
+	'gFaq',
+	'gFaqList',
+	'pProduct',
+	'pProductCollection',
+	'pProductCategory',
+	'pBrand',
+	'settingsBrandColors',
+] as const;
 
-// Event listing. One document per event now, so the old two-arm union (current
-// locale, plus English/undefined whose slug had no current-locale sibling) is
-// gone: there is nothing to deduplicate, and `titleVisible` alone decides
-// whether an event appears in this locale.
-//
-// `categories` is deliberately NOT projected: nothing on the listing renders it,
-// and it costs a reference deref plus a colour-document deref per event.
-const eventCardFields = `
-	_id,
-	_type,
-	"title": ${locString('title')},
-	"slug": slug.current,
-	"subtitle": ${locString('subtitle')},
-	eventDatetime,
-	endDatetime,
-	dateStatus,
-	"location": ${locString('location')},
-	locationLink,
-	locationRef->{
-		"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
-		mapLink,
-	},
-	${eventStatusListFields}
-`;
+// Tags for upcomingEventsQuery: eventCardFields derefs locationRef-> and
+// statusList[].eventStatus-> plus its two colour documents.
+export const UPCOMING_EVENTS_TAGS = [
+	'pEvent',
+	'gLocation',
+	'pEventStatus',
+	'settingsBrandColors',
+] as const;
 
-// Upcoming events for an eventsBlock module. `$upcomingFrom` is only a payload
-// bound, not the answer: it is day-granular and deliberately slack (start of
-// YESTERDAY), because "has this ended?" depends on the event's own timezone and
-// on an end-of-day fallback when endDatetime is blank, neither of which GROQ can
-// express. selectUpcomingEvents() in src/lib/event-date.ts makes the real cut,
-// and `timeWindow`/`limit` are projected through for it rather than applied
-// here — a GROQ slice needs a constant, and the window boundary is timezone-
-// sensitive for the same reason.
+// `windowDays` rather than the raw `timeWindow` string: stega encodes invisible
+// metadata into every string in draft mode, so a discriminator that crosses into
+// JS has to be cleaned before it is compared — and one that is forgotten fails
+// silently. Numbers are untouched by stega, so resolving the radio here removes
+// the hazard rather than defending against it, the same way faqBlock and
+// productsBlock keep their `source` inside GROQ. -1 means "no window".
 //
-// The slack also sidesteps a lexicographic trap: `utc` is compared as a string
-// (as pEventsQuery already does), and Sanity omits zero milliseconds while
-// Date#toISOString does not, so "…:00Z" > "…:00.000Z". Nothing hinges on the
-// boundary when the bound is a day early.
-//
-// coalesce(endDatetime, eventDatetime) so a multi-day event still running is
-// kept even though it started before the bound. Capped at 20: the component
-// slices to `limit` (max 10), and the extra headroom absorbs a stale bound.
+// The events themselves are NOT projected here. They are not a dereference of
+// anything this page holds — they are an independent global query with a time
+// bound — so <EventsBlock> fetches them itself (upcomingEventsQuery below).
+// Nesting them here put `$upcomingFrom` on every pGeneral page's cache key and
+// the three event tags on every pGeneral page's fetch, for a module almost none
+// of them carry.
 const eventsBlockField = `
 	_type,
 	_key,
 	heading,
-	timeWindow,
+	"windowDays": select(timeWindow == "week" => 7, timeWindow == "month" => 30, -1),
 	limit,
-	"events": *[_type == "pEvent" && ${titleVisible}
-		&& coalesce(endDatetime.utc, eventDatetime.utc) >= $upcomingFrom
-	] | order(eventDatetime.utc asc)[0...20]{
-		${eventCardFields}
-	},
 	sectionAppearance {
 		...,
 		"backgroundColor": backgroundColor->color,
@@ -656,15 +649,13 @@ const eventsBlockField = `
 // same shape faqBlockField uses and for the same reason: <ProductsBlock> and its
 // Shopify price lookup both consume one flat array.
 //
-// The hand-picked arm is the fallback, not `collection`: a module written
-// through the API with no `source` still renders something. Not `coalesce` — a
-// hidden field keeps its data, so a stale `products` array would win over the
-// collection the editor actually chose.
+// Same select()-fallback reasoning as faqBlockField above, with the arms swapped
+// to match this module's `initialValue: 'picked'`.
 //
 // visibleProducts(), not hand-rolled brackets: its parentheses are what make the
 // trailing filter a filter (see its own note above). Passing a select() into it
-// is new — every other caller passes a plain field name — but it is the same
-// postfix-on-select() shape faqBlockField already relies on.
+// is new — every other caller passes a plain field name — and it was verified
+// against the API to filter rather than silently pass everything through.
 //
 // Capped at 8, matching the `limit` field's ceiling: card grids are the heaviest
 // thing these pages render.
@@ -683,12 +674,6 @@ const productsBlockField = `
 	}
 `;
 
-// Placed here, not up with freeformField/faqBlockField, because it interpolates
-// eventCardFields, productCardFields, titleVisible and visibleProducts: every
-// fragment in this file is evaluated at module init, so a const referenced above
-// its declaration is a temporal-dead-zone ReferenceError that takes the whole app
-// down on import (same constraint locString's note describes). The event
-// fragments were hoisted above pEventsQuery for this too.
 const pageModuleFields = `
 	_type == 'freeform' => {
 		${freeformField}
@@ -924,6 +909,49 @@ export const pageNewsletterQuery = defineQuery(`
 	}
 `);
 
+// Status badges, shared by the listing and the detail page — both render the
+// same pill with the same link.
+const eventStatusListFields = `
+	statusList[]{
+		_key,
+		link {
+			${linkFields}
+		},
+		eventStatus-> {
+			_id,
+			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+			"slug": slug.current,
+			statusTextColor->{...color},
+			statusBgColor->{...color}
+		}
+	}
+`;
+
+// Event listing. One document per event now, so the old two-arm union (current
+// locale, plus English/undefined whose slug had no current-locale sibling) is
+// gone: there is nothing to deduplicate, and `titleVisible` alone decides
+// whether an event appears in this locale.
+//
+// `categories` is deliberately NOT projected: nothing on the listing renders it,
+// and it costs a reference deref plus a colour-document deref per event.
+const eventCardFields = `
+	_id,
+	_type,
+	"title": ${locString('title')},
+	"slug": slug.current,
+	"subtitle": ${locString('subtitle')},
+	eventDatetime,
+	endDatetime,
+	dateStatus,
+	"location": ${locString('location')},
+	locationLink,
+	locationRef->{
+		"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
+		mapLink,
+	},
+	${eventStatusListFields}
+`;
+
 export const pEventsQuery = defineQuery(`
 	*[_type == "pEvents"][0]{
 		_id,
@@ -935,6 +963,33 @@ export const pEventsQuery = defineQuery(`
 		"eventList": *[_type == "pEvent" && eventDatetime.utc >= $cutoff && ${titleVisible}]{
 			${eventCardFields}
 		} | order(eventDatetime.utc asc),
+	}
+`);
+
+// The eventsBlock module's own read, kept out of the page queries: these events
+// are not a dereference of anything the page holds, so nesting them there put
+// `$upcomingFrom` on every pGeneral page's cache key and the three event tags on
+// every pGeneral page's fetch.
+//
+// `$upcomingFrom` is a payload bound, not the answer. selectUpcomingEvents() in
+// src/lib/event-date.ts decides what is actually upcoming, because that needs the
+// event's own timezone and an end-of-day fallback when endDatetime is blank —
+// neither expressible in GROQ. So the bound is day-granular and a day slack,
+// which also sidesteps a lexicographic trap: `utc` compares as a string (as
+// pEventsQuery does too) and Sanity omits zero milliseconds while
+// Date#toISOString does not, so "…:00Z" > "…:00.000Z".
+//
+// coalesce(endDatetime, eventDatetime) keeps a multi-day event that is still
+// running even though it started before the bound. Capped at 12: rows come back
+// ascending and the window is an upper bound on that same ordering, so the only
+// rows fetched-then-discarded are ones that ended inside the bound's ~24-48h of
+// slack. 10 (the schema ceiling) plus two spare covers that; each extra row
+// costs a locationRef deref plus three more per status entry.
+export const upcomingEventsQuery = defineQuery(`
+	*[_type == "pEvent" && ${titleVisible}
+		&& coalesce(endDatetime.utc, eventDatetime.utc) >= $upcomingFrom
+	] | order(eventDatetime.utc asc)[0...12]{
+		${eventCardFields}
 	}
 `);
 
