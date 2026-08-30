@@ -38,14 +38,57 @@ type MetadataProps = {
 	searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+// The `$upcomingFrom` bound below is only a payload guard for eventsBlock
+// modules -- selectUpcomingEvents() makes the real "is this still upcoming?"
+// decision at render time. It is day-granular so the Data Cache key changes once
+// a day rather than once per request, and set a day EARLY so nothing hinges on a
+// boundary comparison between two ISO strings of differing millisecond precision.
+function getUpcomingFrom(): string {
+	const from = new Date();
+	from.setDate(from.getDate() - 1);
+	from.setHours(0, 0, 0, 0);
+	return from.toISOString();
+}
+
+// An eventsBlock's output depends on the wall clock (the bound above, and the
+// ended state each row renders), so tag-based invalidation alone is not enough --
+// with no content edits the prerendered HTML would keep serving build-time state.
+// Composes with the content tags rather than replacing them. This is still SSG
+// with ISR, not dynamic rendering.
+//
+// Known cost, and it is deliberate rather than overlooked: Next takes the MINIMUM
+// revalidate across every fetch on a route, so this also caps the no-TTL policy
+// that src/lib/shopify/product.ts argues for -- a productsBlock's Storefront
+// lookup expires hourly here instead of only on a webhook. That is churn, not
+// staleness (the webhook still invalidates), and it is the price of letting the
+// events module live on a prerendered page. If the regeneration volume ever
+// matters, the way out is a daily cron hitting /api/revalidate-tag for `pEvent`
+// rather than a shorter interval here.
+export const revalidate = 3600;
+
 const getCachedPageData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageGeneralQuery,
-		params: { slug, locale },
+		params: { slug, locale, upcomingFrom: getUpcomingFrom() },
 		// gFaqList + gFaq: faqBlock modules deref faqSet->questions[]->, so both
 		// the set and the entries it names have to invalidate this page.
+		// pEvent/gLocation/pEventStatus: eventsBlock. pProduct/pProductCollection/
+		// pProductCategory/pBrand: productsBlock, whose card projection derefs
+		// categories[]-> and brands[]->.
 		// settingsBrandColors: sectionAppearance derefs backgroundColor->/textColor->.
-		tags: [`pGeneral:${slug}`, 'gFaq', 'gFaqList', 'settingsBrandColors'],
+		tags: [
+			`pGeneral:${slug}`,
+			'gFaq',
+			'gFaqList',
+			'pEvent',
+			'gLocation',
+			'pEventStatus',
+			'pProduct',
+			'pProductCollection',
+			'pProductCategory',
+			'pBrand',
+			'settingsBrandColors',
+		],
 	})
 );
 

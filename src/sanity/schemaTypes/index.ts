@@ -33,6 +33,8 @@ import { gAnnouncement } from './singletons/g-announcement';
 import { eventStation } from './objects/event-station';
 import { freeform } from './objects/freeform';
 import { faqBlock } from './objects/faq-block';
+import { eventsBlock } from './objects/events-block';
+import { productsBlock } from './objects/products-block';
 import { gAuthor } from './singletons/g-author';
 import { gFooter } from './singletons/g-footer';
 import { gHeader } from './singletons/g-header';
@@ -98,6 +100,8 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	eventStation,
 	freeform,
 	faqBlock,
+	eventsBlock,
+	productsBlock,
 	formField,
 	link(),
 	navDropdown,

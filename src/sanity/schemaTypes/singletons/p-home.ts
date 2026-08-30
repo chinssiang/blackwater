@@ -26,7 +26,12 @@ export const pHome = defineType({
 			title: 'Page Modules',
 			name: 'pageModules',
 			type: 'array',
-			of: [{ type: 'freeform' }, { type: 'faqBlock' }],
+			of: [
+				{ type: 'freeform' },
+				{ type: 'faqBlock' },
+				{ type: 'eventsBlock' },
+				{ type: 'productsBlock' },
+			],
 		},
 		sharing(),
 	],

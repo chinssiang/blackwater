@@ -9,7 +9,7 @@ import { resolveHref } from '@/lib/routes';
 import { localizePath } from '@/lib/i18n';
 import { interpolate } from '@/lib/dictionary';
 import ImageBlock from '@/components/ImageBlock';
-import ProductCard from './ProductCard';
+import ProductCard from '@/components/ProductCard';
 import ProductCategoriesGrid from './ProductCategoriesGrid';
 import type { PageProductIndexQueryResult } from 'sanity.types';
 import type { WithoutPageMetadata } from '@/lib/defineMetadata';

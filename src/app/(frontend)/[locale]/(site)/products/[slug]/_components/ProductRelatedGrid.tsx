@@ -4,7 +4,7 @@ import { interpolate } from '@/lib/dictionary';
 import { getDictionary } from '@/lib/dictionary.server';
 import { applyCardPrices, getCardCommerce } from '@/lib/shopify/product';
 import { resolveHref } from '@/lib/routes';
-import ProductCard from '../../_components/ProductCard';
+import ProductCard from '@/components/ProductCard';
 
 // Async boundary around the related grid's Storefront lookup. It sits below the
 // fold, so it belongs behind its own Suspense boundary rather than on the

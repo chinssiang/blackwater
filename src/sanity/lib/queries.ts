@@ -374,15 +374,6 @@ const faqBlockField = `
 	}
 `;
 
-const pageModuleFields = `
-	_type == 'freeform' => {
-		${freeformField}
-	},
-	_type == 'faqBlock' => {
-		${faqBlockField}
-	},
-`;
-
 const formField = `
 	placeholder,
 	_key,
@@ -580,6 +571,137 @@ const productCardFields = `
 	mainImage {
 		${imageBlockMetaFields}
 	}
+`;
+
+// Status badges, shared by the listing and the detail page — both render the
+// same pill with the same link.
+const eventStatusListFields = `
+	statusList[]{
+		_key,
+		link {
+			${linkFields}
+		},
+		eventStatus-> {
+			_id,
+			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+			"slug": slug.current,
+			statusTextColor->{...color},
+			statusBgColor->{...color}
+		}
+	}
+`;
+
+// Event listing. One document per event now, so the old two-arm union (current
+// locale, plus English/undefined whose slug had no current-locale sibling) is
+// gone: there is nothing to deduplicate, and `titleVisible` alone decides
+// whether an event appears in this locale.
+//
+// `categories` is deliberately NOT projected: nothing on the listing renders it,
+// and it costs a reference deref plus a colour-document deref per event.
+const eventCardFields = `
+	_id,
+	_type,
+	"title": ${locString('title')},
+	"slug": slug.current,
+	"subtitle": ${locString('subtitle')},
+	eventDatetime,
+	endDatetime,
+	dateStatus,
+	"location": ${locString('location')},
+	locationLink,
+	locationRef->{
+		"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
+		mapLink,
+	},
+	${eventStatusListFields}
+`;
+
+// Upcoming events for an eventsBlock module. `$upcomingFrom` is only a payload
+// bound, not the answer: it is day-granular and deliberately slack (start of
+// YESTERDAY), because "has this ended?" depends on the event's own timezone and
+// on an end-of-day fallback when endDatetime is blank, neither of which GROQ can
+// express. selectUpcomingEvents() in src/lib/event-date.ts makes the real cut,
+// and `timeWindow`/`limit` are projected through for it rather than applied
+// here — a GROQ slice needs a constant, and the window boundary is timezone-
+// sensitive for the same reason.
+//
+// The slack also sidesteps a lexicographic trap: `utc` is compared as a string
+// (as pEventsQuery already does), and Sanity omits zero milliseconds while
+// Date#toISOString does not, so "…:00Z" > "…:00.000Z". Nothing hinges on the
+// boundary when the bound is a day early.
+//
+// coalesce(endDatetime, eventDatetime) so a multi-day event still running is
+// kept even though it started before the bound. Capped at 20: the component
+// slices to `limit` (max 10), and the extra headroom absorbs a stale bound.
+const eventsBlockField = `
+	_type,
+	_key,
+	heading,
+	timeWindow,
+	limit,
+	"events": *[_type == "pEvent" && ${titleVisible}
+		&& coalesce(endDatetime.utc, eventDatetime.utc) >= $upcomingFrom
+	] | order(eventDatetime.utc asc)[0...20]{
+		${eventCardFields}
+	},
+	sectionAppearance {
+		...,
+		"backgroundColor": backgroundColor->color,
+		"textColor": textColor->color
+	}
+`;
+
+// A productsBlock names EITHER a collection or its own hand-picked list, and
+// `products` stays flat either way — the discriminator never escapes GROQ, the
+// same shape faqBlockField uses and for the same reason: <ProductsBlock> and its
+// Shopify price lookup both consume one flat array.
+//
+// The hand-picked arm is the fallback, not `collection`: a module written
+// through the API with no `source` still renders something. Not `coalesce` — a
+// hidden field keeps its data, so a stale `products` array would win over the
+// collection the editor actually chose.
+//
+// visibleProducts(), not hand-rolled brackets: its parentheses are what make the
+// trailing filter a filter (see its own note above). Passing a select() into it
+// is new — every other caller passes a plain field name — but it is the same
+// postfix-on-select() shape faqBlockField already relies on.
+//
+// Capped at 8, matching the `limit` field's ceiling: card grids are the heaviest
+// thing these pages render.
+const productsBlockField = `
+	_type,
+	_key,
+	heading,
+	limit,
+	"products": ${visibleProducts('select(source == "collection" => collection->products, products)')}[0...8]{
+		${productCardFields}
+	},
+	sectionAppearance {
+		...,
+		"backgroundColor": backgroundColor->color,
+		"textColor": textColor->color
+	}
+`;
+
+// Placed here, not up with freeformField/faqBlockField, because it interpolates
+// eventCardFields, productCardFields, titleVisible and visibleProducts: every
+// fragment in this file is evaluated at module init, so a const referenced above
+// its declaration is a temporal-dead-zone ReferenceError that takes the whole app
+// down on import (same constraint locString's note describes). The event
+// fragments were hoisted above pEventsQuery for this too.
+const pageModuleFields = `
+	_type == 'freeform' => {
+		${freeformField}
+	},
+	_type == 'faqBlock' => {
+		${faqBlockField}
+	},
+	_type == 'eventsBlock' => {
+		${eventsBlockField}
+	},
+	_type == 'productsBlock' => {
+		${productsBlockField}
+	},
 `;
 
 export const siteDataQuery = defineQuery(`{
@@ -801,49 +923,6 @@ export const pageNewsletterQuery = defineQuery(`
 		}
 	}
 `);
-
-// Status badges, shared by the listing and the detail page — both render the
-// same pill with the same link.
-const eventStatusListFields = `
-	statusList[]{
-		_key,
-		link {
-			${linkFields}
-		},
-		eventStatus-> {
-			_id,
-			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-			"slug": slug.current,
-			statusTextColor->{...color},
-			statusBgColor->{...color}
-		}
-	}
-`;
-
-// Event listing. One document per event now, so the old two-arm union (current
-// locale, plus English/undefined whose slug had no current-locale sibling) is
-// gone: there is nothing to deduplicate, and `titleVisible` alone decides
-// whether an event appears in this locale.
-//
-// `categories` is deliberately NOT projected: nothing on the listing renders it,
-// and it costs a reference deref plus a colour-document deref per event.
-const eventCardFields = `
-	_id,
-	_type,
-	"title": ${locString('title')},
-	"slug": slug.current,
-	"subtitle": ${locString('subtitle')},
-	eventDatetime,
-	endDatetime,
-	dateStatus,
-	"location": ${locString('location')},
-	locationLink,
-	locationRef->{
-		"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
-		mapLink,
-	},
-	${eventStatusListFields}
-`;
 
 export const pEventsQuery = defineQuery(`
 	*[_type == "pEvents"][0]{

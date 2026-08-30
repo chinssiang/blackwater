@@ -4,6 +4,8 @@ paths:
   - src/lib/shopify/**
   - src/app/api/shopify/**
   - src/components/cart/**
+  - src/components/ProductCard.tsx
+  - src/components/ProductsBlock.tsx
   - src/app/(frontend)/[locale]/(site)/products/**
   - src/sanity/schemaTypes/documents/p-product.ts
   - src/sanity/schemaTypes/singletons/settings-cart.ts

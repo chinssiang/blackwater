@@ -1,4 +1,5 @@
 import PageModules from '@/components/PageModules';
+import type { Locale } from '@/lib/i18n';
 import { AnimatedTitle } from './AnimatedTitle';
 
 interface PageHomeProps {
@@ -6,9 +7,10 @@ interface PageHomeProps {
 		pageModules?: Array<any>;
 		landingTitle?: string;
 	};
+	locale: Locale;
 }
 
-export default function PageHome({ data }: PageHomeProps) {
+export default function PageHome({ data, locale }: PageHomeProps) {
 	const { pageModules, landingTitle } = data || {};
 
 	return (
@@ -17,7 +19,7 @@ export default function PageHome({ data }: PageHomeProps) {
 				<AnimatedTitle title={landingTitle} />
 			</div>
 			{pageModules?.map((module) => (
-				<PageModules key={module._key} module={module} />
+				<PageModules key={module._key} module={module} locale={locale} />
 			))}
 		</div>
 	);

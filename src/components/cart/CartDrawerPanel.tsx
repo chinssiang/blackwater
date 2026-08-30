@@ -19,7 +19,7 @@ import {
 	type ShopifyCartResponseLine,
 } from '@/lib/shopify/types';
 import { useScrollLock } from '@/hooks/useScrollLock';
-import ProductCard from '@/app/(frontend)/[locale]/(site)/products/_components/ProductCard';
+import ProductCard from '@/components/ProductCard';
 import CartCountBadge from './CartCountBadge';
 import { useCart } from './CartProvider';
 

@@ -2382,6 +2382,182 @@
     }
   },
   {
+    "name": "productsBlock",
+    "type": "type",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "_type": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string",
+            "value": "productsBlock"
+          }
+        },
+        "heading": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          },
+          "optional": true
+        },
+        "source": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "union",
+            "of": [
+              {
+                "type": "string",
+                "value": "picked"
+              },
+              {
+                "type": "string",
+                "value": "collection"
+              }
+            ]
+          },
+          "optional": true
+        },
+        "products": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "array",
+            "of": {
+              "type": "object",
+              "attributes": {
+                "_key": {
+                  "type": "objectAttribute",
+                  "value": {
+                    "type": "string"
+                  }
+                }
+              },
+              "rest": {
+                "type": "inline",
+                "name": "pProduct.reference"
+              }
+            }
+          },
+          "optional": true
+        },
+        "collection": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "inline",
+            "name": "pProductCollection.reference"
+          },
+          "optional": true
+        },
+        "limit": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "union",
+            "of": [
+              {
+                "type": "number",
+                "value": 2
+              },
+              {
+                "type": "number",
+                "value": 4
+              },
+              {
+                "type": "number",
+                "value": 6
+              },
+              {
+                "type": "number",
+                "value": 8
+              }
+            ]
+          },
+          "optional": true
+        },
+        "sectionAppearance": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "inline",
+            "name": "sectionAppearance"
+          },
+          "optional": true
+        }
+      }
+    }
+  },
+  {
+    "name": "eventsBlock",
+    "type": "type",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "_type": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string",
+            "value": "eventsBlock"
+          }
+        },
+        "heading": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          },
+          "optional": true
+        },
+        "timeWindow": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "union",
+            "of": [
+              {
+                "type": "string",
+                "value": "week"
+              },
+              {
+                "type": "string",
+                "value": "month"
+              },
+              {
+                "type": "string",
+                "value": "all"
+              }
+            ]
+          },
+          "optional": true
+        },
+        "limit": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "union",
+            "of": [
+              {
+                "type": "number",
+                "value": 3
+              },
+              {
+                "type": "number",
+                "value": 5
+              },
+              {
+                "type": "number",
+                "value": 10
+              }
+            ]
+          },
+          "optional": true
+        },
+        "sectionAppearance": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "inline",
+            "name": "sectionAppearance"
+          },
+          "optional": true
+        }
+      }
+    }
+  },
+  {
     "type": "type",
     "name": "gFaqList.reference",
     "value": {
@@ -6123,6 +6299,36 @@
                   "type": "inline",
                   "name": "faqBlock"
                 }
+              },
+              {
+                "type": "object",
+                "attributes": {
+                  "_key": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "rest": {
+                  "type": "inline",
+                  "name": "eventsBlock"
+                }
+              },
+              {
+                "type": "object",
+                "attributes": {
+                  "_key": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "rest": {
+                  "type": "inline",
+                  "name": "productsBlock"
+                }
               }
             ]
           }
@@ -6308,6 +6514,36 @@
                 "rest": {
                   "type": "inline",
                   "name": "faqBlock"
+                }
+              },
+              {
+                "type": "object",
+                "attributes": {
+                  "_key": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "rest": {
+                  "type": "inline",
+                  "name": "eventsBlock"
+                }
+              },
+              {
+                "type": "object",
+                "attributes": {
+                  "_key": {
+                    "type": "objectAttribute",
+                    "value": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "rest": {
+                  "type": "inline",
+                  "name": "productsBlock"
                 }
               }
             ]

@@ -43,7 +43,7 @@ export default async function PageGeneral({ data, locale }: PageGeneralProps) {
 			</section>
 
 			{pageModules?.map((module) => (
-				<PageModules key={module._key} module={module} />
+				<PageModules key={module._key} module={module} locale={locale} />
 			))}
 		</>
 	);

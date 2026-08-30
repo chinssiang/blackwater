@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import ProductCard from '../../_components/ProductCard';
+import ProductCard from '@/components/ProductCard';
 import ProductCategoriesGrid from '../../_components/ProductCategoriesGrid';
 import ProductPageHeader from '../../_components/ProductPageHeader';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
