@@ -27,6 +27,7 @@ export const pHome = defineType({
 			name: 'pageModules',
 			type: 'array',
 			of: [
+				{ type: 'heroBlock' },
 				{ type: 'freeform' },
 				{ type: 'faqBlock' },
 				{ type: 'eventsBlock' },

@@ -286,7 +286,7 @@ const portableTextContentFields = `
 `;
 
 // The `sectionAppearance { ..., backgroundColor->color, textColor->color }`
-// projection below is repeated verbatim in all four page-module fragments, and
+// projection below is repeated verbatim in all five page-module fragments, and
 // it has to stay that way. Hoisting it into its own const — the obvious dedup —
 // adds one level of interpolation to a chain (pageHomeQuery → pageModuleFields →
 // the module fragment → here) that already reaches portableTextContentFields →
@@ -644,6 +644,50 @@ const eventsBlockField = `
 	}
 `;
 
+// The hero module. `paragraph` and the CTA link put this at the same
+// interpolation depth as freeformField (portableTextContentFields → linkFields →
+// resolvedHrefGroq), which the extractor handles; the sectionAppearance block
+// below is spelled out verbatim for the reason given above it, not copy-paste
+// laziness.
+const heroBlockField = `
+	_type,
+	_key,
+	eyebrow,
+	heading,
+	paragraph[]{
+		${portableTextContentFields}
+	},
+	// Narrower than imageBlockMetaFields, which the other image projections use.
+	// That fragment also pulls caption and a link projection, and this object has
+	// neither: hero-block.ts declares its customImage with hasCaptionOption false
+	// and no link option, and the image renders aria-hidden behind the copy.
+	// Dropping the link arm keeps the ~2KB resolvedHrefGroq select() out of the
+	// compiled query and, more to the point, one interpolation level off the
+	// pageHome/pageGeneral chain the note above is about.
+	// (No backticks in here: this comment sits inside a JS template literal.)
+	backgroundImage{
+		image{
+			${imageMetaFields}
+		},
+		customRatio,
+		imageMobile{
+			${imageMetaFields}
+		},
+		customRatioMobile
+	},
+	callToAction{
+		label,
+		link {
+			${linkFields}
+		}
+	},
+	sectionAppearance {
+		...,
+		"backgroundColor": backgroundColor->color,
+		"textColor": textColor->color
+	}
+`;
+
 // A productsBlock names EITHER a collection or its own hand-picked list, and
 // `products` stays flat either way — the discriminator never escapes GROQ, the
 // same shape faqBlockField uses and for the same reason: <ProductsBlock> and its
@@ -683,6 +727,9 @@ const pageModuleFields = `
 	},
 	_type == 'eventsBlock' => {
 		${eventsBlockField}
+	},
+	_type == 'heroBlock' => {
+		${heroBlockField}
 	},
 	_type == 'productsBlock' => {
 		${productsBlockField}

@@ -4,6 +4,7 @@ import * as React from 'react';
 import useEmblaCarousel, {
 	type UseEmblaCarouselType,
 } from 'embla-carousel-react';
+import { useReducedMotion } from 'motion/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@/components/SvgIcons';
 
 import { cn } from '@/lib/utils';
@@ -35,6 +36,10 @@ type CarouselContextProps = {
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
+// embla's own default. Named here because the reduced-motion branch below has to
+// fall back to something when a consumer passes no duration of its own.
+const DEFAULT_DURATION = 25;
+
 function useCarousel() {
 	const context = React.useContext(CarouselContext);
 
@@ -54,9 +59,16 @@ function Carousel({
 	children,
 	...props
 }: React.ComponentProps<'div'> & CarouselProps) {
+	// embla animates with JS transforms, so a CSS media query can never reach it
+	// -- a zero duration is the only way to honour the preference. Handled here
+	// rather than in each consumer: every carousel owes the user this, and a
+	// per-consumer `duration: reduce ? 0 : 25` is a decision someone has to
+	// remember to copy into the next one.
+	const reduce = useReducedMotion() ?? false;
 	const [carouselRef, api] = useEmblaCarousel(
 		{
 			...opts,
+			duration: reduce ? 0 : (opts?.duration ?? DEFAULT_DURATION),
 			axis: orientation === 'horizontal' ? 'x' : 'y',
 		},
 		plugins

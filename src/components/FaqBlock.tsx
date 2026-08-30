@@ -1,14 +1,14 @@
-import { cn, getSpacingClass } from '@/lib/utils';
-import { buildRgbaCssString } from '@/lib/image-utils';
+import SectionShell, {
+	type SectionAppearance,
+} from '@/components/SectionShell';
 import CustomPortableText from '@/components/CustomPortableText';
+import { cn } from '@/lib/utils';
 import {
 	Accordion,
 	AccordionItem,
 	AccordionTrigger,
 	AccordionContent,
 } from '@/components/ui/Accordion';
-
-type MaxWidthType = 'none' | 'xl' | 'lg' | 'md' | 's' | 'xs';
 
 export type FaqItem = {
 	_id?: string;
@@ -34,61 +34,22 @@ export default function FaqBlock({ data, className }: FaqBlockProps) {
 	);
 	if (visible.length === 0) return null;
 
-	const {
-		backgroundColor,
-		textColor,
-		textAlign = 'text-left',
-		maxWidth = 'md',
-		spacingTop,
-		spacingBottom,
-		spacingTopDesktop,
-		spacingBottomDesktop,
-	} = (sectionAppearance as {
-		backgroundColor?: any;
-		textColor?: any;
-		textAlign?: string;
-		maxWidth?: MaxWidthType;
-		spacingTop?: any;
-		spacingBottom?: any;
-		spacingTopDesktop?: any;
-		spacingBottomDesktop?: any;
-	}) || {};
-
-	const hasBackground = !!backgroundColor;
-
-	const spacingClasses = [
-		getSpacingClass('marginTop', spacingTop, hasBackground),
-		getSpacingClass('marginBottom', spacingBottom, hasBackground),
-		getSpacingClass('marginTopDesktop', spacingTopDesktop, hasBackground),
-		getSpacingClass('marginBottomDesktop', spacingBottomDesktop, hasBackground),
-	].filter(Boolean);
-
-	const maxWidthClasses =
-		(
-			{
-				none: 'w-full',
-				xl: 'p-x-xl',
-				lg: 'p-x-lg',
-				md: 'p-x-md',
-				s: 'p-x-s',
-				xs: 'p-x-xs',
-			} as const
-		)[maxWidth] || 'p-x-md';
-
 	return (
-		<section
-			className={cn(
-				'wysiwyg mx-auto',
-				textAlign,
-				maxWidthClasses,
-				...spacingClasses,
-				className
-			)}
-			style={{
-				color: buildRgbaCssString(textColor) || 'inherit',
-				backgroundColor: buildRgbaCssString(backgroundColor) || undefined,
+		<SectionShell
+			// This module's own default predates the shared object's
+			// `initialValue: { maxWidth: 'none' }`, so blocks authored before that was
+			// added carry no value at all. Keeping the fallback here means they stay
+			// the width they have always rendered at instead of going full-bleed.
+			appearance={{
+				...sectionAppearance,
+				maxWidth: sectionAppearance?.maxWidth ?? 'm',
 			}}
+			className={cn('wysiwyg', className)}
 		>
+			{/* Rendered here rather than through SectionShell's `heading` prop: inside
+			    `wysiwyg` the h2 picks up this module's prose styling, which is what it
+			    has always looked like. The shell's own heading is the bare
+			    `t-h-3 uppercase` the events and products strips use. */}
 			{heading && <h2>{heading}</h2>}
 			<Accordion type="single" collapsible>
 				{visible.map((item, i) => {
@@ -103,6 +64,6 @@ export default function FaqBlock({ data, className }: FaqBlockProps) {
 					);
 				})}
 			</Accordion>
-		</section>
+		</SectionShell>
 	);
 }

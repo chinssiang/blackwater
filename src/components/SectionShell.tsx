@@ -1,40 +1,24 @@
-import { cn, getSpacingClass, type SpacingValue } from '@/lib/utils';
-import { buildRgbaCssString } from '@/lib/image-utils';
-import type { SanityColor } from '@/lib/image-utils';
+import type { CSSProperties } from 'react';
+import { cn } from '@/lib/utils';
+import {
+	resolveSectionAppearance,
+	type SectionAppearance,
+} from '@/lib/section-appearance';
 
 // The <section> wrapper every page module renders, and the one place the
-// `sectionAppearance` object is turned into classes and styles.
+// `sectionAppearance` object reaches the DOM.
 //
 // Extracted when the fourth copy of this block appeared. The copies had already
-// drifted: FaqBlock maps `maxWidth` through `lg`/`md` keys the schema never
+// drifted: FaqBlock mapped `maxWidth` through `lg`/`md` keys the schema never
 // emits (section-appearance.js offers none|xl|l|m|s|xs), so two of its options
-// silently fall through to its default. This map is keyed to the schema, so that
+// silently fell through to its default. The mapping itself now lives in
+// src/lib/section-appearance.ts, keyed to the schema and unit-tested, so that
 // class of bug has one place to live rather than four.
 //
 // No hooks and no 'use client', so a Server Component module and the client
 // Freeform can both render it.
 
-type MaxWidth = 'none' | 'xl' | 'l' | 'm' | 's' | 'xs';
-
-const MAX_WIDTH_CLASSES: Record<MaxWidth, string> = {
-	none: 'w-full',
-	xl: 'max-w-7xl',
-	l: 'max-w-5xl',
-	m: 'max-w-3xl',
-	s: 'max-w-xl',
-	xs: 'max-w-xs',
-};
-
-export type SectionAppearance = {
-	backgroundColor?: SanityColor | null;
-	textColor?: SanityColor | null;
-	textAlign?: string | null;
-	maxWidth?: MaxWidth | null;
-	spacingTop?: SpacingValue | null;
-	spacingBottom?: SpacingValue | null;
-	spacingTopDesktop?: SpacingValue | null;
-	spacingBottomDesktop?: SpacingValue | null;
-} | null;
+export type { SectionAppearance };
 
 export default function SectionShell({
 	appearance,
@@ -47,41 +31,40 @@ export default function SectionShell({
 	className?: string;
 	children: React.ReactNode;
 }) {
-	const {
-		backgroundColor,
-		textColor,
-		textAlign,
-		maxWidth,
-		spacingTop,
-		spacingBottom,
-		spacingTopDesktop,
-		spacingBottomDesktop,
-	} = appearance || {};
-
-	// Padding rather than margin once a background is set, so the colour extends
-	// through the gap instead of leaving a band of page behind it.
-	const hasBackground = !!backgroundColor;
+	const { alignClass, maxWidthClass, inkCss, paperCss, spacing } =
+		resolveSectionAppearance(appearance);
 
 	return (
 		<section
 			className={cn(
-				'px-contain mx-auto',
-				textAlign ?? 'text-left',
-				(maxWidth && MAX_WIDTH_CLASSES[maxWidth]) ?? MAX_WIDTH_CLASSES.none,
-				getSpacingClass('marginTop', spacingTop, hasBackground),
-				getSpacingClass('marginBottom', spacingBottom, hasBackground),
-				getSpacingClass('marginTopDesktop', spacingTopDesktop, hasBackground),
-				getSpacingClass(
-					'marginBottomDesktop',
-					spacingBottomDesktop,
-					hasBackground
-				),
+				'section-spacing px-contain mx-auto',
+				// The token remapping lives in globals.css beside .cart-surface, which
+				// solves the same problem for the cart's light surface. Each class is
+				// added only when that colour is in play, so an uncoloured section
+				// resolves exactly as it did before.
+				inkCss && 'section-ink',
+				paperCss && 'section-paper',
+				alignClass,
+				maxWidthClass,
 				className
 			)}
-			style={{
-				color: buildRgbaCssString(textColor) || 'inherit',
-				backgroundColor: buildRgbaCssString(backgroundColor) || undefined,
-			}}
+			style={
+				{
+					// Raw scale steps, not lengths: `section-spacing` multiplies them by
+					// the theme's own `--spacing`. React passes numbers through unsuffixed
+					// for custom properties, and drops undefined.
+					'--section-pt': spacing.pt,
+					'--section-pb': spacing.pb,
+					'--section-pt-sm': spacing.ptSm,
+					'--section-pb-sm': spacing.pbSm,
+					'--section-fg': inkCss,
+					'--section-bg': paperCss,
+					// The paint itself. The classes above only redefine tokens for
+					// descendants; this section still has to draw its own colours.
+					color: inkCss,
+					backgroundColor: paperCss,
+				} as CSSProperties
+			}
 		>
 			{heading && <h2 className="t-h-3 mb-6 uppercase">{heading}</h2>}
 			{children}

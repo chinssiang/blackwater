@@ -36,6 +36,11 @@
 			"other": "in {count} days"
 		},
 		"emptyMonth": "No events for this month",
+		"carousel": {
+			"label": "Upcoming events",
+			"previous": "Previous events",
+			"next": "More events"
+		},
 		"dateFormat": "iii, MM.dd.yy, h:mm aaa",
 		"monthYearFormat": "MMMM yyyy"
 	},

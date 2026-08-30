@@ -34,6 +34,7 @@ import { eventStation } from './objects/event-station';
 import { freeform } from './objects/freeform';
 import { faqBlock } from './objects/faq-block';
 import { eventsBlock } from './objects/events-block';
+import { heroBlock } from './objects/hero-block';
 import { productsBlock } from './objects/products-block';
 import { gAuthor } from './singletons/g-author';
 import { gFooter } from './singletons/g-footer';
@@ -101,6 +102,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	freeform,
 	faqBlock,
 	eventsBlock,
+	heroBlock,
 	productsBlock,
 	formField,
 	link(),

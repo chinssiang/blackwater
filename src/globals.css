@@ -330,6 +330,54 @@
 		--ring: oklch(0.708 0 0);
 	}
 
+	/* Sanity-authored section colours, applied by SectionShell.
+	 *
+	 * Same mechanism as .cart-surface above -- redefine the tokens on a scope
+	 * element so descendants out-inherit the theme -- and it exists for the same
+	 * reason. `@theme inline` compiles `text-foreground` to `color:
+	 * var(--foreground)` and `bg-background` to `background-color:
+	 * var(--background)`, each read at the element carrying the class, so a
+	 * utility on a descendant always beats a `color` inherited from the section.
+	 * Setting `color` alone left ProductCard's `text-foreground` lines untouched
+	 * and its `bg-background` image frame black.
+	 *
+	 * Only --section-fg / --section-bg cross from JS; everything else is derived
+	 * here. .cart-surface has to enumerate twelve fixed values because its
+	 * surface is a known colour, but these two are whatever an editor picked, so
+	 * enumerating would mean extending a list every time a component reaches for
+	 * another token. The lesson .cart-surface records is that stopping at
+	 * ink+paper is not enough: leaving --border and --muted-foreground themed
+	 * makes dividers invisible and muted copy fail AA on an off-theme surface --
+	 * concretely, ui/Accordion's `border-b` and its `text-muted-foreground`
+	 * chevron inside a light FAQ section on the dark theme. */
+	.section-ink {
+		--foreground: var(--section-fg);
+		/* --primary and --accent-foreground are this palette's ink one step over
+		 * (dark: .9491 and .985 against a .985 foreground), not an independent
+		 * brand hue -- left themed, a Badge (`bg-primary/25 text-primary`) renders
+		 * near-white on near-white inside a light section. */
+		--primary: var(--section-fg);
+		/* Paired with --primary above, not left to .section-paper: a section can
+		 * set a text colour and no background, and a Button's fill and its label
+		 * moving independently is how you get black-on-near-black. */
+		--primary-foreground: var(--section-bg, var(--background));
+		--accent-foreground: var(--section-fg);
+		--muted-foreground: color-mix(in oklab, var(--section-fg) 65%, transparent);
+		--border: color-mix(in oklab, var(--section-fg) 25%, transparent);
+		--input: color-mix(in oklab, var(--section-fg) 25%, transparent);
+		--ring: color-mix(in oklab, var(--section-fg) 50%, transparent);
+	}
+
+	/* Always accompanied by .section-ink: resolveSectionAppearance derives a
+	 * legible ink from the background when the editor set no text colour, so a
+	 * background alone can no longer leave the theme's near-white ink sitting on
+	 * an authored light surface. */
+	.section-paper {
+		--background: var(--section-bg);
+		--card: var(--section-bg);
+		--muted: color-mix(in oklab, var(--section-fg, currentcolor) 12%, transparent);
+	}
+
 	.field-hint-ring {
 		&::before {
 			content: '';
@@ -638,6 +686,30 @@
 
 @utility m-x-max {
 	margin-inline: var(--padding-max);
+}
+
+/* Vertical spacing for page-module sections. The values come from Sanity as
+   Tailwind scale steps, which cannot be turned into class names at runtime --
+   Tailwind only emits utilities it finds as literal strings in the source, so a
+   generated `mt-${n}` never exists (the SPACING_CLASSES map this replaces was a
+   stub, and every one of the 30 spacing options resolved to nothing).
+   SectionShell passes the raw scale step inline instead and this utility
+   multiplies it by `--spacing`, the same way pt-header-space-* and min-h-main-*
+   above do -- so retuning the theme's step moves section spacing with every
+   other `mt-*` on the site rather than leaving it stranded at 4px. It is also
+   what makes the sm: breakpoint reachable from an inline style. Always padding, never margin: a section that paints a
+   background needs the space inside its own box, and padding also sidesteps
+   margin-collapse between adjacent sections. */
+@utility section-spacing {
+	padding-top: calc(var(--section-pt, 0) * var(--spacing));
+	padding-bottom: calc(var(--section-pb, 0) * var(--spacing));
+
+	@variant sm {
+		padding-top: calc(var(--section-pt-sm, var(--section-pt, 0)) * var(--spacing));
+		padding-bottom: calc(
+			var(--section-pb-sm, var(--section-pb, 0)) * var(--spacing)
+		);
+	}
 }
 
 @utility p-fill {

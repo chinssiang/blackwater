@@ -179,76 +179,8 @@ export function isValidUrl(urlString: string): boolean {
 
 // --- TAILWIND UTILITIES ---
 
-export type SpacingValue = keyof typeof SPACING_CLASSES.pt; // Union of allowed numeric keys (0, 1, ..., 96)
-type SpacingPrefix = keyof typeof SPACING_CLASSES; // Union of allowed prefix keys (pt, pb, mt, mb, sm:pt, etc.)
-
-// The original SPACING_CLASSES constant is kept as a non-exported const
-// to serve as the source of truth for the types above.
-const SPACING_CLASSES = {
-	// ... (Your SPACING_CLASSES object is very large, keeping it here as a JS object is fine,
-	// but for TS, we can use the keys/types derived from its structure)
-	pt: {
-		0: 'pt-0',
-		1: 'pt-1',
-		// ... all other pt values
-	} as const,
-	pb: {
-		0: 'pb-0',
-		1: 'pb-1',
-		// ... all other pb values
-	} as const,
-	// ... all other keys (mt, mb, sm:pt, sm:pb, sm:mt, sm:mb)
-	// NOTE: For a complete type-safe conversion, the entire object must be typed.
-	// Using `as const` ensures keys are literal types.
-} as const;
-
-type SpacingType =
-	| 'paddingTop'
-	| 'paddingBottom'
-	| 'marginTop'
-	| 'marginBottom'
-	| 'paddingTopDesktop'
-	| 'paddingBottomDesktop'
-	| 'marginTopDesktop'
-	| 'marginBottomDesktop';
-
 // Shared keyboard-focus treatment for absolutely-positioned overlay links (a
 // stretched row link, a pill link, a map link). Inset so the ring draws inside
 // its container rather than being clipped by it.
 export const OVERLAY_LINK_FOCUS =
 	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
-
-/**
- * Gets the corresponding Tailwind CSS class for a spacing utility.
- * @param spacingType - The type of spacing (e.g., 'paddingTop', 'marginBottomDesktop').
- * @param value - The Tailwind spacing scale value (e.g., 8, 16).
- * @param hasBackground - True if the spacing should use padding (hasBackground) instead of margin.
- * @returns The Tailwind class string (e.g., 'pt-8', 'sm:pb-16') or null.
- */
-
-export function getSpacingClass(
-	spacingType: SpacingType,
-	value: SpacingValue | null | undefined,
-	hasBackground: boolean = false
-): string | null {
-	if (value === null || value === undefined) return null;
-
-	// Use a string literal for the prefix determination
-	let prefix: string;
-	if (spacingType.includes('Top')) {
-		prefix = hasBackground ? 'pt' : 'mt';
-	} else if (spacingType.includes('Bottom')) {
-		prefix = hasBackground ? 'pb' : 'mb';
-	} else {
-		return null;
-	}
-
-	const isResponsive = spacingType.includes('Desktop');
-	const finalPrefix = isResponsive ? `sm:${prefix}` : prefix;
-
-	// Type assertion here to satisfy TS that finalPrefix is a valid key of SPACING_CLASSES
-	const classMap = SPACING_CLASSES[finalPrefix as SpacingPrefix];
-
-	// Cast value to keyof typeof classMap to ensure it's a valid number string
-	return (classMap && classMap[value as keyof typeof classMap]) || null;
-}

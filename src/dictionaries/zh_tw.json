@@ -36,6 +36,11 @@
 			"other": "{count} 天後"
 		},
 		"emptyMonth": "本月暫無活動",
+		"carousel": {
+			"label": "近期活動",
+			"previous": "上一批活動",
+			"next": "更多活動"
+		},
 		"dateFormat": "yyyy/MM/dd (iii) HH:mm",
 		"monthYearFormat": "yyyy年M月"
 	},

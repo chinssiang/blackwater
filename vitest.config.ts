@@ -13,5 +13,13 @@ export default defineConfig({
 	test: {
 		include: ['src/**/*.test.ts'],
 		environment: 'node',
+		// src/sanity/env.ts throws on import when these are unset, and it is pulled
+		// in transitively by lib/image-utils (for the image-url builder) which the
+		// colour helpers happen to share a file with. Placeholders: nothing under
+		// test makes a network call.
+		env: {
+			NEXT_PUBLIC_SANITY_DATASET: 'test',
+			NEXT_PUBLIC_SANITY_PROJECT_ID: 'test',
+		},
 	},
 });

@@ -1,4 +1,5 @@
 import { cache } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { UpcomingEventsQueryResult } from 'sanity.types';
 import CustomLink from '@/components/CustomLink';
@@ -25,7 +26,7 @@ import {
 } from '@/lib/image-utils';
 import { revealStagger } from '@/lib/animate';
 import { resolveHref } from '@/lib/routes';
-import { cn, OVERLAY_LINK_FOCUS } from '@/lib/utils';
+import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import type { Locale } from '@/lib/i18n';
 
 // The events index needs a client clock because a visitor can sit on it while
@@ -37,6 +38,23 @@ import type { Locale } from '@/lib/i18n';
 // eventCardFields can never drift from what this consumes — the convention
 // events/page.tsx states for the same fragment.
 type EventRow = UpcomingEventsQueryResult[number];
+
+// Lazy so embla stays out of the shared client graph of every page that can
+// carry modules — see the header of EventsCarousel.tsx for why that matters and
+// why nothing here may import `ui/Carousel` directly.
+const EventsCarousel = dynamic(() => import('@/components/EventsCarousel'));
+
+// The slide wrapper, inlined rather than imported from `ui/Carousel`. The
+// primitive's <CarouselItem> is a client component that reads only
+// `orientation` from context; this carousel never sets it, so the class list is
+// fully determined here — and a plain server div keeps N tickets per page out of
+// the flight payload as client references. `data-slot` is load-bearing: the
+// primitive's key handler only claims Left/Right for elements whose slot starts
+// with "carousel".
+const SLIDE_CLASSES =
+	// Roughly one-and-a-bit tickets on a phone, so the cut edge of the next one
+	// advertises that the strip scrolls.
+	'min-w-0 shrink-0 grow-0 pl-4 basis-[78%] sm:basis-1/2 lg:basis-1/3 xl:basis-1/4';
 
 // Annotated, not inferred: upcomingEventsQuery is built from interpolated
 // helpers, so TypeScript cannot fold it into the string literal that indexes
@@ -89,102 +107,146 @@ export default async function EventsBlock({
 			heading={heading}
 			className={className}
 		>
-			<ul className="border-foreground/20 border-t">
-				{rows.map((event, index) => {
-					const {
-						_id,
-						title,
-						subtitle,
-						slug,
-						eventDatetime,
-						dateStatus,
-						location,
-						locationLink,
-						locationRef,
-						statusList,
-					} = event;
-
-					// locationRef is the preferred source; `location`/`locationLink` are
-					// the one-off fallback the schema hides once a venue is referenced.
-					const displayLocation = locationRef?.name || location;
-					const displayLocationLink = locationRef?.mapLink || locationLink;
-					const href = slug
-						? resolveHref({ documentType: 'pEvent', slug, locale })
-						: null;
-
-					return (
-						<li
-							key={_id}
-							className="reveal group border-foreground/20 relative flex flex-col gap-1 border-b py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6"
-							style={revealStagger(index)}
-						>
-							<div className="min-w-0 flex-1">
-								<p className="t-b-1 text-balance uppercase">
-									{title}
-									{href && (
-										<ArrowUpRight className="ml-1 inline size-[0.9em] transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
-									)}
-								</p>
-								{subtitle && (
-									<p className="t-b-2 text-foreground/60 text-balance">
-										{subtitle}
-									</p>
-								)}
-							</div>
-
-							<p className="t-spec shrink-0 uppercase">
-								{(!dateStatus || dateStatus === 'confirmed') && eventDatetime
-									? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
-									: dateStatus || t.status.tba}
-							</p>
-
-							{displayLocation && (
-								<p className="t-spec min-w-0 shrink-0 uppercase sm:max-w-[14rem] sm:text-right">
-									{displayLocationLink ? (
-										<a
-											href={displayLocationLink}
-											target="_blank"
-											rel="noopener noreferrer"
-											aria-label={displayLocation}
-											// Above the row's stretched link (z-10) so the map link
-											// stays individually clickable.
-											className={cn(
-												'relative z-10 underline-offset-4 hover:underline',
-												OVERLAY_LINK_FOCUS
-											)}
-										>
-											{displayLocation}
-										</a>
-									) : (
-										displayLocation
-									)}
-								</p>
-							)}
-
-							{statusList && statusList.length > 0 && (
-								<span className="relative z-10 flex shrink-0 flex-wrap gap-1">
-									{statusList.map((item) => (
-										<StatusItem key={item._key} data={item as StatusListItem} />
-									))}
-								</span>
-							)}
-
-							{/* Stretched overlay link: any neutral part of the row opens the
-							    event, while the map link and status links above stay
-							    clickable. Avoids nesting <a> inside <a>. */}
-							{href && (
-								<Link
-									href={href}
-									className={cn('absolute inset-0 z-0', OVERLAY_LINK_FOCUS)}
-								>
-									<span className="sr-only">{title}</span>
-								</Link>
-							)}
-						</li>
-					);
-				})}
-			</ul>
+			<EventsCarousel
+				label={t.carousel.label}
+				previousLabel={t.carousel.previous}
+				nextLabel={t.carousel.next}
+			>
+				{rows.map((event, index) => (
+					<div
+						key={event._id}
+						role="group"
+						aria-roledescription="slide"
+						data-slot="carousel-item"
+						className={SLIDE_CLASSES}
+					>
+						<EventTicket
+							event={event}
+							index={index}
+							locale={locale}
+							t={t}
+							dateFnsLocale={dateFnsLocale}
+						/>
+					</div>
+				))}
+			</EventsCarousel>
 		</SectionShell>
+	);
+}
+
+// One square ticket. Extracted for the same reason StatusItem below is: the
+// render body above is the module's structure (shell → carousel → N tickets),
+// and inlining this buried it under fourteen levels of indentation.
+function EventTicket({
+	event,
+	index,
+	locale,
+	t,
+	dateFnsLocale,
+}: {
+	event: EventRow;
+	index: number;
+	locale: Locale;
+	t: Awaited<ReturnType<typeof getDictionary>>['events'];
+	dateFnsLocale: (typeof DATE_FNS_LOCALES)[Locale];
+}) {
+	const {
+		title,
+		subtitle,
+		slug,
+		eventDatetime,
+		dateStatus,
+		location,
+		locationLink,
+		locationRef,
+		statusList,
+	} = event;
+
+	// locationRef is the preferred source; `location`/`locationLink` are the
+	// one-off fallback the schema hides once a venue is referenced.
+	const displayLocation = locationRef?.name || location;
+	const displayLocationLink = locationRef?.mapLink || locationLink;
+	const href = slug
+		? resolveHref({ documentType: 'pEvent', slug, locale })
+		: null;
+
+	return (
+		<article
+			className="reveal group border-foreground/20 relative flex aspect-square flex-col rounded border p-4 transition-colors duration-300 hover:border-foreground/50"
+			style={revealStagger(index)}
+		>
+			<p className="t-spec uppercase">
+				{(!dateStatus || dateStatus === 'confirmed') && eventDatetime
+					? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
+					: dateStatus || t.status.tba}
+			</p>
+
+			{/* The perforation: what makes a bordered square read as a ticket stub
+			    rather than a plain card. */}
+			<div
+				aria-hidden
+				className="border-foreground/20 my-3 border-t border-dashed"
+			/>
+
+			<div className="min-h-0 flex-1">
+				<h3 className="t-h-3 line-clamp-3 text-balance uppercase">
+					{title}
+					{href && (
+						<ArrowUpRight className="ml-1 inline size-[0.9em] transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
+					)}
+				</h3>
+				{subtitle && (
+					<p className="t-b-2 text-foreground/60 mt-1 line-clamp-2 text-balance">
+						{subtitle}
+					</p>
+				)}
+			</div>
+
+			<div className="mt-3 space-y-2">
+				{displayLocation && (
+					<p className="t-spec line-clamp-1 uppercase">
+						{displayLocationLink ? (
+							<a
+								href={displayLocationLink}
+								target="_blank"
+								rel="noopener noreferrer"
+								aria-label={displayLocation}
+								// Above the ticket's stretched link (z-10) so the map link
+								// stays individually clickable.
+								className={cn(
+									'relative z-10 underline-offset-4 hover:underline',
+									OVERLAY_LINK_FOCUS
+								)}
+							>
+								{displayLocation}
+							</a>
+						) : (
+							displayLocation
+						)}
+					</p>
+				)}
+
+				{hasArrayValue(statusList) && (
+					<span className="relative z-10 flex flex-wrap gap-1">
+						{statusList.map((item) => (
+							<StatusItem key={item._key} data={item as StatusListItem} />
+						))}
+					</span>
+				)}
+			</div>
+
+			{/* Stretched overlay link: any neutral part of the ticket opens the event,
+			    while the map link and status links above stay clickable. Avoids
+			    nesting <a> inside <a>. */}
+			{href && (
+				<Link
+					href={href}
+					className={cn('absolute inset-0 z-0 rounded', OVERLAY_LINK_FOCUS)}
+				>
+					<span className="sr-only">{title}</span>
+				</Link>
+			)}
+		</article>
 	);
 }
 
