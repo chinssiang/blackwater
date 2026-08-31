@@ -146,6 +146,7 @@
 		"open": "開啟購物車",
 		"close": "關閉購物車",
 		"empty": "您的購物車是空的。",
+		"browseProducts": "瀏覽商品",
 		"addToCart": "加入購物車",
 		"adding": "加入中…",
 		"added": "已加入購物車",
@@ -154,14 +155,16 @@
 		"subtotal": "小計",
 		"shippingNote": "運費與稅金將於結帳時計算。",
 		"quantity": "數量",
-		"increase": "增加數量",
-		"decrease": "減少數量",
+		"increaseAriaLabel": "增加 {product} 的數量",
+		"decreaseAriaLabel": "減少 {product} 的數量",
 		"remove": "移除",
 		"removeAriaLabel": "從購物車移除 {product}",
 		"itemCount": { "one": "{count} 件商品", "other": "{count} 件商品" },
 		"stockLimited": "僅剩 {count} 件",
-		"errorHeading": "發生錯誤",
-		"errorBody": "購物車更新失敗，請再試一次。"
+		"errorHeading": "我們無法更新您的購物車",
+		"errorBody": "請稍後再試一次。",
+		"loadError": "我們無法載入您的購物車。",
+		"retry": "再試一次"
 	},
 	"newsletter": {
 		"emailLabel": "電子郵件地址",

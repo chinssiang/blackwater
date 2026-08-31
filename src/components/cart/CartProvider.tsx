@@ -23,14 +23,31 @@ import type { ShopifyCartResponse } from '@/lib/shopify/types';
 
 // State and actions are two contexts, not one. The actions never change
 // identity, so a component that only dispatches — the product page's Add to
-// cart, the header trigger — subscribes to something that never updates and is
-// never re-rendered by a quantity step inside the drawer. Merging them would
+// cart, via `useCartActions()` — subscribes to something that never updates and
+// is never re-rendered by a quantity step inside the drawer. Merging them would
 // re-render every consumer on each `isPending` flip, which is what a single
 // object value did before.
+//
+// The header trigger is *not* one of those: it renders the item count, so it
+// reads state and re-renders with it. That costs one button per `isPending`
+// flip, which is not worth a third context to avoid.
+
+/**
+ * Whether a cart read has landed yet. Deliberately *not* inferred from `cart`
+ * being null: the endpoint answers `{ok: true, cart: null}` for a shopper with
+ * no cart cookie, for a cart Shopify has expired, and for an unconfigured
+ * store — so null is the ordinary resting state for most visitors, not a
+ * signal that nothing has loaded. Reading it as "still loading" would leave
+ * every first-time shopper watching a skeleton forever.
+ */
+type CartStatus = 'loading' | 'ready' | 'error';
+
 type CartState = {
 	cart: ShopifyCartResponse | null;
 	/** True while a cart request is in flight (initial load or a mutation). */
 	isPending: boolean;
+	/** Whether the first read has landed, and whether it failed. */
+	status: CartStatus;
 	/**
 	 * Per-line stock ceilings learned from Shopify capping a request, keyed by
 	 * cart-line id. Held here rather than in the line component so it survives
@@ -43,6 +60,8 @@ type CartState = {
 
 type CartActions = {
 	setOpen: (open: boolean) => void;
+	/** Re-read the cart. Exposed so a failed first load can offer a retry. */
+	refresh: () => Promise<void>;
 	addLine: (merchandiseId: string, quantity?: number) => Promise<boolean>;
 	updateLine: (lineId: string, quantity: number) => Promise<boolean>;
 	removeLine: (lineId: string) => Promise<boolean>;
@@ -88,6 +107,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
 	const t = useTranslations('cart');
 	const [cart, setCart] = useState<ShopifyCartResponse | null>(null);
 	const [isPending, setIsPending] = useState(false);
+	const [status, setStatus] = useState<CartStatus>('loading');
 	const [stockLimits, setStockLimits] = useState<Record<string, number>>({});
 	const [isOpen, setOpen] = useState(false);
 
@@ -174,12 +194,21 @@ export function CartProvider({ children }: { children: ReactNode }) {
 					// The locale rides along on reads (mutations send it in the body):
 					// the server resolves each line's product link against it.
 					const res = await fetch(`/api/shopify/cart?locale=${locale}`);
-					if (!res.ok) return;
+					if (!res.ok) throw new Error(`cart read failed: ${res.status}`);
 					const data = (await res.json()) as CartResponse;
 					applyCart(data.cart);
+					if (mounted.current) setStatus('ready');
 				} catch {
-					// No cart on screen yet, so a failed read has nothing to report —
-					// the next mutation surfaces the error itself.
+					// Only the *first* read can fail into an error state. Once a snapshot
+					// has landed, a later failure — a bfcache refresh, a flaky network —
+					// keeps the lines already on screen: a stale cart is closer to the
+					// truth than an error, and the next mutation reports for itself.
+					//
+					// Read through the updater rather than a `status` dependency: this
+					// callback is the dep of the hydrate effect below, so depending on the
+					// value it sets would re-fetch on every transition.
+					if (mounted.current)
+						setStatus((prev) => (prev === 'ready' ? 'ready' : 'error'));
 				}
 			}),
 		[enqueue, applyCart, locale]
@@ -253,13 +282,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
 	// on `mutate`, so with an empty-ish dep set this object is created once for the
 	// life of the provider — dispatch-only consumers never re-render.
 	const actions = useMemo(
-		() => ({ setOpen, addLine, updateLine, removeLine }),
-		[addLine, updateLine, removeLine]
+		() => ({ setOpen, refresh: refreshCart, addLine, updateLine, removeLine }),
+		[refreshCart, addLine, updateLine, removeLine]
 	);
 
 	const state = useMemo(
-		() => ({ cart, isPending, stockLimits, isOpen }),
-		[cart, isPending, stockLimits, isOpen]
+		() => ({ cart, isPending, status, stockLimits, isOpen }),
+		[cart, isPending, status, stockLimits, isOpen]
 	);
 
 	return (

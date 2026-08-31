@@ -6,6 +6,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Dialog } from 'radix-ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import ChromeButton from '@/components/ChromeButton';
 import { CloseIcon } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
@@ -47,6 +48,13 @@ function LineItem({ line }: { line: ShopifyCartResponseLine }) {
 	// showing that to a shopper would be meaningless.
 	const variantLabel =
 		merchandise.title === 'Default Title' ? null : merchandise.title;
+
+	// Every control in this row names its product. A five-line cart otherwise
+	// announces "Increase quantity" five times over with nothing to tell the
+	// lines apart: the group's "Quantity" label is read on entering the group,
+	// not on each button inside it.
+	const ariaLabelFor = (template: string) =>
+		interpolate(template, { product: merchandise.productTitle });
 
 	// The quantity the shopper has asked for, which runs ahead of the server
 	// snapshot. `cartLinesUpdate` takes an absolute quantity, and disabling the
@@ -134,7 +142,7 @@ function LineItem({ line }: { line: ShopifyCartResponseLine }) {
 					<Link
 						href={productHref}
 						prefetch={false}
-						className="shrink-0 rounded focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-white focus-visible:outline-none"
+						className="shrink-0 rounded focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
 					>
 						{thumbnail}
 					</Link>
@@ -155,22 +163,42 @@ function LineItem({ line }: { line: ShopifyCartResponseLine }) {
 						{interpolate(t.stockLimited, { count: stockLimit })}
 					</p>
 				)}
-				<div className="mt-auto flex items-center gap-3">
-					<div className="flex items-center gap-2" aria-label={t.quantity}>
+				{/* Wraps rather than overflows: at 320px the text column is ~122px and
+				    the stepper plus Remove need ~144px, so on the narrowest phones
+				    Remove drops to its own line instead of running under the price.
+				    Content-driven — from 375px up it stays on one row. */}
+				<div className="mt-auto flex flex-wrap items-center gap-x-3 gap-y-2">
+					{/* `role="group"`: ARIA forbids naming a generic element, so without a
+					    role the "Quantity" label here was silently dropped. */}
+					<div
+						role="group"
+						className="flex items-center gap-2"
+						aria-label={t.quantity}
+					>
 						<Button
 							variant="ghost"
 							size="icon-xs"
-							aria-label={t.decrease}
+							// At a quantity of one this button removes the line: the route reads a
+							// quantity of 0 as a remove. "Decrease quantity" would announce one
+							// action and perform another, so at the boundary it borrows the Remove
+							// control's own phrasing.
+							aria-label={ariaLabelFor(
+								quantity === 1 ? t.removeAriaLabel : t.decreaseAriaLabel
+							)}
 							onClick={() => step(-1)}
 						>
 							–
 						</Button>
-						<span className="t-b-2 min-w-4 text-center">{quantity}</span>
+						{/* Live: stepping the quantity is the one thing in this row that
+						    changes without a navigation, and it announced nothing. */}
+						<span aria-live="polite" className="t-b-2 min-w-4 text-center">
+							{quantity}
+						</span>
 						<Button
 							variant="ghost"
 							size="icon-xs"
 							disabled={quantity >= ceiling}
-							aria-label={t.increase}
+							aria-label={ariaLabelFor(t.increaseAriaLabel)}
 							onClick={() => step(1)}
 						>
 							+
@@ -180,10 +208,10 @@ function LineItem({ line }: { line: ShopifyCartResponseLine }) {
 						type="button"
 						disabled={isPending}
 						onClick={() => removeLine(line.id)}
-						aria-label={interpolate(t.removeAriaLabel, {
-							product: merchandise.productTitle,
-						})}
-						className="t-b-2 cursor-pointer uppercase underline underline-offset-4 disabled:opacity-50 text-primary/50"
+						aria-label={ariaLabelFor(t.removeAriaLabel)}
+						// `min-h-6` matches the stepper buttons beside it, so the row is
+						// unchanged while the target clears the 24px minimum.
+						className="t-b-2 inline-flex min-h-6 cursor-pointer items-center uppercase underline underline-offset-4 disabled:opacity-50 text-muted-foreground"
 					>
 						{t.remove}
 					</button>
@@ -198,6 +226,77 @@ function LineItem({ line }: { line: ShopifyCartResponseLine }) {
 				{formatShopifyPrice(line.unitPrice, locale)}
 			</p>
 		</li>
+	);
+}
+
+/**
+ * Stand-in for the line list while the first read is in flight.
+ *
+ * Mirrors LineItem's box model rather than guessing at heights — same `py-4`
+ * row, same 90px thumbnail, same `t-b-2` line boxes, same scroll container — so
+ * the swap to real lines doesn't jump. Two rows is a guess; the line count *is*
+ * the data being awaited, and a fuller cart simply fills in below.
+ *
+ * `aria-hidden` because it says nothing a screen reader can use; the panel
+ * carries `aria-busy` for that.
+ */
+function LineItemsSkeleton() {
+	return (
+		<ul
+			aria-hidden
+			className="px-4 min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain animate-pulse"
+		>
+			{Array.from({ length: 2 }, (_, i) => (
+				<li key={i} className="flex gap-3 py-4">
+					<span className="size-[90px] shrink-0 rounded bg-foreground/10" />
+					<div className="flex min-w-0 flex-1 flex-col gap-1">
+						<p className="t-b-2">
+							<span className="inline-block w-28 rounded bg-foreground/10">
+								&nbsp;
+							</span>
+						</p>
+						<p className="t-b-2">
+							<span className="inline-block w-14 rounded bg-foreground/10">
+								&nbsp;
+							</span>
+						</p>
+						<span className="mt-auto h-6 w-24 rounded bg-foreground/10" />
+					</div>
+					<p className="t-b-2 shrink-0">
+						<span className="inline-block w-12 rounded bg-foreground/10">
+							&nbsp;
+						</span>
+					</p>
+				</li>
+			))}
+		</ul>
+	);
+}
+
+/**
+ * Shown only when the *first* read failed, so there is nothing to fall back on.
+ * A later failure keeps the known lines instead (see CartProvider), because a
+ * stale cart beats an error message. Distinct copy from the mutation toast:
+ * `errorBody` is about a cart that could not be *updated*, which would be a lie
+ * here.
+ */
+function LoadError({
+	onRetry,
+	pending,
+}: {
+	onRetry: () => void;
+	pending: boolean;
+}) {
+	const t = useTranslations('cart');
+	return (
+		<div className="px-4 min-h-0 flex-1 overflow-y-auto overscroll-contain">
+			<div className="flex flex-col items-center gap-5 py-12">
+				<p className="t-b-2 text-center uppercase">{t.loadError}</p>
+				<Button onClick={onRetry} disabled={pending} className="uppercase">
+					{t.retry}
+				</Button>
+			</div>
+		</div>
 	);
 }
 
@@ -219,7 +318,7 @@ export default function CartDrawerPanel({
 	const reduce = useReducedMotion() ?? false;
 	const locale = useLocale();
 	const t = useTranslations('cart');
-	const { cart, isOpen, setOpen } = useCart();
+	const { cart, isOpen, setOpen, status, isPending, refresh } = useCart();
 
 	// Rendered without a price. Getting a live one here would mean a Shopify
 	// lookup inside getCachedSiteData, i.e. on every page of the site (see the
@@ -233,6 +332,13 @@ export default function CartDrawerPanel({
 			...(product as React.ComponentProps<typeof ProductCard>['product']),
 			price: null,
 		}));
+
+	// `pProductIndex` is slug-less in DOCUMENT_ROUTES, so this always resolves;
+	// the same `!` the header uses for `pHome`.
+	const productsHref = resolveHref({
+		documentType: 'pProductIndex',
+		locale,
+	})!;
 
 	useScrollLock(isOpen, () => setOpen(false));
 
@@ -257,21 +363,30 @@ export default function CartDrawerPanel({
 							<Dialog.Content asChild forceMount key="cart-panel">
 								<motion.div
 									// `cart-surface` pins the theme tokens this subtree resolves
-									// (border, muted-foreground, accent-foreground…) to their
-									// :root values. The panel is light in both themes, but it
-									// opens on dark routes too, where the inherited dark tokens
-									// put white/10% borders and 2.6:1 text on white. See
+									// (background, foreground, border, muted-foreground,
+									// accent-foreground…) to their :root values. The panel is light
+									// in both themes, but it opens on dark routes too, where the
+									// inherited dark tokens put white/10% borders and 2.6:1 text on
+									// white. See
 									// globals.css.
 									//
 									// Explicit max-width, not max-w-sm: globals.css remaps the
 									// container scale (sm is 600px here, xs 300px), so the
 									// Tailwind size names don't give a drawer-shaped panel.
-									className="cart-surface text-black bg-white fixed inset-y-0 right-0 z-popover flex w-full max-w-104 flex-col border-l border-border"
+									//
+									// `bg-background`/`text-foreground`, not `bg-white`/`text-black`:
+									// the pinned tokens are the site's own light surface and ink, and
+									// painting #fff/#000 over them put two whites and two blacks on one
+									// panel — the recommendation cards below use `bg-background` for
+									// their image frames and `text-foreground` for their copy, and the
+									// count badge inks with `bg-foreground`.
+									className="cart-surface text-foreground bg-background fixed inset-y-0 right-0 z-popover flex w-full max-w-104 flex-col border-l border-border"
 									variants={cartPanel}
 									initial="hide"
 									animate="show"
 									exit="hide"
 									custom={reduce}
+									aria-busy={status === 'loading'}
 								>
 									{/* The visible count is a badge, which is aria-hidden — so the
 									    item-count phrasing lives here, and screen readers still get
@@ -294,19 +409,50 @@ export default function CartDrawerPanel({
 												/>
 											)}
 										</Dialog.Title>
-										<Dialog.Close
-											aria-label={t.close}
-											className="t-b-2 flex cursor-pointer items-center gap-1 uppercase"
-										>
-											<CloseIcon className="size-4" />
+										<Dialog.Close asChild>
+											<ChromeButton
+												aria-label={t.close}
+												// The glyph is `size-4`, so padding is what gives this a box: `px-2`
+												// plus ChromeButton's row height make it 32x42. `-mr-2` hands the
+												// padding back to the header row's own `px-4` so the icon stays
+												// exactly where it sat.
+												className="-mr-2 px-2"
+											>
+												<CloseIcon className="size-4" />
+											</ChromeButton>
 										</Dialog.Close>
 									</div>
 
-									{lines.length === 0 ? (
+									{/* `lines.length === 0` alone used to decide this, which told a shopper
+									    their cart was empty whenever the read had not landed or had failed.
+									    `cart` cannot answer that: null is also a real empty cart. */}
+									{status === 'loading' ? (
+										<LineItemsSkeleton />
+									) : status === 'error' ? (
+										<LoadError onRetry={refresh} pending={isPending} />
+									) : lines.length === 0 ? (
 										<div className="px-4 min-h-0 flex-1 overflow-y-auto overscroll-contain">
-											<p className="t-b-2 py-12 text-center uppercase">
-												{t.empty}
-											</p>
+											{/* The way out of an empty cart, and the ONLY one when no
+											    recommendations are configured: that list comes from settingsCart,
+											    which an editor can leave unset, and this branch used to render the
+											    bare "empty" line with no path to the catalog at all. Above the
+											    recommendations rather than below, so it is reachable without
+											    scrolling past them.
+											
+											    `setOpen(false)` because the drawer otherwise closes on a pathname
+											    change (CartProvider watches it) — and a shopper already on
+											    /products would click this and watch nothing happen. Same idiom
+											    MobileMenu uses on its own links. */}
+											<div className="flex flex-col items-center gap-4 pt-12 pb-10">
+												<p className="t-b-2 text-center uppercase">{t.empty}</p>
+												<Link
+													href={productsHref}
+													onClick={() => setOpen(false)}
+													className="t-b-2 inline-flex min-h-11 items-center uppercase underline underline-offset-4"
+												>
+													{t.browseProducts}
+												</Link>
+											</div>
 											{recommendations.length > 0 && (
 												<div className="border-t border-border pt-6 pb-8">
 													{settings?.emptyHeading && (
