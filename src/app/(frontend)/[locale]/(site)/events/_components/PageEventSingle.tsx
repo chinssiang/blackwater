@@ -1,6 +1,8 @@
 'use client';
 import Link from 'next/link';
 import { formatRichDate } from '@/lib/event-date';
+import { resolveEventDateStatus } from '@/lib/event-status';
+import { useTranslations } from '@/components/LocaleProvider';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import CustomPortableText from '@/components/CustomPortableText';
 import ImageBlock from '@/components/ImageBlock';
@@ -73,10 +75,14 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 		heroImage,
 	} = data || {};
 
+	const t = useTranslations('events');
+	// The status half is translated; the date format below is still the hardcoded
+	// English pattern, which is a separate gap.
+	const dateStatusInfo = resolveEventDateStatus(dateStatus, t);
 	const formattedDate =
-		eventDatetime && (!dateStatus || dateStatus === 'confirmed')
+		eventDatetime && dateStatusInfo.isFirm
 			? formatRichDate(eventDatetime, 'iii, MM.dd.yy, h:mm aaa')
-			: dateStatus?.toUpperCase() || 'TBA';
+			: dateStatusInfo.label;
 
 	const isMultiLocation =
 		eventFormat === 'multi-location' ||
@@ -160,7 +166,7 @@ function EventBody({
 	];
 
 	return (
-		<section className="flex flex-col lg:flex-row gap-10 lg:p-x-max">
+		<section className="flex flex-col lg:flex-row gap-10 lg:p-x-max pt-60">
 			{/* Left sticky meta — shared for both variants */}
 			<div className="lg:flex-1 lg:sticky lg:top-header h-fit space-y-8 px-contain lg:px-0">
 				{displayLocation && (
@@ -324,7 +330,7 @@ function StationCard({
 						className="mb-6 border border-foreground/20 rounded overflow-hidden"
 					>
 						<AccordionItem value="quest" className="border-b-0">
-							<AccordionTrigger className="p-4 rounded-none hover:no-underline hover:bg-foreground/5 [&>svg]:size-3 cursor-pointer">
+							<AccordionTrigger className="p-4 rounded-none hover:bg-foreground/5 [&>svg]:size-3 cursor-pointer">
 								<div className="min-w-0 flex-1">
 									<p className="t-b-2 uppercase text-muted-foreground mb-1">
 										Flavor Challenge &mdash; {questTitle}

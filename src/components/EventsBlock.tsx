@@ -1,12 +1,14 @@
 import { cache } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import type { UpcomingEventsQueryResult } from 'sanity.types';
 import CustomLink from '@/components/CustomLink';
+import EventStatusPill, {
+	type EventStatusListItem,
+} from '@/components/EventStatusPill';
 import SectionShell, {
 	type SectionAppearance,
 } from '@/components/SectionShell';
-import { ArrowRight } from '@/components/SvgIcons';
+import { MapPin } from 'lucide-react';
 import { sanityFetch } from '@/sanity/lib/live';
 import {
 	upcomingEventsQuery,
@@ -14,6 +16,7 @@ import {
 } from '@/sanity/lib/queries';
 import { getDictionary } from '@/lib/dictionary.server';
 import { formatDaysUntilLabel } from '@/lib/dictionary';
+import { resolveEventDateStatus } from '@/lib/event-status';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 import {
 	formatRichDate,
@@ -21,17 +24,12 @@ import {
 	getUpcomingFrom,
 	selectUpcomingEvents,
 } from '@/lib/event-date';
-import {
-	buildRgbaCssString,
-	ensureAccessibleTextColor,
-	type SanityColor,
-} from '@/lib/image-utils';
 import { revealStagger } from '@/lib/animate';
 import { resolveHref } from '@/lib/routes';
 import {
 	cn,
 	hasArrayValue,
-	OVERLAY_LINK_FOCUS,
+	INLINE_LINK_FOCUS,
 	SECTION_INSET_TRAILING_SLIDE,
 } from '@/lib/utils';
 import type { Locale } from '@/lib/i18n';
@@ -129,7 +127,7 @@ export default async function EventsBlock({
 					}}
 					className={cn(
 						't-spec text-foreground/60 hover:text-foreground shrink-0 rounded uppercase transition-colors',
-						OVERLAY_LINK_FOCUS
+						INLINE_LINK_FOCUS
 					)}
 				>
 					{callToAction?.label || t.viewAll}
@@ -144,42 +142,32 @@ export default async function EventsBlock({
 				nextLabel={t.carousel.next}
 			>
 				{rows.map((event, index) => (
-					<div
+					<EventTicket
 						key={event._id}
-						role="group"
-						aria-roledescription="slide"
-						data-slot="carousel-item"
-						className={SLIDE_CLASSES}
-					>
-						<EventTicket
-							event={event}
-							index={index}
-							locale={locale}
-							now={now}
-							t={t}
-							dateFnsLocale={dateFnsLocale}
-						/>
-					</div>
+						event={event}
+						index={index}
+						now={now}
+						t={t}
+						dateFnsLocale={dateFnsLocale}
+					/>
 				))}
 			</EventsCarousel>
 		</SectionShell>
 	);
 }
 
-// One ticket stub. Extracted for the same reason StatusItem below is: the
+// One ticket stub. Extracted for the same reason <EventStatusPill> is: the
 // render body above is the module's structure (shell → carousel → N tickets),
 // and inlining this buried it under fourteen levels of indentation.
 function EventTicket({
 	event,
 	index,
-	locale,
 	now,
 	t,
 	dateFnsLocale,
 }: {
 	event: EventRow;
 	index: number;
-	locale: Locale;
 	now: Date;
 	t: Awaited<ReturnType<typeof getDictionary>>['events'];
 	dateFnsLocale: (typeof DATE_FNS_LOCALES)[Locale];
@@ -188,7 +176,6 @@ function EventTicket({
 		title,
 		subtitle,
 		category,
-		slug,
 		eventDatetime,
 		dateStatus,
 		location,
@@ -201,183 +188,108 @@ function EventTicket({
 	// one-off fallback the schema hides once a venue is referenced.
 	const displayLocation = locationRef?.name || location;
 	const displayLocationLink = locationRef?.mapLink || locationLink;
-	const href = slug
-		? resolveHref({ documentType: 'pEvent', slug, locale })
-		: null;
 
 	// `title` is the codex ("161 RR"), an internal serial that means nothing to
 	// someone who has not been to a run; `subtitle` is the human name ("Midweek
 	// Reset (6K / 10K)"). The name leads and the codex becomes spec data beside
-	// the category. `subtitle` carries no validation on pEvent, so it can be
-	// absent -- then the codex is the only name there is and it heads the card,
-	// which is also why it is not repeated in the stub in that case.
+	// the category. `subtitle` is optional on pEvent (only length-capped), so it
+	// can be absent -- then the codex is the only name there is and it heads the
+	// card, which is also why it is not repeated in the stub in that case.
 	const heading = subtitle || title;
 	const codex = subtitle ? title : null;
 
 	// One gate for everything that assumes the date is real: a TBA, postponed or
-	// cancelled event must not render a date or count down to one.
-	const dateIsFirm = !dateStatus || dateStatus === 'confirmed';
-	const daysUntil = dateIsFirm ? getDaysUntilEvent(eventDatetime, now) : null;
+	// cancelled event must not render a date or count down to one. The helper
+	// cleans the stega metadata draft mode encodes into the enum -- see its note.
+	const dateStatusInfo = resolveEventDateStatus(dateStatus, t);
+	const daysUntil = dateStatusInfo.isFirm
+		? getDaysUntilEvent(eventDatetime, now)
+		: null;
 	const daysUntilLabel =
 		daysUntil === null ? null : formatDaysUntilLabel(daysUntil, t);
 
 	return (
-		<article
-			className="reveal group border-foreground/20 relative flex h-full flex-col rounded border py-4 transition-colors duration-300 hover:border-foreground/50"
-			style={revealStagger(index)}
+		<div
+			role="group"
+			aria-roledescription="slide"
+			// `aria-roledescription` needs an accessible name, or a screen reader
+			// announces a bare "slide" for every ticket. `aria-label` rather than
+			// pointing at the <h3>: no id to keep unique across two eventsBlock
+			// modules that can both render the same event.
+			aria-label={heading ?? undefined}
+			data-slot="carousel-item"
+			className={SLIDE_CLASSES}
 		>
-			{/* The stub: what kind of run, and which one. The category is the
-			    decoder for the codex -- "161 RR" is a "Road Run (RR)" -- and it is
-			    the one line that tells a first-time visitor what this card is. */}
-			{(category || codex) && (
-				<p className="t-spec flex items-baseline justify-between gap-2 px-4 uppercase">
-					<span className="truncate">{category || codex}</span>
-					{category && codex && (
-						<span className="text-foreground/60 shrink-0">{codex}</span>
-					)}
-				</p>
-			)}
-
-			{/* The perforation: what makes a bordered box read as a ticket stub
-			    rather than a plain card. Full bleed on purpose -- inset by the
-			    card's padding it read as a divider; running edge to edge it reads
-			    as a tear line, which is the whole point of the motif. That is why
-			    the article carries `py-4` and each zone carries its own `px-4`. */}
-			<div
-				aria-hidden
-				className="border-foreground/20 mt-3 border-t border-dashed"
-			/>
-
-			{/* No `flex-1` here: the slack belongs between this block and the
-			    footer (`mt-auto` below), not wrapped around the title. Height is
-			    content-driven -- `aspect-square` forced a 326px box around ~120px
-			    of type, and because the ratio was tied to width the emptiness grew
-			    with the viewport. Tickets in a row still match heights, from the
-			    carousel track's own `align-items: stretch` plus `h-full`. */}
-			{/* No arrow on the heading. Everywhere else on this site ArrowUpRight
-			    marks an EXTERNAL link (the map links below, and every use on
-			    /events and the event page); on an internal link to the event it
-			    inverted the icon's meaning. The stretched link plus the border
-			    hover carries the affordance. */}
-			<div className="mt-5 px-4">
-				<h3 className="t-h-3 line-clamp-3 text-balance uppercase">{heading}</h3>
-				<p className="t-spec text-foreground/60 mt-1.5 uppercase">
-					{dateIsFirm && eventDatetime
-						? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
-						: dateStatus || t.status.tba}
-				</p>
-			</div>
-
-			<div className="mt-auto space-y-1.5 px-4 pt-6">
-				{displayLocation && (
-					<p className="t-spec line-clamp-1 uppercase">
-						{displayLocationLink ? (
-							<a
-								href={displayLocationLink}
-								target="_blank"
-								rel="noopener noreferrer"
-								aria-label={displayLocation}
-								// Above the ticket's stretched link (z-10) so the map link
-								// stays individually clickable.
-								className={cn(
-									'relative z-10 underline-offset-4 hover:underline',
-									OVERLAY_LINK_FOCUS
-								)}
-							>
-								{displayLocation}
-							</a>
-						) : (
-							displayLocation
-						)}
+			<article
+				className="reveal border-foreground/20 flex h-full flex-col rounded border py-4"
+				style={revealStagger(index)}
+			>
+				{(category || codex) && (
+					<p className="t-spec wrap-anywhere px-4 uppercase">
+						{category || codex}
 					</p>
 				)}
 
-				{(daysUntilLabel || hasArrayValue(statusList)) && (
-					<span className="relative z-10 flex flex-wrap gap-1">
-						{/* Same pill, same window (getDaysUntilEvent) and same wording
-						    (formatDaysUntilLabel) as the /events row, so "in 2 days"
-						    cannot mean two different things on two pages. Uncoloured, so
-						    it reads as a cue beside the authored status pills rather
-						    than competing with them. */}
-						{daysUntilLabel && (
-							<StatusItem data={{ eventStatus: { title: daysUntilLabel } }} />
-						)}
-						{statusList?.map((item) => (
-							<StatusItem key={item._key} data={item as StatusListItem} />
-						))}
-					</span>
-				)}
-			</div>
+				<div className="mt-3 px-4">
+					<h3 className="t-h-3 leading-snug text-balance uppercase">
+						{heading}
+					</h3>
+					{/* `.t-spec` is line-height 1 and this wraps on the narrow mobile
+					    card (zh_tw dates are longer), which clips ascenders. */}
+					<p className="t-spec text-foreground/60 mt-1.5 leading-snug uppercase">
+						{dateStatusInfo.isFirm && eventDatetime
+							? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
+							: dateStatusInfo.label}
+					</p>
+				</div>
 
-			{/* Stretched overlay link: any neutral part of the ticket opens the event,
-			    while the map link and status pills above (z-10) stay individually
-			    clickable. Avoids nesting <a> inside <a>. */}
-			{href && (
-				<Link
-					href={href}
-					className={cn('absolute inset-0 z-0 rounded', OVERLAY_LINK_FOCUS)}
-				>
-					{/* Names the destination, not just what happens to be visible: the
-					    heading is the subtitle, so the codex would otherwise be
-					    announced nowhere and two runs could sound identical. */}
-					<span className="sr-only">
-						{[heading, codex].filter(Boolean).join(', ')}
-					</span>
-				</Link>
-			)}
-		</article>
-	);
-}
+				<div className="mt-auto space-y-2.5 px-4 pt-6">
+					{displayLocation && (
+						// `items-start` + flex, not an inline icon: the venue wraps to two
+						// lines on the narrow mobile card, and this keeps the pin on the
+						// first line with the text hanging beside it rather than under it.
+						<p className="t-spec flex items-start gap-1.5 leading-snug uppercase">
+							<MapPin className="mt-px size-3 shrink-0" aria-hidden />
+							{displayLocationLink ? (
+								<a
+									href={displayLocationLink}
+									target="_blank"
+									rel="noopener noreferrer"
+									className={cn(
+										'rounded transition-[color,box-shadow] hover:text-foreground/60',
+										INLINE_LINK_FOCUS
+									)}
+								>
+									{displayLocation}
+								</a>
+							) : (
+								displayLocation
+							)}
+						</p>
+					)}
 
-// Mirrors the pill on /events. Colours come from the referenced brand-colour
-// documents, with ensureAccessibleTextColor deciding the foreground against the
-// authored background; the var() fallbacks keep it legible when a status has no
-// colours set.
-// Typed structurally rather than off the query result: typegen widens the two
-// brand-colour derefs to `{} | Color | null` and the link's resolved `href` to
-// `unknown` (resolvedHrefGroq is a select() it cannot narrow), so the generated
-// shape does not fit its own consumers. PageEvents' copy sidesteps this with
-// `data: any`; naming the fields keeps the looseness to the two values that
-// actually need it.
-type StatusListItem = {
-	link?: { href?: unknown; isNewTab?: boolean | null } | null;
-	eventStatus?: {
-		title?: string | null;
-		statusTextColor?: SanityColor | null;
-		statusBgColor?: SanityColor | null;
-	} | null;
-};
-
-function StatusItem({ data }: { data: StatusListItem }) {
-	const { link, eventStatus } = data || {};
-	if (!eventStatus) return null;
-	const { title, statusTextColor, statusBgColor } = eventStatus;
-	// Narrowed rather than cast: `href` comes back as `unknown` because
-	// resolvedHrefGroq is a select() typegen cannot fold, and a status whose link
-	// resolves to nothing should render as a plain pill.
-	const linkHref = typeof link?.href === 'string' ? link.href : null;
-
-	return (
-		<span
-			className="t-b-2 relative flex items-center gap-0.5 rounded-4xl px-2.5 py-1 uppercase"
-			style={{
-				color:
-					ensureAccessibleTextColor(statusTextColor, statusBgColor) ||
-					'var(--foreground)',
-				backgroundColor: buildRgbaCssString(statusBgColor) || 'var(--muted)',
-			}}
-		>
-			{title}
-			{linkHref && (
-				<>
-					<ArrowRight className="size-3" />
-					<CustomLink
-						className={cn('p-fill rounded-4xl', OVERLAY_LINK_FOCUS)}
-						link={{ href: linkHref, isNewTab: link?.isNewTab ?? false }}
-						aria-label={title ?? undefined}
-					/>
-				</>
-			)}
-		</span>
+					{(daysUntilLabel || hasArrayValue(statusList)) && (
+						<span className="flex flex-wrap gap-1">
+							{/* Same pill, same window (getDaysUntilEvent) and same wording
+							    (formatDaysUntilLabel) as the /events row, so "in 2 days"
+							    cannot mean two different things on two pages. Uncoloured, so
+							    it reads as a cue beside the authored status pills rather
+							    than competing with them. */}
+							{daysUntilLabel && (
+								<EventStatusPill
+									data={{ eventStatus: { title: daysUntilLabel } }}
+								/>
+							)}
+							{statusList?.map((item) => (
+								<EventStatusPill
+									key={item._key}
+									data={item as EventStatusListItem}
+								/>
+							))}
+						</span>
+					)}
+				</div>
+			</article>
+		</div>
 	);
 }

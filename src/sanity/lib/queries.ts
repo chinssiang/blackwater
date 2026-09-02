@@ -1002,11 +1002,14 @@ const eventStatusListFields = `
 // and it costs a reference deref per event. upcomingEventsQuery adds it on top
 // of this fragment instead, because the home-page ticket does render it -- see
 // the note there.
+//
+// `slug` follows the same rule in the other direction: the home-page ticket no
+// longer links anywhere, so only pEventsQuery projects it, rather than putting
+// a slug nobody reads into every eventsBlock's payload.
 const eventCardFields = `
 	_id,
 	_type,
 	"title": ${locString('title')},
-	"slug": slug.current,
 	"subtitle": ${locString('subtitle')},
 	eventDatetime,
 	endDatetime,
@@ -1029,7 +1032,8 @@ export const pEventsQuery = defineQuery(`
 		${i18nSharingFields('noFallback', 'noFallback')},
 		"availableLocales": ${ALL_LOCALES_GROQ},
 		"eventList": *[_type == "pEvent" && eventDatetime.utc >= $cutoff && ${titleVisible}]{
-			${eventCardFields}
+			${eventCardFields},
+			"slug": slug.current
 		} | order(eventDatetime.utc asc),
 	}
 `);

@@ -33,7 +33,16 @@ export const pEvent = defineType({
 			type: 'internationalizedArrayString',
 			validation: (Rule) => Rule.custom(requireSomeValue),
 		}),
-		defineField({ name: 'subtitle', type: 'internationalizedArrayString' }),
+		defineField({
+			name: 'subtitle',
+			type: 'internationalizedArrayString',
+			description:
+				'The human name for the run, e.g. "Midweek Reset (6K / 10K)". Keep it under ~100 characters — it heads the event listings and cards.',
+			validation: (Rule) =>
+				Rule.custom(
+					maxLengthPerLanguage(100, 'Keep under ~100 chars.')
+				).warning(),
+		}),
 		// isUniqueAcrossType, not the default: with no `language` field the
 		// default check short-circuits to `true` and accepts every duplicate.
 		slug({ isUnique: isUniqueAcrossType }),
