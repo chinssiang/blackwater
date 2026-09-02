@@ -50,9 +50,7 @@ export default function ProductPageHeader({
 
 			<div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
 				{title && (
-					<h1 className="max-w-[18ch] text-balance text-[clamp(2rem,6vw,3.75rem)] uppercase leading-[0.95] tracking-[-0.02em]">
-						{title}
-					</h1>
+					<h1 className="max-w-[18ch] text-balance t-h-1 uppercase">{title}</h1>
 				)}
 				{segments.length > 0 && (
 					<p className="t-spec whitespace-nowrap text-foreground/65">

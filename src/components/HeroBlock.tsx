@@ -1,3 +1,4 @@
+import { stegaClean } from '@sanity/client/stega';
 import CustomPortableText from '@/components/CustomPortableText';
 import CustomLink from '@/components/CustomLink';
 import ImageBlock from '@/components/ImageBlock';
@@ -6,7 +7,7 @@ import SectionShell, {
 } from '@/components/SectionShell';
 import { Button } from '@/components/ui/Button';
 import { revealStagger } from '@/lib/animate';
-import { cn } from '@/lib/utils';
+import { cn, hasArrayValue } from '@/lib/utils';
 
 // The page opener: eyebrow, heading, paragraph and an optional call to action
 // over an optional background image.
@@ -15,8 +16,9 @@ import { cn } from '@/lib/utils';
 // state and need something to execute to undo it, so a hero the browser never
 // paints -- or one whose JS never hydrates -- would strand the page's own
 // heading at opacity: 0. `reveal` puts the hidden value in @starting-style
-// instead, so it is only ever a transition start point. This replaced pHome's
-// <AnimatedTitle>, which was a Motion mount animation on exactly that heading.
+// instead, so it is only ever a transition start point. The Motion mount
+// animation this replaced sat on exactly that heading, which is how the trap was
+// found -- don't reintroduce one here.
 
 type HeroBlockProps = {
 	data: {
@@ -62,12 +64,32 @@ export default function HeroBlock({
 			: null;
 	const ctaLabel = callToAction?.label;
 
+	// Trimmed and stega-cleaned before anything decides whether there is a
+	// heading. `src/lib/page-modules.ts` used to do this upstream and was deleted
+	// with the old hero fallback; nothing replaced it, so raw truthiness let a
+	// heading an editor had blanked to spaces both defeat the emptiness bail
+	// below AND render `<h1>   </h1>` -- an a11y failure a crawler reads rather
+	// than falling through to the next heading. Draft mode also appends invisible
+	// stega characters, which would make any heading look non-empty. A predicate,
+	// not the rendered value: the raw `heading` is what gets rendered, so visual
+	// editing keeps its stega metadata.
+	const hasHeading = !!stegaClean(heading)?.trim();
+
+	// `hasArrayValue`, not raw truthiness: Sanity leaves `paragraph: []` behind
+	// when an editor deletes the last portable-text block, and `[]` is truthy --
+	// so `!paragraph` could never fire the bail below, and the render gate emitted
+	// an empty `.wysiwyg` box. Hoisted to a boolean rather than called inline at
+	// both sites because `paragraph` is `any`, and the type guard would narrow it
+	// to `unknown[]` where CustomPortableText wants PortableTextBlock[] (the
+	// explicit `: boolean` is what stops that aliased narrowing).
+	const hasParagraph: boolean = hasArrayValue(paragraph);
+
 	// Same bail as the other modules: an empty hero would still reserve a full
 	// viewport of blank page, which is worse than not rendering.
 	if (
 		!eyebrow &&
-		!heading &&
-		!paragraph &&
+		!hasHeading &&
+		!hasParagraph &&
 		!backgroundImage?.image &&
 		!(ctaHref && ctaLabel)
 	) {
@@ -98,14 +120,21 @@ export default function HeroBlock({
 				</div>
 			)}
 
-			<div className="max-w-2xl">
+			{/* Measure cap. The copy is a column, not a banner: as direct flex
+			    children of the section these stretch to `maxWidthClass`, which
+			    defaults to `w-full` inside a `p-x-max` inset -- up to
+			    --container-max (2000px), roughly 200 characters a line for the
+			    paragraph. The background image stays outside this wrapper so it
+			    remains full-bleed. An authored `sectionAppearance.maxWidth` still
+			    applies on the section, above this. */}
+			<div className="max-w-2xl mx-auto">
 				{eyebrow && (
 					<p className="t-spec reveal mb-3 uppercase" style={revealStagger(0)}>
 						{eyebrow}
 					</p>
 				)}
 
-				{heading && (
+				{hasHeading && (
 					<Heading
 						className="t-h-1 reveal text-balance uppercase"
 						style={revealStagger(1)}
@@ -114,7 +143,7 @@ export default function HeroBlock({
 					</Heading>
 				)}
 
-				{paragraph && (
+				{hasParagraph && (
 					<div className="wysiwyg reveal mt-4" style={revealStagger(2)}>
 						<CustomPortableText blocks={paragraph} />
 					</div>

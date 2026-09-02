@@ -1,5 +1,10 @@
 import { TagIcon } from '@sanity/icons';
 import { defineArrayMember, defineType, defineField } from 'sanity';
+import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
+import {
+	moduleRule,
+	pageModuleHidden,
+} from '@/sanity/schemaTypes/objects/page-module';
 
 // Recommended-products page module: a small grid of product cards on pHome or
 // pGeneral. Cards render Sanity's editorial mainImage and get their price from
@@ -22,6 +27,7 @@ export const productsBlock = defineType({
 	title: 'Products',
 	type: 'object',
 	icon: TagIcon,
+	components: pageModuleComponents,
 	fields: [
 		defineField({
 			name: 'heading',
@@ -62,13 +68,17 @@ export const productsBlock = defineType({
 			hidden: (owner) => sourceOf(owner) !== 'picked',
 			validation: (Rule) => [
 				// Unconditional, like gFaqList.questions: two references to the same
-				// product would render the same card twice.
+				// product would render the same card twice. Deliberately NOT wrapped in
+				// moduleRule, for the reason faq-block.ts gives: a duplicate is a data
+				// error, not an unfinished section.
 				Rule.unique(),
 				Rule.custom(
-					(value, context) =>
-						sourceOf(context) !== 'picked' ||
-						(Array.isArray(value) && value.length > 0) ||
-						'Pick at least one product, or switch to a collection.'
+					moduleRule(
+						(value, context) =>
+							sourceOf(context) !== 'picked' ||
+							(Array.isArray(value) && value.length > 0) ||
+							'Pick at least one product, or switch to a collection.'
+					)
 				),
 			],
 		}),
@@ -81,13 +91,17 @@ export const productsBlock = defineType({
 				'Collections are managed in Products → Collections. Re-ordering the collection re-orders this block, and every other block pointing at it.',
 			hidden: (owner) => sourceOf(owner) !== 'collection',
 			// Conditional so a hidden field never blocks publishing -- only the one
-			// the editor can actually see.
+			// the editor can actually see. `moduleRule` extends that to the module
+			// itself: a section switched off with the eye button must not hold its
+			// page unpublishable either.
 			validation: (Rule) =>
 				Rule.custom(
-					(value, context) =>
-						sourceOf(context) !== 'collection' ||
-						!!value ||
-						'Pick a collection, or switch to hand-picked products.'
+					moduleRule(
+						(value, context) =>
+							sourceOf(context) !== 'collection' ||
+							!!value ||
+							'Pick a collection, or switch to hand-picked products.'
+					)
 				),
 		}),
 		defineField({
@@ -111,6 +125,7 @@ export const productsBlock = defineType({
 			name: 'sectionAppearance',
 			type: 'sectionAppearance',
 		}),
+		pageModuleHidden(),
 	],
 	preview: {
 		select: {

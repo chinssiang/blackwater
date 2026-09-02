@@ -1,6 +1,11 @@
 import { BlockElementIcon } from '@sanity/icons';
 import { defineType, defineField } from 'sanity';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
+import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
+import {
+	moduleRule,
+	pageModuleHidden,
+} from '@/sanity/schemaTypes/objects/page-module';
 
 // Hero page module: the opening statement of a page -- an eyebrow, a heading, a
 // short paragraph and an optional call to action, over an optional background
@@ -22,6 +27,7 @@ export const heroBlock = defineType({
 	title: 'Hero',
 	type: 'object',
 	icon: BlockElementIcon,
+	components: pageModuleComponents,
 	fields: [
 		defineField({
 			name: 'eyebrow',
@@ -68,11 +74,13 @@ export const heroBlock = defineType({
 					// renders when it has a label AND a link, so a link with no label is
 					// exactly as silently broken as a label with no link.
 					validation: (Rule) =>
-						Rule.custom((value, context) => {
-							const link = (context.parent as { link?: unknown } | undefined)
-								?.link;
-							return !link || !!value || 'Add a label, or clear the link.';
-						}),
+						Rule.custom(
+							moduleRule((value, context) => {
+								const link = (context.parent as { link?: unknown } | undefined)
+									?.link;
+								return !link || !!value || 'Add a label, or clear the link.';
+							})
+						),
 				}),
 				defineField({
 					name: 'link',
@@ -82,11 +90,13 @@ export const heroBlock = defineType({
 					// is the common case, and an empty collapsed object must not block
 					// publishing. Only a half-filled one is an error.
 					validation: (Rule) =>
-						Rule.custom((value, context) => {
-							const label = (context.parent as { label?: string } | undefined)
-								?.label;
-							return !label || !!value || 'Add a link, or clear the label.';
-						}),
+						Rule.custom(
+							moduleRule((value, context) => {
+								const label = (context.parent as { label?: string } | undefined)
+									?.label;
+								return !label || !!value || 'Add a link, or clear the label.';
+							})
+						),
 				}),
 			],
 		}),
@@ -96,6 +106,7 @@ export const heroBlock = defineType({
 			description:
 				'Set Text Color as well as Background Color — text does not pick its own contrast, and a background image needs a colour that survives it.',
 		}),
+		pageModuleHidden(),
 	],
 	preview: {
 		select: {

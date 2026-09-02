@@ -21,9 +21,12 @@ type PageModulesProps = {
 	// context. Passed down from PageHome/PageGeneral.
 	locale: Locale;
 	/**
-	 * Only heroBlock reads this. The homepage passes 'h1' for a hero in the first
-	 * slot, because nothing above it claims the page's heading; PageGeneral leaves
-	 * it alone, since it renders the page title as an h1 itself.
+	 * The tag for the module's own heading. The homepage passes 'h1' for slot 0,
+	 * because nothing above it claims the page's heading; PageGeneral leaves it
+	 * alone, since it renders the page title as an h1 itself. Threaded to every
+	 * type that renders a heading, not just heroBlock -- slot 0 is decided by
+	 * POSITION, and hidden modules are filtered in GROQ, so any type can end up
+	 * there.
 	 */
 	headingLevel?: 'h1' | 'h2';
 };
@@ -40,16 +43,28 @@ export default function PageModules({
 			return <Freeform data={module} />;
 
 		case 'faqBlock':
-			return <FaqBlock data={module} />;
+			return <FaqBlock data={module} headingLevel={headingLevel} />;
 
 		case 'eventsBlock':
-			return <EventsBlock data={module} locale={locale} />;
+			return (
+				<EventsBlock
+					data={module}
+					locale={locale}
+					headingLevel={headingLevel}
+				/>
+			);
 
 		case 'heroBlock':
 			return <HeroBlock data={module} headingLevel={headingLevel} />;
 
 		case 'productsBlock':
-			return <ProductsBlock data={module} locale={locale} />;
+			return (
+				<ProductsBlock
+					data={module}
+					locale={locale}
+					headingLevel={headingLevel}
+				/>
+			);
 
 		default:
 			return null;

@@ -199,7 +199,7 @@ export function PageEvents({ data }: PageEventsProps) {
 						delay: 0.3,
 						ease: EASE_HEADER,
 					}}
-					className="t-h-3 uppercase"
+					className="t-l-0 uppercase"
 				>
 					{monthYearDisplay}
 				</motion.p>

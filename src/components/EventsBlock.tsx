@@ -68,12 +68,14 @@ type EventsBlockProps = {
 		sectionAppearance?: SectionAppearance;
 	};
 	locale: Locale;
+	headingLevel?: 'h1' | 'h2';
 	className?: string;
 };
 
 export default async function EventsBlock({
 	data,
 	locale,
+	headingLevel,
 	className,
 }: EventsBlockProps) {
 	const { heading, windowDays, limit, callToAction, sectionAppearance } =
@@ -109,6 +111,7 @@ export default async function EventsBlock({
 		<SectionShell
 			appearance={sectionAppearance}
 			heading={heading}
+			headingLevel={headingLevel}
 			// On the heading's baseline rather than in the carousel's nav row, where
 			// it read as carousel chrome. Rendering it here also keeps it out of
 			// <EventsCarousel>, which is a lazily-loaded CLIENT component -- so this

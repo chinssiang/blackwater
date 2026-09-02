@@ -466,6 +466,12 @@ export default function CartDrawerPanel({
 																key={product._id}
 																product={product}
 																index={i}
+																// Two-up inside a 416px panel leaves ~184px per card on
+																// desktop and ~163px on a phone. The title is `line-clamp-2`,
+																// so the 20px card-title token truncated 5 of 24 real product
+																// names here, 8 on mobile -- "Communion T (New Balance
+																// Redux)" and the like lost their tails. 16px truncates 0/1.
+																compact
 															/>
 														))}
 													</div>

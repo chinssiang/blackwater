@@ -204,28 +204,26 @@
 		--h-header: 42px;
 		--s-section: 80px;
 
-		/* Heading sizes. Fluid because containers run to --container-max (2000px)
-		   while the type used to be a flat pixel value at every width, so a
-		   heading that read correctly on a laptop was a caption on a large
-		   display. The minimums are the previous fixed values, so nothing shrinks
-		   -- with ONE exception: `.wysiwyg h1` was 30px and now floors at 28px
-		   (`--t-size-h1`'s minimum, which is `.t-h-1`'s old value), so an in-prose
-		   h1 loses 2px below ~490px. Accepted deliberately: two sizes for one role
-		   is the drift these tokens exist to end, and 28px is the value the page
-		   titles already used.
-
-		   Declared here rather than inline in each rule because two scales need
-		   them -- the `t-h-*` component tokens below and the `.wysiwyg` prose
-		   headings. Those were 28px/24px and 30px/24px respectively for the same
-		   two roles, which is how a `faqBlock` heading ended up 50% larger than
+		/* Heading sizes, shared by the `t-h-*` component tokens below and the
+		   `.wysiwyg` prose headings so one role cannot have two sizes. Retune here,
+		   not in either rule -- they were 28/24/16px and 30/24/20px for the same
+		   three roles, which is how a `faqBlock` heading ended up 50% larger than
 		   the `eventsBlock` heading beside it on the same page.
 
-		   h1 and h2 ONLY. The third heading pair is still split -- `.t-h-3` is
-		   16px and `.wysiwyg h3` is 20px -- so the section-heading-to-card-title
-		   ratio varies with the viewport and is not tunable from here. Joining it
-		   needs a call on which of the two sizes wins. */
-		--t-size-h1: clamp(1.75rem, 1.49rem + 1.13vw, 2.5rem);
-		--t-size-h2: clamp(1.5rem, 1.37rem + 0.56vw, 1.875rem);
+		   h1/h2 are fluid because containers run to --container-max (2000px). h1
+		   ramps ~371px..~1443px and h2 ~357px..~1429px; both are flat above. Keep
+		   the maxima modest:
+		   h3 down through `p` are flat literals, so growth up here only widens the
+		   h3->h2 step -- 1.35x at 34/27, 1.50x at the 40/30 these were, against
+		   ~1.11x for every step below. Raising them means making h3..p fluid too.
+		   h3 is flat because it is the anchor that pair is tuned against.
+
+		   One accepted regression: `.wysiwyg h1` was a flat 30px and now floors at
+		   28px, so an in-prose h1 is smaller than before anywhere below ~729px
+		   (where this ramp reaches 30px), and loses the full 2px below ~371px. */
+		--t-size-h1: clamp(1.75rem, 1.62rem + 0.56vw, 2.125rem);
+		--t-size-h2: clamp(1.5rem, 1.4375rem + 0.28vw, 1.6875rem);
+		--t-size-h3: 20px;
 
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
 		--width-md: min(100vw - calc(var(--s-contain) * 2), var(--container-md));
@@ -456,7 +454,7 @@
 		h3 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 20px;
+			font-size: var(--t-size-h3);
 			line-height: 1;
 			letter-spacing: -0.02em;
 		}
@@ -599,7 +597,7 @@
 	.t-h-3 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 16px;
+		font-size: var(--t-size-h3);
 		line-height: 1;
 		letter-spacing: -0.02em;
 	}
@@ -616,6 +614,25 @@
 		font-family: var(--font-default);
 		font-weight: 400;
 		font-size: 12px;
+		line-height: 1;
+		letter-spacing: -0.02em;
+	}
+
+	/* 16px uppercase metadata, one rung above `.t-l-1`: event location, date and
+	   start/finish values, the events sticky-bar month, the crew kicker. In the
+	   label family, not the heading family -- these are values and labels, and
+	   they sat on `.t-h-3` only because 482c1e5 renamed a six-level scale down
+	   into three names.
+
+	   Deliberately a literal, not a `--t-size-*` var shared with `.wysiwyg h5,
+	   h6`: that rule is 16px too, but it is a prose HEADING. Same pixels today,
+	   different roles -- coupling them would make a prose retune move an event
+	   date. The vars above exist for one role rendered two ways, which is not
+	   this. */
+	.t-l-0 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: 16px;
 		line-height: 1;
 		letter-spacing: -0.02em;
 	}

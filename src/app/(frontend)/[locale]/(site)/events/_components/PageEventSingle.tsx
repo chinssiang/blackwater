@@ -179,19 +179,19 @@ function EventBody({
 								href={displayLocationLink}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1 t-h-3 uppercase hover:opacity-70 transition-opacity"
+								className="inline-flex items-center gap-1 t-l-0 uppercase hover:opacity-70 transition-opacity"
 							>
 								{displayLocation}
 								<ArrowUpRight className="size-2" aria-hidden />
 							</Link>
 						) : (
-							<p className="t-h-3 uppercase">{displayLocation}</p>
+							<p className="t-l-0 uppercase">{displayLocation}</p>
 						)}
 					</div>
 				)}
 				<div>
 					<p className="t-b-2 uppercase text-muted-foreground mb-1">When</p>
-					<p className="t-h-3 uppercase">{formattedDate}</p>
+					<p className="t-l-0 uppercase">{formattedDate}</p>
 				</div>
 				{hasArrayValue(highlights) && (
 					<div>
@@ -228,13 +228,13 @@ function EventBody({
 								href={startEndLocation!.link}
 								target="_blank"
 								rel="noopener noreferrer"
-								className="inline-flex items-center gap-1 t-h-3 uppercase hover:opacity-70 transition-opacity"
+								className="inline-flex items-center gap-1 t-l-0 uppercase hover:opacity-70 transition-opacity"
 							>
 								{startEndLocation!.name}
 								<ArrowUpRight className="size-2" aria-hidden />
 							</Link>
 						) : (
-							<p className="t-h-3 uppercase">{startEndLocation!.name}</p>
+							<p className="t-l-0 uppercase">{startEndLocation!.name}</p>
 						)}
 					</section>
 				)}

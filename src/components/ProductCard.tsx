@@ -6,6 +6,7 @@ import ImageBlock from '@/components/ImageBlock';
 import { revealStagger } from '@/lib/animate';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
+import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { ArrowRight } from '@/components/SvgIcons';
 
@@ -32,6 +33,12 @@ type ProductCardProps = {
 	 * delay. The caller decides which card qualifies (see PageProductIndex).
 	 */
 	priority?: boolean;
+	/**
+	 * Renders the title at the metadata rung (`t-l-0`, 16px) instead of the 20px
+	 * card title, for containers too narrow for it. Opt-in rather than a
+	 * breakpoint: the card cannot measure its container. See the cart drawer.
+	 */
+	compact?: boolean;
 };
 
 // Renders each category title as its own link to its category page, separated
@@ -82,6 +89,7 @@ export default function ProductCard({
 	product,
 	index = 0,
 	priority = false,
+	compact,
 }: ProductCardProps) {
 	const locale = useLocale();
 	const t = useTranslations('products');
@@ -135,11 +143,11 @@ export default function ProductCard({
 							<CategoryLinks
 								categories={categories}
 								// -my-2 py-2 matches the anchor's padding so the enlarged tap
-							// target stays inside this row's own box instead of
-							// overhanging into blank card space, where it would sit above
-							// the card's stretched overlay link and steal its clicks. The
-							// negative margin keeps the visual rhythm unchanged.
-							className="t-spec -my-2 flex-1 py-2 uppercase text-foreground"
+								// target stays inside this row's own box instead of
+								// overhanging into blank card space, where it would sit above
+								// the card's stretched overlay link and steal its clicks. The
+								// negative margin keeps the visual rhythm unchanged.
+								className="t-spec -my-2 flex-1 py-2 uppercase text-foreground"
 							/>
 						)
 					)}
@@ -154,7 +162,12 @@ export default function ProductCard({
 					)}
 				</div>
 				{product.title && (
-					<h3 className="t-h-3 line-clamp-2 text-balance uppercase">
+					<h3
+						className={cn(
+							compact ? 't-l-0' : 't-h-3',
+							'line-clamp-2 text-balance uppercase'
+						)}
+					>
 						{product.title}
 					</h3>
 				)}
