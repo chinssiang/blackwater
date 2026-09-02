@@ -6,6 +6,7 @@ import {
 	CarouselNext,
 	CarouselPrevious,
 } from '@/components/ui/Carousel';
+import { cn, SECTION_INSET, SECTION_INSET_START } from '@/lib/utils';
 
 // The client half of the upcoming-events strip. <EventsBlock> stays a Server
 // Component and passes the rendered tickets in as `children`, so no ticket
@@ -31,9 +32,9 @@ type EventsCarouselProps = {
 };
 
 // Buttons sit in their own row under the strip rather than at the primitive's
-// default `-left-12`/`-right-12`, which would put them outside `px-contain` and
-// under the page edge. `static left-auto right-auto my-0` is what tailwind-merge
-// needs to drop the absolute positioning the defaults bring.
+// default `-left-12`/`-right-12`, which would put them under the page edge.
+// `static left-auto right-auto my-0` is what tailwind-merge needs to drop the
+// absolute positioning the defaults bring.
 const NAV_BUTTON =
 	'static left-auto right-auto my-0 size-9 pointer-coarse:size-11';
 
@@ -45,8 +46,14 @@ export default function EventsCarousel({
 }: EventsCarouselProps) {
 	return (
 		<Carousel opts={{ align: 'start', dragFree: true }} aria-label={label}>
-			<CarouselContent>{children}</CarouselContent>
-			<div className="mt-4 flex justify-end gap-2">
+			{/* `gap-6` rather than the primitive's per-slide padding plus a
+			    negative track margin: that idiom fights the leading inset, which has
+			    to stay a real padding so the first ticket lines up with the heading.
+			    `ml-0` drops the primitive's default `-ml-4` for the same reason. */}
+			<CarouselContent className={cn(SECTION_INSET_START, 'ml-0 gap-6')}>
+				{children}
+			</CarouselContent>
+			<div className={cn('mt-4 flex justify-end gap-2', SECTION_INSET)}>
 				<CarouselPrevious label={previousLabel} className={NAV_BUTTON} />
 				<CarouselNext label={nextLabel} className={NAV_BUTTON} />
 			</div>

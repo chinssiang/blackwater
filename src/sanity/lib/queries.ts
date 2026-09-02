@@ -610,10 +610,13 @@ export const PAGE_MODULE_TAGS = [
 ] as const;
 
 // Tags for upcomingEventsQuery: eventCardFields derefs locationRef-> and
-// statusList[].eventStatus-> plus its two colour documents.
+// statusList[].eventStatus-> plus its two colour documents, and the query adds
+// categories[0]-> on top of that fragment (pEventCategory). pEventsQuery shares
+// eventCardFields but NOT the category, so it must not carry that tag.
 export const UPCOMING_EVENTS_TAGS = [
 	'pEvent',
 	'gLocation',
+	'pEventCategory',
 	'pEventStatus',
 	'settingsBrandColors',
 ] as const;
@@ -631,12 +634,28 @@ export const UPCOMING_EVENTS_TAGS = [
 // Nesting them here put `$upcomingFrom` on every pGeneral page's cache key and
 // the three event tags on every pGeneral page's fetch, for a module almost none
 // of them carry.
+// The `callToAction` projection below is the same shape heroBlockField uses. It
+// is a SIBLING of that fragment at the same interpolation depth (linkFields ->
+// resolvedHrefGroq), not another level on the chain -- the distinction matters,
+// because one more level here makes the query extractor blow its stack on
+// pageHomeQuery and pageGeneralQuery ALONE while still reporting success,
+// silently dropping just those two result types. Verify both still generate
+// after touching it.
+//
+// Kept out of the template literal: anything inside the backticks is shipped to
+// Sanity in the request body of every uncached fetch of both page queries.
 const eventsBlockField = `
 	_type,
 	_key,
 	heading,
 	"windowDays": select(timeWindow == "week" => 7, timeWindow == "month" => 30, -1),
 	limit,
+	callToAction{
+		label,
+		link {
+			${linkFields}
+		}
+	},
 	sectionAppearance {
 		...,
 		"backgroundColor": backgroundColor->color,
@@ -979,8 +998,10 @@ const eventStatusListFields = `
 // gone: there is nothing to deduplicate, and `titleVisible` alone decides
 // whether an event appears in this locale.
 //
-// `categories` is deliberately NOT projected: nothing on the listing renders it,
-// and it costs a reference deref plus a colour-document deref per event.
+// `categories` is deliberately NOT projected here: /events renders no category,
+// and it costs a reference deref per event. upcomingEventsQuery adds it on top
+// of this fragment instead, because the home-page ticket does render it -- see
+// the note there.
 const eventCardFields = `
 	_id,
 	_type,
@@ -1032,11 +1053,18 @@ export const pEventsQuery = defineQuery(`
 // rows fetched-then-discarded are ones that ended inside the bound's ~24-48h of
 // slack. 10 (the schema ceiling) plus two spare covers that; each extra row
 // costs a locationRef deref plus three more per status entry.
+// `category` is projected HERE and not in eventCardFields: /events shares that
+// fragment and renders no category, so projecting it there put the field in
+// every row of the /events client payload, a deref per row, and a
+// pEventCategory tag on that page's fetch, all for nothing. It is the decoder
+// for the title codes -- an event titled "161 RR" is a "Road Run (RR)". [0], not
+// the array: the ticket shows one. (Outside the backticks, so it is not sent.)
 export const upcomingEventsQuery = defineQuery(`
 	*[_type == "pEvent" && ${titleVisible}
 		&& coalesce(endDatetime.utc, eventDatetime.utc) >= $upcomingFrom
 	] | order(eventDatetime.utc asc)[0...12]{
-		${eventCardFields}
+		${eventCardFields},
+		"category": ${locString('categories[0]->title')}
 	}
 `);
 

@@ -72,6 +72,7 @@ export const sectionAppearance = defineType({
 			title: 'Spacing Top',
 			name: 'spacingTop',
 			type: 'number',
+			initialValue: 9,
 			options: {
 				list: SPACING_OPTIONS,
 			},
@@ -80,6 +81,7 @@ export const sectionAppearance = defineType({
 			title: 'Spacing Top (Desktop)',
 			name: 'spacingTopDesktop',
 			type: 'number',
+			initialValue: 12,
 			options: {
 				list: SPACING_OPTIONS,
 			},
@@ -88,6 +90,7 @@ export const sectionAppearance = defineType({
 			title: 'Spacing Bottom',
 			name: 'spacingBottom',
 			type: 'number',
+			initialValue: 9,
 			options: {
 				list: SPACING_OPTIONS,
 			},
@@ -96,6 +99,7 @@ export const sectionAppearance = defineType({
 			title: 'Spacing Bottom (Desktop)',
 			name: 'spacingBottomDesktop',
 			type: 'number',
+			initialValue: 12,
 			options: {
 				list: SPACING_OPTIONS,
 			},

@@ -1,5 +1,5 @@
 import type { CSSProperties } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, SECTION_INSET } from '@/lib/utils';
 import {
 	resolveSectionAppearance,
 	type SectionAppearance,
@@ -23,13 +23,22 @@ export type { SectionAppearance };
 export default function SectionShell({
 	appearance,
 	heading,
+	headingAction,
 	className,
 	children,
+	bleed = false,
 }: {
 	appearance?: SectionAppearance;
 	heading?: string;
+	/**
+	 * Optional trailing element on the heading's baseline -- a "see all" link and
+	 * the like. Rendered only when passed; a module that omits it gets exactly
+	 * the markup it had before this existed.
+	 */
+	headingAction?: React.ReactNode;
 	className?: string;
 	children: React.ReactNode;
+	bleed?: boolean;
 }) {
 	const { alignClass, maxWidthClass, inkCss, paperCss, spacing } =
 		resolveSectionAppearance(appearance);
@@ -37,11 +46,8 @@ export default function SectionShell({
 	return (
 		<section
 			className={cn(
-				'section-spacing px-contain mx-auto',
-				// The token remapping lives in globals.css beside .cart-surface, which
-				// solves the same problem for the cart's light surface. Each class is
-				// added only when that colour is in play, so an uncoloured section
-				// resolves exactly as it did before.
+				'section-spacing mx-auto',
+				!bleed && SECTION_INSET,
 				inkCss && 'section-ink',
 				paperCss && 'section-paper',
 				alignClass,
@@ -66,7 +72,36 @@ export default function SectionShell({
 				} as CSSProperties
 			}
 		>
-			{heading && <h2 className="t-h-3 mb-6 uppercase">{heading}</h2>}
+			{/* `t-h-2`, not `t-h-3`: `t-h-3` is the card-title token, so a section
+			    heading rendered in it was the exact size of the cards it governed
+			    (16px over 16px, a ratio of 1.00) and the section read as one flat
+			    band. It also put these headings 8px below a `faqBlock` heading,
+			    which renders through `.wysiwyg` instead and so never shared the
+			    mistake. Both scales resolve to --t-size-h2 now, so the two agree at
+			    every viewport. */}
+			{(heading || headingAction) && (
+				// The flex classes are CONDITIONAL on `headingAction`, not always on.
+				// `sectionAppearance` can set text-center/text-right (alignClass, on
+				// the section), and a heading that is always a flex item shrinks to
+				// its own text -- text-align then has nothing left to move, so every
+				// centred section would silently go left. With no action the h2 stays
+				// a block and alignment behaves as it always has.
+				//
+				// `mb-6` and the bleed inset live on the wrapper rather than the h2 so
+				// the action shares them instead of escaping the row.
+				<div
+					className={cn(
+						'mb-6',
+						headingAction && 'flex items-baseline justify-between gap-4',
+						bleed && SECTION_INSET
+					)}
+				>
+					{/* Gated separately from the wrapper: `heading` is optional on every
+					    module that has one, and an action must not vanish with it. */}
+					{heading && <h2 className="t-h-2 uppercase">{heading}</h2>}
+					{headingAction}
+				</div>
+			)}
 			{children}
 		</section>
 	);

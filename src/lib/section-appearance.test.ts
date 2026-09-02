@@ -106,10 +106,23 @@ describe('resolveSectionAppearance', () => {
 			spacingBottom: 24,
 			spacingTopDesktop: null,
 		});
+		// 0 is an authored choice and must survive; only absent values default.
 		expect(r.spacing.pt).toBe(0);
 		expect(r.spacing.pb).toBe(24);
-		expect(r.spacing.ptSm).toBeUndefined();
-		expect(r.spacing.pbSm).toBeUndefined();
+		expect(r.spacing.ptSm).toBe(12);
+		expect(r.spacing.pbSm).toBe(12);
+	});
+
+	// The Studio's initialValue only fires for newly created array items, so
+	// content already in a dataset arrives with no spacing at all. Without these
+	// the section-spacing utility falls through to 0 and the section has no
+	// padding, which is not what the schema tells the editor the default is.
+	it('defaults absent spacing to the same steps the schema offers', () => {
+		const r = resolveSectionAppearance({});
+		expect(r.spacing.pt).toBe(9);
+		expect(r.spacing.pb).toBe(9);
+		expect(r.spacing.ptSm).toBe(12);
+		expect(r.spacing.pbSm).toBe(12);
 	});
 });
 
@@ -144,7 +157,9 @@ describe('findHeadingHeroKey', () => {
 
 	it('ignores non-hero modules that happen to have a heading', () => {
 		expect(
-			findHeadingHeroKey([{ _type: 'productsBlock', _key: 'p', heading: 'Kit' }])
+			findHeadingHeroKey([
+				{ _type: 'productsBlock', _key: 'p', heading: 'Kit' },
+			])
 		).toBeNull();
 	});
 

@@ -15,3 +15,24 @@ export function interpolate(
 ): string {
 	return template.replace(/\{(\w+)\}/g, (_, k) => String(vars[k] ?? ''));
 }
+
+/**
+ * The "today" / "in N days" pill wording, shared by the /events rows and the
+ * home-page events strip.
+ *
+ * Lives here rather than beside `getDaysUntilEvent` in event-date.ts so that
+ * module stays free of a dictionary import: it is also pulled in by
+ * PageEventSingle, PageEventsCrew and a Studio schema, none of which want
+ * en.json in their graph.
+ *
+ * The zero case is a separate dictionary key, not a plural form, so it cannot
+ * be folded into `pickPlural`.
+ */
+export function formatDaysUntilLabel(
+	daysUntil: number,
+	t: Dictionary['events']
+): string {
+	return daysUntil === 0
+		? t.status.today
+		: interpolate(pickPlural(t.daysUntil, daysUntil), { count: daysUntil });
+}

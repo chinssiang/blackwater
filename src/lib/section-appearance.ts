@@ -34,6 +34,16 @@ const TEXT_ALIGN_CLASSES = new Set([
 
 const DEFAULT_ALIGN = 'text-left';
 
+// Mirrors the `initialValue`s on section-appearance.js. Declared here as well
+// because `initialValue` only fires when an editor creates a new array item in
+// the Studio: every module already in a dataset, and every module written
+// through the API or a migration, carries no spacing at all and would otherwise
+// fall through `section-spacing`'s own `var(--section-pt, 0)` to zero padding.
+// The schema and the resolver have to agree, the way maxWidth/textAlign already
+// do through MAX_WIDTH_CLASSES.none and DEFAULT_ALIGN. Tailwind scale steps.
+const DEFAULT_SPACING = 9;
+const DEFAULT_SPACING_DESKTOP = 12;
+
 export type SectionAppearance = {
 	backgroundColor?: SanityColor | null;
 	textColor?: SanityColor | null;
@@ -104,10 +114,10 @@ export function resolveSectionAppearance(
 		inkCss,
 		paperCss,
 		spacing: {
-			pt: spacingTop ?? undefined,
-			pb: spacingBottom ?? undefined,
-			ptSm: spacingTopDesktop ?? undefined,
-			pbSm: spacingBottomDesktop ?? undefined,
+			pt: spacingTop ?? DEFAULT_SPACING,
+			pb: spacingBottom ?? DEFAULT_SPACING,
+			ptSm: spacingTopDesktop ?? DEFAULT_SPACING_DESKTOP,
+			pbSm: spacingBottomDesktop ?? DEFAULT_SPACING_DESKTOP,
 		},
 	};
 }

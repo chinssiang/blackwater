@@ -683,6 +683,30 @@
   },
   {
     "type": "type",
+    "name": "eventsBlock.callToAction",
+    "value": {
+      "type": "object",
+      "attributes": {
+        "label": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "string"
+          },
+          "optional": true
+        },
+        "link": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "inline",
+            "name": "link"
+          },
+          "optional": true
+        }
+      }
+    }
+  },
+  {
+    "type": "type",
     "name": "backgroundImage.image",
     "value": {
       "type": "object",
@@ -2800,6 +2824,14 @@
                 "value": 10
               }
             ]
+          },
+          "optional": true
+        },
+        "callToAction": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "inline",
+            "name": "eventsBlock.callToAction"
           },
           "optional": true
         },

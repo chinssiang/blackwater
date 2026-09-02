@@ -184,3 +184,7 @@ export function isValidUrl(urlString: string): boolean {
 // its container rather than being clipped by it.
 export const OVERLAY_LINK_FOCUS =
 	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
+
+export const SECTION_INSET = 'p-x-max';
+export const SECTION_INSET_START = 'pl-(--padding-max)';
+export const SECTION_INSET_TRAILING_SLIDE = 'last:mr-contain';

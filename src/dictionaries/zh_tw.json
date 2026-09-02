@@ -36,6 +36,7 @@
 			"other": "{count} 天後"
 		},
 		"emptyMonth": "本月暫無活動",
+		"viewAll": "所有活動",
 		"carousel": {
 			"label": "近期活動",
 			"previous": "上一批活動",

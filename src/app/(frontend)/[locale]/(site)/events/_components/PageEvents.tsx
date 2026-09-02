@@ -4,11 +4,11 @@ import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
 import { motion, useReducedMotion } from 'motion/react';
-import type { PEventsQueryResult, RichDate } from 'sanity.types';
+import type { PEventsQueryResult } from 'sanity.types';
 import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 import {
 	formatRichDate,
-	getRichDateDaysUntil,
+	getDaysUntilEvent,
 	getRichDateInstant,
 	getRichDateYearMonth,
 	isEventEnded,
@@ -22,7 +22,7 @@ import {
 } from '@/lib/image-utils';
 import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { interpolate, pickPlural } from '@/lib/dictionary';
+import { formatDaysUntilLabel, interpolate } from '@/lib/dictionary';
 import { localizePath } from '@/lib/i18n';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 
@@ -43,18 +43,6 @@ const eventRowAnim = {
 // How often the ended/days-until state is re-evaluated once mounted, so a row
 // dims at its end time without the visitor reloading.
 const CLOCK_TICK_MS = 60 * 1000;
-
-// How far ahead an event still earns a "today"/"in N days" pill.
-const DAYS_UNTIL_PILL_WINDOW = 3;
-
-function getDaysUntilEvent(
-	eventDatetime: RichDate | null | undefined,
-	currentDate: Date
-): number | null {
-	const diffDays = getRichDateDaysUntil(eventDatetime, currentDate);
-	if (diffDays === null) return null;
-	return diffDays >= 0 && diffDays <= DAYS_UNTIL_PILL_WINDOW ? diffDays : null;
-}
 
 // Typed off the QUERY result, not the raw `PEvent` document type: pEvent is
 // field-level localized, so on the document every prose field is an
@@ -399,13 +387,7 @@ export function PageEvents({ data }: PageEventsProps) {
 											key={`in-${daysUntil}-day`}
 											data={{
 												eventStatus: {
-													title:
-														daysUntil === 0
-															? t.status.today
-															: interpolate(
-																	pickPlural(t.daysUntil, daysUntil),
-																	{ count: daysUntil }
-																),
+													title: formatDaysUntilLabel(daysUntil, t),
 												},
 											}}
 										/>

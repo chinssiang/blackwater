@@ -204,6 +204,29 @@
 		--h-header: 42px;
 		--s-section: 80px;
 
+		/* Heading sizes. Fluid because containers run to --container-max (2000px)
+		   while the type used to be a flat pixel value at every width, so a
+		   heading that read correctly on a laptop was a caption on a large
+		   display. The minimums are the previous fixed values, so nothing shrinks
+		   -- with ONE exception: `.wysiwyg h1` was 30px and now floors at 28px
+		   (`--t-size-h1`'s minimum, which is `.t-h-1`'s old value), so an in-prose
+		   h1 loses 2px below ~490px. Accepted deliberately: two sizes for one role
+		   is the drift these tokens exist to end, and 28px is the value the page
+		   titles already used.
+
+		   Declared here rather than inline in each rule because two scales need
+		   them -- the `t-h-*` component tokens below and the `.wysiwyg` prose
+		   headings. Those were 28px/24px and 30px/24px respectively for the same
+		   two roles, which is how a `faqBlock` heading ended up 50% larger than
+		   the `eventsBlock` heading beside it on the same page.
+
+		   h1 and h2 ONLY. The third heading pair is still split -- `.t-h-3` is
+		   16px and `.wysiwyg h3` is 20px -- so the section-heading-to-card-title
+		   ratio varies with the viewport and is not tunable from here. Joining it
+		   needs a call on which of the two sizes wins. */
+		--t-size-h1: clamp(1.75rem, 1.49rem + 1.13vw, 2.5rem);
+		--t-size-h2: clamp(1.5rem, 1.37rem + 0.56vw, 1.875rem);
+
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
 		--width-md: min(100vw - calc(var(--s-contain) * 2), var(--container-md));
 		--width-lg: min(100vw - calc(var(--s-contain) * 2), var(--container-lg));
@@ -417,16 +440,16 @@
 		h1 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 30px;
-			line-height: 0.9;
+			font-size: var(--t-size-h1);
+			line-height: 1.1;
 			letter-spacing: -0.04em;
 		}
 
 		h2 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 24px;
-			line-height: 0.9;
+			font-size: var(--t-size-h2);
+			line-height: 1;
 			letter-spacing: -0.02em;
 		}
 
@@ -556,7 +579,7 @@
 	.t-h-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 28px;
+		font-size: var(--t-size-h1);
 		line-height: 1.1;
 		letter-spacing: -0.04em;
 	}
@@ -564,8 +587,12 @@
 	.t-h-2 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 24px;
-		line-height: 0.9;
+		font-size: var(--t-size-h2);
+		/* Was 0.9. A line box shorter than the type clips ascenders the moment a
+		   heading wraps, and this token now carries every page-module section
+		   heading (SectionShell), which wraps far more often than the two single
+		   line call sites it had before. 1 is still very tight. */
+		line-height: 1;
 		letter-spacing: -0.02em;
 	}
 

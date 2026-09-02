@@ -49,7 +49,9 @@ export default function FaqBlock({ data, className }: FaqBlockProps) {
 			{/* Rendered here rather than through SectionShell's `heading` prop: inside
 			    `wysiwyg` the h2 picks up this module's prose styling, which is what it
 			    has always looked like. The shell's own heading is the bare
-			    `t-h-3 uppercase` the events and products strips use. */}
+			    `t-h-2 uppercase` the events and products strips use. Both paths read
+			    --t-size-h2, so the two are the same size at every viewport -- they
+			    were not until the prose scale and the token scale were joined. */}
 			{heading && <h2>{heading}</h2>}
 			<Accordion type="single" collapsible>
 				{visible.map((item, i) => {

@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { RichDate } from 'sanity.types';
-import { isEventEnded, selectUpcomingEvents } from './event-date';
+import {
+	getDaysUntilEvent,
+	isEventEnded,
+	selectUpcomingEvents,
+} from './event-date';
 
 // Everything is anchored in Asia/Taipei (UTC+8), the timezone the events are
 // authored in, and `now` is fixed so the suite does not drift with the clock.
@@ -49,6 +53,35 @@ describe('isEventEnded', () => {
 
 	it('never ends an event with no usable date', () => {
 		expect(isEventEnded(null, null, NOW)).toBe(false);
+	});
+});
+
+describe('getDaysUntilEvent', () => {
+	// Shared by the /events rows and the home-page strip, so the window has to
+	// mean the same thing in both places.
+	it('counts whole Taipei calendar days, not 24-hour spans', () => {
+		// 4 hours later on the clock, but the next calendar day in Taipei.
+		expect(getDaysUntilEvent(taipei('2026-08-31T02:00'), NOW)).toBe(1);
+	});
+
+	it('reports an event later today as 0', () => {
+		expect(getDaysUntilEvent(taipei('2026-08-30T23:00'), NOW)).toBe(0);
+	});
+
+	it('includes the far edge of the window', () => {
+		expect(getDaysUntilEvent(taipei('2026-09-02T09:00'), NOW)).toBe(3);
+	});
+
+	it('returns null beyond the window rather than a count', () => {
+		expect(getDaysUntilEvent(taipei('2026-09-03T09:00'), NOW)).toBeNull();
+	});
+
+	it('returns null for a past event', () => {
+		expect(getDaysUntilEvent(taipei('2026-08-29T09:00'), NOW)).toBeNull();
+	});
+
+	it('returns null for an undated event', () => {
+		expect(getDaysUntilEvent(null, NOW)).toBeNull();
 	});
 });
 

@@ -125,6 +125,29 @@ export function getRichDateDaysUntil(
 	return Math.round((toUtcDays(instant) - toUtcDays(now)) / 86_400_000);
 }
 
+/**
+ * How far ahead an event still earns a "today" / "in N days" cue.
+ *
+ * Lives here rather than beside either call site: `/events` and the home-page
+ * `eventsBlock` both render this cue, and a window that differs between them is
+ * the same event described two ways on two pages.
+ */
+const DAYS_UNTIL_PILL_WINDOW = 3;
+
+/**
+ * `getRichDateDaysUntil` narrowed to the pill window: the day count when the
+ * event is between today and DAYS_UNTIL_PILL_WINDOW days away, otherwise null.
+ * Past events are excluded too, so callers do not have to re-check.
+ */
+export function getDaysUntilEvent(
+	eventDatetime: RichDate | null | undefined,
+	currentDate: Date
+): number | null {
+	const diffDays = getRichDateDaysUntil(eventDatetime, currentDate);
+	if (diffDays === null) return null;
+	return diffDays >= 0 && diffDays <= DAYS_UNTIL_PILL_WINDOW ? diffDays : null;
+}
+
 /** Rendered when an eventsBlock's editor never set a count. */
 const DEFAULT_EVENT_LIMIT = 5;
 

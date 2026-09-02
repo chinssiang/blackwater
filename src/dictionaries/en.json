@@ -36,6 +36,7 @@
 			"other": "in {count} days"
 		},
 		"emptyMonth": "No events for this month",
+		"viewAll": "All events",
 		"carousel": {
 			"label": "Upcoming events",
 			"previous": "Previous events",
