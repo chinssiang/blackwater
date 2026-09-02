@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Dialog } from 'radix-ui';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { SiteDataQueryResult } from 'sanity.types';
+import ChromeButton from '@/components/ChromeButton';
 import CustomLink from '@/components/CustomLink';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
@@ -121,15 +122,17 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 
 	return (
 		<Dialog.Root open={open} onOpenChange={setOpen} modal={true}>
-			<Dialog.Trigger
-				className={cn(
-					't-b-2 flex cursor-pointer items-center gap-1 uppercase lg:hidden justify-between focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2',
-					locale === 'en' ? 'min-w-14' : 'min-w-11'
-				)}
-				aria-label={open ? t.closeMenu : t.openMenu}
-			>
-				<AnimatedMenuIcon open={open} reduce={reduce} />
-				<span>{t.menu}</span>
+			<Dialog.Trigger asChild>
+				<ChromeButton
+					className={cn(
+						'justify-between lg:hidden',
+						locale === 'en' ? 'min-w-14' : 'min-w-11'
+					)}
+					aria-label={open ? t.closeMenu : t.openMenu}
+				>
+					<AnimatedMenuIcon open={open} reduce={reduce} />
+					<span>{t.menu}</span>
+				</ChromeButton>
 			</Dialog.Trigger>
 
 			<Dialog.Portal forceMount>
@@ -160,15 +163,17 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 										<WordmarkSvg className="h-full" />
 										<span className="sr-only">{siteTitle}</span>
 									</Link>
-									<Dialog.Close
-										className={cn(
-											't-b-2 ml-auto flex cursor-pointer items-center gap-1 uppercase justify-between',
-											locale === 'en' ? 'min-w-14' : 'min-w-11'
-										)}
-										aria-label={t.closeMenu}
-									>
-										<AnimatedMenuIcon open={open} reduce={reduce} />
-										<span>{t.close}</span>
+									<Dialog.Close asChild>
+										<ChromeButton
+											className={cn(
+												'ml-auto justify-between',
+												locale === 'en' ? 'min-w-14' : 'min-w-11'
+											)}
+											aria-label={t.closeMenu}
+										>
+											<AnimatedMenuIcon open={open} reduce={reduce} />
+											<span>{t.close}</span>
+										</ChromeButton>
 									</Dialog.Close>
 								</div>
 

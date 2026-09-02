@@ -1,5 +1,6 @@
 'use client';
 
+import ChromeButton from '@/components/ChromeButton';
 import { useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
 import CartCountBadge from './CartCountBadge';
@@ -20,8 +21,7 @@ export default function CartButton() {
 	const count = cart?.totalQuantity ?? 0;
 
 	return (
-		<button
-			type="button"
+		<ChromeButton
 			onClick={() => setOpen(true)}
 			// The label carries the count, because aria-label replaces the text
 			// content outright — without it a screen reader hears "Open cart"
@@ -33,14 +33,17 @@ export default function CartButton() {
 					? `${t.open}, ${interpolate(pickPlural(t.itemCount, count), { count })}`
 					: t.open
 			}
-			// `relative` so the badge can hang off the label's top-right corner.
-			// The button box is exactly the label, so no extra wrapper is needed.
-			className="t-b-2 relative flex cursor-pointer items-center uppercase focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-2 max-lg:mr-3"
+			className="max-lg:mr-3"
 		>
-			{t.title}
-			{count > 0 && (
-				<CartCountBadge count={count} className="absolute -top-2 -right-4" />
-			)}
-		</button>
+			{/* `relative` belongs on the label, not the button: ChromeButton fills
+			    the header row, and anchored to that the badge would hang off the top
+			    of the header rather than off the word. */}
+			<span className="relative inline-flex">
+				{t.title}
+				{count > 0 && (
+					<CartCountBadge count={count} className="absolute -top-2 -right-4" />
+				)}
+			</span>
+		</ChromeButton>
 	);
 }

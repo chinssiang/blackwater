@@ -158,6 +158,7 @@
 		"open": "Open cart",
 		"close": "Close cart",
 		"empty": "Your cart is empty.",
+		"browseProducts": "Browse products",
 		"addToCart": "Add to cart",
 		"adding": "Adding…",
 		"added": "Added to cart",
@@ -166,14 +167,16 @@
 		"subtotal": "Subtotal",
 		"shippingNote": "Shipping and taxes are calculated at checkout.",
 		"quantity": "Quantity",
-		"increase": "Increase quantity",
-		"decrease": "Decrease quantity",
+		"increaseAriaLabel": "Increase quantity of {product}",
+		"decreaseAriaLabel": "Decrease quantity of {product}",
 		"remove": "Remove",
 		"removeAriaLabel": "Remove {product} from cart",
 		"itemCount": { "one": "{count} item", "other": "{count} items" },
 		"stockLimited": "Only {count} left in stock",
-		"errorHeading": "Something went wrong",
-		"errorBody": "Your cart could not be updated. Please try again."
+		"errorHeading": "We couldn't update your cart",
+		"errorBody": "Please try again in a moment.",
+		"loadError": "We couldn't load your cart.",
+		"retry": "Try again"
 	},
 	"newsletter": {
 		"emailLabel": "Email address",
