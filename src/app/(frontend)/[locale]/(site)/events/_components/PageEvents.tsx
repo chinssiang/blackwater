@@ -9,17 +9,17 @@ import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 import {
 	formatRichDate,
 	getDaysUntilEvent,
-	getRichDateYearMonth,
+	getTodayKey,
+	groupEventsByDay,
 	isEventEnded,
 } from '@/lib/event-date';
 import {
 	formatDayKey,
 	fromMonthIndex,
-	getMonthRange,
-	getTodayKey,
-	groupEventsByDay,
 	getDayKeyYearMonth,
+	monthStartKey,
 	toMonthIndex,
+	type DayKey,
 } from '@/lib/calendar';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
@@ -87,6 +87,11 @@ export function PageEvents({ data }: PageEventsProps) {
 	const [selectedMonthIndex, setSelectedMonthIndex] = useState<number | null>(
 		null
 	);
+	// The other half of the calendar's cursor. It lives here rather than in
+	// <EventsCalendar> because Radix unmounts the inactive tab panel, so a
+	// child-owned selection would be discarded every time the visitor looked at
+	// the list — the same "keeps your place" promise the month above makes.
+	const [selectedDay, setSelectedDay] = useState<DayKey | null>(null);
 
 	useEffect(() => {
 		const timer = setInterval(() => setCurrentDate(new Date()), CLOCK_TICK_MS);
@@ -96,20 +101,24 @@ export function PageEvents({ data }: PageEventsProps) {
 	// Grouped here rather than on the server: the page already serializes
 	// `eventList` into this component's props, so a second pre-grouped copy of
 	// every event was travelling in the same payload to say the same thing.
+	//
+	// This is the ONLY timezone-aware pass over the list. Everything below is
+	// derived from these day keys with string and integer maths, because a key's
+	// `yyyy-MM` prefix is by construction the month the event falls in, in the
+	// timezone it was authored in — reading each event again to ask for its month
+	// would be the same Intl work a second time for the same answer.
+	const eventsByDay = useMemo(() => groupEventsByDay(eventList), [eventList]);
+
 	const eventsByMonth = useMemo(() => {
 		const byMonth = new Map<number, EventListItem[]>();
-		for (const event of eventList || []) {
-			// Timezone-aware, so an event just after midnight in Taipei is filed
-			// under the month it happens in there, not the runtime's.
-			const yearMonth = getRichDateYearMonth(event.eventDatetime);
-			if (!yearMonth) continue;
-			const index = toMonthIndex(yearMonth);
+		for (const [dayKey, events] of eventsByDay) {
+			const index = toMonthIndex(getDayKeyYearMonth(dayKey));
 			const bucket = byMonth.get(index);
-			if (bucket) bucket.push(event);
-			else byMonth.set(index, [event]);
+			if (bucket) bucket.push(...events);
+			else byMonth.set(index, [...events]);
 		}
 		return byMonth;
-	}, [eventList]);
+	}, [eventsByDay]);
 
 	// Sorted explicitly rather than trusting insertion order: GROQ orders by the
 	// absolute instant while these buckets are civil months, and the two can
@@ -119,18 +128,19 @@ export function PageEvents({ data }: PageEventsProps) {
 		[eventsByMonth]
 	);
 
-	const eventsByDay = useMemo(() => groupEventsByDay(eventList), [eventList]);
+	const todayMonthIndex = toMonthIndex(
+		getDayKeyYearMonth(getTodayKey(currentDate))
+	);
 
 	// How far the calendar can page in each direction. The list has its own
 	// bounds (the months that hold events); this one also covers the empty
-	// months between them, which the grid can legitimately show.
-	const monthRange = useMemo(
-		() => getMonthRange(eventList, currentDate),
-		// Same reasoning as `defaultMonthIndex` below: recomputing the bounds on
-		// every clock tick would be churn for a value that only moves at midnight.
-		// eslint-disable-next-line react-hooks/exhaustive-deps
-		[eventList]
-	);
+	// months between them, which the grid can legitimately show. Today's month is
+	// always inside it, so a calendar with no events near now still opens on a
+	// real month rather than on a distant one.
+	const monthRange = {
+		min: Math.min(todayMonthIndex, monthsWithEvents[0] ?? todayMonthIndex),
+		max: Math.max(todayMonthIndex, monthsWithEvents.at(-1) ?? todayMonthIndex),
+	};
 
 	const defaultMonthIndex = useMemo(() => {
 		const upcoming = monthsWithEvents.find((index) =>
@@ -144,10 +154,7 @@ export function PageEvents({ data }: PageEventsProps) {
 		if (upcoming !== undefined) return upcoming;
 		// All events are in the past -> open on the most recent month; with no
 		// events at all, on the month the visitor is actually in.
-		return (
-			monthsWithEvents.at(-1) ??
-			toMonthIndex(getDayKeyYearMonth(getTodayKey(currentDate)))
-		);
+		return monthsWithEvents.at(-1) ?? todayMonthIndex;
 		// `currentDate` is deliberately omitted: the landing month is a first-render
 		// decision. Recomputing it on a clock tick would move the view out from
 		// under someone browsing a month they had not explicitly selected.
@@ -187,7 +194,7 @@ export function PageEvents({ data }: PageEventsProps) {
 			return next >= monthRange.min && next <= monthRange.max ? next : null;
 		}
 		return direction < 0
-			? (monthsWithEvents.filter((index) => index < currentMonthIndex).at(-1) ??
+			? (monthsWithEvents.findLast((index) => index < currentMonthIndex) ??
 					null)
 			: (monthsWithEvents.find((index) => index > currentMonthIndex) ?? null);
 	};
@@ -202,11 +209,10 @@ export function PageEvents({ data }: PageEventsProps) {
 	const hasPrevious = stepMonth(-1) !== null;
 	const hasNext = stepMonth(1) !== null;
 
-	const currentMonth = fromMonthIndex(currentMonthIndex);
 	// From the month itself, not from an event inside it: an empty month has no
 	// event to take a name from, and the calendar can display one.
 	const monthYearDisplay = formatDayKey(
-		`${currentMonth.year}-${String(currentMonth.month + 1).padStart(2, '0')}-01`,
+		monthStartKey(fromMonthIndex(currentMonthIndex)),
 		t.monthYearFormat,
 		dateFnsLocale
 	);
@@ -280,9 +286,11 @@ export function PageEvents({ data }: PageEventsProps) {
 
 				<TabsContent value="calendar">
 					<EventsCalendar
-						month={currentMonth}
+						monthIndex={currentMonthIndex}
 						eventsByDay={eventsByDay}
 						currentDate={currentDate}
+						selectedDay={selectedDay}
+						onSelectDay={setSelectedDay}
 					/>
 				</TabsContent>
 

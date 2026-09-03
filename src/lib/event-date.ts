@@ -1,6 +1,9 @@
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import type { Locale } from 'date-fns';
 import type { RichDate } from 'sanity.types';
+// Type-only, so this stays a leaf at runtime: `calendar.ts` owns the shape of a
+// civil date, this file owns which timezone a stored value is read in.
+import type { DayKey } from '@/lib/calendar';
 
 const FALLBACK_TIMEZONE = 'Asia/Taipei';
 
@@ -49,6 +52,68 @@ export function getRichDateYearMonth(
 	const yyyyMM = formatInTimeZone(value.utc, timezone, 'yyyy-MM');
 	const [year, month] = yyyyMM.split('-').map(Number);
 	return { year, month: month - 1 };
+}
+
+/**
+ * The civil date a `richDate` falls on, in the event's OWN stored timezone.
+ *
+ * The day-granular sibling of `getRichDateYearMonth` above, and the reduction
+ * the calendar grid buckets by. The event's timezone rather than the viewer's
+ * is the whole point: an event authored for 07:00 in Taipei belongs on the 5th
+ * for everyone looking at it, including a viewer in Los Angeles for whom that
+ * instant is still the 4th.
+ */
+export function getRichDateDayKey(
+	value: RichDate | null | undefined
+): DayKey | null {
+	// Via `getRichDateInstant` so an unparseable `utc` is rejected here rather
+	// than thrown out of `formatInTimeZone`.
+	const instant = getRichDateInstant(value);
+	if (!instant) return null;
+	return formatInTimeZone(
+		instant,
+		value?.timezone || FALLBACK_TIMEZONE,
+		'yyyy-MM-dd'
+	);
+}
+
+/**
+ * Today's civil date, in the timezone the events are read in.
+ *
+ * `now` is a parameter for the same reason it is on `isEventEnded`. The
+ * timezone defaults to the club's rather than the viewer's so the calendar's
+ * "today" marker lands on the same cell as an event starting at 07:00 Taipei —
+ * marking it by the viewer's timezone is exactly the confusion it exists to
+ * avoid.
+ */
+export function getTodayKey(now: Date, timezone = FALLBACK_TIMEZONE): DayKey {
+	return formatInTimeZone(now, timezone, 'yyyy-MM-dd');
+}
+
+/**
+ * Events bucketed by the civil day they start on, in input order.
+ *
+ * Start day only, deliberately: an event with an `endDatetime` days later would
+ * otherwise paint a band across the calendar grid, and the multi-day events
+ * this has to show are race weekends and training blocks — things a visitor
+ * looks up by when they BEGIN. A spanning-bar layout is a different component,
+ * not a flag on this one.
+ *
+ * Input order is preserved (the queries hand us events ascending by start
+ * instant), so each day's list reads chronologically without a second sort.
+ */
+export function groupEventsByDay<T extends { eventDatetime?: RichDate | null }>(
+	events: readonly T[] | null | undefined
+): Map<DayKey, T[]> {
+	const byDay = new Map<DayKey, T[]>();
+	for (const event of events || []) {
+		const key = getRichDateDayKey(event.eventDatetime);
+		if (!key) continue;
+		const bucket = byDay.get(key);
+		if (bucket) bucket.push(event);
+		else byDay.set(key, [event]);
+	}
+	return byDay;
 }
 
 /**

@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import type { RichDate } from 'sanity.types';
 import {
 	getDaysUntilEvent,
+	getRichDateDayKey,
+	getTodayKey,
+	groupEventsByDay,
 	isEventEnded,
 	selectUpcomingEvents,
 } from './event-date';
@@ -155,5 +158,93 @@ describe('selectUpcomingEvents', () => {
 		expect(selectUpcomingEvents(many, { now: NOW, limit: 3 })).toHaveLength(3);
 		// `?? `, not `||` — a stored 0 is an answer, not an absence.
 		expect(selectUpcomingEvents(many, { now: NOW, limit: 0 })).toHaveLength(0);
+	});
+});
+
+/** The same wall-clock time authored in Los Angeles instead. */
+function losAngeles(local: string): RichDate {
+	return {
+		_type: 'richDate',
+		local,
+		utc: new Date(`${local}:00-07:00`).toISOString(),
+		timezone: 'America/Los_Angeles',
+		offset: -420,
+	};
+}
+
+describe('getRichDateDayKey', () => {
+	it("buckets by the event's own timezone, not the runtime's", () => {
+		// 07:00 Taipei is 23:00 UTC the PREVIOUS day. Bucketing by a runtime
+		// calendar would file this run under the 4th on a UTC server.
+		expect(getRichDateDayKey(taipei('2026-09-05T07:00'))).toBe('2026-09-05');
+	});
+
+	it('keeps a late-night event on its own local date', () => {
+		// 23:30 Taipei is 15:30 UTC the same day, so this one only breaks the
+		// other way — a viewer in UTC+13 would call it the 6th.
+		expect(getRichDateDayKey(taipei('2026-09-05T23:30'))).toBe('2026-09-05');
+	});
+
+	it('honours a different stored timezone on the same instant', () => {
+		// 2026-09-05T07:00-07:00 is 2026-09-05T22:00 in Taipei: same instant,
+		// and each event keeps the civil date it was authored for.
+		expect(getRichDateDayKey(losAngeles('2026-09-05T07:00'))).toBe(
+			'2026-09-05'
+		);
+	});
+
+	it('returns null when there is no usable instant', () => {
+		expect(getRichDateDayKey(null)).toBeNull();
+		expect(getRichDateDayKey({ _type: 'richDate' })).toBeNull();
+		expect(
+			getRichDateDayKey({ _type: 'richDate', utc: 'not-a-date' })
+		).toBeNull();
+	});
+});
+
+describe('getTodayKey', () => {
+	it("resolves today in the events' timezone, not the runtime one", () => {
+		// 2026-09-04T20:00 UTC is already the 5th in Taipei.
+		expect(getTodayKey(new Date('2026-09-04T20:00:00Z'), TZ)).toBe(
+			'2026-09-05'
+		);
+	});
+});
+
+describe('groupEventsByDay', () => {
+	const events = [
+		{ _id: 'a', eventDatetime: taipei('2026-09-05T07:00') },
+		{ _id: 'b', eventDatetime: taipei('2026-09-05T19:30') },
+		{ _id: 'c', eventDatetime: taipei('2026-09-12T07:00') },
+		{ _id: 'd', eventDatetime: null },
+	];
+
+	it('buckets by start day and keeps the query order within a day', () => {
+		const byDay = groupEventsByDay(events);
+		expect(byDay.get('2026-09-05')?.map((e) => e._id)).toEqual(['a', 'b']);
+		expect(byDay.get('2026-09-12')?.map((e) => e._id)).toEqual(['c']);
+	});
+
+	it('drops undated events rather than inventing a day for them', () => {
+		const byDay = groupEventsByDay(events);
+		expect([...byDay.values()].flat().map((e) => e._id)).not.toContain('d');
+	});
+
+	it('buckets a multi-day event on its start day only', () => {
+		const byDay = groupEventsByDay([
+			{
+				_id: 'stage-race',
+				eventDatetime: taipei('2026-09-05T07:00'),
+				endDatetime: taipei('2026-09-07T18:00'),
+			},
+		]);
+		expect(byDay.get('2026-09-05')?.map((e) => e._id)).toEqual(['stage-race']);
+		expect(byDay.has('2026-09-06')).toBe(false);
+		expect(byDay.has('2026-09-07')).toBe(false);
+	});
+
+	it('handles an empty or missing list', () => {
+		expect(groupEventsByDay([]).size).toBe(0);
+		expect(groupEventsByDay(null).size).toBe(0);
 	});
 });

@@ -1,34 +1,29 @@
 import { formatInTimeZone } from 'date-fns-tz';
 import type { Locale as DateFnsLocale } from 'date-fns';
-import type { RichDate } from 'sanity.types';
-import { getRichDateInstant } from '@/lib/event-date';
 
 /**
- * The month-grid maths behind the /events calendar view.
+ * Month-grid geometry for the /events calendar view.
  *
- * Everything here is pure and takes its "now" as an argument, for the same
- * reason `event-date.ts` does: the page is prerendered hourly, so the server and
- * the browser resolve "today" at different instants and only the caller knows
- * which clock a given render should use.
+ * Pure calendar coordinates: a `DayKey` (a civil `yyyy-MM-dd` date, carrying no
+ * timezone) and a `YearMonth`. Nothing here knows what an event is or which
+ * timezone the club runs on — turning a stored `richDate` into one of these
+ * coordinates is `event-date.ts`'s job, beside every other rule about the
+ * timezone a value was authored in. That line is what keeps the club's fallback
+ * timezone defined exactly once: bucketing a day and judging an event ended
+ * cannot drift onto different defaults.
  *
- * The other rule this module keeps is the one `event-date.ts` sets out at
- * length: a day is a CIVIL date in a named timezone, never a `Date`'s runtime
- * calendar. Every day here is therefore a `yyyy-MM-dd` string, and the grid is
- * built from integer y/m/d arithmetic via `Date.UTC` rather than from local
- * `Date` mutators — so a Taipei event at 07:00 lands on the same cell whether
- * the page renders on a UTC server or in a browser in UTC-7.
+ * The arithmetic is deliberately integer y/m/d through `Date.UTC`, never local
+ * `Date` mutators, so a grid comes out identical whether it is built on a UTC
+ * server or in a browser in UTC-7.
  */
 
-/** The timezone the club's calendar is read in when an event carries none. */
-const FALLBACK_TIMEZONE = 'Asia/Taipei';
-
-/** A civil date, `yyyy-MM-dd`. The key every day in this module is bucketed by. */
+/** A civil date, `yyyy-MM-dd`. The key every day in the calendar is bucketed by. */
 export type DayKey = string;
 
 export type YearMonth = { year: number; month: number };
 
 export type CalendarDay = {
-	/** `yyyy-MM-dd` in the calendar's timezone. */
+	/** `yyyy-MM-dd`. */
 	key: DayKey;
 	/** Day of the month, 1-31. */
 	day: number;
@@ -47,19 +42,8 @@ export function toMonthIndex({ year, month }: YearMonth): number {
 }
 
 export function fromMonthIndex(index: number): YearMonth {
-	return {
-		year: Math.floor(index / 12),
-		month: index - Math.floor(index / 12) * 12,
-	};
-}
-
-/** `n` months from `value`, negative to go back. */
-export function addMonths(value: YearMonth, n: number): YearMonth {
-	return fromMonthIndex(toMonthIndex(value) + n);
-}
-
-export function isSameMonth(a: YearMonth, b: YearMonth): boolean {
-	return a.year === b.year && a.month === b.month;
+	const year = Math.floor(index / 12);
+	return { year, month: index - year * 12 };
 }
 
 /** A `yyyy-MM-dd` key from y/m/d parts, zero-padded. `month` is 0-based. */
@@ -70,24 +54,14 @@ function dayKeyFromParts(year: number, month: number, day: number): DayKey {
 }
 
 /**
- * The civil date a `richDate` falls on, in the event's OWN stored timezone.
+ * The first day of a month, as a key.
  *
- * The event's timezone rather than the viewer's is the whole point: an event
- * authored for 07:00 in Taipei belongs on the 5th of the month for everyone
- * looking at this calendar, including a viewer in Los Angeles for whom that
- * instant is still the 4th.
+ * Exists so no caller has to hand-build a key: the zero-padding is the contract
+ * every `DayKey` rests on, and it was being re-implemented in the two views that
+ * render a month name.
  */
-export function getRichDateDayKey(
-	value: RichDate | null | undefined
-): DayKey | null {
-	if (!value?.utc) return null;
-	const instant = getRichDateInstant(value);
-	if (!instant) return null;
-	return formatInTimeZone(
-		instant,
-		value.timezone || FALLBACK_TIMEZONE,
-		'yyyy-MM-dd'
-	);
+export function monthStartKey({ year, month }: YearMonth): DayKey {
+	return dayKeyFromParts(year, month, 1);
 }
 
 /** The `YearMonth` a day key belongs to. */
@@ -97,29 +71,21 @@ export function getDayKeyYearMonth(key: DayKey): YearMonth {
 }
 
 /**
- * Today's civil date in `timezone`, from an absolute instant.
- *
- * Takes the timezone explicitly so the "today" ring is drawn in the same
- * calendar the events are bucketed into. Marking today by the VIEWER's timezone
- * would put the ring on a different cell than the one an event starting at
- * 07:00 Taipei sits in, which is exactly the confusion the ring exists to avoid.
- */
-export function getTodayKey(now: Date, timezone = FALLBACK_TIMEZONE): DayKey {
-	return formatInTimeZone(now, timezone, 'yyyy-MM-dd');
-}
-
-/**
- * The days of the month grid, padded to whole weeks.
+ * The month grid, as whole weeks padded from the neighbouring months.
  *
  * `weekStartsOn` is the date-fns convention (0 = Sunday … 6 = Saturday) and
  * comes from the active date-fns locale, so the English calendar starts on
  * Sunday and the Chinese one on Monday without either being hard-coded here.
  *
- * Always six rows. A month grid whose height changes with the month makes the
+ * Rows rather than a flat list because rows are the only shape a month is ever
+ * rendered in, and returning them here is what keeps `DAYS_IN_WEEK` from
+ * escaping into a view that would then hold its own copy of it.
+ *
+ * Always six rows. A grid whose height changes with the month makes the
  * next/previous control jump the page under the pointer, and on mobile it moves
- * the agenda below the grid by up to a row's height on every step. The cost is
- * one trailing week of padding in short months, which is what every calendar app
- * pays for the same stability.
+ * the day panel below the grid by up to a row's height on every step. The cost
+ * is one trailing week of padding in short months, which is what every calendar
+ * app pays for the same stability.
  */
 const WEEKS_IN_GRID = 6;
 const DAYS_IN_WEEK = 7;
@@ -127,7 +93,7 @@ const DAYS_IN_WEEK = 7;
 export function buildMonthGrid(
 	{ year, month }: YearMonth,
 	weekStartsOn = 0
-): CalendarDay[] {
+): CalendarDay[][] {
 	// Integer arithmetic in UTC only — no local-timezone mutators, so the grid
 	// is identical wherever it is built. Day 0 of the next month is the last day
 	// of this one.
@@ -136,21 +102,25 @@ export function buildMonthGrid(
 	const leading =
 		(firstOfMonth.getUTCDay() - weekStartsOn + DAYS_IN_WEEK) % DAYS_IN_WEEK;
 
-	const days: CalendarDay[] = [];
-	for (let i = 0; i < WEEKS_IN_GRID * DAYS_IN_WEEK; i++) {
-		const dayOfMonth = i - leading + 1;
-		const cell = new Date(Date.UTC(year, month, dayOfMonth));
-		days.push({
-			key: dayKeyFromParts(
-				cell.getUTCFullYear(),
-				cell.getUTCMonth(),
-				cell.getUTCDate()
-			),
-			day: cell.getUTCDate(),
-			isCurrentMonth: dayOfMonth >= 1 && dayOfMonth <= daysInMonth,
-		});
+	const weeks: CalendarDay[][] = [];
+	for (let w = 0; w < WEEKS_IN_GRID; w++) {
+		const week: CalendarDay[] = [];
+		for (let d = 0; d < DAYS_IN_WEEK; d++) {
+			const dayOfMonth = w * DAYS_IN_WEEK + d - leading + 1;
+			const cell = new Date(Date.UTC(year, month, dayOfMonth));
+			week.push({
+				key: dayKeyFromParts(
+					cell.getUTCFullYear(),
+					cell.getUTCMonth(),
+					cell.getUTCDate()
+				),
+				day: cell.getUTCDate(),
+				isCurrentMonth: dayOfMonth >= 1 && dayOfMonth <= daysInMonth,
+			});
+		}
+		weeks.push(week);
 	}
-	return days;
+	return weeks;
 }
 
 /**
@@ -160,7 +130,7 @@ export function buildMonthGrid(
  * midnight IN UTC. Going through plain `format()` instead would resolve the
  * instant in the RUNTIME timezone, which turns 2026-09-05 into the 4th for
  * every viewer west of Greenwich — the same class of bug the day keys exist to
- * prevent, reintroduced at the last step. Every date string this calendar shows
+ * prevent, reintroduced at the last step. Every date string the calendar shows
  * comes through here.
  */
 export function formatDayKey(
@@ -197,57 +167,4 @@ export function buildWeekdayHeadings(weekStartsOn = 0): DayKey[] {
 			date.getUTCDate()
 		);
 	});
-}
-
-/**
- * Events bucketed by the civil day they start on, in insertion order.
- *
- * Start day only, deliberately: an event with an `endDatetime` days later would
- * otherwise paint a band across the grid, and the two multi-day events this
- * calendar has to show are a race weekend and a training block — things a
- * visitor looks up by when they BEGIN. A spanning-bar layout is a different
- * component, not a flag on this one.
- *
- * Input order is preserved (the query hands us events ascending by start
- * instant), so each day's list reads chronologically without a second sort.
- */
-export function groupEventsByDay<T extends { eventDatetime?: RichDate | null }>(
-	events: readonly T[] | null | undefined
-): Map<DayKey, T[]> {
-	const byDay = new Map<DayKey, T[]>();
-	for (const event of events || []) {
-		const key = getRichDateDayKey(event.eventDatetime);
-		if (!key) continue;
-		const bucket = byDay.get(key);
-		if (bucket) bucket.push(event);
-		else byDay.set(key, [event]);
-	}
-	return byDay;
-}
-
-/**
- * The span of months the calendar can page through, as month indices.
- *
- * Derived from the events themselves rather than from an arbitrary window: the
- * page fetches a bounded range (12 months back, everything forward), and paging
- * past either end would show empty grids with no way to know how far the
- * emptiness runs. `now`'s own month is always included, so a calendar with no
- * events near today still opens on a real month rather than on a distant one.
- */
-export function getMonthRange<T extends { eventDatetime?: RichDate | null }>(
-	events: readonly T[] | null | undefined,
-	now: Date,
-	timezone = FALLBACK_TIMEZONE
-): { min: number; max: number } {
-	const current = toMonthIndex(getDayKeyYearMonth(getTodayKey(now, timezone)));
-	let min = current;
-	let max = current;
-	for (const event of events || []) {
-		const key = getRichDateDayKey(event.eventDatetime);
-		if (!key) continue;
-		const index = toMonthIndex(getDayKeyYearMonth(key));
-		if (index < min) min = index;
-		if (index > max) max = index;
-	}
-	return { min, max };
 }
