@@ -5,7 +5,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 // Over a full-bleed hero the header is fully solid once this fraction of the
 // hero has scrolled out, not at the very last pixel: waiting for the end reads
 // as the header lagging behind content that has already gone.
-const HEADER_SOLID_AT = 0.7;
+const HEADER_SOLID_AT = 0.36;
 
 // The wave hero's background wrapper when it opens the page, and the owner of
 // the header's scroll progress. The contract is the `[data-site-header]` rules

@@ -128,7 +128,7 @@ export function EventTicket({
 			    icon's meaning. The stretched link plus the heading's ink change
 			    carries the affordance. */}
 			<div className="mt-3 px-4">
-				<h3 className="t-h-3 group-hover:text-foreground/60 leading-snug text-balance uppercase transition-colors">
+				<h3 className="t-l-0 group-hover:text-foreground/60 leading-snug text-balance uppercase transition-colors">
 					{heading}
 				</h3>
 				{/* `.t-spec` is line-height 1 and this wraps on the narrow mobile

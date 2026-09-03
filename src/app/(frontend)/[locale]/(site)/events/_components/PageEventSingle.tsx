@@ -148,14 +148,6 @@ export default function PageEventSingle({
 					)}
 				</div>
 
-				{/* The tear line from EventTicket, at page scale: it is what makes the
-				    detail page read as the same object as the card it came from. Full
-				    bleed within the gutter, dashed, aria-hidden -- decoration. */}
-				<div
-					aria-hidden
-					className="border-foreground/20 mt-10 border-t border-dashed"
-				/>
-
 				<div className="mt-6 flex flex-wrap items-center gap-x-8 gap-y-4">
 					<p className="t-h-3 uppercase">{formattedDate}</p>
 					{(stateLabel || hasArrayValue(statusList)) && (
@@ -263,11 +255,8 @@ function EventSpecs({
 	if (cells.length === 0) return null;
 
 	return (
-		// `reveal` with no delay, deliberately: the band carries the venue link and
-		// the facts a shopper of a run actually needs, so it must never be held
-		// invisible waiting for a cadence.
-		<section className="reveal p-x-max mt-12 lg:mt-16" style={REVEAL_SOFT}>
-			<dl className="border-foreground/20 flex flex-wrap gap-x-12 gap-y-8 border-t pt-6">
+		<section className="reveal p-x-max mt-6 lg:mt-8" style={REVEAL_SOFT}>
+			<dl className="border-foreground/20 flex flex-wrap gap-x-12 gap-y-8 border-b pb-6">
 				{cells.map((cell) => (
 					<div key={cell.label} className="min-w-0">
 						<dt className="t-spec text-foreground/60 mb-2 uppercase">

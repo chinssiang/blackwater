@@ -210,24 +210,34 @@
 		   three roles, which is how a `faqBlock` heading ended up 50% larger than
 		   the `eventsBlock` heading beside it on the same page.
 
-		   h1/h2 are fluid because containers run to --container-max (2000px), and
-		   both ramp across the same viewport window they always have -- h1
-		   ~371px..~1443px, h2 ~357px..~1429px -- flat outside it. Only the maxima
-		   moved: h1 tops out at 28px (was 34px) and h2 at 24px (was 27px), with the
-		   minima dropped to 24px and 22px so each stays a ramp rather than a
-		   constant. h3 down through `p` are flat literals, so the maxima are what
-		   set the top-end ladder: 28/24 is 1.17x and 24/20 (h2 over the flat h3)
+		   All three are fluid because containers run to --container-max (2000px),
+		   and all three ramp across the same viewport window -- h1 ~371px..~1443px,
+		   h2 ~357px..~1429px, h3 ~371px..~1443px -- flat outside it, so they start
+		   and stop moving together. The MAXIMA are what set the top-end ladder,
+		   where h4 down through `p` are flat literals: 28/24 is 1.17x and 24/20
 		   1.20x, against ~1.11x for every step below. Raising them again only
 		   widens the h3->h2 step -- it was 1.35x at 34/27 and 1.50x at the 40/30
-		   these started as -- so growing up here means making h3..p fluid too. h3 is
-		   flat because it is the anchor the pair is tuned against.
+		   these started as -- so growing up here means making h4..p fluid too.
 
-		   One accepted regression, now larger than it was: `.wysiwyg h1` was a flat
-		   30px and floors at 24px, so an in-prose h1 is smaller than before at every
-		   viewport, by 2px above ~1443px and the full 6px below ~371px. */
+		   h3's 20px maximum is unchanged, so desktop is pixel-identical to when h3
+		   was a flat literal and it is still the anchor that ladder is tuned
+		   against; only its 18px floor is new, because 20px reads too large on a
+		   phone for what is now the card-title token (event tickets, product cards,
+		   category labels, the event date and spec values). Its slope is
+		   deliberately h2's own 0.187vw -- both ramp exactly 2px across the window
+		   -- so the two move in lockstep.
+
+		   Three accepted regressions. `.wysiwyg h1` was a flat 30px and floors at
+		   24px, so an in-prose h1 is smaller than before at every viewport, by 2px
+		   above ~1443px and the full 6px below ~371px. h3's 18px floor is exactly
+		   `.wysiwyg h4`'s flat size, so in prose those two rungs read identically on
+		   a phone -- a deliberate trade, not an oversight; fix it by ramping h4 down
+		   too rather than by raising h3's floor. And the mobile h3->h2 step is now
+		   1.22x rather than 1.10x, which matches the widest step at the top end
+		   instead of being unusually tight. */
 		--t-size-h1: clamp(1.5rem, 1.414rem + 0.373vw, 1.75rem);
 		--t-size-h2: clamp(1.375rem, 1.333rem + 0.187vw, 1.5rem);
-		--t-size-h3: 20px;
+		--t-size-h3: clamp(1.125rem, 1.082rem + 0.187vw, 1.25rem);
 
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
 		--width-md: min(100vw - calc(var(--s-contain) * 2), var(--container-md));
@@ -467,14 +477,7 @@
 			letter-spacing: -0.02em;
 		}
 
-		h4 {
-			font-family: var(--font-default);
-			font-weight: 500;
-			font-size: 18px;
-			line-height: 1;
-			letter-spacing: -0.02em;
-		}
-
+		h4,
 		h5,
 		h6 {
 			font-family: var(--font-default);

@@ -137,7 +137,7 @@ export default function ProductCard({
 			<div className="mt-4 flex-1 space-y-3">
 				<div className="flex gap-2 justify-between items-center">
 					{brandLabel ? (
-						<p className="t-l-1 flex-1 text-foreground">{brandLabel}</p>
+						<p className="t-b-1 flex-1 text-foreground">{brandLabel}</p>
 					) : (
 						hasCategories && (
 							<CategoryLinks
@@ -154,9 +154,6 @@ export default function ProductCard({
 					{showCategoryTag && (
 						<CategoryLinks
 							categories={categories}
-							// /60 not /50: on the force-light product routes the
-							// background is #f2f2f2, where foreground/50 lands on
-							// #7e7e7e = 3.63:1 and fails AA. /60 is #676767 = 5.0:1.
 							className="t-spec -my-2 py-2 uppercase text-foreground/60"
 						/>
 					)}
