@@ -21,9 +21,21 @@ type Props = {
 	params: Promise<{ locale: string; slug: string }>;
 };
 
-export async function generateStaticParams() {
+// Takes the parent [locale] segment's param: pageProductSlugsQuery applies the
+// locale-visibility guard, so this has to run per locale rather than emit one
+// slug list for both. Its result type flows on its own -- `titleVisible` is a
+// plain const string, so interpolating it keeps the template-literal type that
+// indexes Sanity's query->result map. (What loses the type is a helper CALL in
+// a hole, e.g. locString(...) or ${eventCardFields} -- which is why the
+// single-document query below needs an explicit annotation and this does not.)
+export async function generateStaticParams({
+	params,
+}: {
+	params: { locale: string };
+}): Promise<{ slug: string | null }[]> {
 	const { data } = await sanityFetch({
 		query: pageProductSlugsQuery,
+		params: { locale: params.locale },
 		perspective: 'published',
 		stega: false,
 		// Without a tag this list caches forever under the catch-all 'sanity'
@@ -31,6 +43,7 @@ export async function generateStaticParams() {
 		// list and skip prerendering a newly published document.
 		tags: ['pProduct'],
 	});
+
 	return data ?? [];
 }
 

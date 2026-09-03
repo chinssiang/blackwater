@@ -29,7 +29,9 @@
 		"status": {
 			"today": "今天",
 			"ended": "已結束",
-			"tba": "待定"
+			"tba": "待定",
+			"postponed": "延期",
+			"cancelled": "取消"
 		},
 		"daysUntil": {
 			"one": "{count} 天後",
@@ -41,6 +43,37 @@
 			"label": "近期活動",
 			"previous": "上一批活動",
 			"next": "更多活動"
+		},
+		"related": {
+			"series": "{category} 的其他活動",
+			"seriesGeneric": "最新活動",
+			"venue": "{location} 的其他活動"
+		},
+		"detail": {
+			"location": "地點",
+			"goodToKnow": "注意事項",
+			"startFinish": "起終點",
+			"station": "第 {number} 站",
+			"gettingHere": "前往方式",
+			"headingOut": "離開方式",
+			"notes": "活動說明",
+			"flavorChallenge": "主題挑戰",
+			"exampleImageAlt": "{quest} 範例"
+		},
+		"spec": {
+			"venue": "地點",
+			"distance": "距離",
+			"distanceValue": "{km} 公里",
+			"type": "類型",
+			"entry": "費用",
+			"free": "免費",
+			"ends": "結束",
+			"eventType": {
+				"group-run": "團跑",
+				"race": "競賽",
+				"social": "社交",
+				"trail": "越野跑"
+			}
 		},
 		"dateFormat": "yyyy/MM/dd (iii) HH:mm",
 		"monthYearFormat": "yyyy年M月"

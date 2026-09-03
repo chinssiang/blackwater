@@ -29,7 +29,9 @@
 		"status": {
 			"today": "today",
 			"ended": "ended",
-			"tba": "TBA"
+			"tba": "TBA",
+			"postponed": "Postponed",
+			"cancelled": "Cancelled"
 		},
 		"daysUntil": {
 			"one": "in {count} day",
@@ -41,6 +43,37 @@
 			"label": "Upcoming events",
 			"previous": "Previous events",
 			"next": "More events"
+		},
+		"related": {
+			"series": "More in {category}",
+			"seriesGeneric": "Latest events",
+			"venue": "Also at {location}"
+		},
+		"detail": {
+			"location": "Location",
+			"goodToKnow": "Good to know",
+			"startFinish": "Start & Finish",
+			"station": "Station {number}",
+			"gettingHere": "Getting Here",
+			"headingOut": "Heading Out",
+			"notes": "Event Notes",
+			"flavorChallenge": "Flavor Challenge",
+			"exampleImageAlt": "Example of {quest}"
+		},
+		"spec": {
+			"venue": "Venue",
+			"distance": "Distance",
+			"distanceValue": "{km} km",
+			"type": "Type",
+			"entry": "Entry",
+			"free": "Free",
+			"ends": "Ends",
+			"eventType": {
+				"group-run": "Group run",
+				"race": "Race",
+				"social": "Social",
+				"trail": "Trail"
+			}
 		},
 		"dateFormat": "iii, MM.dd.yy, h:mm aaa",
 		"monthYearFormat": "MMMM yyyy"

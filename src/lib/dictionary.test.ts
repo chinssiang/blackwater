@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import en from '@/dictionaries/en.json';
 import zhTw from '@/dictionaries/zh_tw.json';
 import { LOCALES } from '@/lib/i18n';
+import { formatDateStatusLabel } from '@/lib/dictionary';
 
 // `Dictionary` is `typeof en`, so TypeScript only ever checks the English file.
 // A key added to en.json and forgotten in zh_tw.json compiles clean and arrives
@@ -55,5 +56,36 @@ describe('dictionaries', () => {
 			});
 			expect(blanks, `${locale}.json has blank values`).toEqual([]);
 		}
+	});
+});
+
+// The label shown in place of a date when the date is not firm. Shared because
+// the detail page, the /events rows and the ticket stub all render this field,
+// and before it existed the first translated it while the other two printed the
+// raw English schema value in both locales.
+describe('formatDateStatusLabel', () => {
+	const t = en.events;
+
+	it('translates the statuses the schema defines', () => {
+		expect(formatDateStatusLabel('postponed', t)).toBe(t.status.postponed);
+		expect(formatDateStatusLabel('cancelled', t)).toBe(t.status.cancelled);
+	});
+
+	it('uses the TBA wording for tba and for no status', () => {
+		expect(formatDateStatusLabel('tba', t)).toBe(t.status.tba);
+		expect(formatDateStatusLabel(null, t)).toBe(t.status.tba);
+		expect(formatDateStatusLabel(undefined, t)).toBe(t.status.tba);
+	});
+
+	it('never leaks a raw schema value into the page', () => {
+		// The behaviour this replaced was `dateStatus || t.status.tba`, which
+		// rendered an unmapped enum as its own untranslated identifier.
+		expect(formatDateStatusLabel('rescheduled', t)).toBe(t.status.tba);
+	});
+
+	it('resolves from the locale dictionary it is handed', () => {
+		expect(formatDateStatusLabel('postponed', zhTw.events)).toBe(
+			zhTw.events.status.postponed
+		);
 	});
 });

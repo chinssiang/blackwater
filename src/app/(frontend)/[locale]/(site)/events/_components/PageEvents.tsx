@@ -11,18 +11,20 @@ import {
 	getDaysUntilEvent,
 	getRichDateInstant,
 	getRichDateYearMonth,
+	isDateFirm,
 	isEventEnded,
 } from '@/lib/event-date';
 import { ArrowUpRight } from '@/components/SvgIcons';
+import { StatusItem } from '@/components/EventTicket';
 import { Button } from '@/components/ui/Button';
 import { fadeAnim } from '@/lib/animate';
-import {
-	buildRgbaCssString,
-	ensureAccessibleTextColor,
-} from '@/lib/image-utils';
 import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { formatDaysUntilLabel, interpolate } from '@/lib/dictionary';
+import {
+	formatDateStatusLabel,
+	formatDaysUntilLabel,
+	interpolate,
+} from '@/lib/dictionary';
 import { localizePath } from '@/lib/i18n';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 
@@ -337,9 +339,9 @@ export function PageEvents({ data }: PageEventsProps) {
 										}
 									)}
 								>
-									{(!dateStatus || dateStatus === 'confirmed') && eventDatetime
+									{isDateFirm(dateStatus) && eventDatetime
 										? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
-										: dateStatus || t.status.tba}
+										: formatDateStatusLabel(dateStatus, t)}
 
 									<Link
 										className={cn('p-fill', OVERLAY_LINK_FOCUS)}
@@ -385,6 +387,7 @@ export function PageEvents({ data }: PageEventsProps) {
 									{!eventHasEnded && daysUntil !== null && (
 										<StatusItem
 											key={`in-${daysUntil}-day`}
+											className="py-2"
 											data={{
 												eventStatus: {
 													title: formatDaysUntilLabel(daysUntil, t),
@@ -397,12 +400,13 @@ export function PageEvents({ data }: PageEventsProps) {
 											<StatusItem
 												key={item._key}
 												data={item}
-												className={cn(eventHasEnded ? 'opacity-30' : '')}
+												className={cn('py-2', eventHasEnded && 'opacity-30')}
 											/>
 										))}
 									{eventHasEnded && (
 										<StatusItem
 											key="ended"
+											className="py-2"
 											data={{ eventStatus: { title: t.status.ended } }}
 										/>
 									)}
@@ -415,39 +419,6 @@ export function PageEvents({ data }: PageEventsProps) {
 				<p className="py-8 text-center">{t.emptyMonth}</p>
 			)}
 		</div>
-	);
-}
-
-function StatusItem({ data, className }: { data: any; className?: string }) {
-	const { link, eventStatus } = data;
-
-	if (!eventStatus) return null;
-	const { title, statusTextColor, statusBgColor } = eventStatus || {};
-	return (
-		<span
-			className={cn(
-				'rounded-4xl py-2 px-2.5 uppercase relative flex items-center gap-0.5 t-b-2',
-				className
-			)}
-			style={{
-				color:
-					ensureAccessibleTextColor(statusTextColor, statusBgColor) ||
-					'var(--foreground)',
-				backgroundColor: buildRgbaCssString(statusBgColor) || 'var(--muted)',
-			}}
-		>
-			{title}
-			{link?.href && (
-				<>
-					<ArrowRight className="size-3" />
-					<CustomLink
-						className={cn('p-fill rounded-4xl', OVERLAY_LINK_FOCUS)}
-						link={link}
-						aria-label={title}
-					></CustomLink>
-				</>
-			)}
-		</span>
 	);
 }
 
