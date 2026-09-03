@@ -624,16 +624,26 @@ export const PAGE_MODULE_TAGS = [
 	'settingsBrandColors',
 ] as const;
 
-// Tags for upcomingEventsQuery: eventCardFields derefs locationRef-> and
-// statusList[].eventStatus-> plus its two colour documents, and the query adds
-// categories[0]-> on top of that fragment (pEventCategory). pEventsQuery shares
-// eventCardFields but NOT the category, so it must not carry that tag.
-export const UPCOMING_EVENTS_TAGS = [
+// The types eventCardFields dereferences: locationRef-> plus
+// statusList[].eventStatus-> and its two brand-colour documents. Composed into
+// each consumer's own list rather than restated per query, the way
+// PAGE_MODULE_TAGS serves pageModuleFields -- adding a deref to the fragment
+// then means editing one list, and under `revalidate: false` a type that is
+// dereferenced but untagged freezes that surface until the next deploy.
+//
+// `pEventCategory` is deliberately NOT here: pEventsQuery shares the fragment
+// but projects no category, so it must not carry that tag.
+export const EVENT_CARD_TAGS = [
 	'pEvent',
 	'gLocation',
-	'pEventCategory',
 	'pEventStatus',
 	'settingsBrandColors',
+] as const;
+
+// upcomingEventsQuery adds categories[0]-> on top of the fragment.
+export const UPCOMING_EVENTS_TAGS = [
+	...EVENT_CARD_TAGS,
+	'pEventCategory',
 ] as const;
 
 // `windowDays` rather than the raw `timeWindow` string: stega encodes invisible
@@ -1038,13 +1048,16 @@ const eventStatusListFields = `
 // of this fragment instead, because the home-page ticket does render it -- see
 // the note there.
 //
-// `slug` follows the same rule in the other direction: the home-page ticket no
-// longer links anywhere, so only pEventsQuery projects it, rather than putting
-// a slug nobody reads into every eventsBlock's payload.
+// `slug` IS projected here, unlike `categories`: every surface that renders a
+// ticket renders it as a link to the event -- the /events rows, the home-page
+// carousel and the event page's related strips, whose whole purpose is moving
+// between related runs -- so the fragment is what keeps the three from
+// disagreeing about whether a card opens anything.
 const eventCardFields = `
 	_id,
 	_type,
 	"title": ${locString('title')},
+	"slug": slug.current,
 	"subtitle": ${locString('subtitle')},
 	eventDatetime,
 	endDatetime,
@@ -1067,8 +1080,7 @@ export const pEventsQuery = defineQuery(`
 		${i18nSharingFields('noFallback', 'noFallback')},
 		"availableLocales": ${ALL_LOCALES_GROQ},
 		"eventList": *[_type == "pEvent" && eventDatetime.utc >= $cutoff && ${titleVisible}]{
-			${eventCardFields},
-			"slug": slug.current
+			${eventCardFields}
 		} | order(eventDatetime.utc asc),
 	}
 `);
@@ -1104,6 +1116,98 @@ export const upcomingEventsQuery = defineQuery(`
 	] | order(eventDatetime.utc asc)[0...12]{
 		${eventCardFields},
 		"category": ${locString('categories[0]->title')}
+	}
+`);
+
+// Same deref set as upcomingEventsQuery -- the shared fragment plus a category
+// projection -- but its own const, so the two queries stay free to diverge.
+export const RELATED_EVENTS_TAGS = [
+	...EVENT_CARD_TAGS,
+	'pEventCategory',
+] as const;
+
+// The event page's two related strips: other events in the same series (same
+// category) and other events at the same venue. One query with two projections
+// rather than two queries, so it is one round trip and one cache entry.
+//
+// Anchored on $slug -- the same params the page's own fetch already takes -- so
+// EventRelated owns its data instead of waiting on ids projected out of
+// pageEventSingleQuery. That is the composition rule: a component that needs
+// nothing from its parent's fetch can never be stuck behind it. It also means
+// `categoryTitle` and `locationName` for the two headings come back here rather
+// than being threaded down as props.
+//
+// Fetched by EventRelated, NOT nested in pageEventSingleQuery, and the reason is
+// tags rather than cache keys. /api/revalidate-tag fires revalidateTag(_type)
+// AND revalidateTag(`${_type}:${slug}`), and the page's own read is scoped to
+// `pEvent:${slug}` so publishing event B cannot expire event A's document. This
+// strip MUST expire when B changes, so it needs the broad `pEvent` tag --
+// nesting it would put that tag on the page's own fetch, which generateMetadata
+// awaits through the same cache(), and every publish would then invalidate the
+// metadata of all 178 event pages and pull 8 related rows just to read
+// `sharing`.
+//
+// NO WALL-CLOCK PARAM, deliberately. `order(eventDatetime.utc desc)` already
+// puts anything upcoming first, since a future event carries the largest
+// timestamp, and then walks back through the most recent past. The clock is
+// needed only to split those two halves for display, which orderByRelevance()
+// does in JS -- GROQ cannot, as it needs the event's own timezone and an
+// end-of-day fallback. So nothing rolls this cache key over daily.
+//
+// `^.^` in the series filter reaches the anchor document from inside the array
+// filter's own scope (one extra level), the same shape pageProductSingleQuery's
+// defaultRelatedProducts uses. Verified against both datasets.
+//
+// `!defined(^.categories[0]._ref)` is the fallback for the four events that
+// carry no category at all (bw-94-rr, 1602-fm, 139-cr, bw-96-sc -- the field is
+// unset, not an empty array, so `count(categories) == 0` does NOT find them):
+// the filter degrades to "the latest events overall" rather than matching
+// nothing. Three of the four have no venue either, so without this they are the
+// only pages that would render no strip whatsoever.
+//
+// The venue arm needs `defined(^.locationRef._ref)`, or an event with no
+// referenced venue matches every other event that also has none. It only ever
+// finds locationRef-backed venues; an event whose venue is the one-off
+// `location` string (141-cr, say) correctly gets no venue strip.
+//
+// The venue arm does NOT exclude category siblings in the filter, and that is
+// deliberate. Doing so looks like the obvious efficiency win -- 17 of the 34
+// venue-bearing events share both category and venue with their siblings, so
+// rows are fetched and then dropped by EventRelated's JS dedupe. But measured,
+// filtering them out in GROQ empties the venue strip on those same 17 of 34
+// events: "same programme, same venue, just older" is the most relevant set
+// there is, and the series arm cannot show it because those events fall outside
+// its own slice. So the dedupe stays in JS, where it only removes rows the
+// series strip is actually rendering.
+//
+// [0...6] rather than 8: every row returned becomes a rendered slide, in the
+// HTML and again in the inlined RSC payload, and the carousel shows 4 at its
+// widest (basis-1/4). The house default for an event strip is 5
+// (DEFAULT_EVENT_LIMIT in event-date.ts).
+//
+// eventCardFields is interpolated at the QUERY level, exactly as
+// upcomingEventsQuery does -- a sibling at the same depth, not a new level on
+// the eventStatusListFields -> linkFields -> resolvedHrefGroq chain. Do NOT
+// wrap either projection in a fragment; that is the level that kills the
+// extractor.
+export const relatedEventsQuery = defineQuery(`
+	*[_type == "pEvent" && slug.current == $slug && ${titleVisible}][0]{
+		"categoryTitle": ${locString('categories[0]->title')},
+		"locationName": ${locString('locationRef->name')},
+		"series": *[_type == "pEvent" && _id != ^._id && ${titleVisible}
+			&& (!defined(^.categories[0]._ref)
+				|| count((categories[]._ref)[@ in ^.^.categories[]._ref]) > 0)
+		] | order(eventDatetime.utc desc)[0...6]{
+			${eventCardFields},
+			"category": ${locString('categories[0]->title')}
+		},
+		"venue": *[_type == "pEvent" && _id != ^._id && ${titleVisible}
+			&& defined(^.locationRef._ref)
+			&& locationRef._ref == ^.locationRef._ref
+		] | order(eventDatetime.utc desc)[0...6]{
+			${eventCardFields},
+			"category": ${locString('categories[0]->title')}
+		}
 	}
 `);
 
@@ -1307,8 +1411,12 @@ export const pageProductIndexQuery = defineQuery(`
 	}
 `);
 
+// See the note on pageEventSlugsQuery. This is the one that actually bites
+// today: two published products carry a zh_tw title and no en title, so the
+// unguarded list prerendered /en/products/<slug> for both -- 73KB of noindexed
+// "Page not found" each, in the build output and reachable.
 export const pageProductSlugsQuery = defineQuery(`
-	*[_type == "pProduct" && defined(slug.current)]
+	*[_type == "pProduct" && defined(slug.current) && ${titleVisible}]
 	{"slug": slug.current}
 `);
 
@@ -1468,8 +1576,18 @@ export const pageProductsAllQuery = defineQuery(`
 	}
 `);
 
+// `titleVisible` here, not just `defined(slug.current)`: generateStaticParams
+// runs once per locale, and without the guard it returned every slug for both,
+// so a document visible in only one locale got a prerendered page in the other
+// -- where pageEventSingleQuery (which DOES carry the guard) returns null and
+// the route renders NotFoundContent at HTTP 200. The two queries in that route
+// have to agree about visibility or the build bakes in soft 404s.
+//
+// Measured on this dataset: 0 affected events (all 89 carry an en title, and
+// the guard accepts the en fallback), but 2 affected products -- see the same
+// guard on pageProductSlugsQuery.
 export const pageEventSlugsQuery = defineQuery(`
-	*[_type == "pEvent" && defined(slug.current)]
+	*[_type == "pEvent" && defined(slug.current) && ${titleVisible}]
 	{"slug": slug.current}
 `);
 

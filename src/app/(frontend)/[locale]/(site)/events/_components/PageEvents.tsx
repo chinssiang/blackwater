@@ -384,6 +384,7 @@ export function PageEvents({ data }: PageEventsProps) {
 									{!eventHasEnded && daysUntil !== null && (
 										<EventStatusPill
 											key={`in-${daysUntil}-day`}
+											className="py-2"
 											data={{
 												eventStatus: {
 													title: formatDaysUntilLabel(daysUntil, t),
@@ -396,12 +397,13 @@ export function PageEvents({ data }: PageEventsProps) {
 											<EventStatusPill
 												key={item._key}
 												data={item}
-												className={cn(eventHasEnded ? 'opacity-30' : '')}
+												className={cn('py-2', eventHasEnded && 'opacity-30')}
 											/>
 										))}
 									{eventHasEnded && (
 										<EventStatusPill
 											key="ended"
+											className="py-2"
 											data={{ eventStatus: { title: t.status.ended } }}
 										/>
 									)}

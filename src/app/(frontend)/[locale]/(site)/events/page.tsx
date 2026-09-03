@@ -3,7 +3,7 @@ import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundC
 import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
-import { pEventsQuery } from '@/sanity/lib/queries';
+import { EVENT_CARD_TAGS, pEventsQuery } from '@/sanity/lib/queries';
 import defineMetadata, {
 	normalizeLocales,
 	omitPageMetadata,
@@ -86,15 +86,11 @@ const getCachedEventsData = cache(
 		sanityFetch({
 			query: pEventsQuery,
 			params: { locale, cutoff: getEventsCutoff() },
-			// The card query derefs locationRef-> (gLocation) and statusList's
-			// eventStatus-> plus its color refs (pEventStatus, settingsBrandColors).
-			tags: [
-				'pEvents',
-				'pEvent',
-				'gLocation',
-				'pEventStatus',
-				'settingsBrandColors',
-			],
+			// EVENT_CARD_TAGS covers what eventCardFields dereferences; this page
+			// adds its own singleton on top. Composed rather than restated so a
+			// deref added to the fragment cannot be tagged on the other event
+			// surfaces and missed here.
+			tags: [...EVENT_CARD_TAGS, 'pEvents'],
 		})
 );
 
