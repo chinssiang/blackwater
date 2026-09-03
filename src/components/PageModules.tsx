@@ -5,13 +5,15 @@ import HeroBlock from './HeroBlock';
 import ProductsBlock from './ProductsBlock';
 import type { Locale } from '@/lib/i18n';
 
-// Freeform is 'use client', so splitting it out of the shared chunk is a real
-// saving. FaqBlock, HeroBlock and ProductsBlock are Server Components with no
-// client chunk to split, so they are imported statically above and the lazy
-// boundary would only add another suspend point for the stream to flush at.
-// EventsBlock is also a Server Component but now has a transitive client chunk
-// (embla, via EventsCarousel); it owns that split itself rather than exporting
-// the problem here, because the weight is the carousel's, not the module's.
+// FaqBlock and ProductsBlock are Server Components with no client chunk to
+// split, so they are imported statically. The other three carry client code,
+// and a dynamic() called from a Server Component -- this file's Freeform below,
+// and EventsBlock's dynamic(EventsCarousel) -- does NOT code-split: measured on
+// a production build, Freeform's and the carousel's code both ride in the
+// homepage and /[slug] route chunks, on pages that render neither. Only a
+// dynamic() inside a 'use client' module is a real boundary, which is how
+// HeroBlock reaches its canvas (HeroWaveLazy). The Freeform and EventsCarousel
+// calls are left as they are pending that same treatment.
 const Freeform = dynamic(() => import('./Freeform'));
 
 type PageModulesProps = {

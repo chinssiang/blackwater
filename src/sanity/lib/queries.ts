@@ -682,7 +682,10 @@ const eventsBlockField = `
 // interpolation depth as freeformField (portableTextContentFields → linkFields →
 // resolvedHrefGroq), which the extractor handles; the sectionAppearance block
 // below is spelled out verbatim for the reason given above it, not copy-paste
-// laziness.
+// laziness. `waveBackground` is resolved to a boolean in GROQ rather than
+// shipping the `backgroundEffect` string: draft mode stega-encodes strings, so
+// comparing against 'wave' in JS would need a stegaClean first -- the
+// windowDays / faqBlock.source treatment.
 const heroBlockField = `
 	_type,
 	_key,
@@ -691,6 +694,7 @@ const heroBlockField = `
 	paragraph[]{
 		${portableTextContentFields}
 	},
+	"waveBackground": backgroundEffect == 'wave',
 	// Narrower than imageBlockMetaFields, which the other image projections use.
 	// That fragment also pulls caption and a link projection, and this object has
 	// neither: hero-block.ts declares its customImage with hasCaptionOption false
@@ -699,15 +703,22 @@ const heroBlockField = `
 	// compiled query and, more to the point, one interpolation level off the
 	// pageHome/pageGeneral chain the note above is about.
 	// (No backticks in here: this comment sits inside a JS template literal.)
-	backgroundImage{
-		image{
-			${imageMetaFields}
-		},
-		customRatio,
-		imageMobile{
-			${imageMetaFields}
-		},
-		customRatioMobile
+	// Conditional on the effect: the schema hides the image while the wave is
+	// selected but keeps the data, and HeroBlock can never render it then, so
+	// the asset refs and lqip strings would be dead payload on every wave hero.
+	// A conditional, not a select() around a fragment, so no interpolation level
+	// is added to the chain the note above is about.
+	backgroundEffect != 'wave' => {
+		backgroundImage{
+			image{
+				${imageMetaFields}
+			},
+			customRatio,
+			imageMobile{
+				${imageMetaFields}
+			},
+			customRatioMobile
+		}
 	},
 	callToAction{
 		label,

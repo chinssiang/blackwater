@@ -1,5 +1,33 @@
 import { ImageIcon } from '@sanity/icons';
-import { defineField } from 'sanity';
+import {
+	defineField,
+	type FieldDefinitionBase,
+	type ObjectDefinition,
+} from 'sanity';
+
+// Explicit rather than inferred from the defaults: the rest is spread onto the
+// field definition, and an inferred type has no way to say so -- a caller
+// passing `hidden` was an excess-property error even though it worked at
+// runtime. Anything a field definition accepts passes through -- including the
+// field-only `fieldset`/`group`, which live on FieldDefinitionBase, not on
+// ObjectDefinition -- except what the factory owns (type, fields, icon,
+// preview; options are merged, not replaced) and `validation`: this object is
+// rendered inside page modules, where a validator cannot be wrapped in
+// moduleRule() and would block publishing a parked module (page-module.ts).
+// hero-block.ts passes `hidden` to collapse the whole image object while its
+// wave background is selected.
+type CustomImageProps = Partial<
+	Omit<
+		ObjectDefinition & FieldDefinitionBase,
+		'type' | 'fields' | 'options' | 'icon' | 'preview' | 'validation'
+	>
+> & {
+	hasMobileOption?: boolean;
+	hasCaptionOption?: boolean;
+	hasCropOption?: boolean;
+	hasLinkOption?: boolean;
+	options?: ObjectDefinition['options'];
+};
 
 export default function customImage({
 	title = 'Image',
@@ -10,7 +38,7 @@ export default function customImage({
 	hasLinkOption = false,
 	options = {},
 	...props
-} = {}) {
+}: CustomImageProps = {}) {
 	const crops = [
 		{ title: '1 : 1 (square)', value: 1 },
 		{ title: '5 : 7', value: 0.7142857143 },
@@ -84,8 +112,11 @@ export default function customImage({
 		],
 		preview: {
 			select: {
-				asset: 'imageBlock.image.asset',
-				originalFilename: 'imageBlock.image.asset.originalFilename',
+				// Relative to this object's own value, so no field-name prefix: the
+				// former `imageBlock.image.asset` never resolved and every image
+				// previewed as "Missing image".
+				asset: 'image.asset',
+				originalFilename: 'image.asset.originalFilename',
 				caption: 'caption',
 				customRatio: 'customRatio',
 			},

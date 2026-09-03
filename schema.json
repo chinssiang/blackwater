@@ -2745,6 +2745,23 @@
           },
           "optional": true
         },
+        "backgroundEffect": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "union",
+            "of": [
+              {
+                "type": "string",
+                "value": "none"
+              },
+              {
+                "type": "string",
+                "value": "wave"
+              }
+            ]
+          },
+          "optional": true
+        },
         "backgroundImage": {
           "type": "objectAttribute",
           "value": {

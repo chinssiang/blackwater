@@ -22,6 +22,12 @@ import { cn, SECTION_INSET, SECTION_INSET_START } from '@/lib/utils';
 // into EventsBlock would pull the primitive straight back into the static graph.
 // That is why the slides there are plain server-rendered divs.
 //
+// Measured 2026-09-03 on a production build, the paragraph above does not
+// hold: a dynamic() called from a Server Component does not code-split, and
+// this file's code sits in the homepage and /[slug] route chunks on pages with
+// no eventsBlock. A real boundary needs the dynamic() inside a 'use client'
+// module -- see HeroWaveLazy.tsx for the working shape. Follow-up.
+//
 // Reduced motion is the primitive's business now, not this file's.
 
 type EventsCarouselProps = {

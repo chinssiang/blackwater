@@ -210,19 +210,23 @@
 		   three roles, which is how a `faqBlock` heading ended up 50% larger than
 		   the `eventsBlock` heading beside it on the same page.
 
-		   h1/h2 are fluid because containers run to --container-max (2000px). h1
-		   ramps ~371px..~1443px and h2 ~357px..~1429px; both are flat above. Keep
-		   the maxima modest:
-		   h3 down through `p` are flat literals, so growth up here only widens the
-		   h3->h2 step -- 1.35x at 34/27, 1.50x at the 40/30 these were, against
-		   ~1.11x for every step below. Raising them means making h3..p fluid too.
-		   h3 is flat because it is the anchor that pair is tuned against.
+		   h1/h2 are fluid because containers run to --container-max (2000px), and
+		   both ramp across the same viewport window they always have -- h1
+		   ~371px..~1443px, h2 ~357px..~1429px -- flat outside it. Only the maxima
+		   moved: h1 tops out at 28px (was 34px) and h2 at 24px (was 27px), with the
+		   minima dropped to 24px and 22px so each stays a ramp rather than a
+		   constant. h3 down through `p` are flat literals, so the maxima are what
+		   set the top-end ladder: 28/24 is 1.17x and 24/20 (h2 over the flat h3)
+		   1.20x, against ~1.11x for every step below. Raising them again only
+		   widens the h3->h2 step -- it was 1.35x at 34/27 and 1.50x at the 40/30
+		   these started as -- so growing up here means making h3..p fluid too. h3 is
+		   flat because it is the anchor the pair is tuned against.
 
-		   One accepted regression: `.wysiwyg h1` was a flat 30px and now floors at
-		   28px, so an in-prose h1 is smaller than before anywhere below ~729px
-		   (where this ramp reaches 30px), and loses the full 2px below ~371px. */
-		--t-size-h1: clamp(1.75rem, 1.62rem + 0.56vw, 2.125rem);
-		--t-size-h2: clamp(1.5rem, 1.4375rem + 0.28vw, 1.6875rem);
+		   One accepted regression, now larger than it was: `.wysiwyg h1` was a flat
+		   30px and floors at 24px, so an in-prose h1 is smaller than before at every
+		   viewport, by 2px above ~1443px and the full 6px below ~371px. */
+		--t-size-h1: clamp(1.5rem, 1.414rem + 0.373vw, 1.75rem);
+		--t-size-h2: clamp(1.375rem, 1.333rem + 0.187vw, 1.5rem);
 		--t-size-h3: 20px;
 
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
@@ -396,7 +400,11 @@
 	.section-paper {
 		--background: var(--section-bg);
 		--card: var(--section-bg);
-		--muted: color-mix(in oklab, var(--section-fg, currentcolor) 12%, transparent);
+		--muted: color-mix(
+			in oklab,
+			var(--section-fg, currentcolor) 12%,
+			transparent
+		);
 	}
 
 	.field-hint-ring {
@@ -749,7 +757,9 @@
 	padding-bottom: calc(var(--section-pb, 0) * var(--spacing));
 
 	@variant sm {
-		padding-top: calc(var(--section-pt-sm, var(--section-pt, 0)) * var(--spacing));
+		padding-top: calc(
+			var(--section-pt-sm, var(--section-pt, 0)) * var(--spacing)
+		);
 		padding-bottom: calc(
 			var(--section-pb-sm, var(--section-pb, 0)) * var(--spacing)
 		);
@@ -891,6 +901,47 @@ body:has([data-not-found]) footer {
 @media (prefers-reduced-motion: reduce) {
 	.animate-page-in {
 		transition: none;
+	}
+}
+
+/* The site header's background, in one place, as a function of
+   --header-progress: 1 everywhere, so the header is its usual 95% paper plus
+   blur-xs; 0 under a full-bleed hero (HeroBlock marks the hero's background
+   wrapper `data-hero-underlay`), so the very first paint is transparent with
+   no post-hydration flip. The hero's own wrapper, HeroUnderlay, then writes
+   the scroll progress inline for as long as it is mounted (HEADER_SOLID_AT
+   there sets how soon it reaches 1) and adds `data-header-solid` once it
+   does. The blur is a step, not a ramp: a
+   backdrop-filter over the animating canvas re-blurs on every wave frame and a
+   ramped radius defeats any caching, so it stays `none` until the paper is
+   solid enough to hide the switch.
+
+   Registered with inherits: false so a progress write invalidates the header
+   alone, not everything inside it. The explicit `1` in the rule below is the
+   fallback where @property is unsupported. */
+@property --header-progress {
+	syntax: '<number>';
+	initial-value: 1;
+	inherits: false;
+}
+
+@layer components {
+	[data-site-header] {
+		--header-progress: 1;
+		background-color: color-mix(
+			in oklab,
+			var(--background) calc(var(--header-progress) * 95%),
+			transparent
+		);
+		backdrop-filter: blur(var(--blur-xs));
+	}
+
+	body:has([data-hero-underlay]) [data-site-header] {
+		--header-progress: 0;
+	}
+
+	body:has([data-hero-underlay]) [data-site-header]:not([data-header-solid]) {
+		backdrop-filter: none;
 	}
 }
 
