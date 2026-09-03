@@ -165,10 +165,11 @@ export function PageEventCrew({
 								variant="ghost"
 								size="sm"
 								className={cn(
-									// text-[10px] is load-bearing: t-l-2 sets the size in
+									// The explicit size is load-bearing: t-l-2 sets the size in
 									// @layer components, but Button's base text-sm is a
-									// utility and wins the cascade. Not a duplicate.
-									'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
+									// utility and wins the cascade. Not a duplicate. Reads the
+									// token's var rather than a literal so the rung stays fluid.
+									'uppercase t-l-2 text-[length:var(--t-size-l2)] cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !prevHref }
 								)}
 								disabled={!prevHref}
@@ -184,10 +185,11 @@ export function PageEventCrew({
 								variant="ghost"
 								size="sm"
 								className={cn(
-									// text-[10px] is load-bearing: t-l-2 sets the size in
+									// The explicit size is load-bearing: t-l-2 sets the size in
 									// @layer components, but Button's base text-sm is a
-									// utility and wins the cascade. Not a duplicate.
-									'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
+									// utility and wins the cascade. Not a duplicate. Reads the
+									// token's var rather than a literal so the rung stays fluid.
+									'uppercase t-l-2 text-[length:var(--t-size-l2)] cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !nextHref }
 								)}
 								disabled={!nextHref}
@@ -239,7 +241,7 @@ export function PageEventCrew({
 													/>
 												</div>
 											) : (
-												<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[8px] font-semibold">
+												<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[10px] font-semibold">
 													{displayName.charAt(0)}
 												</span>
 											)}

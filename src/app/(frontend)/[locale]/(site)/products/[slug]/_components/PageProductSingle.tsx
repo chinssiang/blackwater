@@ -209,7 +209,7 @@ export default function PageProductSingle({
 							<p className="t-l-1 mb-5 uppercase text-foreground/65">
 								{productText.whyWeChoseIt}
 							</p>
-							<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4] text-pretty">
+							<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 text-pretty">
 								<CustomPortableText blocks={content as any} />
 							</div>
 						</div>
@@ -231,7 +231,7 @@ export default function PageProductSingle({
 										{item.title}
 									</p>
 									{item.contentType === 'richText' && item.richText && (
-										<div className="t-b-1 mt-3 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4]">
+										<div className="t-b-1 mt-3 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
 											<CustomPortableText blocks={item.richText} />
 										</div>
 									)}

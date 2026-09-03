@@ -67,7 +67,7 @@ export default function FaqBlock({
 					return (
 						<AccordionItem key={value} value={value}>
 							<AccordionTrigger>{item.question}</AccordionTrigger>
-							<AccordionContent className="[&_p]:leading-[125%]">
+							<AccordionContent>
 								<CustomPortableText blocks={item.answer} />
 							</AccordionContent>
 						</AccordionItem>

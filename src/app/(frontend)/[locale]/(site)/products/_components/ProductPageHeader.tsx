@@ -78,9 +78,7 @@ export default function ProductPageHeader({
 			</div>
 
 			{lede && (
-				<p className="t-b-1 mt-6 max-w-[62ch] leading-relaxed text-foreground/70">
-					{lede}
-				</p>
+				<p className="t-b-1 mt-6 max-w-[62ch] text-foreground/70">{lede}</p>
 			)}
 		</header>
 	);

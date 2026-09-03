@@ -204,40 +204,57 @@
 		--h-header: 42px;
 		--s-section: 80px;
 
-		/* Heading sizes, shared by the `t-h-*` component tokens below and the
-		   `.wysiwyg` prose headings so one role cannot have two sizes. Retune here,
-		   not in either rule -- they were 28/24/16px and 30/24/20px for the same
-		   three roles, which is how a `faqBlock` heading ended up 50% larger than
-		   the `eventsBlock` heading beside it on the same page.
+		/* Type sizes shared by more than one rule. A size gets a var only when two
+		   rules render the SAME role -- the `t-*` component token and its `.wysiwyg`
+		   prose twin, or a token and a call site that has to restate it past a
+		   Tailwind utility. Roles that render in exactly one rule keep their clamp
+		   inline below; a var per rung would be indirection with one reader, and
+		   pairing two roles that merely share a pixel value (`.t-l-2` and
+		   `.t-spec` land on the same rung here) would make retuning one silently
+		   move the other. `.t-l-0` and `.wysiwyg h4` are the case in point: both
+		   were a flat 16px, and because they were never coupled they could
+		   diverge here without a second thought.
 
-		   All three are fluid because containers run to --container-max (2000px),
-		   and all three ramp across the same viewport window -- h1 ~371px..~1443px,
-		   h2 ~357px..~1429px, h3 ~371px..~1443px -- flat outside it, so they start
-		   and stop moving together. The MAXIMA are what set the top-end ladder,
-		   where h4 down through `p` are flat literals: 28/24 is 1.17x and 24/20
-		   1.20x, against ~1.11x for every step below. Raising them again only
-		   widens the h3->h2 step -- it was 1.35x at 34/27 and 1.50x at the 40/30
-		   these started as -- so growing up here means making h4..p fluid too.
+		   Retune here, not in either rule -- h1/h2/h3 were 28/24/16px and 30/24/20px
+		   for the same three roles, which is how a `faqBlock` heading ended up 50%
+		   larger than the `eventsBlock` heading beside it on the same page.
 
-		   h3's 20px maximum is unchanged, so desktop is pixel-identical to when h3
-		   was a flat literal and it is still the anchor that ladder is tuned
-		   against; only its 18px floor is new, because 20px reads too large on a
-		   phone for what is now the card-title token (event tickets, product cards,
-		   category labels, the event date and spec values). Its slope is
-		   deliberately h2's own 0.187vw -- both ramp exactly 2px across the window
-		   -- so the two move in lockstep.
+		   EVERY rung is fluid, and every one ramps across the same viewport window
+		   (~369px..~1441px, flat outside it) so the whole ladder starts and stops
+		   moving together and no two rungs cross. The headings ramp 2px, everything
+		   below them 1px -- a 0.093vw slope per pixel of travel over that window.
+		   The lower rungs were flat literals until now, which meant body copy stayed
+		   14px inside containers that run to --container-max (2000px) while the
+		   headings above it grew.
 
-		   Three accepted regressions. `.wysiwyg h1` was a flat 30px and floors at
-		   24px, so an in-prose h1 is smaller than before at every viewport, by 2px
-		   above ~1443px and the full 6px below ~371px. h3's 18px floor is exactly
-		   `.wysiwyg h4`'s flat size, so in prose those two rungs read identically on
-		   a phone -- a deliberate trade, not an oversight; fix it by ramping h4 down
-		   too rather than by raising h3's floor. And the mobile h3->h2 step is now
-		   1.22x rather than 1.10x, which matches the widest step at the top end
-		   instead of being unusually tight. */
+		   The ladder, floor -> ceiling:
+
+		     h1   24 -> 28    t-h-1, .wysiwyg h1
+		     h2   22 -> 24    t-h-2, .wysiwyg h2 + blockquote
+		     h3   18 -> 20    t-h-3, .wysiwyg h3        (card titles)
+		     h4   15 -> 16    .wysiwyg h4/h5/h6         (inline below)
+		     l0   16 -> 17    t-l-0                     (inline below)
+		     b1   14 -> 15    t-b-1, .wysiwyg p/ol/ul, Button size="xl"
+		     b2   12 -> 13    t-b-2                     (inline below)
+		     l1   12 -> 13    t-l-1                     (inline below)
+		     spec 11 -> 12    t-spec                    (inline below)
+		     l2   11 -> 12    t-l-2
+
+		   `l2` is the one rung that moved at BOTH ends: it was a flat 10px, carrying
+		   43 call sites including ConsentBanner's body copy and the size-chart row
+		   labels. 10px is below the practical floor for uppercase micro-labels,
+		   which have no ascenders or descenders to read shape from. It now lands on
+		   `spec`'s rung -- they were never a hierarchy pair, they are two voices
+		   (display caps vs. the typewriter face) that read as distinct at equal
+		   pixels, so they keep separate vars rather than one shared one.
+
+		   `.wysiwyg h4` ramping down to 15px is what fixes the documented collision
+		   where it read identically to h3's 18px floor on a phone. */
 		--t-size-h1: clamp(1.5rem, 1.414rem + 0.373vw, 1.75rem);
 		--t-size-h2: clamp(1.375rem, 1.333rem + 0.187vw, 1.5rem);
 		--t-size-h3: clamp(1.125rem, 1.082rem + 0.187vw, 1.25rem);
+		--t-size-b1: clamp(0.875rem, 0.853rem + 0.093vw, 0.9375rem);
+		--t-size-l2: clamp(0.6875rem, 0.666rem + 0.093vw, 0.75rem);
 
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
 		--width-md: min(100vw - calc(var(--s-contain) * 2), var(--container-md));
@@ -465,7 +482,7 @@
 			font-family: var(--font-default);
 			font-weight: 500;
 			font-size: var(--t-size-h2);
-			line-height: 1;
+			line-height: 1.15;
 			letter-spacing: -0.02em;
 		}
 
@@ -473,7 +490,7 @@
 			font-family: var(--font-default);
 			font-weight: 500;
 			font-size: var(--t-size-h3);
-			line-height: 1;
+			line-height: 1.2;
 			letter-spacing: -0.02em;
 		}
 
@@ -482,8 +499,12 @@
 		h6 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 16px;
-			line-height: 1;
+			/* Ramps DOWN to 15px rather than sitting flat at 16: h3's floor is
+			   18px, so a flat 16 made the two rungs read as one on a phone. Its
+			   own clamp, not `.t-l-0`'s -- a prose heading and an event date are
+			   different roles that happen to share a ceiling. */
+			font-size: clamp(0.9375rem, 0.916rem + 0.093vw, 1rem);
+			line-height: 1.2;
 			letter-spacing: -0.02em;
 		}
 
@@ -513,8 +534,8 @@
 		ul {
 			font-family: var(--font-default);
 			font-weight: 400;
-			font-size: 14px;
-			line-height: 1;
+			font-size: var(--t-size-b1);
+			line-height: 1.5;
 			letter-spacing: -0.02em;
 
 			a {
@@ -552,8 +573,8 @@
 			p {
 				font-family: var(--font-default);
 				font-weight: 500;
-				font-size: 24px;
-				line-height: 0.9;
+				font-size: var(--t-size-h2);
+				line-height: 1.15;
 				letter-spacing: -0.02em;
 			}
 
@@ -585,6 +606,29 @@
 }
 
 @layer components {
+	/* LINE HEIGHT IS A ROLE, NOT A CONSTANT. Every token below used to be
+	   `line-height: 1`, which is a tight-but-defensible display setting on a
+	   heading and a readability failure on anything that wraps: at 1 the
+	   descenders of one line sit on the ascenders of the next. It cost nine
+	   independent call-site patches at five different values -- `leading-5`,
+	   `leading-[1.4]` twice, `leading-relaxed` four times, `[&_p]:leading-[125%]`
+	   and `leading-snug` -- so body prose had five leadings depending on which
+	   page you were on. Eight are gone; the value lives here once per role:
+
+	     prose that wraps (b1, b2, .wysiwyg p)        1.5
+	     labels and metadata (l0, l1, l2, spec)       1.2 - 1.3
+	     headings (h1, h2, h3)                        1.1 - 1.2
+
+	   1.5 is the figure WCAG 1.4.8 asks for within a paragraph and the value
+	   1.4.12 (Text Spacing, AA) expects content to survive a user forcing.
+
+	   Utilities still win -- these rules are in `@layer components` and
+	   `leading-*` is a utility -- so a genuinely local override stays possible.
+	   That is the escape hatch, not the default, and the one survivor earns it:
+	   ProductCard's title is `line-clamp-2 min-h-[2lh]`, where the leading sets
+	   the reserved height of a card in a grid rather than the readability of a
+	   paragraph. */
+
 	.t-h-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
@@ -597,11 +641,12 @@
 		font-family: var(--font-default);
 		font-weight: 500;
 		font-size: var(--t-size-h2);
-		/* Was 0.9. A line box shorter than the type clips ascenders the moment a
-		   heading wraps, and this token now carries every page-module section
-		   heading (SectionShell), which wraps far more often than the two single
-		   line call sites it had before. 1 is still very tight. */
-		line-height: 1;
+		/* Was 0.9, then 1. A line box shorter than the type clips ascenders the
+		   moment a heading wraps, and this token now carries every page-module
+		   section heading (SectionShell), which wraps far more often than the two
+		   single-line call sites it had before. 1 did not actually clear them at
+		   -0.02em on this face; 1.15 does and is still tight. */
+		line-height: 1.15;
 		letter-spacing: -0.02em;
 	}
 
@@ -609,69 +654,77 @@
 		font-family: var(--font-default);
 		font-weight: 500;
 		font-size: var(--t-size-h3);
-		line-height: 1;
+		/* The card-title rung -- event tickets, product cards, category labels --
+		   so two-line titles are the norm here, not the exception. */
+		line-height: 1.2;
 		letter-spacing: -0.02em;
 	}
 
 	.t-b-1 {
 		font-family: var(--font-default);
 		font-weight: 400;
-		font-size: 14px;
-		line-height: 1;
+		font-size: var(--t-size-b1);
+		line-height: 1.5;
 		letter-spacing: -0.02em;
 	}
 
 	.t-b-2 {
 		font-family: var(--font-default);
 		font-weight: 400;
-		font-size: 12px;
-		line-height: 1;
+		font-size: clamp(0.75rem, 0.728rem + 0.093vw, 0.8125rem);
+		line-height: 1.5;
 		letter-spacing: -0.02em;
 	}
 
-	/* 16px uppercase metadata, one rung above `.t-l-1`: event location, date and
+	/* Uppercase metadata one rung above `.t-l-1`: event location, date and
 	   start/finish values, the events sticky-bar month, the crew kicker. In the
 	   label family, not the heading family -- these are values and labels, and
 	   they sat on `.t-h-3` only because 482c1e5 renamed a six-level scale down
 	   into three names.
 
-	   Deliberately a literal, not a `--t-size-*` var shared with `.wysiwyg h5,
-	   h6`: that rule is 16px too, but it is a prose HEADING. Same pixels today,
-	   different roles -- coupling them would make a prose retune move an event
-	   date. The vars above exist for one role rendered two ways, which is not
-	   this. */
+	   Deliberately NOT sharing a var with `.wysiwyg h4/h5/h6`. Both were a flat
+	   16px, but a prose heading and an event date are different roles -- coupling
+	   them would make a prose retune move an event date, and it is exactly that
+	   independence that lets this rung go to 17 while h4 drops to 15. */
 	.t-l-0 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 16px;
-		line-height: 1;
+		font-size: clamp(1rem, 0.978rem + 0.093vw, 1.0625rem);
+		line-height: 1.2;
 		letter-spacing: -0.02em;
 	}
 
+	/* `.t-l-1` and `.t-l-2` are set in caps at most call sites (13 of 21 and 32
+	   of 43), and caps carry no ascenders or descenders for the eye to read word
+	   shape from -- they read letter by letter, so they need room between the
+	   letters. Both tracked NEGATIVE until now, which is the display-heading
+	   setting applied to the two rungs it hurts most. They open up toward
+	   `.t-spec`'s existing +0.04em instead. */
 	.t-l-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 12px;
-		line-height: 1;
-		letter-spacing: -0.02em;
+		font-size: clamp(0.75rem, 0.728rem + 0.093vw, 0.8125rem);
+		line-height: 1.25;
+		letter-spacing: 0.02em;
 	}
 
 	.t-l-2 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 10px;
-		line-height: 1;
-		letter-spacing: -0.012em;
+		font-size: var(--t-size-l2);
+		line-height: 1.3;
+		letter-spacing: 0.04em;
 	}
 
 	/* Spec voice: the typewriter face used for curated metadata (prices,
 	   index numerals, brand/category data). Reads as a counter-voice against
-	   the display caps. */
+	   the display caps. Shares `.t-l-2`'s rung by pixels but not by var -- see
+	   the ladder comment in :root. */
 	.t-spec {
 		font-family: var(--font-feature);
 		font-weight: 500;
-		font-size: 11px;
-		line-height: 1;
+		font-size: clamp(0.6875rem, 0.666rem + 0.093vw, 0.75rem);
+		line-height: 1.25;
 		letter-spacing: 0.04em;
 	}
 }

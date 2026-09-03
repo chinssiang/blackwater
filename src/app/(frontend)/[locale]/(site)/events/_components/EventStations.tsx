@@ -213,7 +213,7 @@ function QuestSummary({
 		<>
 			<p className="t-spec text-foreground/60 mb-1 uppercase">{label}</p>
 			{instructions && (
-				<p className="t-b-1 leading-5 whitespace-pre-line">{instructions}</p>
+				<p className="t-b-1 whitespace-pre-line">{instructions}</p>
 			)}
 		</>
 	);
