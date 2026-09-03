@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 import type { SizeGuideSectionData } from './SizeGuideSection';
 
 const ITEM_CLASS =
-	'block rounded-full px-3.5 py-1.5 t-l-1 uppercase whitespace-nowrap transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-foreground';
+	'block rounded-full px-3.5 py-1.5 t-l-1 uppercase whitespace-nowrap transition-[color,background-color,opacity,box-shadow] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-foreground';
 const ITEM_ACTIVE = 'bg-foreground text-background';
 const ITEM_IDLE = 'hover:opacity-60';
 

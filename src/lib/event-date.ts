@@ -84,18 +84,6 @@ export function getRichDateEndOfDayInstant(
  * `now` is a parameter rather than an internal `new Date()` so callers can drive
  * it from React state (and so the function stays pure).
  */
-/**
- * Whether an event's date can be trusted as a real instant.
- *
- * A TBA, postponed or cancelled event must not render a date or count down to
- * one, and three surfaces need that same gate (the /events rows, the ticket
- * stub, the detail page). Shared so they cannot disagree about what "firm"
- * means — the same reason formatDaysUntilLabel is shared for the pill wording.
- */
-export function isDateFirm(dateStatus: string | null | undefined): boolean {
-	return !dateStatus || dateStatus === 'confirmed';
-}
-
 export function isEventEnded(
 	eventDatetime: RichDate | null | undefined,
 	endDatetime: RichDate | null | undefined,

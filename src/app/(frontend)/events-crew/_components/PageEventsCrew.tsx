@@ -145,14 +145,14 @@ export function PageEventCrew({
 						<span
 							className={cn(
 								'uppercase text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
-								scrolled ? 't-b-1' : 't-h-3'
+								scrolled ? 't-b-1' : 't-l-0'
 							)}
 						>
 							Crew briefing
 						</span>
 						{/* Size is deliberately scroll-invariant; only the kicker responds. */}
 						<h1
-							className="t-h-3 font-bold tracking-tight animate-fade-in"
+							className="t-l-0 font-bold animate-fade-in"
 							style={{ animationDelay: '0.15s' }}
 						>
 							{monthDisplay}

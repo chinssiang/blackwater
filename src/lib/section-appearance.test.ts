@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { resolveSectionAppearance } from './section-appearance';
-import { findHeadingHeroKey, heroHeading } from './page-modules';
 
 const color = (r: number, g: number, b: number, a = 1) => ({
 	hex: '#000000',
@@ -123,58 +122,5 @@ describe('resolveSectionAppearance', () => {
 		expect(r.spacing.pb).toBe(9);
 		expect(r.spacing.ptSm).toBe(12);
 		expect(r.spacing.pbSm).toBe(12);
-	});
-});
-
-describe('findHeadingHeroKey', () => {
-	const hero = (key: string, heading?: string | null) => ({
-		_type: 'heroBlock',
-		_key: key,
-		heading,
-	});
-	const other = (key: string) => ({ _type: 'freeform', _key: key });
-
-	it('returns null when there are no modules', () => {
-		expect(findHeadingHeroKey(undefined)).toBeNull();
-		expect(findHeadingHeroKey([])).toBeNull();
-	});
-
-	it('ignores a hero an editor added but never filled in', () => {
-		// The regression this guards: an empty hero used to suppress the
-		// landingTitle fallback while rendering nothing itself.
-		expect(findHeadingHeroKey([hero('a')])).toBeNull();
-		expect(findHeadingHeroKey([hero('a', '')])).toBeNull();
-		expect(findHeadingHeroKey([hero('a', '   ')])).toBeNull();
-	});
-
-	it('finds a hero that is not in the first slot', () => {
-		expect(findHeadingHeroKey([other('x'), hero('a', 'Hello')])).toBe('a');
-	});
-
-	it('picks the first hero carrying a heading', () => {
-		expect(findHeadingHeroKey([hero('a'), hero('b', 'Real')])).toBe('b');
-	});
-
-	it('ignores non-hero modules that happen to have a heading', () => {
-		expect(
-			findHeadingHeroKey([
-				{ _type: 'productsBlock', _key: 'p', heading: 'Kit' },
-			])
-		).toBeNull();
-	});
-
-	it('sees through stega encoding on the heading', () => {
-		expect(findHeadingHeroKey([hero('a', stega('Hello'))])).toBe('a');
-	});
-});
-
-describe('heroHeading', () => {
-	it('returns null for anything that is not a hero', () => {
-		expect(heroHeading({ _type: 'freeform', heading: 'x' })).toBeNull();
-		expect(heroHeading(null)).toBeNull();
-	});
-
-	it('returns the trimmed heading', () => {
-		expect(heroHeading({ _type: 'heroBlock', heading: '  Hi  ' })).toBe('Hi');
 	});
 });

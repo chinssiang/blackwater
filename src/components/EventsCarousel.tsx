@@ -22,6 +22,12 @@ import { cn, SECTION_INSET, SECTION_INSET_START } from '@/lib/utils';
 // into EventsBlock would pull the primitive straight back into the static graph.
 // That is why the slides there are plain server-rendered divs.
 //
+// Measured 2026-09-03 on a production build, the paragraph above does not
+// hold: a dynamic() called from a Server Component does not code-split, and
+// this file's code sits in the homepage and /[slug] route chunks on pages with
+// no eventsBlock. A real boundary needs the dynamic() inside a 'use client'
+// module -- see HeroWaveLazy.tsx for the working shape. Follow-up.
+//
 // Reduced motion is the primitive's business now, not this file's.
 
 type EventsCarouselProps = {
@@ -44,8 +50,26 @@ export default function EventsCarousel({
 	nextLabel,
 	children,
 }: EventsCarouselProps) {
+	// `dragFree` is deliberately NOT set. It is embla's opt-out of snapping: a
+	// drag rests wherever momentum dies, which left a ticket half past the
+	// viewport edge looking clipped. Off (the default), a drag settles on a snap
+	// point.
+	//
+	// `slidesToScroll: 'auto'` makes each snap a full GROUP rather than one
+	// slide, so a nav click advances by however many tickets currently fit --
+	// four at `xl`, three at `lg`, one on the `basis-[78%]` mobile card --
+	// without anyone restating the basis ladder here. embla derives the grouping
+	// by measuring, and takes the track's leading padding and the last slide's
+	// `mr-contain` into account as start/end gaps.
+	//
+	// `containScroll` is left at its `trimSnaps` default, which drops the snaps
+	// that would scroll past the end -- that is what keeps the final group flush
+	// with the trailing inset instead of over-scrolling into dead space.
 	return (
-		<Carousel opts={{ align: 'start', dragFree: true }} aria-label={label}>
+		<Carousel
+			opts={{ align: 'start', slidesToScroll: 'auto' }}
+			aria-label={label}
+		>
 			{/* `gap-6` rather than the primitive's per-slide padding plus a
 			    negative track margin: that idiom fights the leading inset, which has
 			    to stay a real padding so the first ticket lines up with the heading.

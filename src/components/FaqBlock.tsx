@@ -23,11 +23,19 @@ type FaqBlockProps = {
 		items?: FaqItem[];
 		sectionAppearance?: any;
 	};
+	headingLevel?: 'h1' | 'h2';
 	className?: string;
 };
 
-export default function FaqBlock({ data, className }: FaqBlockProps) {
+export default function FaqBlock({
+	data,
+	headingLevel = 'h2',
+	className,
+}: FaqBlockProps) {
 	const { heading, items, sectionAppearance } = data || {};
+	// Not SectionShell's `heading` prop (see the note at the render below), so
+	// this module switches the tag itself rather than inheriting the shell's.
+	const Heading = headingLevel;
 
 	const visible = (items ?? []).filter(
 		(i) => i?.question && Array.isArray(i?.answer) && i.answer.length > 0
@@ -52,7 +60,7 @@ export default function FaqBlock({ data, className }: FaqBlockProps) {
 			    `t-h-2 uppercase` the events and products strips use. Both paths read
 			    --t-size-h2, so the two are the same size at every viewport -- they
 			    were not until the prose scale and the token scale were joined. */}
-			{heading && <h2>{heading}</h2>}
+			{heading && <Heading>{heading}</Heading>}
 			<Accordion type="single" collapsible>
 				{visible.map((item, i) => {
 					const value = item._id ?? `faq-${i}`;

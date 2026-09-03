@@ -1,16 +1,15 @@
 import {
 	formatRichDate,
 	getDaysUntilEvent,
-	isDateFirm,
 	isEventEnded,
 } from '@/lib/event-date';
+import { resolveEventDateStatus } from '@/lib/event-status';
 import CustomPortableText from '@/components/CustomPortableText';
 import ImageBlock from '@/components/ImageBlock';
 import { LocationCurrentTime } from '@/components/LocationCurrentTimeLazy';
-import { StatusItem } from '@/components/EventTicket';
+import EventStatusPill from '@/components/EventStatusPill';
 import { cn, hasArrayValue } from '@/lib/utils';
 import {
-	formatDateStatusLabel,
 	formatDaysUntilLabel,
 	interpolate,
 	type Dictionary,
@@ -94,11 +93,16 @@ export default function PageEventSingle({
 	const codex = subtitle ? title : null;
 	const category = categories?.[0]?.title;
 
-	const dateIsFirm = isDateFirm(dateStatus);
+	// One resolve for the whole page: the helper cleans the stega metadata draft
+	// mode encodes into the enum -- see its note -- and returning both answers
+	// from one clean is what stops the firmness and the label being paired
+	// wrongly.
+	const dateStatusInfo = resolveEventDateStatus(dateStatus, t);
+	const dateIsFirm = dateStatusInfo.isFirm;
 	const formattedDate =
 		dateIsFirm && eventDatetime
 			? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
-			: formatDateStatusLabel(dateStatus, t);
+			: dateStatusInfo.label;
 
 	// One instant for the whole render. Freshness comes from the route's
 	// `revalidate`, not a client clock -- a clock here would have to bring the
@@ -157,13 +161,13 @@ export default function PageEventSingle({
 					{(stateLabel || hasArrayValue(statusList)) && (
 						<div className="flex flex-wrap gap-2">
 							{stateLabel && (
-								<StatusItem
+								<EventStatusPill
 									className="py-2"
 									data={{ eventStatus: { title: stateLabel } }}
 								/>
 							)}
 							{statusList?.map((item) => (
-								<StatusItem
+								<EventStatusPill
 									key={item._key || item.eventStatus?.title}
 									className={cn('py-2', hasEnded && 'opacity-40')}
 									// An ended event must not advertise a live registration
@@ -211,11 +215,11 @@ function EventSpecs({
 
 	const displayLocation = locationRef?.name || location;
 	const displayLocationLink = locationRef?.mapLink || locationLink;
-	// Gated on isDateFirm like every other date on this page: without it a
+	// Gated on the same firmness as every other date on this page: without it a
 	// cancelled event's masthead reads CANCELLED while the band below states
 	// when it finishes.
 	const endsAt =
-		endDatetime && isDateFirm(dateStatus)
+		endDatetime && resolveEventDateStatus(dateStatus, t).isFirm
 			? formatRichDate(endDatetime, t.dateFormat, dateFnsLocale)
 			: null;
 	// No cast: `eventType` is a real union in the generated result type, so

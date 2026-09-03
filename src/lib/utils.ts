@@ -180,10 +180,16 @@ export function isValidUrl(urlString: string): boolean {
 // --- TAILWIND UTILITIES ---
 
 // Shared keyboard-focus treatment for absolutely-positioned overlay links (a
-// stretched row link, a pill link, a map link). Inset so the ring draws inside
-// its container rather than being clipped by it.
+// stretched row link, a pill link). Inset so the ring draws inside its
+// container rather than being clipped by it.
 export const OVERLAY_LINK_FOCUS =
 	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring';
+
+// The same treatment for a link that sits in normal flow rather than over a
+// container -- a `ring-inset` ring on an 11px inline box draws over the glyphs,
+// and fragments across line boxes once the link's text can wrap.
+export const INLINE_LINK_FOCUS =
+	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring';
 
 export const SECTION_INSET = 'p-x-max';
 export const SECTION_INSET_START = 'pl-(--padding-max)';

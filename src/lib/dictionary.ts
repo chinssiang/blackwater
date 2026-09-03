@@ -36,24 +36,3 @@ export function formatDaysUntilLabel(
 		? t.status.today
 		: interpolate(pickPlural(t.daysUntil, daysUntil), { count: daysUntil });
 }
-
-/**
- * The label shown in place of a date when the date is not firm.
- *
- * Beside formatDaysUntilLabel for the same reason: three surfaces render this
- * field, and before this existed they disagreed — the detail page translated
- * it while the /events rows and the ticket stub printed the raw schema value,
- * so one postponed event read "Postponed" in its hero and "postponed" in its
- * own related-strip ticket, untranslated in both locales.
- *
- * Falls back to the TBA wording for an unrecognised value rather than leaking
- * a schema enum into the page.
- */
-export function formatDateStatusLabel(
-	dateStatus: string | null | undefined,
-	t: Dictionary['events']
-): string {
-	if (dateStatus === 'postponed') return t.status.postponed;
-	if (dateStatus === 'cancelled') return t.status.cancelled;
-	return t.status.tba;
-}

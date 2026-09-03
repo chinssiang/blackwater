@@ -117,6 +117,26 @@ export function ArrowRight({ className }: SvgIconsProps) {
 	);
 }
 
+// Marks a venue. Same 24x24 stroke geometry as ArrowRight above, so the two
+// sit together at the same optical weight.
+export function MapPin({ className }: SvgIconsProps) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={cn(className)}
+		>
+			<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+			<circle cx="12" cy="10" r="3" />
+		</svg>
+	);
+}
+
 export function Plus({ className }: SvgIconsProps) {
 	return (
 		<svg

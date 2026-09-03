@@ -1,5 +1,5 @@
 import CustomLink from '@/components/CustomLink';
-import { cn, OVERLAY_LINK_FOCUS } from '@/lib/utils';
+import { cn, INLINE_LINK_FOCUS } from '@/lib/utils';
 
 // The "see all" link that sits on a SectionShell heading's baseline.
 //
@@ -30,8 +30,8 @@ export default function SectionHeadingLink({
 		<CustomLink
 			link={{ href, isNewTab }}
 			className={cn(
-				't-spec text-foreground/60 hover:text-foreground shrink-0 rounded uppercase transition-colors',
-				OVERLAY_LINK_FOCUS
+				't-spec text-foreground/60 hover:text-foreground shrink-0 rounded uppercase transition-[color,box-shadow]',
+				INLINE_LINK_FOCUS
 			)}
 		>
 			{children}

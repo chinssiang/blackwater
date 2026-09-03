@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import type { RichDate } from 'sanity.types';
 import {
 	getDaysUntilEvent,
-	isDateFirm,
 	isEventEnded,
 	selectUpcomingEvents,
 } from './event-date';
@@ -156,31 +155,5 @@ describe('selectUpcomingEvents', () => {
 		expect(selectUpcomingEvents(many, { now: NOW, limit: 3 })).toHaveLength(3);
 		// `?? `, not `||` — a stored 0 is an answer, not an absence.
 		expect(selectUpcomingEvents(many, { now: NOW, limit: 0 })).toHaveLength(0);
-	});
-});
-
-// The single gate three surfaces share for "is this date real". Before it was
-// extracted, each spelled the predicate out and they were free to drift.
-describe('isDateFirm', () => {
-	it('treats an unset status as confirmed', () => {
-		// Most events carry no dateStatus at all; they must still show their date.
-		expect(isDateFirm(undefined)).toBe(true);
-		expect(isDateFirm(null)).toBe(true);
-	});
-
-	it('accepts the confirmed status', () => {
-		expect(isDateFirm('confirmed')).toBe(true);
-	});
-
-	it('rejects every status that means the date is not real', () => {
-		expect(isDateFirm('tba')).toBe(false);
-		expect(isDateFirm('postponed')).toBe(false);
-		expect(isDateFirm('cancelled')).toBe(false);
-	});
-
-	it('rejects an unrecognised status rather than assuming it is firm', () => {
-		// A schema value added later must not start rendering a date until
-		// someone decides it should.
-		expect(isDateFirm('rescheduled')).toBe(false);
 	});
 });
