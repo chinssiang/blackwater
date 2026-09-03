@@ -243,7 +243,7 @@ function PolicyLinks({
 				<CustomLink
 					key={i}
 					link={link}
-					className="t-l-2 mr-4 inline-block text-foreground underline underline-offset-2 hover:text-foreground/70"
+					className="t-l-2 mr-4 inline-block text-foreground underline underline-offset-2 transition-colors hover:text-foreground/70"
 				>
 					{link.label || link.href}
 				</CustomLink>

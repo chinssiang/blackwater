@@ -26,11 +26,18 @@ export function Header({
 }) {
 	const { siteTitle, menu, mobileMenu } = data || {};
 	const locale = useLocale();
+	// No scroll logic here. Over a full-bleed hero the header's background is a
+	// function of `--header-progress` (the `[data-site-header]` rules in
+	// globals.css), and the hero's own wrapper, HeroUnderlay, writes that
+	// progress onto this element for as long as the hero is mounted.
 
 	return (
 		<header
+			data-site-header
 			className={cn(
-				'p-x-max h-header sticky top-0 z-header grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none transition-colors bg-background/95 backdrop-blur-xs',
+				// No bg-*/backdrop-* utility here: the background is the
+				// `[data-site-header]` rules in globals.css, so it has one home.
+				'p-x-max h-header sticky top-0 z-header grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none',
 				isLightHeader && 'theme-light'
 			)}
 		>

@@ -27,6 +27,20 @@ export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 // entries would move the page's lastmod.
 const faqBlockUsesSet = `coalesce(source, "set") != "picked"`;
 
+// Whether a page module is switched on. The eye button on the Studio array row
+// (schemaTypes/components/PageModuleItem.tsx) writes `hidden: true` and unsets
+// it again on the way back, so absent means visible -- no backfill needed.
+// Coalesced for the unset case, same reason as faqBlockUsesSet above; here
+// `hidden == false` and `!hidden` would each drop every untouched module.
+//
+// Applied as the array PREDICATE, not projected as a field, so a switched-off
+// module never reaches JS. That is what makes the rest of the pipeline correct
+// for free: PageHome hands the <h1> to slot 0, which is the first module a
+// visitor actually sees rather than the first one authored; a hidden faqBlock
+// stays out of the FAQPage JSON-LD; and EventsBlock/ProductsBlock never mount to
+// run their own fetches.
+const moduleVisible = `coalesce(hidden, false) == false`;
+
 // `contentUpdatedAt` collects the `_updatedAt` of every document a page RENDERS
 // but does not own, so sitemap.ts can advertise the newest of the two as
 // lastmod. All three sitemap queries carry one; this is the shared reasoning.
@@ -61,9 +75,9 @@ export const SITEMAP_PAGES_QUERY = defineQuery(`
 		"contentUpdatedAt": [
 			faqSet->_updatedAt,
 			faqSet->questions[]->_updatedAt,
-			pageModules[_type == "faqBlock" && ${faqBlockUsesSet}].faqSet->_updatedAt,
-			pageModules[_type == "faqBlock" && ${faqBlockUsesSet}].faqSet->questions[]->_updatedAt,
-			pageModules[_type == "faqBlock" && source == "picked"].questions[]->_updatedAt,
+			pageModules[_type == "faqBlock" && ${moduleVisible} && ${faqBlockUsesSet}].faqSet->_updatedAt,
+			pageModules[_type == "faqBlock" && ${moduleVisible} && ${faqBlockUsesSet}].faqSet->questions[]->_updatedAt,
+			pageModules[_type == "faqBlock" && ${moduleVisible} && source == "picked"].questions[]->_updatedAt,
 			sections[].charts[].chart->_updatedAt
 		]
 	}
@@ -593,7 +607,8 @@ const productCardFields = `
 // that render pageModules cannot drift from what the fragments actually touch.
 //
 // Worth seeing plainly: these are attached to the whole page fetch, so they fan
-// out to every pGeneral page whether or not it carries the module. Publishing one
+// out to every pGeneral page whether or not it carries the module -- or whether
+// the module is switched on, since the tag set is static. Publishing one
 // product expires all of them — /api/revalidate-tag uses `expire: 0`, so that is
 // immediate. That is the price of resolving a module's references inside the page
 // query; it is the same trade faqBlock already makes with gFaq/gFaqList, one
@@ -667,7 +682,10 @@ const eventsBlockField = `
 // interpolation depth as freeformField (portableTextContentFields → linkFields →
 // resolvedHrefGroq), which the extractor handles; the sectionAppearance block
 // below is spelled out verbatim for the reason given above it, not copy-paste
-// laziness.
+// laziness. `waveBackground` is resolved to a boolean in GROQ rather than
+// shipping the `backgroundEffect` string: draft mode stega-encodes strings, so
+// comparing against 'wave' in JS would need a stegaClean first -- the
+// windowDays / faqBlock.source treatment.
 const heroBlockField = `
 	_type,
 	_key,
@@ -676,6 +694,7 @@ const heroBlockField = `
 	paragraph[]{
 		${portableTextContentFields}
 	},
+	"waveBackground": backgroundEffect == 'wave',
 	// Narrower than imageBlockMetaFields, which the other image projections use.
 	// That fragment also pulls caption and a link projection, and this object has
 	// neither: hero-block.ts declares its customImage with hasCaptionOption false
@@ -684,15 +703,22 @@ const heroBlockField = `
 	// compiled query and, more to the point, one interpolation level off the
 	// pageHome/pageGeneral chain the note above is about.
 	// (No backticks in here: this comment sits inside a JS template literal.)
-	backgroundImage{
-		image{
-			${imageMetaFields}
-		},
-		customRatio,
-		imageMobile{
-			${imageMetaFields}
-		},
-		customRatioMobile
+	// Conditional on the effect: the schema hides the image while the wave is
+	// selected but keeps the data, and HeroBlock can never render it then, so
+	// the asset refs and lqip strings would be dead payload on every wave hero.
+	// A conditional, not a select() around a fragment, so no interpolation level
+	// is added to the chain the note above is about.
+	backgroundEffect != 'wave' => {
+		backgroundImage{
+			image{
+				${imageMetaFields}
+			},
+			customRatio,
+			imageMobile{
+				${imageMetaFields}
+			},
+			customRatioMobile
+		}
 	},
 	callToAction{
 		label,
@@ -864,14 +890,23 @@ export const productSubmissionConfigQuery = defineQuery(`{
 	"logo": ${byLocale('pProductIndex')}[defined(confirmationEmail.logo.asset)][0].confirmationEmail.logo
 }`);
 
-export const pageHomeQuery = defineQuery(`
+export // `landingTitle` is not rendered: PageHome reads it only to tell "this dataset
+// predates the hero migration" from "this homepage has no modules yet", and the
+// migration unsets it, so it and the schema field retire together.
+//
+// `moduleCount` counts pageModules BEFORE `moduleVisible` filters it. Without it
+// the guard cannot separate "no modules authored" from "every module parked with
+// the eye toggle", so hiding the only module reproduced the unmigrated signature
+// and failed the production build.
+const pageHomeQuery = defineQuery(`
 	${byLocale('pHome')}[0]{
 		${baseFields},
 		${availableLocalesField},
 		"isHomepage": true,
 		landingTitle,
+		"moduleCount": count(pageModules),
 		"textColor": textColor->color,
-		pageModules[]{
+		pageModules[${moduleVisible}]{
 			${pageModuleFields}
 		}
 	}
@@ -900,7 +935,7 @@ export const pageGeneralQuery = defineQuery(`
 		content[]{
 			${portableTextContentFields}
 		},
-		pageModules[]{
+		pageModules[${moduleVisible}]{
 			${pageModuleFields}
 		},
 		_updatedAt
@@ -1002,11 +1037,14 @@ const eventStatusListFields = `
 // and it costs a reference deref per event. upcomingEventsQuery adds it on top
 // of this fragment instead, because the home-page ticket does render it -- see
 // the note there.
+//
+// `slug` follows the same rule in the other direction: the home-page ticket no
+// longer links anywhere, so only pEventsQuery projects it, rather than putting
+// a slug nobody reads into every eventsBlock's payload.
 const eventCardFields = `
 	_id,
 	_type,
 	"title": ${locString('title')},
-	"slug": slug.current,
 	"subtitle": ${locString('subtitle')},
 	eventDatetime,
 	endDatetime,
@@ -1029,7 +1067,8 @@ export const pEventsQuery = defineQuery(`
 		${i18nSharingFields('noFallback', 'noFallback')},
 		"availableLocales": ${ALL_LOCALES_GROQ},
 		"eventList": *[_type == "pEvent" && eventDatetime.utc >= $cutoff && ${titleVisible}]{
-			${eventCardFields}
+			${eventCardFields},
+			"slug": slug.current
 		} | order(eventDatetime.utc asc),
 	}
 `);

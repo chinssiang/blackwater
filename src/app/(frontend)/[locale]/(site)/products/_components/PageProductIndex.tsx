@@ -68,9 +68,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 
 			<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 				<div>
-					<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance tracking-tight">
-						{collection.title}
-					</h2>
+					<h2 className="t-h-2 uppercase text-balance">{collection.title}</h2>
 					{collection.description && (
 						<p className="t-b-1 mt-3 max-w-[60ch] leading-relaxed text-foreground/70">
 							{collection.description}
@@ -191,7 +189,7 @@ export function PageProductIndex({ data }: Props) {
 					<div className="border-t border-foreground/15 pt-4">
 						<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 							{allProducts?.title && (
-								<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
+								<h2 className="t-h-2 uppercase text-balance">
 									{allProducts.title}
 								</h2>
 							)}

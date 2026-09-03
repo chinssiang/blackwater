@@ -24,6 +24,7 @@ export default function SectionShell({
 	appearance,
 	heading,
 	headingAction,
+	headingLevel = 'h2',
 	className,
 	children,
 	bleed = false,
@@ -36,12 +37,20 @@ export default function SectionShell({
 	 * the markup it had before this existed.
 	 */
 	headingAction?: React.ReactNode;
+	/**
+	 * The tag for `heading`. Threaded from PageHome via PageModules so the module
+	 * in slot 0 owns the page's <h1> whatever its type is -- previously only
+	 * heroBlock read the level, so hiding a hero (or authoring any other type
+	 * first) left the homepage with no <h1> at all.
+	 */
+	headingLevel?: 'h1' | 'h2';
 	className?: string;
 	children: React.ReactNode;
 	bleed?: boolean;
 }) {
 	const { alignClass, maxWidthClass, inkCss, paperCss, spacing } =
 		resolveSectionAppearance(appearance);
+	const Heading = headingLevel;
 
 	return (
 		<section
@@ -73,12 +82,9 @@ export default function SectionShell({
 			}
 		>
 			{/* `t-h-2`, not `t-h-3`: `t-h-3` is the card-title token, so a section
-			    heading rendered in it was the exact size of the cards it governed
-			    (16px over 16px, a ratio of 1.00) and the section read as one flat
-			    band. It also put these headings 8px below a `faqBlock` heading,
-			    which renders through `.wysiwyg` instead and so never shared the
-			    mistake. Both scales resolve to --t-size-h2 now, so the two agree at
-			    every viewport. */}
+			    heading rendered in it was the exact size of the cards it governed and
+			    the section read as one flat band. Both scales resolve to --t-size-h2
+			    now; the ladder and its ratios live in globals.css. */}
 			{(heading || headingAction) && (
 				// The flex classes are CONDITIONAL on `headingAction`, not always on.
 				// `sectionAppearance` can set text-center/text-right (alignClass, on
@@ -98,7 +104,7 @@ export default function SectionShell({
 				>
 					{/* Gated separately from the wrapper: `heading` is optional on every
 					    module that has one, and an action must not vanish with it. */}
-					{heading && <h2 className="t-h-2 uppercase">{heading}</h2>}
+					{heading && <Heading className="t-h-2 uppercase">{heading}</Heading>}
 					{headingAction}
 				</div>
 			)}
