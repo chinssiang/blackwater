@@ -9,22 +9,29 @@ import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 import {
 	formatRichDate,
 	getDaysUntilEvent,
-	getRichDateInstant,
 	getRichDateYearMonth,
 	isEventEnded,
 } from '@/lib/event-date';
+import {
+	formatDayKey,
+	fromMonthIndex,
+	getMonthRange,
+	getTodayKey,
+	groupEventsByDay,
+	getDayKeyYearMonth,
+	toMonthIndex,
+} from '@/lib/calendar';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { fadeAnim } from '@/lib/animate';
-import {
-	buildRgbaCssString,
-	ensureAccessibleTextColor,
-} from '@/lib/image-utils';
 import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { formatDaysUntilLabel, interpolate } from '@/lib/dictionary';
 import { localizePath } from '@/lib/i18n';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
+import { EventStatusItem } from './EventStatusItem';
+import { EventsCalendar } from './EventsCalendar';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
 const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
@@ -44,6 +51,12 @@ const eventRowAnim = {
 // dims at its end time without the visitor reloading.
 const CLOCK_TICK_MS = 60 * 1000;
 
+/** The two ways this page can render its events. */
+type EventsView = 'list' | 'calendar';
+
+const VIEW_TRIGGER_CLASS =
+	't-l-2 rounded-full border border-foreground px-2.5 py-1.5 uppercase whitespace-nowrap transition-colors data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=inactive]:bg-transparent data-[state=inactive]:hover:bg-foreground/5';
+
 // Typed off the QUERY result, not the raw `PEvent` document type: pEvent is
 // field-level localized, so on the document every prose field is an
 // internationalizedArray, while GROQ hands this component the single resolved
@@ -52,15 +65,11 @@ type EventsData = NonNullable<PEventsQueryResult>;
 type EventListItem = EventsData['eventList'][number];
 
 interface PageEventsProps {
-	data: WithoutPageMetadata<EventsData> & {
-		groupedEvents: {
-			[key: string]: EventListItem[];
-		};
-	};
+	data: WithoutPageMetadata<EventsData>;
 }
 
 export function PageEvents({ data }: PageEventsProps) {
-	const { title, groupedEvents } = data || {};
+	const { title, eventList } = data || {};
 	const locale = useLocale();
 	const t = useTranslations('events');
 	const common = useTranslations('common');
@@ -71,73 +80,85 @@ export function PageEvents({ data }: PageEventsProps) {
 	// holds the real clock from the first client render even though the
 	// prerendered HTML was built with the clock as of the last revalidation.
 	const [currentDate, setCurrentDate] = useState(() => new Date());
-	const [selectedMonth, setSelectedMonth] = useState<{
-		month: number;
-		year: number;
-	} | null>(null);
+	const [view, setView] = useState<EventsView>('list');
+	// A month index (see `toMonthIndex`), not a {year, month} pair: the two views
+	// step through months differently and both comparisons and arithmetic stay
+	// integer. Null means "wherever the default lands".
+	const [selectedMonthIndex, setSelectedMonthIndex] = useState<number | null>(
+		null
+	);
 
 	useEffect(() => {
 		const timer = setInterval(() => setCurrentDate(new Date()), CLOCK_TICK_MS);
 		return () => clearInterval(timer);
 	}, []);
 
-	const availableMonths = useMemo(() => {
-		if (!groupedEvents) return [];
+	// Grouped here rather than on the server: the page already serializes
+	// `eventList` into this component's props, so a second pre-grouped copy of
+	// every event was travelling in the same payload to say the same thing.
+	const eventsByMonth = useMemo(() => {
+		const byMonth = new Map<number, EventListItem[]>();
+		for (const event of eventList || []) {
+			// Timezone-aware, so an event just after midnight in Taipei is filed
+			// under the month it happens in there, not the runtime's.
+			const yearMonth = getRichDateYearMonth(event.eventDatetime);
+			if (!yearMonth) continue;
+			const index = toMonthIndex(yearMonth);
+			const bucket = byMonth.get(index);
+			if (bucket) bucket.push(event);
+			else byMonth.set(index, [event]);
+		}
+		return byMonth;
+	}, [eventList]);
 
-		return Object.keys(groupedEvents)
-			.map((key) => {
-				const events = groupedEvents[key];
-				const firstEvent = events[0];
-				const yearMonth = getRichDateYearMonth(firstEvent?.eventDatetime);
-				const instant = getRichDateInstant(firstEvent?.eventDatetime);
-				if (!firstEvent || !yearMonth || !instant) return null;
+	// Sorted explicitly rather than trusting insertion order: GROQ orders by the
+	// absolute instant while these buckets are civil months, and the two can
+	// disagree for events stored in different timezones.
+	const monthsWithEvents = useMemo(
+		() => [...eventsByMonth.keys()].sort((a, b) => a - b),
+		[eventsByMonth]
+	);
 
-				return {
-					key,
-					month: yearMonth.month,
-					year: yearMonth.year,
-					date: instant,
-					firstEventDatetime: firstEvent.eventDatetime,
-					events,
-				};
-			})
-			.filter((item): item is NonNullable<typeof item> => item !== null)
-			.sort((a, b) => a.date.getTime() - b.date.getTime());
-	}, [groupedEvents]);
+	const eventsByDay = useMemo(() => groupEventsByDay(eventList), [eventList]);
+
+	// How far the calendar can page in each direction. The list has its own
+	// bounds (the months that hold events); this one also covers the empty
+	// months between them, which the grid can legitimately show.
+	const monthRange = useMemo(
+		() => getMonthRange(eventList, currentDate),
+		// Same reasoning as `defaultMonthIndex` below: recomputing the bounds on
+		// every clock tick would be churn for a value that only moves at midnight.
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+		[eventList]
+	);
 
 	const defaultMonthIndex = useMemo(() => {
-		if (availableMonths.length === 0) return 0;
-		const index = availableMonths.findIndex((itemMonth) =>
-			itemMonth.events.some(
-				(event) =>
-					!isEventEnded(event.eventDatetime, event.endDatetime, currentDate)
-			)
+		const upcoming = monthsWithEvents.find((index) =>
+			eventsByMonth
+				.get(index)
+				?.some(
+					(event) =>
+						!isEventEnded(event.eventDatetime, event.endDatetime, currentDate)
+				)
 		);
-		// All events are in the past -> open on the most recent month.
-		return index >= 0 ? index : availableMonths.length - 1;
+		if (upcoming !== undefined) return upcoming;
+		// All events are in the past -> open on the most recent month; with no
+		// events at all, on the month the visitor is actually in.
+		return (
+			monthsWithEvents.at(-1) ??
+			toMonthIndex(getDayKeyYearMonth(getTodayKey(currentDate)))
+		);
 		// `currentDate` is deliberately omitted: the landing month is a first-render
 		// decision. Recomputing it on a clock tick would move the view out from
 		// under someone browsing a month they had not explicitly selected.
 		// eslint-disable-next-line react-hooks/exhaustive-deps
-	}, [availableMonths]);
+	}, [monthsWithEvents, eventsByMonth]);
 
-	const currentMonthIndex = useMemo(() => {
-		if (selectedMonth) {
-			const index = availableMonths.findIndex((itemMonth) => {
-				return (
-					itemMonth.month === selectedMonth.month &&
-					itemMonth.year === selectedMonth.year
-				);
-			});
-			if (index >= 0) return index;
-		}
-		return defaultMonthIndex;
-	}, [availableMonths, selectedMonth, defaultMonthIndex]);
-
-	const currentMonthData = availableMonths[currentMonthIndex];
+	// One month drives both views, so switching between them keeps your place.
+	const currentMonthIndex = selectedMonthIndex ?? defaultMonthIndex;
 	const displayEvents = useMemo(
-		() => currentMonthData?.events || [],
-		[currentMonthData]
+		() => eventsByMonth.get(currentMonthIndex) ?? [],
+		[eventsByMonth, currentMonthIndex]
 	);
 
 	// Drop the status column only when no row will render a pill. Must mirror all
@@ -156,298 +177,308 @@ export function PageEvents({ data }: PageEventsProps) {
 		? 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_minmax(0,1fr)]'
 		: 'grid-cols-[60%_1fr] lg:grid-cols-[3fr_1fr_minmax(0,1fr)_230px]';
 
-	const goToPreviousMonth = () => {
-		if (currentMonthIndex > 0) {
-			const prevMonth = availableMonths[currentMonthIndex - 1];
-			if (!prevMonth) return;
-			setSelectedMonth({ month: prevMonth.month, year: prevMonth.year });
-			window.scrollTo({ top: 0 });
+	// The two views step differently, and that is the point rather than an
+	// inconsistency: the list has no way to render a month with no rows in it, so
+	// it moves to the next month that HAS events; the calendar's grid says
+	// something real about an empty month, so it moves one month at a time.
+	const stepMonth = (direction: -1 | 1): number | null => {
+		if (view === 'calendar') {
+			const next = currentMonthIndex + direction;
+			return next >= monthRange.min && next <= monthRange.max ? next : null;
 		}
+		return direction < 0
+			? (monthsWithEvents.filter((index) => index < currentMonthIndex).at(-1) ??
+					null)
+			: (monthsWithEvents.find((index) => index > currentMonthIndex) ?? null);
 	};
 
-	const goToNextMonth = () => {
-		if (currentMonthIndex < availableMonths.length - 1) {
-			const nextMonth = availableMonths[currentMonthIndex + 1];
-			if (!nextMonth) return;
-			setSelectedMonth({ month: nextMonth.month, year: nextMonth.year });
-			window.scrollTo({ top: 0 });
-		}
+	const goToMonth = (direction: -1 | 1) => {
+		const next = stepMonth(direction);
+		if (next === null) return;
+		setSelectedMonthIndex(next);
+		window.scrollTo({ top: 0 });
 	};
 
-	const hasPrevious = currentMonthIndex > 0;
-	const hasNext = currentMonthIndex < availableMonths.length - 1;
+	const hasPrevious = stepMonth(-1) !== null;
+	const hasNext = stepMonth(1) !== null;
 
-	const monthYearDisplay = currentMonthData
-		? formatRichDate(
-				currentMonthData.firstEventDatetime,
-				t.monthYearFormat,
-				dateFnsLocale
-			)
-		: '';
+	const currentMonth = fromMonthIndex(currentMonthIndex);
+	// From the month itself, not from an event inside it: an empty month has no
+	// event to take a name from, and the calendar can display one.
+	const monthYearDisplay = formatDayKey(
+		`${currentMonth.year}-${String(currentMonth.month + 1).padStart(2, '0')}-01`,
+		t.monthYearFormat,
+		dateFnsLocale
+	);
 
 	return (
 		<div className="min-h-screen p-x-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
 			<h1 id="events-heading" className="sr-only">
 				{title}
 			</h1>
-			<div className="flex items-center justify-between sticky top-header bg-background/95 z-10 font-bold">
-				<motion.p
-					key={monthYearDisplay}
-					initial={prefersReducedMotion ? false : 'hide'}
-					animate="show"
-					variants={fadeAnim}
-					transition={{
-						duration: 0.6,
-						delay: 0.3,
-						ease: EASE_HEADER,
-					}}
-					className="t-h-3 uppercase"
-				>
-					{monthYearDisplay}
-				</motion.p>
-				{availableMonths.length > 0 && (
-					<div className="flex items-center justify-between gap-1">
-						<Button
-							onClick={goToPreviousMonth}
-							disabled={!hasPrevious}
-							aria-label={t.aria.previousMonth}
-							variant="ghost"
-							className="uppercase text-xs font-normal cursor-pointer hover:opacity-60"
-						>
-							<ArrowLeft />
-							{t.aria.previousMonth}
-						</Button>
-						/
-						<Button
-							onClick={goToNextMonth}
-							disabled={!hasNext}
-							aria-label={t.aria.nextMonth}
-							variant="ghost"
-							className="uppercase text-xs font-normal cursor-pointer hover:opacity-60"
-						>
-							{t.aria.nextMonth}
-							<ArrowRight className="size-3.5" />
-						</Button>
-					</div>
-				)}
-			</div>
-			{hasArrayValue(displayEvents) ? (
-				<div
-					className="mt-10 lg:mt-17.5"
-					role="table"
-					aria-labelledby="events-heading"
-				>
-					<div
-						role="row"
-						className={cn(
-							't-b-1 uppercase grid border-y border-b border-foreground/80 py-2 lg:py-6',
-							colStyle
-						)}
+			<Tabs
+				value={view}
+				onValueChange={(next) => setView(next as EventsView)}
+				// The month controls sit in the sticky bar with the tabs but outside
+				// both panels: they steer whichever view is showing, and duplicating
+				// them per panel would put two of every control in the DOM.
+			>
+				<div className="flex items-center justify-between gap-2 sm:gap-3 sticky top-header bg-background/95 z-10 font-bold">
+					<motion.p
+						key={monthYearDisplay}
+						initial={prefersReducedMotion ? false : 'hide'}
+						animate="show"
+						variants={fadeAnim}
+						transition={{
+							duration: 0.6,
+							delay: 0.3,
+							ease: EASE_HEADER,
+						}}
+						className="t-h-3 uppercase"
 					>
-						<Th className="lg:pl-0">{t.headers.codex}</Th>
-						<Th
-							isHideStatusColumn={isHideStatusColumn}
-							className="text-right lg:text-left"
-						>
-							{t.headers.time}
-						</Th>
-						<Th
-							isHideStatusColumn={isHideStatusColumn}
-							className="hidden lg:block"
-						>
-							{t.headers.location}
-						</Th>
-						{!isHideStatusColumn && (
-							<Th
-								isHideStatusColumn={isHideStatusColumn}
-								className="hidden lg:block text-right"
+						{monthYearDisplay}
+					</motion.p>
+					<div className="flex items-center gap-2 sm:gap-3">
+						<TabsList aria-label={t.view.label} className="gap-1.5">
+							<TabsTrigger value="list" className={VIEW_TRIGGER_CLASS}>
+								{t.view.list}
+							</TabsTrigger>
+							<TabsTrigger value="calendar" className={VIEW_TRIGGER_CLASS}>
+								{t.view.calendar}
+							</TabsTrigger>
+						</TabsList>
+						<div className="flex items-center justify-between gap-1">
+							<Button
+								onClick={() => goToMonth(-1)}
+								disabled={!hasPrevious}
+								aria-label={t.aria.previousMonth}
+								variant="ghost"
+								className="uppercase text-xs font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
 							>
-								{t.headers.status}
-							</Th>
-						)}
+								<ArrowLeft />
+								{/* Label hidden, not dropped: the button keeps its
+								    aria-label, and at 375px the month, the view toggle and
+								    two worded buttons cannot share one line. */}
+								<span className="max-sm:hidden">{t.aria.previousMonth}</span>
+							</Button>
+							<span aria-hidden className="max-sm:hidden">
+								/
+							</span>
+							<Button
+								onClick={() => goToMonth(1)}
+								disabled={!hasNext}
+								aria-label={t.aria.nextMonth}
+								variant="ghost"
+								className="uppercase text-xs font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
+							>
+								<span className="max-sm:hidden">{t.aria.nextMonth}</span>
+								<ArrowRight className="size-3.5" />
+							</Button>
+						</div>
 					</div>
-					{displayEvents.map((item, index) => {
-						const {
-							title,
-							subtitle,
-							_id,
-							slug,
-							statusList,
-							eventDatetime,
-							endDatetime,
-							dateStatus,
-							location,
-							locationLink,
-						} = item || {};
+				</div>
 
-						// The generated query type already carries locationRef; the cast
-						// this replaces would have hidden it if eventCardFields ever
-						// dropped the deref.
-						const locationRef = item?.locationRef;
-						const displayLocation = locationRef?.name || location;
-						const displayLocationLink = locationRef?.mapLink || locationLink;
+				<TabsContent value="calendar">
+					<EventsCalendar
+						month={currentMonth}
+						eventsByDay={eventsByDay}
+						currentDate={currentDate}
+					/>
+				</TabsContent>
 
-						const eventHasEnded = isEventEnded(
-							eventDatetime,
-							endDatetime,
-							currentDate
-						);
-						const daysUntil = getDaysUntilEvent(eventDatetime, currentDate);
-
-						return (
-							<motion.div
-								key={_id}
+				<TabsContent value="list">
+					{hasArrayValue(displayEvents) ? (
+						<div
+							className="mt-10 lg:mt-17.5"
+							role="table"
+							aria-labelledby="events-heading"
+						>
+							<div
 								role="row"
 								className={cn(
-									'relative t-b-1 transition-colors hover:bg-foreground/85 grid items-center border-b group py-4 border-foreground/80 lg:py-2 lg:min-h-15 group/row',
-									colStyle,
-									{
-										'pointer-events-none': eventHasEnded,
-									}
+									't-b-1 uppercase grid border-y border-b border-foreground/80 py-2 lg:py-6',
+									colStyle
 								)}
-								initial={prefersReducedMotion ? false : 'hide'}
-								animate="show"
-								variants={eventRowAnim}
-								transition={{
-									duration: 1.2,
-									delay: 0.3 + index * EVENT_ROW_STAGGER,
-									ease: EASE_OUT_EXPO,
-								}}
 							>
-								<Td
-									className={cn(
-										'font-bold uppercase lg:pl-0 t-b-1 lg:flex flex-wrap items-center gap-2.5 text-balance group-hover/row:translate-x-1 transition-transform',
-										{
-											'opacity-30': eventHasEnded,
-										}
-									)}
+								<Th className="lg:pl-0">{t.headers.codex}</Th>
+								<Th
+									isHideStatusColumn={isHideStatusColumn}
+									className="text-right lg:text-left"
 								>
-									<p className="text-balance mb-4 lg:mb-0">{title}</p>
-									{subtitle && (
-										<p className="text-muted-foreground text-balance group-hover/row:text-muted">
-											{subtitle}
-										</p>
-									)}
-								</Td>
-								<Td
-									className={cn(
-										'static t-b-1 uppercase mb-auto text-right lg:text-left lg:mb-0',
-										{
-											'opacity-30': eventHasEnded,
-										}
-									)}
+									{t.headers.time}
+								</Th>
+								<Th
+									isHideStatusColumn={isHideStatusColumn}
+									className="hidden lg:block"
 								>
-									{(!dateStatus || dateStatus === 'confirmed') && eventDatetime
-										? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
-										: dateStatus || t.status.tba}
+									{t.headers.location}
+								</Th>
+								{!isHideStatusColumn && (
+									<Th
+										isHideStatusColumn={isHideStatusColumn}
+										className="hidden lg:block text-right"
+									>
+										{t.headers.status}
+									</Th>
+								)}
+							</div>
+							{displayEvents.map((item, index) => {
+								const {
+									title,
+									subtitle,
+									_id,
+									slug,
+									statusList,
+									eventDatetime,
+									endDatetime,
+									dateStatus,
+									location,
+									locationLink,
+								} = item || {};
 
-									<Link
-										className={cn('p-fill', OVERLAY_LINK_FOCUS)}
-										href={localizePath(`/events/${slug}`, locale)}
-										aria-label={interpolate(t.aria.viewEvent, {
-											title: title || '',
-										})}
-									/>
-								</Td>
-								<Td
-									className={cn(
-										't-b-1 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line wrap-break-word min-w-0 group/location',
-										{
-											'opacity-30': eventHasEnded,
-										}
-									)}
-								>
-									{displayLocation}
-									{displayLocationLink && (
-										<span className="whitespace-nowrap -translate-y-0.25 ml-1 inline-block group-hover/location:translate-x-0.5 group-hover/location:-translate-y-0.5 transition-transform">
-											&#8203;
-											<ArrowUpRight className="size-2 inline-block" />
-										</span>
-									)}
-									{displayLocationLink && (
-										<CustomLink
+								// The generated query type already carries locationRef; the cast
+								// this replaces would have hidden it if eventCardFields ever
+								// dropped the deref.
+								const locationRef = item?.locationRef;
+								const displayLocation = locationRef?.name || location;
+								const displayLocationLink =
+									locationRef?.mapLink || locationLink;
+
+								const eventHasEnded = isEventEnded(
+									eventDatetime,
+									endDatetime,
+									currentDate
+								);
+								const daysUntil = getDaysUntilEvent(eventDatetime, currentDate);
+
+								return (
+									<motion.div
+										key={_id}
+										role="row"
+										className={cn(
+											'relative t-b-1 transition-colors hover:bg-foreground/85 grid items-center border-b group py-4 border-foreground/80 lg:py-2 lg:min-h-15 group/row',
+											colStyle,
+											{
+												'pointer-events-none': eventHasEnded,
+											}
+										)}
+										initial={prefersReducedMotion ? false : 'hide'}
+										animate="show"
+										variants={eventRowAnim}
+										transition={{
+											duration: 1.2,
+											delay: 0.3 + index * EVENT_ROW_STAGGER,
+											ease: EASE_OUT_EXPO,
+										}}
+									>
+										<Td
 											className={cn(
-												'p-fill increase-target-size',
-												OVERLAY_LINK_FOCUS
+												'font-bold uppercase lg:pl-0 t-b-1 lg:flex flex-wrap items-center gap-2.5 text-balance group-hover/row:translate-x-1 transition-transform',
+												{
+													'opacity-30': eventHasEnded,
+												}
 											)}
-											link={{ href: displayLocationLink, isNewTab: true }}
-											aria-label={interpolate(t.aria.viewLocation, {
-												location: displayLocation || '',
-											})}
-										/>
-									)}
-								</Td>
-								<Td
-									className={
-										'lg:justify-end gap-1 flex flex-wrap min-w-0 col-start-1 lg:col-start-[unset] mt-6 lg:mt-0'
-									}
-								>
-									{!eventHasEnded && daysUntil !== null && (
-										<StatusItem
-											key={`in-${daysUntil}-day`}
-											data={{
-												eventStatus: {
-													title: formatDaysUntilLabel(daysUntil, t),
-												},
-											}}
-										/>
-									)}
-									{hasArrayValue(statusList) &&
-										statusList.map((item: any) => (
-											<StatusItem
-												key={item._key}
-												data={item}
-												className={cn(eventHasEnded ? 'opacity-30' : '')}
+										>
+											<p className="text-balance mb-4 lg:mb-0">{title}</p>
+											{subtitle && (
+												<p className="text-muted-foreground text-balance group-hover/row:text-muted">
+													{subtitle}
+												</p>
+											)}
+										</Td>
+										<Td
+											className={cn(
+												'static t-b-1 uppercase mb-auto text-right lg:text-left lg:mb-0',
+												{
+													'opacity-30': eventHasEnded,
+												}
+											)}
+										>
+											{(!dateStatus || dateStatus === 'confirmed') &&
+											eventDatetime
+												? formatRichDate(
+														eventDatetime,
+														t.dateFormat,
+														dateFnsLocale
+													)
+												: dateStatus || t.status.tba}
+
+											<Link
+												className={cn('p-fill', OVERLAY_LINK_FOCUS)}
+												href={localizePath(`/events/${slug}`, locale)}
+												aria-label={interpolate(t.aria.viewEvent, {
+													title: title || '',
+												})}
 											/>
-										))}
-									{eventHasEnded && (
-										<StatusItem
-											key="ended"
-											data={{ eventStatus: { title: t.status.ended } }}
-										/>
-									)}
-								</Td>
-							</motion.div>
-						);
-					})}
-				</div>
-			) : (
-				<p className="py-8 text-center">{t.emptyMonth}</p>
-			)}
+										</Td>
+										<Td
+											className={cn(
+												't-b-1 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line wrap-break-word min-w-0 group/location',
+												{
+													'opacity-30': eventHasEnded,
+												}
+											)}
+										>
+											{displayLocation}
+											{displayLocationLink && (
+												<span className="whitespace-nowrap -translate-y-0.25 ml-1 inline-block group-hover/location:translate-x-0.5 group-hover/location:-translate-y-0.5 transition-transform">
+													&#8203;
+													<ArrowUpRight className="size-2 inline-block" />
+												</span>
+											)}
+											{displayLocationLink && (
+												<CustomLink
+													className={cn(
+														'p-fill increase-target-size',
+														OVERLAY_LINK_FOCUS
+													)}
+													link={{ href: displayLocationLink, isNewTab: true }}
+													aria-label={interpolate(t.aria.viewLocation, {
+														location: displayLocation || '',
+													})}
+												/>
+											)}
+										</Td>
+										<Td
+											className={
+												'lg:justify-end gap-1 flex flex-wrap min-w-0 col-start-1 lg:col-start-[unset] mt-6 lg:mt-0'
+											}
+										>
+											{!eventHasEnded && daysUntil !== null && (
+												<EventStatusItem
+													key={`in-${daysUntil}-day`}
+													data={{
+														eventStatus: {
+															title: formatDaysUntilLabel(daysUntil, t),
+														},
+													}}
+												/>
+											)}
+											{hasArrayValue(statusList) &&
+												statusList.map((item: any) => (
+													<EventStatusItem
+														key={item._key}
+														data={item}
+														className={cn(eventHasEnded ? 'opacity-30' : '')}
+													/>
+												))}
+											{eventHasEnded && (
+												<EventStatusItem
+													key="ended"
+													data={{ eventStatus: { title: t.status.ended } }}
+												/>
+											)}
+										</Td>
+									</motion.div>
+								);
+							})}
+						</div>
+					) : (
+						<p className="py-8 text-center">{t.emptyMonth}</p>
+					)}
+				</TabsContent>
+			</Tabs>
 		</div>
-	);
-}
-
-function StatusItem({ data, className }: { data: any; className?: string }) {
-	const { link, eventStatus } = data;
-
-	if (!eventStatus) return null;
-	const { title, statusTextColor, statusBgColor } = eventStatus || {};
-	return (
-		<span
-			className={cn(
-				'rounded-4xl py-2 px-2.5 uppercase relative flex items-center gap-0.5 t-b-2',
-				className
-			)}
-			style={{
-				color:
-					ensureAccessibleTextColor(statusTextColor, statusBgColor) ||
-					'var(--foreground)',
-				backgroundColor: buildRgbaCssString(statusBgColor) || 'var(--muted)',
-			}}
-		>
-			{title}
-			{link?.href && (
-				<>
-					<ArrowRight className="size-3" />
-					<CustomLink
-						className={cn('p-fill rounded-4xl', OVERLAY_LINK_FOCUS)}
-						link={link}
-						aria-label={title}
-					></CustomLink>
-				</>
-			)}
-		</span>
 	);
 }
 

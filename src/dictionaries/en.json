@@ -43,7 +43,24 @@
 			"next": "More events"
 		},
 		"dateFormat": "iii, MM.dd.yy, h:mm aaa",
-		"monthYearFormat": "MMMM yyyy"
+		"monthYearFormat": "MMMM yyyy",
+		"view": {
+			"label": "Event view",
+			"list": "List",
+			"calendar": "Calendar"
+		},
+		"calendar": {
+			"gridLabel": "Events in {month}",
+			"weekdayFormat": "EEE",
+			"weekdayNarrowFormat": "EEEEE",
+			"dayFormat": "EEEE, MMMM d, yyyy",
+			"dayHeadingFormat": "EEEE, MMMM d",
+			"timeFormat": "h:mm aaa",
+			"today": "Today",
+			"selectDay": "{day}, {events}",
+			"eventCount": { "one": "{count} event", "other": "{count} events" },
+			"moreEvents": "+{count} more"
+		}
 	},
 	"products": {
 		"categoriesTitle": "Categories",

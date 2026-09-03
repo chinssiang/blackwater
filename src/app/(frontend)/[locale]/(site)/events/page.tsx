@@ -11,7 +11,6 @@ import defineMetadata, {
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
 import { buildEventName } from '@/lib/buildEventName';
-import { formatRichDate } from '@/lib/event-date';
 import JsonLd from '@/components/JsonLd';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
 import type { PEventsQueryResult } from 'sanity.types';
@@ -118,24 +117,6 @@ export default async function Page(props: Props) {
 	if (!data) return <NotFoundContent locale={locale} />;
 
 	const { eventList } = data || {};
-	const groupedEvents = eventList.reduce(
-		(
-			acc: Record<string, (typeof eventList)[number][]>,
-			event: (typeof eventList)[number]
-		) => {
-			const key =
-				formatRichDate(event.eventDatetime, 'yyyy_MMMM').toLowerCase() ||
-				'unknown';
-
-			if (!acc[key]) {
-				acc[key] = [];
-			}
-			acc[key].push(event);
-
-			return acc;
-		},
-		{}
-	);
 
 	const cleanList = stegaClean(eventList);
 	const itemListJsonLd = defineEventsItemListJsonLd(
@@ -146,7 +127,7 @@ export default async function Page(props: Props) {
 	return (
 		<>
 			{itemListJsonLd && <JsonLd data={itemListJsonLd} />}
-			<PageEvents data={omitPageMetadata({ ...data, groupedEvents })} />
+			<PageEvents data={omitPageMetadata(data)} />
 		</>
 	);
 }
