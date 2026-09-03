@@ -51,6 +51,14 @@ const eventRowAnim = {
 // dims at its end time without the visitor reloading.
 const CLOCK_TICK_MS = 60 * 1000;
 
+// How far the calendar grid can be paged. The past bound mirrors
+// `EVENTS_PAST_WINDOW_MONTHS` in page.tsx — the query fetches no further back,
+// so an empty grid beyond it would be a claim we cannot support. Keep the two in
+// step. The future bound is presentational: the query has every upcoming event,
+// so this is just how far past the last one it stays worth looking.
+const CALENDAR_PAST_WINDOW_MONTHS = 12;
+const CALENDAR_FUTURE_WINDOW_MONTHS = 12;
+
 /** The two ways this page can render its events. */
 type EventsView = 'list' | 'calendar';
 
@@ -111,11 +119,16 @@ export function PageEvents({ data }: PageEventsProps) {
 
 	const eventsByMonth = useMemo(() => {
 		const byMonth = new Map<number, EventListItem[]>();
-		for (const [dayKey, events] of eventsByDay) {
+		// Day keys sorted first: `eventsByDay` is in the query's INSTANT order, and
+		// for events stored in different timezones that is not the same as civil-day
+		// order — concatenating buckets as they were first seen could put a later
+		// day above an earlier one in the list view. Keys are zero-padded, so a
+		// lexical sort is a chronological one.
+		for (const dayKey of [...eventsByDay.keys()].sort()) {
 			const index = toMonthIndex(getDayKeyYearMonth(dayKey));
 			const bucket = byMonth.get(index);
-			if (bucket) bucket.push(...events);
-			else byMonth.set(index, [...events]);
+			if (bucket) bucket.push(...eventsByDay.get(dayKey)!);
+			else byMonth.set(index, [...eventsByDay.get(dayKey)!]);
 		}
 		return byMonth;
 	}, [eventsByDay]);
@@ -132,14 +145,24 @@ export function PageEvents({ data }: PageEventsProps) {
 		getDayKeyYearMonth(getTodayKey(currentDate))
 	);
 
-	// How far the calendar can page in each direction. The list has its own
-	// bounds (the months that hold events); this one also covers the empty
-	// months between them, which the grid can legitimately show. Today's month is
-	// always inside it, so a calendar with no events near now still opens on a
-	// real month rather than on a distant one.
+	// How far the calendar can page. Bounded by what the data can honestly answer,
+	// NOT by where the events happen to sit: clamping to the event span made both
+	// arrows dead whenever every event fell in the current month, which is exactly
+	// the case where "is anything on next month?" is the question being asked.
+	//
+	// Backwards stops at the query's own cutoff (`EVENTS_PAST_WINDOW_MONTHS` in
+	// page.tsx) because older months were never fetched — an empty grid there
+	// would claim there were no events when we simply did not ask. Forwards the
+	// query has everything, so an empty month is the truth, and a year past the
+	// last event is room enough to see that.
 	const monthRange = {
-		min: Math.min(todayMonthIndex, monthsWithEvents[0] ?? todayMonthIndex),
-		max: Math.max(todayMonthIndex, monthsWithEvents.at(-1) ?? todayMonthIndex),
+		min: Math.min(
+			todayMonthIndex - CALENDAR_PAST_WINDOW_MONTHS,
+			monthsWithEvents[0] ?? todayMonthIndex
+		),
+		max:
+			Math.max(todayMonthIndex, monthsWithEvents.at(-1) ?? todayMonthIndex) +
+			CALENDAR_FUTURE_WINDOW_MONTHS,
 	};
 
 	const defaultMonthIndex = useMemo(() => {
@@ -199,6 +222,15 @@ export function PageEvents({ data }: PageEventsProps) {
 			: (monthsWithEvents.find((index) => index > currentMonthIndex) ?? null);
 	};
 
+	// A day in a leading/trailing padding week belongs to a neighbouring month, so
+	// selecting it moves the calendar there rather than showing a panel for a day
+	// the header says you are not looking at.
+	const selectDay = (day: DayKey) => {
+		setSelectedDay(day);
+		const dayMonth = toMonthIndex(getDayKeyYearMonth(day));
+		if (dayMonth !== currentMonthIndex) setSelectedMonthIndex(dayMonth);
+	};
+
 	const goToMonth = (direction: -1 | 1) => {
 		const next = stepMonth(direction);
 		if (next === null) return;
@@ -206,6 +238,9 @@ export function PageEvents({ data }: PageEventsProps) {
 		window.scrollTo({ top: 0 });
 	};
 
+	// With nothing in the whole window there is no month worth stepping to, and
+	// the pre-toggle header hid these controls in exactly that case.
+	const hasEventsAnywhere = monthsWithEvents.length > 0;
 	const hasPrevious = stepMonth(-1) !== null;
 	const hasNext = stepMonth(1) !== null;
 
@@ -253,34 +288,36 @@ export function PageEvents({ data }: PageEventsProps) {
 								{t.view.calendar}
 							</TabsTrigger>
 						</TabsList>
-						<div className="flex items-center justify-between gap-1">
-							<Button
-								onClick={() => goToMonth(-1)}
-								disabled={!hasPrevious}
-								aria-label={t.aria.previousMonth}
-								variant="ghost"
-								className="uppercase text-xs font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
-							>
-								<ArrowLeft />
-								{/* Label hidden, not dropped: the button keeps its
+						{hasEventsAnywhere && (
+							<div className="flex items-center justify-between gap-1">
+								<Button
+									onClick={() => goToMonth(-1)}
+									disabled={!hasPrevious}
+									aria-label={t.aria.previousMonth}
+									variant="ghost"
+									className="uppercase text-xs font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
+								>
+									<ArrowLeft />
+									{/* Label hidden, not dropped: the button keeps its
 								    aria-label, and at 375px the month, the view toggle and
 								    two worded buttons cannot share one line. */}
-								<span className="max-sm:hidden">{t.aria.previousMonth}</span>
-							</Button>
-							<span aria-hidden className="max-sm:hidden">
-								/
-							</span>
-							<Button
-								onClick={() => goToMonth(1)}
-								disabled={!hasNext}
-								aria-label={t.aria.nextMonth}
-								variant="ghost"
-								className="uppercase text-xs font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
-							>
-								<span className="max-sm:hidden">{t.aria.nextMonth}</span>
-								<ArrowRight className="size-3.5" />
-							</Button>
-						</div>
+									<span className="max-sm:hidden">{t.aria.previousMonth}</span>
+								</Button>
+								<span aria-hidden className="max-sm:hidden">
+									/
+								</span>
+								<Button
+									onClick={() => goToMonth(1)}
+									disabled={!hasNext}
+									aria-label={t.aria.nextMonth}
+									variant="ghost"
+									className="uppercase text-xs font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
+								>
+									<span className="max-sm:hidden">{t.aria.nextMonth}</span>
+									<ArrowRight className="size-3.5" />
+								</Button>
+							</div>
+						)}
 					</div>
 				</div>
 
@@ -290,7 +327,7 @@ export function PageEvents({ data }: PageEventsProps) {
 						eventsByDay={eventsByDay}
 						currentDate={currentDate}
 						selectedDay={selectedDay}
-						onSelectDay={setSelectedDay}
+						onSelectDay={selectDay}
 					/>
 				</TabsContent>
 

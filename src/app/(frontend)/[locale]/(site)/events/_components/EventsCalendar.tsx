@@ -16,9 +16,14 @@ import {
 	type DayKey,
 } from '@/lib/calendar';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
-import { interpolate, pickPlural } from '@/lib/dictionary';
+import {
+	formatDaysUntilLabel,
+	interpolate,
+	pickPlural,
+} from '@/lib/dictionary';
 import {
 	formatRichDate,
+	getDaysUntilEvent,
 	getTodayKey,
 	isEventEnded,
 	groupEventsByDay,
@@ -55,21 +60,16 @@ type PreparedDay = CalendarDay & {
 	label: string | null;
 };
 
-// How many events a desktop cell shows before it collapses the rest into a
-// count. Three is what fits in the cell height below without the grid growing a
-// scrollbar; the remainder is never hidden, because selecting the day lists all
-// of them in the panel underneath.
-const MAX_CHIPS_PER_DAY = 3;
-
-// Mobile shows density, not content: at ~48px a cell has room for the date and
-// a few dots, and nothing legible beyond that. Capped so a busy day cannot push
-// the dots onto a second line and change the row height.
-const MAX_DOTS_PER_DAY = 3;
-
-// Both subtrees are in the DOM at every width (one is `lg:hidden`, the other
-// `hidden lg:flex`), so the ended state is resolved once for whichever of them
-// needs the most events rather than twice per event.
-const MAX_VISIBLE_PER_DAY = Math.max(MAX_CHIPS_PER_DAY, MAX_DOTS_PER_DAY);
+// How many events a day cell shows before it collapses the rest into a count.
+// Three is what fits the desktop cell height without the grid growing a
+// scrollbar, and what a ~48px mobile cell holds as dots on one line. The rest is
+// never hidden — selecting the day lists all of them in the panel beneath, and
+// the overflow count says how many that is.
+//
+// One number for both widths: both subtrees are in the DOM at every width (one
+// `lg:hidden`, the other `hidden lg:flex`), so a single slice also resolves each
+// event's ended state once instead of once per subtree.
+const MAX_EVENTS_PER_DAY = 3;
 
 // Shared by the two shapes a cell takes, so the box a day occupies cannot drift
 // between the interactive and the inert one.
@@ -133,16 +133,20 @@ export function EventsCalendar({
 	// accessible names — everything that depends on the month and the locale but
 	// not on the clock or the selection. `selectableDays` falls out of the same
 	// walk rather than a second flatten-and-filter over the 42 cells.
-	const { weeks, selectableDays } = useMemo(() => {
+	const { weeks, selectableDays, monthDays } = useMemo(() => {
 		const selectable: DayKey[] = [];
+		const inMonth: DayKey[] = [];
 		const prepared = buildMonthGrid(
 			fromMonthIndex(monthIndex),
 			weekStartsOn
 		).map((week) =>
 			week.map((day): PreparedDay => {
-				const events = day.isCurrentMonth
-					? (eventsByDay.get(day.key) ?? [])
-					: [];
+				// Padding days get their real events too. They are VISIBLE dates —
+				// a six-week grid always shows a few of the neighbouring month, and
+				// blanking them told a visitor scanning that row the day was free
+				// while the next month's grid showed a run on it. Selecting one
+				// moves the calendar to the month that owns it (see `selectDay`).
+				const events = eventsByDay.get(day.key) ?? [];
 				if (events.length === 0) return { ...day, events, label: null };
 				selectable.push(day.key);
 				return {
@@ -161,7 +165,7 @@ export function EventsCalendar({
 				};
 			})
 		);
-		return { weeks: prepared, selectableDays: selectable };
+		return { weeks: prepared, selectableDays: selectable, monthDays: inMonth };
 	}, [monthIndex, weekStartsOn, eventsByDay, dateFnsLocale, t]);
 
 	// In the events' own timezone, not the viewer's: the ring has to land on the
@@ -173,12 +177,21 @@ export function EventsCalendar({
 	// simply stops being selectable and the fallback takes over. Nothing to
 	// synchronise, and no frame where the panel shows a day the grid no longer
 	// displays.
+	//
+	// The fallback opens on the next day still to come, not on `monthDays[0]` —
+	// that is the month's EARLIEST event, so late in a busy month the calendar
+	// opened on a run that finished weeks ago, dimmed and inert. Day keys are
+	// zero-padded, so `>=` is a chronological comparison with no Intl work. Only
+	// days of the displayed month are candidates: a padding day stays clickable
+	// but must not be what the month opens on.
 	const activeDay =
 		selectedDay && selectableDays.includes(selectedDay)
 			? selectedDay
-			: selectableDays.includes(todayKey)
+			: monthDays.includes(todayKey)
 				? todayKey
-				: (selectableDays[0] ?? null);
+				: (monthDays.find((key) => key >= todayKey) ??
+					monthDays.at(-1) ??
+					null);
 
 	const activeEvents = activeDay ? (eventsByDay.get(activeDay) ?? []) : [];
 
@@ -224,7 +237,9 @@ export function EventsCalendar({
 									<DayCell
 										day={day}
 										isActive={day.key === activeDay}
-										isToday={day.key === todayKey}
+										// Current-month only: a ring on a greyed padding cell
+										// reads as "today is in this month" when it is not.
+										isToday={day.isCurrentMonth && day.key === todayKey}
 										currentDate={currentDate}
 										panelId={panelId}
 										onSelect={onSelectDay}
@@ -322,10 +337,11 @@ function DayCell({
 	// Resolved once for both subtrees below, and only for the events either of
 	// them can show: `isEventEnded` falls back to an end-of-day instant in the
 	// event's timezone, which is two Intl conversions per call.
-	const visible = day.events.slice(0, MAX_VISIBLE_PER_DAY).map((event) => ({
+	const visible = day.events.slice(0, MAX_EVENTS_PER_DAY).map((event) => ({
 		event,
 		hasEnded: isEventEnded(event.eventDatetime, event.endDatetime, currentDate),
 	}));
+	const overflow = day.events.length - visible.length;
 
 	return (
 		<button
@@ -342,9 +358,10 @@ function DayCell({
 		>
 			{dayNumber}
 
-			{/* Mobile: density only. */}
+			{/* Mobile: density only — plus the count, so a day with twelve events
+			    does not look identical to a day with three. */}
 			<span className="mt-1 flex h-1.5 items-center justify-center gap-1 lg:hidden">
-				{visible.slice(0, MAX_DOTS_PER_DAY).map(({ event, hasEnded }) => (
+				{visible.map(({ event, hasEnded }) => (
 					<span
 						key={event._id}
 						className={cn(
@@ -353,21 +370,24 @@ function DayCell({
 						)}
 					/>
 				))}
+				{overflow > 0 && (
+					<span className="t-l-2 text-muted-foreground leading-none">
+						+{overflow}
+					</span>
+				)}
 			</span>
 
 			{/* Desktop: the events themselves. */}
 			<span className="mt-1.5 hidden w-full flex-col gap-1 lg:flex">
-				{visible.slice(0, MAX_CHIPS_PER_DAY).map(({ event, hasEnded }) => (
+				{visible.map(({ event, hasEnded }) => (
 					<EventChip key={event._id} event={event} hasEnded={hasEnded} />
 				))}
-				{day.events.length > MAX_CHIPS_PER_DAY && (
+				{overflow > 0 && (
 					// `text-left` explicitly: this sits inside a <button>, which
 					// centres its text by default, and the chips above set their own
 					// alignment.
 					<span className="t-l-2 text-muted-foreground px-1.5 text-left uppercase">
-						{interpolate(t.calendar.moreEvents, {
-							count: day.events.length - MAX_CHIPS_PER_DAY,
-						})}
+						{interpolate(t.calendar.moreEvents, { count: overflow })}
 					</span>
 				)}
 			</span>
@@ -387,9 +407,16 @@ function useEventTimeLabel(event: EventListItem, formatStr: string): string {
 	const dateFnsLocale = DATE_FNS_LOCALES[useLocale()];
 	const { eventDatetime, dateStatus } = event;
 	const dateIsFirm = !dateStatus || dateStatus === 'confirmed';
-	return dateIsFirm && eventDatetime
-		? formatRichDate(eventDatetime, formatStr, dateFnsLocale)
-		: dateStatus || t.status.tba;
+	if (dateIsFirm && eventDatetime) {
+		return formatRichDate(eventDatetime, formatStr, dateFnsLocale);
+	}
+	// Through the dictionary, not `dateStatus` itself: those are the schema's
+	// enum tokens (`tba`/`postponed`/`cancelled`), so rendering them raw printed
+	// an English word on the Chinese page — and made `status.tba` unreachable,
+	// since a set value is always truthy. An unknown token still falls back
+	// rather than rendering blank.
+	const label = t.status[dateStatus as keyof typeof t.status];
+	return typeof label === 'string' ? label : t.status.tba;
 }
 
 /**
@@ -466,6 +493,7 @@ function DayEventRow({
 	const displayLocation = locationRef?.name || location;
 	const displayLocationLink = locationRef?.mapLink || locationLink;
 	const hasEnded = isEventEnded(eventDatetime, endDatetime, currentDate);
+	const daysUntil = getDaysUntilEvent(eventDatetime, currentDate);
 	// Through the route table rather than a hand-built path, so the event route
 	// lives in exactly one place.
 	const href = slug
@@ -526,8 +554,18 @@ function DayEventRow({
 				</p>
 			)}
 
-			{(hasArrayValue(statusList) || hasEnded) && (
+			{(hasArrayValue(statusList) || hasEnded || daysUntil !== null) && (
 				<span className="relative z-10 flex flex-wrap gap-1">
+					{/* Same cue, same window and same wording as the list row: an event
+					    two days out cannot say "in 2 days" in one view and nothing in
+					    the other, on one page behind one toggle. */}
+					{!hasEnded && daysUntil !== null && (
+						<EventStatusItem
+							data={{
+								eventStatus: { title: formatDaysUntilLabel(daysUntil, t) },
+							}}
+						/>
+					)}
 					{hasArrayValue(statusList) &&
 						statusList.map((item) => (
 							<EventStatusItem

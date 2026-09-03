@@ -29,7 +29,9 @@
 		"status": {
 			"today": "今天",
 			"ended": "已結束",
-			"tba": "待定"
+			"tba": "待定",
+			"postponed": "延期",
+			"cancelled": "取消"
 		},
 		"daysUntil": {
 			"one": "{count} 天後",

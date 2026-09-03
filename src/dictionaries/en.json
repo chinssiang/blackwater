@@ -29,7 +29,9 @@
 		"status": {
 			"today": "today",
 			"ended": "ended",
-			"tba": "TBA"
+			"tba": "TBA",
+			"postponed": "Postponed",
+			"cancelled": "Cancelled"
 		},
 		"daysUntil": {
 			"one": "in {count} day",

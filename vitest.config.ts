@@ -20,6 +20,13 @@ export default defineConfig({
 		env: {
 			NEXT_PUBLIC_SANITY_DATASET: 'test',
 			NEXT_PUBLIC_SANITY_PROJECT_ID: 'test',
+			// Deliberately NOT UTC. Every date helper here exists to stop a civil
+			// date being resolved in the runtime's timezone, and under UTC the naive
+			// implementations they replace pass every assertion — `format(new
+			// Date('2026-09-05'))` only prints the 4th somewhere west of Greenwich.
+			// Running the suite in a negative-offset zone is what makes those tests
+			// able to fail. CI sets no TZ, so without this it inherits UTC.
+			TZ: 'America/Los_Angeles',
 		},
 	},
 });
