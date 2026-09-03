@@ -11,8 +11,8 @@ import {
 import { useCartActions } from '@/components/cart/CartProvider';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate } from '@/lib/dictionary';
-import { appendReferralParams, REFERRAL_SOURCE } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
+import { appendReferralParams, cn, REFERRAL_SOURCE } from '@/lib/utils';
+import { Button, buttonVariants } from '@/components/ui/Button';
 import VariantPicker from './VariantPicker';
 import BackInStockForm from './BackInStockForm';
 
@@ -213,30 +213,31 @@ export default function BuyColumn({
 								{isAdding ? cartText.adding : cartText.addToCart}
 							</Button>
 						) : purchaseLink ? (
-							<Button asChild>
-								<a
-									href={appendReferralParams(purchaseLink, {
-										source: REFERRAL_SOURCE,
-										medium: 'referral',
-										campaign: 'curated-products',
-										content: slug ?? undefined,
-									})}
-									target="_blank"
-									rel="noopener"
-									aria-label={interpolate(productText.buyAriaLabel, {
-										product: title ?? productText.thisProduct,
-									})}
-									className="group sm:max-w-112 uppercase w-full h-14"
+							<a
+								href={appendReferralParams(purchaseLink, {
+									source: REFERRAL_SOURCE,
+									medium: 'referral',
+									campaign: 'curated-products',
+									content: slug ?? undefined,
+								})}
+								target="_blank"
+								rel="noopener"
+								aria-label={interpolate(productText.buyAriaLabel, {
+									product: title ?? productText.thisProduct,
+								})}
+								className={cn(
+									buttonVariants(),
+									'group sm:max-w-112 uppercase w-full h-14'
+								)}
+							>
+								{productText.buyIt}
+								<span
+									aria-hidden
+									className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
 								>
-									{productText.buyIt}
-									<span
-										aria-hidden
-										className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
-									>
-										↗
-									</span>
-								</a>
-							</Button>
+									↗
+								</span>
+							</a>
 						) : null}
 					</div>
 				)

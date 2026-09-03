@@ -8,7 +8,7 @@ import { HeroUnderlay } from '@/components/HeroUnderlay';
 import SectionShell, {
 	type SectionAppearance,
 } from '@/components/SectionShell';
-import { Button } from '@/components/ui/Button';
+import { buttonVariants } from '@/components/ui/Button';
 import { revealStagger } from '@/lib/animate';
 import type { SanityColor } from '@/lib/image-utils';
 import { resolveSectionAppearance } from '@/lib/section-appearance';
@@ -219,16 +219,15 @@ export default function HeroBlock({
 
 				{ctaHref && ctaLabel && (
 					<div className="reveal mt-6" style={revealStagger(3)}>
-						<Button asChild size="lg">
-							<CustomLink
-								link={{
-									href: ctaHref,
-									isNewTab: callToAction?.link?.isNewTab ?? false,
-								}}
-							>
-								{ctaLabel}
-							</CustomLink>
-						</Button>
+						<CustomLink
+							link={{
+								href: ctaHref,
+								isNewTab: callToAction?.link?.isNewTab ?? false,
+							}}
+							className={buttonVariants({ size: 'lg' })}
+						>
+							{ctaLabel}
+						</CustomLink>
 					</div>
 				)}
 			</div>

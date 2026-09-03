@@ -61,7 +61,7 @@ export default function FaqBlock({
 			    --t-size-h2, so the two are the same size at every viewport -- they
 			    were not until the prose scale and the token scale were joined. */}
 			{heading && <Heading>{heading}</Heading>}
-			<Accordion type="single" collapsible>
+			<Accordion>
 				{visible.map((item, i) => {
 					const value = item._id ?? `faq-${i}`;
 					return (

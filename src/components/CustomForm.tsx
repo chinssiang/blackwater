@@ -203,8 +203,16 @@ const FieldComponentType: React.FC<FieldComponentTypeProps> = ({
 			return (
 				<Select
 					name={field.fieldName ?? undefined}
-					value={controllerField.value || undefined}
-					onValueChange={controllerField.onChange}
+					// `items` lets the trigger show the option's title before the popup has
+					// ever mounted; without it Base UI can only echo the raw value.
+					items={(selectOptions ?? []).map((item) => ({
+						value: item.value ?? '',
+						label: item.title,
+					}))}
+					// null, not undefined: undefined would flip the select to uncontrolled,
+					// and null is Base UI's "nothing selected", which shows the placeholder.
+					value={controllerField.value || null}
+					onValueChange={(value) => controllerField.onChange(value)}
 				>
 					<SelectTrigger
 						id={id}
@@ -213,7 +221,7 @@ const FieldComponentType: React.FC<FieldComponentTypeProps> = ({
 						<SelectValue placeholder={placeholder ?? undefined} />
 					</SelectTrigger>
 
-					<SelectContent side="bottom" position="popper">
+					<SelectContent side="bottom" alignItemWithTrigger={false}>
 						<SelectGroup>
 							{selectOptions?.map((item) => (
 								<SelectItem key={item._key} value={item.value ?? ''}>

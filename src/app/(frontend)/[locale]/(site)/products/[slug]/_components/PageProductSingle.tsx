@@ -256,7 +256,7 @@ export default function PageProductSingle({
 								{ ...REVEAL_SOFT, '--reveal-delay': '0.4s' } as CSSProperties
 							}
 						>
-							<Accordion type="multiple">
+							<Accordion multiple>
 								{metadata.map((item: any, i: number) => {
 									const value = item._key ?? `meta-${i}`;
 									return (

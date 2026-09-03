@@ -139,11 +139,7 @@ function StationCard({
 
 			{questLabel &&
 				(hasExampleImage ? (
-					<Accordion
-						type="single"
-						collapsible
-						className="border-foreground/20 mb-6 overflow-hidden rounded border"
-					>
+					<Accordion className="border-foreground/20 mb-6 overflow-hidden rounded border">
 						<AccordionItem value="quest" className="border-b-0">
 							<AccordionTrigger className="hover:bg-foreground/5 cursor-pointer rounded-none p-4 hover:no-underline [&>svg]:size-3">
 								<div className="min-w-0 flex-1">

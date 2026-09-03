@@ -117,22 +117,25 @@ function FieldStatus({
 	const showError = fieldState.invalid && !!fieldState.error;
 	const [isTooltipTriggered, setIsTooltipTriggered] = useState(false);
 
+	// Nothing to anchor a tooltip to until there is an error. Base UI's trigger
+	// renders whatever `render` is given, so the icon is that element rather
+	// than a child that may be absent.
+	if (!showError) return null;
+
 	return isShowErrorOnFocus ? (
-		<Tooltip open={(!!showError && isFocused) || isTooltipTriggered}>
+		<Tooltip open={isFocused || isTooltipTriggered}>
 			<TooltipTrigger
 				className={cn('absolute top-1/2 right-2 -translate-y-1/2', className)}
-				asChild
-			>
-				{showError && (
+				render={
 					<HiOutlineInformationCircle
 						className="text-error h-5 w-5"
 						onMouseEnter={() => setIsTooltipTriggered(true)}
 						onMouseLeave={() => setIsTooltipTriggered(false)}
 					/>
-				)}
-			</TooltipTrigger>
+				}
+			/>
 			<TooltipContent
-				className="pointer-events-none z-[calc(var(--z-index-dialog)+1)]"
+				className="pointer-events-none"
 				align="end"
 				sideOffset={-2}
 			>
@@ -143,19 +146,17 @@ function FieldStatus({
 		<Tooltip open={isTooltipTriggered}>
 			<TooltipTrigger
 				className={cn('absolute top-1/2 right-2 -translate-y-1/2', className)}
-				asChild
-			>
-				{showError && (
+				render={
 					<HiOutlineInformationCircle
 						className="text-error h-5 w-5"
 						onMouseEnter={() => setIsTooltipTriggered(true)}
 						onMouseLeave={() => setIsTooltipTriggered(false)}
 						onClick={() => setIsTooltipTriggered((prev) => !prev)}
 					/>
-				)}
-			</TooltipTrigger>
+				}
+			/>
 			<TooltipContent
-				className="pointer-events-none z-[calc(var(--z-index-dialog)+1)]"
+				className="pointer-events-none"
 				align="end"
 				sideOffset={-2}
 			>

@@ -11,7 +11,7 @@ See `package.json` scripts. Two things they don't tell you:
 
 ## Architecture
 
-This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in Sanity and rendered via Next.js. The stack uses React 19, Tailwind CSS v4, Radix UI, and Motion (Framer Motion successor).
+This is a **Next.js 16 (App Router) + Sanity v5** project. Content is managed in Sanity and rendered via Next.js. The stack uses React 19, Tailwind CSS v4, Base UI (`@base-ui/react`, the shadcn default since July 2026 — see the note under Key Shared Components), and Motion (Framer Motion successor).
 
 `scripts/` holds one-shot Node data scripts run directly against a dataset, for work `defineMigration`'s per-document callback can't do (e.g. `merge-product-i18n.mjs`, which has to read a document's translation siblings). Reusable migrations live in `src/sanity/migrations/` and run via the Sanity CLI.
 
@@ -150,7 +150,12 @@ Most of `src/components/` is self-describing; these carry rules the code alone w
 - `<SizeChartTable>` — Renders one `gSizeChart` as a table. Exports `isRenderable()` so callers gate empty states on the same condition it bails on (it `stegaClean`s each size — draft mode encodes metadata into `sizes[n]`, so a raw truthiness test calls an empty chart renderable). Uses `border-separate` and a column-count-derived `minWidth` so the label column can pin while values scroll, and marks the scroll container as a focusable `role="region"` so keyboard users can reach clipped columns — see the notes in the file before changing any of these.
 - `<LocationCurrentTime>` — Live local Taipei time on `/events*`. **Always import it from `@/components/LocationCurrentTimeLazy`**, never from the component file directly: it carries `date-fns` plus both locale bundles, and both render sites (Header, MobileMenu) sit in the always-mounted chrome — one static import anywhere puts that weight back into every route's shared chunk (measured: −61KB with both sites lazy).
 - `<ProductCard>` — `src/components/ProductCard.tsx`. Shopify-unaware by design; its `price` is rewritten upstream by `applyCardPrices`. Lived under `products/_components/` until the cart drawer and `productsBlock` both needed it from outside that route.
-- `ui/Carousel` — embla, not Radix, unlike everything else in `ui/`. The product gallery is its only consumer.
+- `ui/Carousel` — embla, not Base UI, unlike everything else in `ui/`. The product gallery is its only consumer.
+- **Base UI (`@base-ui/react`) is the primitive layer** under everything else in `ui/` and under `Popover`, imported per component (`@base-ui/react/dialog`) — so there is no barrel for `optimizePackageImports` to split. The files are shadcn's Base UI versions carrying this repo's own class strings, and four things about Base UI differ from the Radix it replaced:
+  - **`render` replaces `asChild`.** `<Dialog.Close render={<ChromeButton … />}>label</Dialog.Close>`: the component's children become the rendered element's children and the props are merged. `Button` is the exception — a link that should look like a button gets `buttonVariants()` on the anchor (through `cn()` so the caller's overrides still win) and never `<Button render={<a />}>`, which puts `role="button"` on the link; shadcn's Base UI docs say the same. `MobileMenu`'s CTA and `AdaSkip` are the references.
+  - **State is a bare attribute, never `data-state`.** Popups carry `data-open`/`data-closed` (plus `data-starting-style`/`data-ending-style` for CSS transitions), checkboxes and radios `data-checked`, tabs `data-active`, accordion triggers `data-panel-open`, select items `data-highlighted`. The `--radix-*` variables became `--transform-origin`, `--available-height`, `--anchor-width` and `--accordion-panel-height`. Checkbox and radio render a `<span>` beside a hidden `<input>`, which is where a passed `id` lands — so `<Label htmlFor>` keeps working — and why their disabled styling is `data-disabled:`, not `disabled:`.
+  - **Popups have a `Positioner`, and that is where the `z-index` goes.** It is the positioned element; a `z-*` on the `Popup` inside it takes no part in stacking. `Popover` sits at `z-popover`, `Tooltip` one step above `z-dialog` (it renders inside the ProductSubmission dialog), `Select` at `z-50`.
+  - **The Motion-driven overlays follow Base UI's animation handbook.** `MobileMenu` and `CartDrawerPanel` gate `<Dialog.Portal keepMounted>` behind the controlled `open` inside `<AnimatePresence>` and compose `Popup`/`Backdrop` with `motion.div` through `render`; Base UI sees Motion's opacity animation via `getAnimations()` and waits for it before unmounting. Both pass `modal="trap-focus"`, which still traps focus and hides the page from assistive tech but leaves Base UI's own scroll lock off: `useScrollLock` owns the lock (see Hooks), and two locks writing the same `<html>`/`<body>` inline styles would race.
 
 ### Utilities (`src/lib/`)
 
@@ -163,7 +168,7 @@ Function-level detail is in the files; these are the non-obvious ones.
 
 ### Hooks (`src/hooks/`)
 
-- `useScrollLock.ts` — Locks document scroll while an overlay is open, and keeps that lock honest across the page lifecycle (`pagehide` releases it, `pageshow` lets the owner close itself on a bfcache restore). Used by `CartDrawer` and `MobileMenu`; **the lock is global, so new overlays must go through this** rather than calling `scrollDisable`/`scrollEnable` directly.
+- `useScrollLock.ts` — Locks document scroll while an overlay is open, and keeps that lock honest across the page lifecycle (`pagehide` releases it, `pageshow` lets the owner close itself on a bfcache restore). Used by `CartDrawer` and `MobileMenu`; **the lock is global, so new overlays must go through this** rather than calling `scrollDisable`/`scrollEnable` directly. Those two open Base UI dialogs with `modal="trap-focus"` precisely so Base UI's own scroll lock stays off and this hook remains the only writer.
 - `useScrollSpy.ts` — IntersectionObserver scroll-spy for in-page section navs + horizontal-strip auto-scroll; also exports `readRootPxVar()`.
 
 ### Commerce (Shopify + cart)

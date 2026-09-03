@@ -13,7 +13,7 @@ import ProductCard from '@/components/ProductCard';
 import ProductCategoriesGrid from './ProductCategoriesGrid';
 import type { PageProductIndexQueryResult } from 'sanity.types';
 import type { WithoutPageMetadata } from '@/lib/defineMetadata';
-import { Button } from '@/components/ui/Button';
+import { buttonVariants } from '@/components/ui/Button';
 
 type Props = {
 	data: WithoutPageMetadata<NonNullable<PageProductIndexQueryResult>>;
@@ -220,13 +220,15 @@ export function PageProductIndex({ data }: Props) {
 					</div>
 
 					<div className="mt-20 flex justify-center lg:mt-30">
-						<Button
-							asChild
-							size="lg"
-							className="t-l-1 text-xs whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6"
+						<Link
+							href={allProductsHref}
+							className={cn(
+								buttonVariants({ size: 'lg' }),
+								't-l-1 text-xs whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6'
+							)}
 						>
-							<Link href={allProductsHref}>{t.moreProducts}</Link>
-						</Button>
+							{t.moreProducts}
+						</Link>
 					</div>
 				</section>
 			)}

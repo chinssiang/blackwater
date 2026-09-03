@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils';
 import { hasArrayValue } from '@/lib/utils';
 import { buildRgbaCssString } from '@/lib/image-utils';
-import { Button } from '@/components/ui/Button';
+import { buttonVariants } from '@/components/ui/Button';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -160,43 +160,37 @@ export function PageEventCrew({
 					</div>
 					{availableMonthKeys.length > 0 && (
 						<nav className="flex items-center gap-1 shrink-0">
-							<Button
-								asChild
-								variant="ghost"
-								size="sm"
+							<Link
+								href={prevHref || '#'}
 								className={cn(
+									buttonVariants({ variant: 'ghost', size: 'sm' }),
 									// text-[10px] is load-bearing: t-l-2 sets the size in
 									// @layer components, but Button's base text-sm is a
 									// utility and wins the cascade. Not a duplicate.
 									'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !prevHref }
 								)}
-								disabled={!prevHref}
+								aria-disabled={!prevHref || undefined}
 							>
-								<Link href={prevHref || '#'}>
-									<ArrowLeft className="size-3.5" />
-									Prev
-								</Link>
-							</Button>
+								<ArrowLeft className="size-3.5" />
+								Prev
+							</Link>
 							<span className="text-white/20 text-xs select-none">/</span>
-							<Button
-								asChild
-								variant="ghost"
-								size="sm"
+							<Link
+								href={nextHref || '#'}
 								className={cn(
+									buttonVariants({ variant: 'ghost', size: 'sm' }),
 									// text-[10px] is load-bearing: t-l-2 sets the size in
 									// @layer components, but Button's base text-sm is a
 									// utility and wins the cascade. Not a duplicate.
 									'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !nextHref }
 								)}
-								disabled={!nextHref}
+								aria-disabled={!nextHref || undefined}
 							>
-								<Link href={nextHref || '#'}>
-									Next
-									<ArrowRight className="size-3.5" />
-								</Link>
-							</Button>
+								Next
+								<ArrowRight className="size-3.5" />
+							</Link>
 						</nav>
 					)}
 				</div>

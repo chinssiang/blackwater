@@ -7,7 +7,7 @@ import type { CartSettings } from './CartDrawerPanel';
 
 // The drawer mounts in the site Layout, so whatever it imports is in the shared
 // bundle on every route — including pages with no commerce on them at all. Its
-// contents are heavy (Radix Dialog, Motion, and ProductCard → ImageBlock →
+// contents are heavy (Base UI Dialog, Motion, and ProductCard → ImageBlock →
 // SanityImage for the empty state), so the panel lives in its own chunk and is
 // fetched the first time a shopper opens the cart.
 //
