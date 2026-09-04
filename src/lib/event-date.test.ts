@@ -1,8 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import type { RichDate } from 'sanity.types';
+import { vercelStegaCombine } from '@vercel/stega';
 import {
+	formatEventTimeLabel,
 	getDaysUntilEvent,
 	getRichDateDayKey,
+	readEventDateStatus,
 	getTodayKey,
 	groupEventsByDay,
 	isEventEnded,
@@ -246,5 +249,109 @@ describe('groupEventsByDay', () => {
 	it('handles an empty or missing list', () => {
 		expect(groupEventsByDay([]).size).toBe(0);
 		expect(groupEventsByDay(null).size).toBe(0);
+	});
+});
+
+describe('readEventDateStatus', () => {
+	// The schema's values: confirmed | tba | postponed | cancelled.
+	it('reports no status for a firm date', () => {
+		expect(readEventDateStatus('confirmed')).toBeNull();
+		expect(readEventDateStatus(null)).toBeNull();
+		expect(readEventDateStatus(undefined)).toBeNull();
+		expect(readEventDateStatus('')).toBeNull();
+	});
+
+	it('reports the status that overrides the time', () => {
+		expect(readEventDateStatus('tba')).toBe('tba');
+		expect(readEventDateStatus('postponed')).toBe('postponed');
+		expect(readEventDateStatus('cancelled')).toBe('cancelled');
+	});
+
+	it('sees through draft-mode stega encoding', () => {
+		// The bug this exists to stop: `dateStatus` is not on `filterDefault`'s
+		// denylist (which covers `status`, not `dateStatus`), so in the
+		// Presentation tool it arrives with invisible characters appended. A raw
+		// `=== 'confirmed'` is then false for EVERY event and each one renders its
+		// status word where its start time belongs — visible only to editors.
+		const encoded = vercelStegaCombine('confirmed', {
+			origin: 'sanity.io',
+			href: '/studio',
+		});
+		expect(encoded).not.toBe('confirmed');
+		expect(readEventDateStatus(encoded)).toBeNull();
+
+		const encodedTba = vercelStegaCombine('tba', {
+			origin: 'sanity.io',
+			href: '/studio',
+		});
+		expect(readEventDateStatus(encodedTba)).toBe('tba');
+	});
+});
+
+describe('formatEventTimeLabel', () => {
+	const labels = {
+		today: 'today',
+		ended: 'ended',
+		tba: 'TBA',
+		postponed: 'Postponed',
+		cancelled: 'Cancelled',
+	};
+
+	it('formats the time when the date is firm', () => {
+		expect(
+			formatEventTimeLabel(
+				{ eventDatetime: taipei('2026-09-05T19:30'), dateStatus: 'confirmed' },
+				'HH:mm',
+				labels
+			)
+		).toBe('19:30');
+	});
+
+	it('renders the TRANSLATED status, never the raw enum token', () => {
+		// Rendering `dateStatus` itself put an English word on the Chinese page,
+		// and made the `tba` entry unreachable — a set value is always truthy.
+		expect(
+			formatEventTimeLabel(
+				{ eventDatetime: taipei('2026-09-05T19:30'), dateStatus: 'postponed' },
+				'HH:mm',
+				labels
+			)
+		).toBe('Postponed');
+		expect(
+			formatEventTimeLabel(
+				{ eventDatetime: taipei('2026-09-05T19:30'), dateStatus: 'tba' },
+				'HH:mm',
+				labels
+			)
+		).toBe('TBA');
+	});
+
+	it('falls back to TBA for an undated event or an unknown token', () => {
+		expect(
+			formatEventTimeLabel({ eventDatetime: null }, 'HH:mm', labels)
+		).toBe('TBA');
+		expect(
+			formatEventTimeLabel(
+				{ eventDatetime: taipei('2026-09-05T19:30'), dateStatus: 'rescheduled' },
+				'HH:mm',
+				labels
+			)
+		).toBe('TBA');
+	});
+
+	it('shows the time, not the status, for a stega-encoded confirmed date', () => {
+		expect(
+			formatEventTimeLabel(
+				{
+					eventDatetime: taipei('2026-09-05T19:30'),
+					dateStatus: vercelStegaCombine('confirmed', {
+						origin: 'sanity.io',
+						href: '/studio',
+					}),
+				},
+				'HH:mm',
+				labels
+			)
+		).toBe('19:30');
 	});
 });

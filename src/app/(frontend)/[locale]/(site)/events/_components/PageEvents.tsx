@@ -7,7 +7,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import type { PEventsQueryResult } from 'sanity.types';
 import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 import {
-	formatRichDate,
+	formatEventTimeLabel,
 	getDaysUntilEvent,
 	getTodayKey,
 	groupEventsByDay,
@@ -439,14 +439,12 @@ export function PageEvents({ data }: PageEventsProps) {
 												}
 											)}
 										>
-											{(!dateStatus || dateStatus === 'confirmed') &&
-											eventDatetime
-												? formatRichDate(
-														eventDatetime,
-														t.dateFormat,
-														dateFnsLocale
-													)
-												: dateStatus || t.status.tba}
+											{formatEventTimeLabel(
+												item,
+												t.dateFormat,
+												t.status,
+												dateFnsLocale
+											)}
 
 											<Link
 												className={cn('p-fill', OVERLAY_LINK_FOCUS)}

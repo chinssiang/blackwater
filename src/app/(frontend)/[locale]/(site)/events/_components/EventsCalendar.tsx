@@ -22,7 +22,7 @@ import {
 	pickPlural,
 } from '@/lib/dictionary';
 import {
-	formatRichDate,
+	formatEventTimeLabel,
 	getDaysUntilEvent,
 	getTodayKey,
 	isEventEnded,
@@ -149,6 +149,9 @@ export function EventsCalendar({
 				const events = eventsByDay.get(day.key) ?? [];
 				if (events.length === 0) return { ...day, events, label: null };
 				selectable.push(day.key);
+				// Only the displayed month's days are default candidates; a padding
+				// day stays clickable but must not be what a month opens on.
+				if (day.isCurrentMonth) inMonth.push(day.key);
 				return {
 					...day,
 					events,
@@ -251,7 +254,22 @@ export function EventsCalendar({
 				</tbody>
 			</table>
 
-			<div id={panelId} className="mt-8 lg:mt-12">
+			{/* The panel is the only place this view opens an event from, and
+			    selecting a day replaces it wholesale. Without a live region the
+			    change is silent: `aria-pressed` flips on the button and nothing
+			    else is announced, so a screen-reader user has no signal that the
+			    activation did anything. `polite` rather than `assertive` — it
+			    follows a deliberate action, so it should not interrupt.
+			    `aria-atomic` so the heading, the count and the day are read as one
+			    statement rather than as whichever nodes happened to change. */}
+			<div
+				id={panelId}
+				className="mt-8 lg:mt-12"
+				role="region"
+				aria-live="polite"
+				aria-atomic="true"
+				aria-label={t.calendar.dayPanelLabel}
+			>
 				{activeDay ? (
 					<>
 						{/* Left-aligned rather than justified: at 1440px a justified count
@@ -404,19 +422,12 @@ function DayCell({
  */
 function useEventTimeLabel(event: EventListItem, formatStr: string): string {
 	const t = useTranslations('events');
-	const dateFnsLocale = DATE_FNS_LOCALES[useLocale()];
-	const { eventDatetime, dateStatus } = event;
-	const dateIsFirm = !dateStatus || dateStatus === 'confirmed';
-	if (dateIsFirm && eventDatetime) {
-		return formatRichDate(eventDatetime, formatStr, dateFnsLocale);
-	}
-	// Through the dictionary, not `dateStatus` itself: those are the schema's
-	// enum tokens (`tba`/`postponed`/`cancelled`), so rendering them raw printed
-	// an English word on the Chinese page — and made `status.tba` unreachable,
-	// since a set value is always truthy. An unknown token still falls back
-	// rather than rendering blank.
-	const label = t.status[dateStatus as keyof typeof t.status];
-	return typeof label === 'string' ? label : t.status.tba;
+	return formatEventTimeLabel(
+		event,
+		formatStr,
+		t.status,
+		DATE_FNS_LOCALES[useLocale()]
+	);
 }
 
 /**

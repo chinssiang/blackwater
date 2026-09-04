@@ -59,6 +59,7 @@
 			"dayHeadingFormat": "EEEE, MMMM d",
 			"timeFormat": "h:mm aaa",
 			"today": "Today",
+			"dayPanelLabel": "Events on the selected day",
 			"selectDay": "{day}, {events}",
 			"eventCount": { "one": "{count} event", "other": "{count} events" },
 			"moreEvents": "+{count} more"

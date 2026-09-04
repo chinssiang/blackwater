@@ -16,8 +16,9 @@ import { getDictionary } from '@/lib/dictionary.server';
 import { formatDaysUntilLabel } from '@/lib/dictionary';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 import {
-	formatRichDate,
+	formatEventTimeLabel,
 	getDaysUntilEvent,
+	readEventDateStatus,
 	getUpcomingFrom,
 	selectUpcomingEvents,
 } from '@/lib/event-date';
@@ -215,8 +216,10 @@ function EventTicket({
 	const codex = subtitle ? title : null;
 
 	// One gate for everything that assumes the date is real: a TBA, postponed or
-	// cancelled event must not render a date or count down to one.
-	const dateIsFirm = !dateStatus || dateStatus === 'confirmed';
+	// cancelled event must not render a date or count down to one. It lives in
+	// event-date.ts so this and the two /events views cannot drift, and so the
+	// stega cleaning it does happens everywhere rather than here only.
+	const dateIsFirm = readEventDateStatus(dateStatus) === null;
 	const daysUntil = dateIsFirm ? getDaysUntilEvent(eventDatetime, now) : null;
 	const daysUntilLabel =
 		daysUntil === null ? null : formatDaysUntilLabel(daysUntil, t);
@@ -262,9 +265,7 @@ function EventTicket({
 			<div className="mt-5 px-4">
 				<h3 className="t-h-3 line-clamp-3 text-balance uppercase">{heading}</h3>
 				<p className="t-spec text-foreground/60 mt-1.5 uppercase">
-					{dateIsFirm && eventDatetime
-						? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
-						: dateStatus || t.status.tba}
+					{formatEventTimeLabel(event, t.dateFormat, t.status, dateFnsLocale)}
 				</p>
 			</div>
 

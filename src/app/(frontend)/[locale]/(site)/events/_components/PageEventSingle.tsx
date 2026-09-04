@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
-import { formatRichDate } from '@/lib/event-date';
+import { formatEventTimeLabel, formatRichDate } from '@/lib/event-date';
+import { useTranslations } from '@/components/LocaleProvider';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import CustomPortableText from '@/components/CustomPortableText';
 import ImageBlock from '@/components/ImageBlock';
@@ -63,6 +64,7 @@ type PageEventSingleProps = {
 };
 
 export default function PageEventSingle({ data }: PageEventSingleProps) {
+	const t = useTranslations('events');
 	const {
 		title,
 		subtitle,
@@ -73,10 +75,14 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 		heroImage,
 	} = data || {};
 
-	const formattedDate =
-		eventDatetime && (!dateStatus || dateStatus === 'confirmed')
-			? formatRichDate(eventDatetime, 'iii, MM.dd.yy, h:mm aaa')
-			: dateStatus?.toUpperCase() || 'TBA';
+	// Through the shared gate: this used to render `dateStatus.toUpperCase()` and
+	// a hardcoded 'TBA', so a postponed event showed an English enum token on the
+	// Chinese page and the dictionary was never consulted.
+	const formattedDate = formatEventTimeLabel(
+		{ eventDatetime, dateStatus },
+		'iii, MM.dd.yy, h:mm aaa',
+		t.status
+	);
 
 	const isMultiLocation =
 		eventFormat === 'multi-location' ||

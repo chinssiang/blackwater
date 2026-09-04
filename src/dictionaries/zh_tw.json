@@ -59,6 +59,7 @@
 			"dayHeadingFormat": "M月d日 EEEE",
 			"timeFormat": "HH:mm",
 			"today": "今天",
+			"dayPanelLabel": "所選日期的活動",
 			"selectDay": "{day}，{events}",
 			"eventCount": { "one": "{count} 個活動", "other": "{count} 個活動" },
 			"moreEvents": "還有 {count} 個"
