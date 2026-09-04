@@ -5,6 +5,7 @@ import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate } from '@/lib/dictionary';
 import { htmlLangFor } from '@/lib/i18n';
 import { cn, OVERLAY_LINK_FOCUS } from '@/lib/utils';
+import { Plus } from '@/components/SvgIcons';
 import {
 	aqiBandKey,
 	TAIPEI_TIMEZONE,
@@ -103,35 +104,32 @@ export function WeatherWidget() {
 	];
 
 	return (
-		<div className="text-foreground bg-background/85 backdrop-blur-xs border-foreground/36 right-contain bottom-[calc(var(--height-g-toolbar)+var(--spacing-contain))] lg:bottom-1 absolute z-g-toolbar w-52 border">
+		<div className="text-foreground bg-background/85 backdrop-blur-xs border-foreground/36 right-contain bottom-1 absolute z-g-toolbar w-(--width-max) sm:max-w-64 border max-sm:left-contain">
 			<button
 				type="button"
 				onClick={() => setIsOpen((open) => !open)}
 				aria-expanded={isOpen}
 				aria-controls={panelId}
 				className={cn(
-					// Names both properties that move. `hover:opacity-60` is the house
-					// default treatment for anything interactive, and every ring-*
-					// utility compiles to box-shadow, which transition-colors would
-					// not have covered.
-					'flex w-full items-baseline justify-between gap-2 p-2.5 text-left transition-[opacity,box-shadow] hover:opacity-60 cursor-pointer',
+					'flex w-full items-center justify-between gap-2 p-2.5 text-left transition-[opacity,box-shadow] hover:opacity-60 cursor-pointer',
 					OVERLAY_LINK_FOCUS
 				)}
 			>
 				<span className="t-b-2 uppercase">{t.label}</span>
-				<span className="t-b-1 tabular-nums">
+				<span className="t-b-2 tabular-nums ml-auto">
 					{Math.round(temperature)}
 					{t.units.celsius}
 				</span>
+				<span className="t-b-2 text-foreground/80 uppercase">
+					( {condition} )
+				</span>
+				<Plus
+					className={cn('size-3 ml-auto transition-transform', {
+						'rotate-45': isOpen,
+					})}
+				/>
 			</button>
 
-			{/*
-			  Kept in the DOM and collapsed with a 0fr -> 1fr row so both the open
-			  and the close ease; a conditional render cannot transition in without
-			  a mount animation. `inert` keeps the collapsed content out of the tab
-			  order and the accessibility tree, which `overflow-hidden` alone does
-			  not.
-			*/}
 			<div
 				id={panelId}
 				inert={!isOpen}
@@ -141,10 +139,7 @@ export function WeatherWidget() {
 				)}
 			>
 				<div className="min-h-0">
-					<p className="t-b-2 text-foreground/60 border-foreground/36 border-t px-2.5 pt-2.5 pb-1">
-						{condition}
-					</p>
-					<dl className="px-2.5">
+					<dl className="px-2.5 border-foreground/36 border-t pt-2.5 pb-1">
 						{rows.map(({ label, value }) => (
 							<div
 								key={label}
