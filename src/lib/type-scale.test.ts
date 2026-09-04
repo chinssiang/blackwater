@@ -12,7 +12,7 @@ const CSS = readFileSync(new URL('../globals.css', import.meta.url), 'utf8');
 
 describe('TYPE_SCALE_CLASSES', () => {
 	it('lists exactly the t-* classes globals.css defines', () => {
-		const defined = [...CSS.matchAll(/^\t\.(t-[a-z0-9-]+)\s*\{/gm)].map(
+		const defined = [...CSS.matchAll(/^\s*\.(t-[a-z0-9-]+)\s*\{/gm)].map(
 			([, name]) => name
 		);
 

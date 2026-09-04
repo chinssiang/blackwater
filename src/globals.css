@@ -215,16 +215,12 @@
 		   for the same three roles, which is how a `faqBlock` heading ended up 50%
 		   larger than the `eventsBlock` heading beside it on the same page.
 
-		   EVERY rung is fluid, and every one ramps across the same viewport window
-		   -- 369px to 1444px, flat outside it -- so the whole ladder starts and
-		   stops moving together and no two rungs cross. The headings travel 2px
-		   (h1 4px), everything below them 1px, which is a 0.093vw slope per pixel
-		   of travel across that window. That is why the intercepts carry four
-		   decimals: at three, rounding moved each rung's window by up to 10px and
-		   the ladder no longer shared one. `h2` is the exception, ~10px early at
-		   both ends, and is left as tuned. The lower rungs were flat literals until
-		   now, which meant body copy stayed 14px inside containers that run to
-		   --container-max (2000px) while the headings above it grew.
+		   Every rung ramps across one window, 369px to 1444px, flat outside it --
+		   0.093vw per pixel of travel. Keep new rungs on that slope and give the
+		   intercept FOUR decimals: at three, rounding moves a rung's window by up
+		   to 10px and the ladder stops sharing one. `h2` predates the rule, is
+		   ~10px early at both ends, and is left as tuned. CLAUDE.md's type-scale
+		   section carries the reasoning.
 
 		   The ladder, floor -> ceiling:
 
@@ -632,12 +628,9 @@
 	   centring, not type. Anything else is a sign this table is wrong.
 
 	   FONT SIZE is the one property a call site can no longer take by accident:
-	   `cn()` registers these nine class names with tailwind-merge as a one-way
-	   conflict against Tailwind's `font-size` group (`src/lib/utils.ts`), so a
-	   `t-*` deletes an earlier `text-sm` -- `<Button>`'s base, which used to win
-	   silently and had three call sites restating `text-[10px]` to force the
-	   rung back -- while an explicit `text-*` AFTER a token still overrides it.
-	   Adding a rung here means adding it to `TYPE_SCALE_CLASSES`; the test in
+	   `cn()` registers these nine class names with tailwind-merge so a `t-*`
+	   deletes an earlier `text-sm`. The reasoning lives with the config in
+	   `src/lib/utils.ts`; adding a rung here means adding it there too, and
 	   `src/lib/type-scale.test.ts` fails if the two disagree. */
 
 	.t-h-1 {
@@ -693,10 +686,8 @@
 	   they sat on `.t-h-3` only because 482c1e5 renamed a six-level scale down
 	   into three names.
 
-	   Deliberately NOT sharing a var with `.wysiwyg h4/h5/h6`. Both were a flat
-	   16px, but a prose heading and an event date are different roles -- coupling
-	   them would make a prose retune move an event date, and it is exactly that
-	   independence that lets this rung go to 17 while h4 drops to 15. */
+	   Lands on the same 16->17px as `.wysiwyg h4` and deliberately keeps its own
+	   clamp; that rule carries the reasoning. */
 	.t-l-0 {
 		font-family: var(--font-default);
 		font-weight: 500;
