@@ -30,7 +30,7 @@ import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { formatDaysUntilLabel, interpolate } from '@/lib/dictionary';
 import { localizePath } from '@/lib/i18n';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
-import { EventStatusItem } from './EventStatusItem';
+import { EventStatusItem } from '@/components/EventStatusItem';
 import { EventsCalendar } from './EventsCalendar';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;

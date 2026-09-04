@@ -3,6 +3,10 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import type { UpcomingEventsQueryResult } from 'sanity.types';
 import CustomLink from '@/components/CustomLink';
+import {
+	EventStatusItem,
+	type StatusListItem,
+} from '@/components/EventStatusItem';
 import SectionShell, {
 	type SectionAppearance,
 } from '@/components/SectionShell';
@@ -301,10 +305,12 @@ function EventTicket({
 						    it reads as a cue beside the authored status pills rather
 						    than competing with them. */}
 						{daysUntilLabel && (
-							<StatusItem data={{ eventStatus: { title: daysUntilLabel } }} />
+							<EventStatusItem
+								data={{ eventStatus: { title: daysUntilLabel } }}
+							/>
 						)}
 						{statusList?.map((item) => (
-							<StatusItem key={item._key} data={item as StatusListItem} />
+							<EventStatusItem key={item._key} data={item as StatusListItem} />
 						))}
 					</span>
 				)}
@@ -327,58 +333,5 @@ function EventTicket({
 				</Link>
 			)}
 		</article>
-	);
-}
-
-// Mirrors the pill on /events. Colours come from the referenced brand-colour
-// documents, with ensureAccessibleTextColor deciding the foreground against the
-// authored background; the var() fallbacks keep it legible when a status has no
-// colours set.
-// Typed structurally rather than off the query result: typegen widens the two
-// brand-colour derefs to `{} | Color | null` and the link's resolved `href` to
-// `unknown` (resolvedHrefGroq is a select() it cannot narrow), so the generated
-// shape does not fit its own consumers. PageEvents' copy sidesteps this with
-// `data: any`; naming the fields keeps the looseness to the two values that
-// actually need it.
-type StatusListItem = {
-	link?: { href?: unknown; isNewTab?: boolean | null } | null;
-	eventStatus?: {
-		title?: string | null;
-		statusTextColor?: SanityColor | null;
-		statusBgColor?: SanityColor | null;
-	} | null;
-};
-
-function StatusItem({ data }: { data: StatusListItem }) {
-	const { link, eventStatus } = data || {};
-	if (!eventStatus) return null;
-	const { title, statusTextColor, statusBgColor } = eventStatus;
-	// Narrowed rather than cast: `href` comes back as `unknown` because
-	// resolvedHrefGroq is a select() typegen cannot fold, and a status whose link
-	// resolves to nothing should render as a plain pill.
-	const linkHref = typeof link?.href === 'string' ? link.href : null;
-
-	return (
-		<span
-			className="t-b-2 relative flex items-center gap-0.5 rounded-4xl px-2.5 py-1 uppercase"
-			style={{
-				color:
-					ensureAccessibleTextColor(statusTextColor, statusBgColor) ||
-					'var(--foreground)',
-				backgroundColor: buildRgbaCssString(statusBgColor) || 'var(--muted)',
-			}}
-		>
-			{title}
-			{linkHref && (
-				<>
-					<ArrowRight className="size-3" />
-					<CustomLink
-						className={cn('p-fill rounded-4xl', OVERLAY_LINK_FOCUS)}
-						link={{ href: linkHref, isNewTab: link?.isNewTab ?? false }}
-						aria-label={title ?? undefined}
-					/>
-				</>
-			)}
-		</span>
 	);
 }

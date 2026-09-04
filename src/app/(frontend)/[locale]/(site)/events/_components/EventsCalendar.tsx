@@ -31,7 +31,10 @@ import {
 import { resolveHref } from '@/lib/routes';
 import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import type { PEventsQueryResult } from 'sanity.types';
-import { EventStatusItem } from './EventStatusItem';
+import {
+	EventStatusItem,
+	type StatusListItem,
+} from '@/components/EventStatusItem';
 
 type EventListItem = NonNullable<PEventsQueryResult>['eventList'][number];
 
@@ -581,7 +584,7 @@ function DayEventRow({
 						statusList.map((item) => (
 							<EventStatusItem
 								key={item._key}
-								data={item}
+								data={item as StatusListItem}
 								className={cn(hasEnded && 'opacity-30')}
 							/>
 						))}

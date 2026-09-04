@@ -2,6 +2,10 @@
 import Link from 'next/link';
 import { formatEventTimeLabel, formatRichDate } from '@/lib/event-date';
 import { useTranslations } from '@/components/LocaleProvider';
+import {
+	EventStatusItem,
+	type StatusListItem,
+} from '@/components/EventStatusItem';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import CustomPortableText from '@/components/CustomPortableText';
 import ImageBlock from '@/components/ImageBlock';
@@ -26,16 +30,6 @@ type Station = {
 	questExampleImage?: Record<string, any> | null;
 	directionsIn?: string | null;
 	directionsOut?: string | null;
-};
-
-type StatusListItem = {
-	_key?: string | null;
-	eventStatus?: {
-		title?: string | null;
-		statusTextColor?: Record<string, number> | null;
-		statusBgColor?: Record<string, number> | null;
-	} | null;
-	link?: { href?: string | null } | null;
 };
 
 type Highlight = {
@@ -111,10 +105,7 @@ export default function PageEventSingle({ data }: PageEventSingleProps) {
 					{hasArrayValue(statusList) && (
 						<div className="flex flex-wrap gap-2 ">
 							{statusList!.map((item) => (
-								<EventStatusBadge
-									key={item._key || item.eventStatus?.title}
-									item={item}
-								/>
+								<EventStatusItem key={item._key} data={item} />
 							))}
 						</div>
 					)}
@@ -389,31 +380,4 @@ function StationCard({
 			</div>
 		</section>
 	);
-}
-
-function EventStatusBadge({ item }: { item: StatusListItem }) {
-	const { eventStatus, link } = item;
-	if (!eventStatus) return null;
-	const { title, statusTextColor, statusBgColor } = eventStatus;
-
-	const sharedProps = {
-		className:
-			'rounded-4xl py-2 px-2.5 uppercase t-b-2 inline-flex items-center gap-1',
-		style: {
-			color: buildRgbaCssString(statusTextColor as any) || 'var(--foreground)',
-			backgroundColor:
-				buildRgbaCssString(statusBgColor as any) || 'var(--muted)',
-		},
-	};
-
-	if (link?.href) {
-		return (
-			<Link href={link.href} {...sharedProps}>
-				{title}
-				<ArrowUpRight className="size-2" aria-hidden />
-			</Link>
-		);
-	}
-
-	return <span {...sharedProps}>{title}</span>;
 }
