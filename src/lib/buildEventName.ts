@@ -1,8 +1,7 @@
 import { formatInTimeZone } from 'date-fns-tz';
 import type { Locale } from '@/lib/i18n';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
-
-const FALLBACK_TIMEZONE = 'Asia/Taipei';
+import { FALLBACK_TIMEZONE } from '@/lib/event-date';
 
 // Concise, locale-aware date used inside structured-data names (no time).
 const NAME_DATE_FORMAT: Record<Locale, string> = {

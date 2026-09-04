@@ -5,7 +5,7 @@ import Link from 'next/link';
 import CustomLink from '@/components/CustomLink';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { ArrowUpRight } from '@/components/SvgIcons';
-import { revealStagger } from '@/lib/animate';
+import { REVEAL_SOFT } from '@/lib/animate';
 import {
 	buildMonthGrid,
 	buildWeekdayHeadings,
@@ -24,6 +24,7 @@ import {
 import {
 	formatEventTimeLabel,
 	getDaysUntilEvent,
+	getEventEndInstant,
 	getTodayKey,
 	isEventEnded,
 	groupEventsByDay,
@@ -59,9 +60,22 @@ type EventsCalendarProps = {
 
 /** A grid cell with everything that depends only on the month and the locale. */
 type PreparedDay = CalendarDay & {
-	events: EventListItem[];
+	/** Capped at what a cell can show; `total` is how many the day really has. */
+	events: PreparedEvent[];
+	total: number;
 	/** The day button's accessible name; null when the day has no events. */
 	label: string | null;
+};
+
+/**
+ * One event with its end instant already resolved. That instant depends on the
+ * event, never on the clock, so it belongs with the grid rather than in a render
+ * body the 60-second tick re-runs — the end-of-day fallback most events take
+ * costs two Intl conversions each time.
+ */
+type PreparedEvent = {
+	event: EventListItem;
+	endsAt: number | null;
 };
 
 // How many events a day cell shows before it collapses the rest into a count.
@@ -150,8 +164,20 @@ export function EventsCalendar({
 				// blanking them told a visitor scanning that row the day was free
 				// while the next month's grid showed a run on it. Selecting one
 				// moves the calendar to the month that owns it (see `selectDay`).
-				const events = eventsByDay.get(day.key) ?? [];
-				if (events.length === 0) return { ...day, events, label: null };
+				const dayEvents = eventsByDay.get(day.key) ?? [];
+				const events: PreparedEvent[] = dayEvents
+					.slice(0, MAX_EVENTS_PER_DAY)
+					.map((event) => ({
+						event,
+						endsAt:
+							getEventEndInstant(
+								event.eventDatetime,
+								event.endDatetime
+							)?.getTime() ?? null,
+					}));
+				if (dayEvents.length === 0) {
+					return { ...day, events, label: null, total: 0 };
+				}
 				selectable.push(day.key);
 				// Only the displayed month's days are default candidates; a padding
 				// day stays clickable but must not be what a month opens on.
@@ -162,11 +188,12 @@ export function EventsCalendar({
 					// The visible content is a number and a few chips, so the button
 					// names itself explicitly: the date in full, plus how many events
 					// are on it.
+					total: dayEvents.length,
 					label: interpolate(t.calendar.selectDay, {
 						day: formatDayKey(day.key, t.calendar.dayFormat, dateFnsLocale),
 						events: interpolate(
-							pickPlural(t.calendar.eventCount, events.length),
-							{ count: events.length }
+							pickPlural(t.calendar.eventCount, dayEvents.length),
+							{ count: dayEvents.length }
 						),
 					}),
 				};
@@ -296,11 +323,10 @@ export function EventsCalendar({
 							</p>
 						</div>
 						<ul className="border-foreground/80 mt-4 border-t">
-							{activeEvents.map((event, index) => (
+							{activeEvents.map((event) => (
 								<DayEventRow
 									key={event._id}
 									event={event}
-									index={index}
 									currentDate={currentDate}
 								/>
 							))}
@@ -352,18 +378,18 @@ function DayCell({
 		</span>
 	);
 
-	if (day.events.length === 0) {
+	if (day.total === 0) {
 		return <div className={CELL_CLASS}>{dayNumber}</div>;
 	}
 
-	// Resolved once for both subtrees below, and only for the events either of
-	// them can show: `isEventEnded` falls back to an end-of-day instant in the
-	// event's timezone, which is two Intl conversions per call.
-	const visible = day.events.slice(0, MAX_EVENTS_PER_DAY).map((event) => ({
+	// The end instants came with the grid, so the clock tick costs one numeric
+	// comparison per visible event rather than two Intl conversions.
+	const now = currentDate.getTime();
+	const visible = day.events.map(({ event, endsAt }) => ({
 		event,
-		hasEnded: isEventEnded(event.eventDatetime, event.endDatetime, currentDate),
+		hasEnded: endsAt !== null && endsAt < now,
 	}));
-	const overflow = day.events.length - visible.length;
+	const overflow = day.total - visible.length;
 
 	return (
 		<button
@@ -482,11 +508,9 @@ function EventChip({
  */
 function DayEventRow({
 	event,
-	index,
 	currentDate,
 }: {
 	event: EventListItem;
-	index: number;
 	currentDate: Date;
 }) {
 	const locale = useLocale();
@@ -509,10 +533,22 @@ function DayEventRow({
 	return (
 		<li
 			className={cn(
-				'reveal border-foreground/25 group relative flex flex-col gap-2 border-b py-4',
+				// `isolate` is load-bearing. The venue link and the status pills below
+				// carry `z-10` to sit above this row's own stretched link — but a
+				// `relative` element with `z-index: auto` creates NO stacking context,
+				// so without this they compete in the ROOT context with the page's
+				// `sticky … z-10` header and win on DOM order: scroll the panel up and
+				// the pills paint over the month name and the view toggle. Isolating
+				// scopes that `z-10` to the row, which is all it ever meant.
+				'reveal border-foreground/25 group relative isolate flex flex-col gap-2 border-b py-4',
 				hasEnded && 'pointer-events-none'
 			)}
-			style={revealStagger(index)}
+			// `reveal` with no delay, deliberately not `revealStagger`. These rows are
+			// the only place this view opens an event from, and they remount on every
+			// day selection (keyed by event id), so a stagger held the content someone
+			// just tapped for at opacity 0 for up to 0.36s — the one thing the
+			// utility's own note in globals.css says to keep delays off.
+			style={REVEAL_SOFT}
 		>
 			<div
 				className={cn(

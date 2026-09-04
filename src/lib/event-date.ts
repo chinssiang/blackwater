@@ -6,7 +6,18 @@ import type { RichDate } from 'sanity.types';
 // civil date, this file owns which timezone a stored value is read in.
 import type { DayKey } from '@/lib/calendar';
 
-const FALLBACK_TIMEZONE = 'Asia/Taipei';
+/**
+ * The timezone an event is read in when its stored `richDate` carries none —
+ * and, more broadly, the club's own timezone.
+ *
+ * Exported because it was declared three times: here, in `buildEventName.ts`
+ * (which names events for structured data) and as `CREW_TIMEZONE` on the crew
+ * page (which buckets months). Three literals meant the day an event is filed
+ * under, the day it is judged to have ended, and the day its structured data
+ * claims could drift apart on a relocation or a second chapter — silently, and
+ * with every test still passing, since each suite passes its own `TZ` in.
+ */
+export const FALLBACK_TIMEZONE = 'Asia/Taipei';
 
 /**
  * Format a `richDate` value in its own stored timezone, so the editor's
@@ -213,11 +224,30 @@ export function isEventEnded(
 	endDatetime: RichDate | null | undefined,
 	now: Date
 ): boolean {
-	const end =
-		getRichDateInstant(endDatetime) ??
-		getRichDateEndOfDayInstant(eventDatetime);
+	const end = getEventEndInstant(eventDatetime, endDatetime);
 	if (!end) return false;
 	return end < now;
+}
+
+/**
+ * The instant an event is over — the authored end time, or the end of its start
+ * day in its own timezone.
+ *
+ * The clock-INDEPENDENT half of `isEventEnded`, split out so a caller rendering
+ * many events against a ticking clock can resolve it once instead of once per
+ * tick. It is not cheap: the end-of-day fallback (the common case, since most
+ * events carry no `endDatetime`) costs two `Intl.DateTimeFormat` conversions,
+ * and a calendar month re-running that for every visible event every minute is
+ * pure waste — the answer only changes when the event does.
+ */
+export function getEventEndInstant(
+	eventDatetime: RichDate | null | undefined,
+	endDatetime: RichDate | null | undefined
+): Date | null {
+	return (
+		getRichDateInstant(endDatetime) ??
+		getRichDateEndOfDayInstant(eventDatetime)
+	);
 }
 
 /**
