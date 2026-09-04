@@ -1,6 +1,4 @@
 import { readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { cn, TYPE_SCALE_CLASSES } from '@/lib/utils';
 
@@ -10,10 +8,7 @@ import { cn, TYPE_SCALE_CLASSES } from '@/lib/utils';
 // the DOM. That registration is a hand-kept list beside a stylesheet, which is
 // the shape of thing that silently rots — hence this file.
 
-const CSS = readFileSync(
-	join(dirname(fileURLToPath(import.meta.url)), '..', 'globals.css'),
-	'utf8'
-);
+const CSS = readFileSync(new URL('../globals.css', import.meta.url), 'utf8');
 
 describe('TYPE_SCALE_CLASSES', () => {
 	it('lists exactly the t-* classes globals.css defines', () => {
