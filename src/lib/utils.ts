@@ -30,6 +30,14 @@ export const TYPE_SCALE_CLASSES = [
  * meant to be overridable at a call site -- `leading-*`, `font-medium` and an
  * explicit `text-*` all still work -- so registering the conflict in both
  * directions would close the escape hatch the tokens are designed around.
+ *
+ * One trap it cannot see: tailwind-merge resolves conflicts only WITHIN a
+ * modifier scope, so a token beside a responsive pair keeps the half it did
+ * not match. `<Input>`'s base is `text-base md:text-sm`; a `t-b-2` on one
+ * would drop the unprefixed `text-base` and leave `md:text-sm` standing, so
+ * the field would render below 16px on a phone and iOS would zoom the
+ * viewport on focus. No call site does this today -- put the token on a
+ * wrapper, or restate the mobile size, if one ever needs to.
  */
 const twMerge = extendTailwindMerge<'type-scale'>({
 	extend: {

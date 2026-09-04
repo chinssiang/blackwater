@@ -232,7 +232,8 @@
 		     h2   22 -> 24    t-h-2, .wysiwyg h2 + blockquote
 		     h3   18 -> 20    t-h-3, .wysiwyg h3        (card titles)
 		     l0   16 -> 17    t-l-0
-		     h4   15 -> 16    .wysiwyg h4/h5/h6
+		     h4   16 -> 17    .wysiwyg h4
+		     h5   15 -> 16    .wysiwyg h5/h6
 		     b1   14 -> 15    t-b-1, .wysiwyg p/ol/ul
 		     b2   12 -> 13    t-b-2
 		     l1   12 -> 13    t-l-1
@@ -493,15 +494,25 @@
 			letter-spacing: -0.02em;
 		}
 
-		h4,
+		/* h4 keeps its own rung. It was a flat 18px until b87fac5 folded it in
+		   with h5/h6 at 16px, which left prose with one level where it had two
+		   and made h4 identical to h6. 18px is not the way back, though -- that
+		   is h3's floor, so the two read as one on a phone. 16->17 sits clear of
+		   both. Deliberately its own clamp rather than `.t-l-0`'s, which lands
+		   on the same numbers: a prose heading and an event date are different
+		   roles, and a prose retune must not move a ticket. */
+		h4 {
+			font-family: var(--font-default);
+			font-weight: 500;
+			font-size: clamp(1rem, 0.9786rem + 0.093vw, 1.0625rem);
+			line-height: 1.2;
+			letter-spacing: -0.02em;
+		}
+
 		h5,
 		h6 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			/* Ramps DOWN to 15px rather than sitting flat at 16: h3's floor is
-			   18px, so a flat 16 made the two rungs read as one on a phone. Its
-			   own clamp, not `.t-l-0`'s -- a prose heading and an event date are
-			   different roles that happen to share a ceiling. */
 			font-size: clamp(0.9375rem, 0.9161rem + 0.093vw, 1rem);
 			line-height: 1.2;
 			letter-spacing: -0.02em;
@@ -613,9 +624,10 @@
 	   1.4.12 (Text Spacing, AA) expects content to survive a user forcing.
 
 	   A `leading-*` utility still beats these rules, which is the escape hatch --
-	   but of the twelve patches only ProductCard's survives, where the leading
-	   sets the reserved height of a `line-clamp-2 min-h-[2lh]` card in a grid
-	   rather than the readability of a paragraph. Header and ToolBar set
+	   but of the twelve patches only ProductCard's EXCERPT survives (not its
+	   title, which carries no leading utility), where the leading sets the
+	   reserved height of a `line-clamp-2 min-h-[2lh]` card in a grid rather
+	   than the readability of a paragraph. Header and ToolBar set
 	   `[&_a]:leading-header` on their nav links, which is chrome-height
 	   centring, not type. Anything else is a sign this table is wrong.
 

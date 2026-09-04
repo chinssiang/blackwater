@@ -265,7 +265,7 @@ export default function PageProductSingle({
 											value={value}
 											className="border-foreground/10 "
 										>
-											<AccordionTrigger className="t-l-2 uppercase text-foreground/65">
+											<AccordionTrigger className="t-l-1 uppercase text-foreground/65">
 												{item.title}
 											</AccordionTrigger>
 											<AccordionContent>
