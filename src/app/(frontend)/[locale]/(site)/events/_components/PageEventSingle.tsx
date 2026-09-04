@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { formatEventTimeLabel, formatRichDate } from '@/lib/event-date';
+import { resolveEventLocation } from '@/lib/event-location';
 import { useTranslations } from '@/components/LocaleProvider';
 import {
 	EventStatusItem,
@@ -139,8 +140,8 @@ function EventBody({
 		content,
 	} = data || {};
 
-	const displayLocation = locationRef?.name || location;
-	const displayLocationLink = locationRef?.mapLink || locationLink;
+	const { name: displayLocation, mapLink: displayLocationLink } =
+		resolveEventLocation(data);
 
 	const hasContent = hasArrayValue(content);
 	const hasStations = hasArrayValue(stations);

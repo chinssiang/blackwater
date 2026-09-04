@@ -11,6 +11,7 @@ import defineMetadata, {
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
 import { buildEventName } from '@/lib/buildEventName';
+import { resolveEventLocation } from '@/lib/event-location';
 import JsonLd from '@/components/JsonLd';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
 import type { PEventsQueryResult } from 'sanity.types';
@@ -29,7 +30,11 @@ function defineEventsItemListJsonLd(
 ): Record<string, unknown> | null {
 	const itemListElement = (eventList || [])
 		.map((event, i) => {
-			const href = resolveHref({ documentType: 'pEvent', slug: event?.slug, locale });
+			const href = resolveHref({
+				documentType: 'pEvent',
+				slug: event?.slug,
+				locale,
+			});
 			if (!event?.title || !href) return null;
 			return {
 				'@type': 'ListItem',
@@ -38,7 +43,7 @@ function defineEventsItemListJsonLd(
 					{
 						title: event.title,
 						subtitle: event.subtitle,
-						location: event.locationRef?.name || event.location,
+						location: resolveEventLocation(event).name,
 						eventDatetime: event.eventDatetime?.utc,
 						timezone: event.eventDatetime?.timezone,
 					},

@@ -28,6 +28,7 @@ import {
 	isEventEnded,
 	groupEventsByDay,
 } from '@/lib/event-date';
+import { resolveEventLocation } from '@/lib/event-location';
 import { resolveHref } from '@/lib/routes';
 import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import type { PEventsQueryResult } from 'sanity.types';
@@ -492,20 +493,11 @@ function DayEventRow({
 	const t = useTranslations('events');
 	const timeLabel = useEventTimeLabel(event, t.calendar.timeFormat);
 
-	const {
-		title,
-		subtitle,
-		slug,
-		statusList,
-		eventDatetime,
-		endDatetime,
-		location,
-		locationLink,
-		locationRef,
-	} = event;
+	const { title, subtitle, slug, statusList, eventDatetime, endDatetime } =
+		event;
 
-	const displayLocation = locationRef?.name || location;
-	const displayLocationLink = locationRef?.mapLink || locationLink;
+	const { name: displayLocation, mapLink: displayLocationLink } =
+		resolveEventLocation(event);
 	const hasEnded = isEventEnded(eventDatetime, endDatetime, currentDate);
 	const daysUntil = getDaysUntilEvent(eventDatetime, currentDate);
 	// Through the route table rather than a hand-built path, so the event route

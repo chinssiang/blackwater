@@ -28,6 +28,7 @@ import { fadeAnim } from '@/lib/animate';
 import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { formatDaysUntilLabel, interpolate } from '@/lib/dictionary';
+import { resolveEventLocation } from '@/lib/event-location';
 import { localizePath } from '@/lib/i18n';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 import { EventStatusItem } from '@/components/EventStatusItem';
@@ -61,9 +62,6 @@ const CALENDAR_FUTURE_WINDOW_MONTHS = 12;
 
 /** The two ways this page can render its events. */
 type EventsView = 'list' | 'calendar';
-
-const VIEW_TRIGGER_CLASS =
-	't-l-2 rounded-full border border-foreground px-2.5 py-1.5 uppercase whitespace-nowrap transition-colors data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=inactive]:bg-transparent data-[state=inactive]:hover:bg-foreground/5';
 
 // Typed off the QUERY result, not the raw `PEvent` document type: pEvent is
 // field-level localized, so on the document every prose field is an
@@ -281,10 +279,10 @@ export function PageEvents({ data }: PageEventsProps) {
 					</motion.p>
 					<div className="flex items-center gap-2 sm:gap-3">
 						<TabsList aria-label={t.view.label} className="gap-1.5">
-							<TabsTrigger value="list" className={VIEW_TRIGGER_CLASS}>
+							<TabsTrigger value="list" variant="pill" size="sm">
 								{t.view.list}
 							</TabsTrigger>
-							<TabsTrigger value="calendar" className={VIEW_TRIGGER_CLASS}>
+							<TabsTrigger value="calendar" variant="pill" size="sm">
 								{t.view.calendar}
 							</TabsTrigger>
 						</TabsList>
@@ -377,17 +375,10 @@ export function PageEvents({ data }: PageEventsProps) {
 									eventDatetime,
 									endDatetime,
 									dateStatus,
-									location,
-									locationLink,
 								} = item || {};
 
-								// The generated query type already carries locationRef; the cast
-								// this replaces would have hidden it if eventCardFields ever
-								// dropped the deref.
-								const locationRef = item?.locationRef;
-								const displayLocation = locationRef?.name || location;
-								const displayLocationLink =
-									locationRef?.mapLink || locationLink;
+								const { name: displayLocation, mapLink: displayLocationLink } =
+									resolveEventLocation(item);
 
 								const eventHasEnded = isEventEnded(
 									eventDatetime,

@@ -32,6 +32,7 @@ import {
 	type SanityColor,
 } from '@/lib/image-utils';
 import { revealStagger } from '@/lib/animate';
+import { resolveEventLocation } from '@/lib/event-location';
 import { resolveHref } from '@/lib/routes';
 import {
 	cn,
@@ -196,16 +197,13 @@ function EventTicket({
 		slug,
 		eventDatetime,
 		dateStatus,
-		location,
-		locationLink,
-		locationRef,
 		statusList,
 	} = event;
 
 	// locationRef is the preferred source; `location`/`locationLink` are the
 	// one-off fallback the schema hides once a venue is referenced.
-	const displayLocation = locationRef?.name || location;
-	const displayLocationLink = locationRef?.mapLink || locationLink;
+	const { name: displayLocation, mapLink: displayLocationLink } =
+		resolveEventLocation(event);
 	const href = slug
 		? resolveHref({ documentType: 'pEvent', slug, locale })
 		: null;
