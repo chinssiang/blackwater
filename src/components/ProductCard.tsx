@@ -54,10 +54,10 @@ type ProductCardProps = {
 };
 
 /**
- * The five-column-count grid every product listing uses: one card below 640px,
- * two to 1024, three to 1536, four beyond, and never wider than 470px once the
- * page hits its own max width. `ProductsBlock` and the cart drawer are the two
- * grids shaped differently, and both pass their own.
+ * The grid five of the eight call sites share: one card below 640px, two to
+ * 1024, three to 1536, four beyond, and never wider than 470px once the page
+ * hits its own max width. The three shaped differently -- `ProductsBlock`, the
+ * cart drawer and the collection page -- each pass their own and say why.
  */
 const DEFAULT_CARD_SIZES =
 	'(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw';

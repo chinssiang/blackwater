@@ -1,5 +1,4 @@
-import { readFileSync } from 'node:fs';
-import { globSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { cn, TYPE_SCALE_CLASSES } from '@/lib/utils';
 
@@ -30,9 +29,14 @@ describe('TYPE_SCALE_CLASSES', () => {
 		const rungs = new Set<string>(TYPE_SCALE_CLASSES);
 		const used = new Map<string, string>();
 
-		for (const file of globSync('src/**/*.{ts,tsx}')) {
-			if (file.endsWith('type-scale.test.ts')) continue;
-			for (const [, name] of readFileSync(file, 'utf8').matchAll(
+		const SRC = new URL('..', import.meta.url);
+		const files = readdirSync(SRC, { recursive: true, encoding: 'utf8' });
+
+		for (const file of files) {
+			if (!/\.tsx?$/.test(file) || file.endsWith('type-scale.test.ts')) {
+				continue;
+			}
+			for (const [, name] of readFileSync(new URL(file, SRC), 'utf8').matchAll(
 				/(?<![\w-])(t-(?:h|b|l)-[a-z0-9]+|t-spec)(?![\w-])/g
 			)) {
 				if (!rungs.has(name)) used.set(name, file);
