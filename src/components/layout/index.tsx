@@ -33,6 +33,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 	const pathname = usePathname();
 	const isLightSection = isLightThemePath(pathname);
 	const hideNewsletter = shouldHideGlobalNewsletter(pathname);
+
 	// SPA pageview tracking lives in HeadTrackingCode — the one component
 	// allowed to talk to gtag, so it stays behind the consent gate.
 
@@ -83,6 +84,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 				</Main>
 				<Footer data={footerData} />
 				{!toolbar?.hideToolbar && <ToolBar menu={toolbar?.toolbarMenu} />}
+
 				<CartDrawer settings={siteData?.cart} />
 			</LazyMotion>
 		</CartProvider>

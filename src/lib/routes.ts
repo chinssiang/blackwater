@@ -100,6 +100,30 @@ export function isLightThemePath(pathname: string): boolean {
 	);
 }
 
+// Subtrees that carry the Taipei weather widget — each entry matches itself and
+// its descendants, so "/events" covers the index and every single event. The
+// homepage is handled separately below rather than listed here: as a base, "/"
+// is a prefix of every path, so a subtree rule on it would show the widget
+// sitewide.
+const WEATHER_WIDGET_SUBTREES = ['/events'];
+
+/**
+ * Read by <Layout>, which mounts the widget in the always-mounted chrome.
+ *
+ * Goes through normalizeRoutePath for the reason the section on this file in
+ * CLAUDE.md spells out: a prerender's pathname carries the internal "/en"
+ * prefix that the client router never produces, so comparing a raw
+ * usePathname() here would bake "hidden" into the prerendered HTML of every
+ * English page and let hydration pop the widget in afterwards.
+ */
+export function shouldShowWeatherWidget(pathname: string): boolean {
+	const normalized = normalizeRoutePath(pathname);
+	if (normalized === '/') return true;
+	return WEATHER_WIDGET_SUBTREES.some(
+		(base) => normalized === base || normalized.startsWith(`${base}/`)
+	);
+}
+
 export function resolveHref({
 	documentType,
 	slug,

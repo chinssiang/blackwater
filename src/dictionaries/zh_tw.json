@@ -13,6 +13,49 @@
 	"locationCurrentTime": {
 		"dateFormat": "iii, p"
 	},
+	"weather": {
+		"label": "台北",
+		"observedAt": "更新於 {time}",
+		"metrics": {
+			"feelsLike": "體感溫度",
+			"wind": "風速",
+			"humidity": "濕度",
+			"rain": "降雨",
+			"aqi": "空氣品質"
+		},
+		"units": {
+			"celsius": "°C",
+			"kilometresPerHour": "公里/小時",
+			"percent": "%",
+			"millimetres": "毫米"
+		},
+		"conditions": {
+			"clear": "晴",
+			"mainlyClear": "晴時多雲",
+			"partlyCloudy": "多雲",
+			"overcast": "陰",
+			"fog": "霧",
+			"drizzle": "細雨",
+			"freezingDrizzle": "凍雨（細）",
+			"rain": "雨",
+			"freezingRain": "凍雨",
+			"snow": "雪",
+			"snowGrains": "霰",
+			"showers": "陣雨",
+			"snowShowers": "陣雪",
+			"thunderstorm": "雷雨",
+			"thunderstormHail": "雷雨並有冰雹",
+			"unknown": "未知"
+		},
+		"aqiBands": {
+			"good": "良好",
+			"moderate": "普通",
+			"unhealthySensitive": "對敏感族群不健康",
+			"unhealthy": "對所有族群不健康",
+			"veryUnhealthy": "非常不健康",
+			"hazardous": "危害"
+		}
+	},
 	"events": {
 		"headers": {
 			"codex": "活動",
