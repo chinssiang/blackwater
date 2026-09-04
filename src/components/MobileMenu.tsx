@@ -121,10 +121,8 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 		) : null;
 
 	return (
-		// `modal="trap-focus"`, not `true`: both trap focus and hide the rest of the
-		// page from assistive tech, but only `true` engages Base UI's own scroll lock.
-		// This overlay keeps the lock with useScrollLock (bfcache semantics -- see the
-		// hook), and two locks writing the same <html>/<body> inline styles would race.
+		// `modal="trap-focus"`, not `true`, so useScrollLock stays the only writer of
+		// the page's scroll lock -- the reasoning is on that hook.
 		<Dialog.Root open={open} onOpenChange={setOpen} modal="trap-focus">
 			<Dialog.Trigger
 				render={
@@ -159,9 +157,6 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 							}
 						>
 							<Dialog.Title className="sr-only">{t.menu}</Dialog.Title>
-							<Dialog.Description className="sr-only">
-								{t.menu}
-							</Dialog.Description>
 
 							{/* Top bar: brand logo (left) + morphing close toggle (right),
 							    aligned to the real header so the logo reads as "stayed". */}

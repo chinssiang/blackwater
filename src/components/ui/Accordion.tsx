@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import { Accordion as AccordionPrimitive } from '@base-ui/react/accordion';
 import { ChevronDownIcon } from 'lucide-react';
 

@@ -106,12 +106,10 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
 function FieldStatus({
 	fieldState = {},
 	isFocused,
-	isShowErrorOnFocus = false,
 	className,
 }: {
 	fieldState?: any;
 	isFocused?: boolean;
-	isShowErrorOnFocus?: boolean;
 	className?: string;
 }) {
 	const showError = fieldState.invalid && !!fieldState.error;
@@ -119,10 +117,11 @@ function FieldStatus({
 
 	// Nothing to anchor a tooltip to until there is an error. Base UI's trigger
 	// renders whatever `render` is given, so the icon is that element rather
-	// than a child that may be absent.
+	// than a child that may be absent -- and a field with no error mounts no
+	// tooltip at all.
 	if (!showError) return null;
 
-	return isShowErrorOnFocus ? (
+	return (
 		<Tooltip open={isFocused || isTooltipTriggered}>
 			<TooltipTrigger
 				className={cn('absolute top-1/2 right-2 -translate-y-1/2', className)}
@@ -131,27 +130,6 @@ function FieldStatus({
 						className="text-error h-5 w-5"
 						onMouseEnter={() => setIsTooltipTriggered(true)}
 						onMouseLeave={() => setIsTooltipTriggered(false)}
-					/>
-				}
-			/>
-			<TooltipContent
-				className="pointer-events-none"
-				align="end"
-				sideOffset={-2}
-			>
-				<p>{fieldState.error?.message}</p>
-			</TooltipContent>
-		</Tooltip>
-	) : (
-		<Tooltip open={isTooltipTriggered}>
-			<TooltipTrigger
-				className={cn('absolute top-1/2 right-2 -translate-y-1/2', className)}
-				render={
-					<HiOutlineInformationCircle
-						className="text-error h-5 w-5"
-						onMouseEnter={() => setIsTooltipTriggered(true)}
-						onMouseLeave={() => setIsTooltipTriggered(false)}
-						onClick={() => setIsTooltipTriggered((prev) => !prev)}
 					/>
 				}
 			/>

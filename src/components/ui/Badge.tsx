@@ -1,28 +1,22 @@
 import * as React from 'react';
-import { mergeProps } from '@base-ui/react/merge-props';
-import { useRender } from '@base-ui/react/use-render';
 
 import { cn } from '@/lib/utils';
 
-function Badge({
-	className,
-	render,
-	...props
-}: useRender.ComponentProps<'span'>) {
-	return useRender({
-		defaultTagName: 'span',
-		render,
-		props: mergeProps<'span'>(
-			{
-				className: cn(
-					't-l-2 inline-flex w-fit items-center py-2 px-3 uppercase bg-primary/25 text-primary rounded',
-					className
-				),
-			},
-			props
-		),
-		state: { slot: 'badge' },
-	});
+// A plain <span>, not Base UI's `useRender`: nothing composes a Badge with
+// another element, and the hook costs a ref merge and a props merge on every
+// one -- /products/all renders 24 cards, each with a badge per tag. `ui/Label`
+// is a plain element for the same reason.
+function Badge({ className, ...props }: React.ComponentProps<'span'>) {
+	return (
+		<span
+			data-slot="badge"
+			className={cn(
+				't-l-2 inline-flex w-fit items-center py-2 px-3 uppercase bg-primary/25 text-primary rounded',
+				className
+			)}
+			{...props}
+		/>
+	);
 }
 
 export { Badge };

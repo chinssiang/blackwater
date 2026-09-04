@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 
@@ -56,8 +55,11 @@ function SelectTrigger({
 
 // Placement props and the z-index go to the Positioner (the positioned
 // element). `alignItemWithTrigger` is Base UI's name for Radix's item-aligned
-// mode: the popup overlaps the trigger so the selected item sits on it, and
-// skips the entrance animation. Pass `false` for a plain dropdown.
+// mode: the popup overlaps the trigger so the selected item sits on it. Pass
+// `false` for a plain dropdown. Base UI reports that mode as `data-side="none"`
+// on the popup, which is what suppresses the entrance animation below -- read
+// off the *effective* mode, since Base UI drops item-alignment on touch input
+// and when there is not enough room.
 function SelectContent({
 	className,
 	children,
@@ -84,9 +86,8 @@ function SelectContent({
 			>
 				<SelectPrimitive.Popup
 					data-slot="select-content"
-					data-align-trigger={alignItemWithTrigger}
 					className={cn(
-						'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 relative min-w-(--anchor-width) origin-(--transform-origin) overflow-hidden rounded-lg shadow-md ring-1 duration-100 data-[align-trigger=true]:animate-none',
+						'bg-popover text-popover-foreground data-open:animate-in data-closed:animate-out data-closed:fade-out-0 data-open:fade-in-0 data-closed:zoom-out-95 data-open:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 ring-foreground/10 relative min-w-(--anchor-width) origin-(--transform-origin) overflow-hidden rounded-lg shadow-md ring-1 duration-100 data-[side=none]:animate-none motion-reduce:animate-none',
 						className
 					)}
 					{...props}
@@ -159,7 +160,7 @@ function SelectSeparator({
 function SelectScrollUpButton({
 	className,
 	...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollUpArrow>) {
+}: SelectPrimitive.ScrollUpArrow.Props) {
 	return (
 		<SelectPrimitive.ScrollUpArrow
 			data-slot="select-scroll-up-button"
@@ -177,7 +178,7 @@ function SelectScrollUpButton({
 function SelectScrollDownButton({
 	className,
 	...props
-}: React.ComponentProps<typeof SelectPrimitive.ScrollDownArrow>) {
+}: SelectPrimitive.ScrollDownArrow.Props) {
 	return (
 		<SelectPrimitive.ScrollDownArrow
 			data-slot="select-scroll-down-button"

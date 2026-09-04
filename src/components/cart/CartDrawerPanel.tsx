@@ -347,10 +347,8 @@ export default function CartDrawerPanel({
 	const count = cart?.totalQuantity ?? 0;
 
 	return (
-		// `modal="trap-focus"`, not `true`: both trap focus and hide the rest of the
-		// page from assistive tech, but only `true` engages Base UI's own scroll lock.
-		// This overlay keeps the lock with useScrollLock (bfcache semantics -- see the
-		// hook), and two locks writing the same <html>/<body> inline styles would race.
+		// `modal="trap-focus"`, not `true`, so useScrollLock stays the only writer of
+		// the page's scroll lock -- the reasoning is on that hook.
 		<Dialog.Root open={isOpen} onOpenChange={setOpen} modal="trap-focus">
 			{/* Base UI's Motion recipe (handbook, "Animation"): the controlled `open`
 			    gates the portal inside AnimatePresence so the exit choreography plays,

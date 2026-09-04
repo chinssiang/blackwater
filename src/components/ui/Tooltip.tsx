@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 
 import { cn } from '@/lib/utils';
@@ -32,9 +31,10 @@ function TooltipTrigger({ ...props }: TooltipPrimitive.Trigger.Props) {
 
 // Placement props go to the Positioner, and so does the z-index: it is the
 // positioned element, so a `z-*` on the Popup would not take part in stacking.
-// One step above z-dialog, because the only consumer (FieldStatus) renders
-// inside the ProductSubmission dialog and popover, and a tooltip is transient
-// enough to sit above everything.
+// `z-tooltip` is the top rung of the ladder in globals.css: a tooltip is
+// transient and has to clear the dialog it was opened from (FieldStatus renders
+// inside the ProductSubmission dialog and popover). On the ladder rather than a
+// local calc(), so every stacking level reads from one list.
 function TooltipContent({
 	className,
 	side = 'top',
@@ -55,12 +55,12 @@ function TooltipContent({
 				alignOffset={alignOffset}
 				side={side}
 				sideOffset={sideOffset}
-				className="isolate z-[calc(var(--z-index-dialog)+1)]"
+				className="isolate z-tooltip"
 			>
 				<TooltipPrimitive.Popup
 					data-slot="tooltip-content"
 					className={cn(
-						'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 rounded-md px-3 py-1.5 text-xs bg-foreground text-background w-fit max-w-xs origin-(--transform-origin)',
+						'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 rounded-md px-3 py-1.5 text-xs bg-foreground text-background w-fit max-w-xs origin-(--transform-origin) motion-reduce:animate-none',
 						className
 					)}
 					{...props}

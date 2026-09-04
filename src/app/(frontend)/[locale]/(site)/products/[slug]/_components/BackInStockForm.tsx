@@ -119,7 +119,6 @@ export default function BackInStockForm({
 										: undefined,
 								}}
 								isFocused={isFocused}
-								isShowErrorOnFocus={true}
 							/>
 						</div>
 						<Button

@@ -150,11 +150,7 @@ function ProductField({
 									setIsFocused(false);
 								}}
 							/>
-							<FieldStatus
-								fieldState={fieldState}
-								isFocused={isFocused}
-								isShowErrorOnFocus
-							/>
+							<FieldStatus fieldState={fieldState} isFocused={isFocused} />
 						</div>
 					</FieldContent>
 				</Field>

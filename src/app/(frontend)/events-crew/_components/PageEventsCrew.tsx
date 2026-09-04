@@ -14,7 +14,7 @@ import type {
 } from 'sanity.types';
 import { formatRichDate, isEventEnded } from '@/lib/event-date';
 import SanityImage from '@/components/SanityImage';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 
 type EventItem = NonNullable<EventCrewByMonthQueryResult>[number];
 
@@ -60,6 +60,40 @@ interface PageEventCrewProps {
 	availableMonthKeys: string[];
 	uniqueMembers: UniqueMember[];
 	selectedMember: UniqueMember | null;
+}
+
+/**
+ * One arrow in the month pager. Renders a plain <span> when there is no month
+ * that way, rather than a link that is styled as disabled: `pointer-events-none`
+ * does not take an anchor out of the tab order and `aria-disabled` is only
+ * advisory, so a keyboard user could still reach the arrow and navigate to the
+ * `#` placeholder. No target, no link — the same shape `ui/Pagination` uses.
+ */
+function MonthNavLink({
+	href,
+	children,
+}: {
+	href: string | null;
+	children: ReactNode;
+}) {
+	// text-[10px] is load-bearing: t-l-2 sets the size in @layer components, but
+	// buttonVariants' base text-sm is a utility and wins the cascade. Not a
+	// duplicate.
+	const className = cn(
+		buttonVariants({ variant: 'ghost', size: 'sm' }),
+		'uppercase t-l-2 text-[10px]'
+	);
+
+	if (!href) return <span className={className}>{children}</span>;
+
+	return (
+		<Link
+			href={href}
+			className={cn(className, 'cursor-pointer hover:opacity-60')}
+		>
+			{children}
+		</Link>
+	);
 }
 
 export function PageEventCrew({
@@ -160,37 +194,15 @@ export function PageEventCrew({
 					</div>
 					{availableMonthKeys.length > 0 && (
 						<nav className="flex items-center gap-1 shrink-0">
-							<Link
-								href={prevHref || '#'}
-								className={cn(
-									buttonVariants({ variant: 'ghost', size: 'sm' }),
-									// text-[10px] is load-bearing: t-l-2 sets the size in
-									// @layer components, but Button's base text-sm is a
-									// utility and wins the cascade. Not a duplicate.
-									'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
-									{ 'pointer-events-none': !prevHref }
-								)}
-								aria-disabled={!prevHref || undefined}
-							>
+							<MonthNavLink href={prevHref}>
 								<ArrowLeft className="size-3.5" />
 								Prev
-							</Link>
+							</MonthNavLink>
 							<span className="text-white/20 text-xs select-none">/</span>
-							<Link
-								href={nextHref || '#'}
-								className={cn(
-									buttonVariants({ variant: 'ghost', size: 'sm' }),
-									// text-[10px] is load-bearing: t-l-2 sets the size in
-									// @layer components, but Button's base text-sm is a
-									// utility and wins the cascade. Not a duplicate.
-									'uppercase t-l-2 text-[10px] cursor-pointer hover:opacity-60',
-									{ 'pointer-events-none': !nextHref }
-								)}
-								aria-disabled={!nextHref || undefined}
-							>
+							<MonthNavLink href={nextHref}>
 								Next
 								<ArrowRight className="size-3.5" />
-							</Link>
+							</MonthNavLink>
 						</nav>
 					)}
 				</div>

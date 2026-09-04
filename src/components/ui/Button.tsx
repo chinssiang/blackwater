@@ -1,4 +1,3 @@
-import * as React from 'react';
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
 
@@ -58,12 +57,15 @@ const buttonVariants = cva(
 // screen readers' link lists (shadcn's Base UI docs say the same). Put
 // `buttonVariants()` on the link instead, through `cn()` so the caller's
 // overrides still win -- MobileMenu's CTA and AdaSkip are the references.
+// `render` is omitted from the props below so that rule is a compile error
+// rather than a comment someone has to notice.
 function Button({
 	className,
 	variant = 'default',
 	size = 'default',
 	...props
-}: ButtonPrimitive.Props & VariantProps<typeof buttonVariants>) {
+}: Omit<ButtonPrimitive.Props, 'render'> &
+	VariantProps<typeof buttonVariants>) {
 	return (
 		<ButtonPrimitive
 			data-slot="button"

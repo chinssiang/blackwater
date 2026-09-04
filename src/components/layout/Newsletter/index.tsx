@@ -211,7 +211,6 @@ export function Newsletter({
 												: undefined,
 										}}
 										isFocused={isFocused}
-										isShowErrorOnFocus={true}
 									/>
 								</div>
 								<Button
