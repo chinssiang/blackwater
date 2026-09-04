@@ -76,11 +76,7 @@ export default function VariantPicker({
 									}
 									onClick={() => onSelect(option.name, value)}
 									className={cn(
-										// The explicit size is load-bearing, not a duplicate: `t-l-2`
-										// is in @layer components and Button's base `text-sm` is a
-										// utility, so the utility wins. It reads the token's own var
-										// rather than a literal so the rung stays fluid.
-										't-l-2 text-[length:var(--t-size-l2)] uppercase',
+										't-l-2 uppercase',
 										'min-h-11 min-w-11 px-3.5',
 										!available &&
 											!selected &&

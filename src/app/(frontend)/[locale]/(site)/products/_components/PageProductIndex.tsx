@@ -223,7 +223,7 @@ export function PageProductIndex({ data }: Props) {
 						<Button
 							asChild
 							size="lg"
-							className="t-l-1 text-xs whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6"
+							className="t-l-1 whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6"
 						>
 							<Link href={allProductsHref}>{t.moreProducts}</Link>
 						</Button>

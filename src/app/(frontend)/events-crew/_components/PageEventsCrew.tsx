@@ -165,11 +165,7 @@ export function PageEventCrew({
 								variant="ghost"
 								size="sm"
 								className={cn(
-									// The explicit size is load-bearing: t-l-2 sets the size in
-									// @layer components, but Button's base text-sm is a
-									// utility and wins the cascade. Not a duplicate. Reads the
-									// token's var rather than a literal so the rung stays fluid.
-									'uppercase t-l-2 text-[length:var(--t-size-l2)] cursor-pointer hover:opacity-60',
+									'uppercase t-l-2 cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !prevHref }
 								)}
 								disabled={!prevHref}
@@ -185,11 +181,7 @@ export function PageEventCrew({
 								variant="ghost"
 								size="sm"
 								className={cn(
-									// The explicit size is load-bearing: t-l-2 sets the size in
-									// @layer components, but Button's base text-sm is a
-									// utility and wins the cascade. Not a duplicate. Reads the
-									// token's var rather than a literal so the rung stays fluid.
-									'uppercase t-l-2 text-[length:var(--t-size-l2)] cursor-pointer hover:opacity-60',
+									'uppercase t-l-2 cursor-pointer hover:opacity-60',
 									{ 'pointer-events-none': !nextHref }
 								)}
 								disabled={!nextHref}

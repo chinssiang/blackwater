@@ -1,5 +1,42 @@
 import { clsx, ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { extendTailwindMerge } from 'tailwind-merge';
+
+/**
+ * The type-scale classes defined in `globals.css`. They set a font-size, so
+ * tailwind-merge has to know they conflict with `text-sm` and friends --
+ * otherwise both survive the merge and the cascade decides, and the cascade
+ * always picks the Tailwind utility, because the `t-*` rules live in
+ * `@layer components`. That is how a `t-l-2` on a `<Button>` was silently
+ * overridden by its base `text-sm`, and why four call sites had grown a size
+ * restatement to force the rung back -- each one freezing it at a literal.
+ *
+ * `src/lib/type-scale.test.ts` fails if this list and the stylesheet disagree.
+ */
+export const TYPE_SCALE_CLASSES = [
+	't-h-1',
+	't-h-2',
+	't-h-3',
+	't-l-0',
+	't-b-1',
+	't-b-2',
+	't-l-1',
+	't-l-2',
+	't-spec',
+] as const;
+
+/**
+ * The conflict is deliberately ONE-WAY: a `t-*` clears a font-size utility
+ * before it, but a font-size utility after a `t-*` clears nothing. A token is
+ * meant to be overridable at a call site -- `leading-*`, `font-medium` and an
+ * explicit `text-*` all still work -- so registering the conflict in both
+ * directions would close the escape hatch the tokens are designed around.
+ */
+const twMerge = extendTailwindMerge<'type-scale'>({
+	extend: {
+		classGroups: { 'type-scale': [...TYPE_SCALE_CLASSES] },
+		conflictingClassGroups: { 'type-scale': ['font-size'] },
+	},
+});
 
 // --- UTILITIES / GET ---
 
