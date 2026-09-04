@@ -33,12 +33,6 @@ type ProductCardProps = {
 	 * delay. The caller decides which card qualifies (see PageProductIndex).
 	 */
 	priority?: boolean;
-	/**
-	 * Renders the title at the metadata rung (`t-l-0`, 16px) instead of the 20px
-	 * card title, for containers too narrow for it. Opt-in rather than a
-	 * breakpoint: the card cannot measure its container. See the cart drawer.
-	 */
-	compact?: boolean;
 };
 
 // Renders each category title as its own link to its category page, separated
@@ -89,7 +83,6 @@ export default function ProductCard({
 	product,
 	index = 0,
 	priority = false,
-	compact,
 }: ProductCardProps) {
 	const locale = useLocale();
 	const t = useTranslations('products');
@@ -110,6 +103,15 @@ export default function ProductCard({
 			style={revealStagger(index)}
 		>
 			<div className="relative aspect-square overflow-hidden bg-background rounded">
+				{product.badge && product.badge.length > 0 && (
+					<div className="sm:absolute sm:top-4 left-0 flex flex-col items-start gap-1.5 relative">
+						{product.badge.map((b) => (
+							<Badge key={b}>
+								{(t.badges as Record<string, string>)[b] ?? b}
+							</Badge>
+						))}
+					</div>
+				)}
 				{product.mainImage ? (
 					<ImageBlock
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:-translate-y-2 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
@@ -121,23 +123,15 @@ export default function ProductCard({
 				) : (
 					<div className="h-full w-full" />
 				)}
-
-				{product.badge && product.badge.length > 0 && (
-					<div className="absolute top-4 left-0 flex flex-col items-start gap-1.5">
-						{product.badge.map((b) => (
-							<Badge key={b}>
-								{(t.badges as Record<string, string>)[b] ?? b}
-							</Badge>
-						))}
-					</div>
-				)}
 			</div>
 
 			{/* Info */}
 			<div className="mt-4 flex-1 space-y-3">
-				<div className="flex gap-2 justify-between items-center">
+				<div className="flex gap-2 justify-between sm:items-center flex-col sm:flex-row">
 					{brandLabel ? (
-						<p className="t-b-1 flex-1 text-foreground">{brandLabel}</p>
+						<p className="t-b-2 sm:text-sm flex-1 text-foreground whitespace-nowrap">
+							{brandLabel}
+						</p>
 					) : (
 						hasCategories && (
 							<CategoryLinks
@@ -161,8 +155,7 @@ export default function ProductCard({
 				{product.title && (
 					<h3
 						className={cn(
-							compact ? 't-l-0' : 't-h-3',
-							'line-clamp-2 text-balance uppercase'
+							't-l-1 sm:text-base line-clamp-2 text-balance uppercase'
 						)}
 					>
 						{product.title}

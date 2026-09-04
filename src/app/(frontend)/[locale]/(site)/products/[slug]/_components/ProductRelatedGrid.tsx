@@ -82,7 +82,7 @@ export default async function ProductRelatedGrid({
 					{categoryTitle ?? dict.products.allProducts}
 				</Link>
 			</div>
-			<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-10">
+			<div className="grid grid-cols-2 gap-6 lg:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-10">
 				{products.map((product, index) => (
 					<ProductCard
 						key={product._id}
