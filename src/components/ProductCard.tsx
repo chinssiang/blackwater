@@ -115,7 +115,16 @@ export default function ProductCard({
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:-translate-y-2 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
 						imageObj={product.mainImage}
 						alt={product.title ?? ''}
-						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw"
+						// Only the first clause differs by consumer: `productsBlock`
+						// (the `compact` caller) is the one grid that is two-up below
+						// 640px, so a flat 100vw there made the browser fetch an image
+						// twice as wide as the slot -- four times the pixels -- on
+						// every phone. Above 640px every grid agrees.
+						sizes={
+							compact
+								? '(max-width: 640px) 50vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw'
+								: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw'
+						}
 						priority={priority}
 					/>
 				) : (
@@ -134,7 +143,7 @@ export default function ProductCard({
 			</div>
 
 			{/* Info */}
-			<div className="mt-4 flex-1 space-y-3">
+			<div className="mt-4 flex flex-1 flex-col space-y-3">
 				<div className="flex gap-2 justify-between items-center">
 					{brandLabel ? (
 						<p className="t-b-1 flex-1 text-foreground">{brandLabel}</p>
@@ -154,6 +163,9 @@ export default function ProductCard({
 					{showCategoryTag && (
 						<CategoryLinks
 							categories={categories}
+							// /60 not /50: on the force-light product routes the
+							// background is #f2f2f2, where foreground/50 lands on
+							// #7e7e7e = 3.63:1 and fails AA. /60 is #676767 = 5.0:1.
 							className="t-spec -my-2 py-2 uppercase text-foreground/60"
 						/>
 					)}
@@ -169,8 +181,11 @@ export default function ProductCard({
 					</h3>
 				)}
 
-				{/* Always reserves two lines so cards in the same row keep an
-				   equal height and their footers align. */}
+				{/* Reserves two lines so a short or missing excerpt does not pull
+				    the rest of the card up. Footer alignment is the parent flex
+				    column plus `mt-auto` below, not this -- it has to be, since
+				    the brand line above alternates between two rungs of
+				    different heights. */}
 				<p className="t-b-2  line-clamp-2 min-h-[2lh] max-w-[42ch] leading-snug text-foreground/60">
 					{product.excerpt}
 				</p>

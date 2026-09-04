@@ -15,7 +15,7 @@ export default function Caption({
 	return (
 		<p
 			className={cn(
-				't-l-sm flex items-center justify-start gap-2 select-none',
+				't-l-1 flex items-center justify-start gap-2 select-none',
 				className
 			)}
 		>

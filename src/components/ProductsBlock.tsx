@@ -50,7 +50,7 @@ export default async function ProductsBlock({
 			headingLevel={headingLevel}
 			className={className}
 		>
-			<div className="grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
+			<div className="grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
 				{priced.map((product, index) => (
 					<ProductCard
 						key={product._id}
