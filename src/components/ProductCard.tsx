@@ -37,9 +37,30 @@ type ProductCardProps = {
 	 * Renders the title at the metadata rung (`t-l-0`, 16px) instead of the 20px
 	 * card title, for containers too narrow for it. Opt-in rather than a
 	 * breakpoint: the card cannot measure its container. See the cart drawer.
+	 *
+	 * Type density only. It is NOT a stand-in for how wide the slot is -- its
+	 * two callers, `productsBlock` and the cart drawer, differ by more than 2x
+	 * above 640px. Pass `sizes` for that.
 	 */
 	compact?: boolean;
+	/**
+	 * The `sizes` attribute for the card image, when this grid is not the
+	 * standard one `DEFAULT_CARD_SIZES` describes. The card cannot derive this:
+	 * how many columns there are at each breakpoint, and how wide the container
+	 * is, are facts only the grid holds -- and `sectionAppearance` can narrow a
+	 * `productsBlock` section without the card ever seeing it.
+	 */
+	sizes?: string;
 };
+
+/**
+ * The five-column-count grid every product listing uses: one card below 640px,
+ * two to 1024, three to 1536, four beyond, and never wider than 470px once the
+ * page hits its own max width. `ProductsBlock` and the cart drawer are the two
+ * grids shaped differently, and both pass their own.
+ */
+const DEFAULT_CARD_SIZES =
+	'(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw';
 
 // Renders each category title as its own link to its category page, separated
 // by ", ". Sits above the card's stretched overlay link (relative z-10) so the
@@ -90,6 +111,7 @@ export default function ProductCard({
 	index = 0,
 	priority = false,
 	compact,
+	sizes,
 }: ProductCardProps) {
 	const locale = useLocale();
 	const t = useTranslations('products');
@@ -115,16 +137,7 @@ export default function ProductCard({
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:-translate-y-2 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
 						imageObj={product.mainImage}
 						alt={product.title ?? ''}
-						// Only the first clause differs by consumer: `productsBlock`
-						// (the `compact` caller) is the one grid that is two-up below
-						// 640px, so a flat 100vw there made the browser fetch an image
-						// twice as wide as the slot -- four times the pixels -- on
-						// every phone. Above 640px every grid agrees.
-						sizes={
-							compact
-								? '(max-width: 640px) 50vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw'
-								: '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw'
-						}
+						sizes={sizes ?? DEFAULT_CARD_SIZES}
 						priority={priority}
 					/>
 				) : (
@@ -166,6 +179,9 @@ export default function ProductCard({
 							// /60 not /50: on the force-light product routes the
 							// background is #f2f2f2, where foreground/50 lands on
 							// #7e7e7e = 3.63:1 and fails AA. /60 is #676767 = 5.0:1.
+							// That arithmetic holds for those routes only -- inside a
+							// SectionShell both the ink and the ground are the
+							// editor's, and no alpha can promise a ratio there.
 							className="t-spec -my-2 py-2 uppercase text-foreground/60"
 						/>
 					)}
@@ -181,11 +197,12 @@ export default function ProductCard({
 					</h3>
 				)}
 
-				{/* Reserves two lines so a short or missing excerpt does not pull
-				    the rest of the card up. Footer alignment is the parent flex
-				    column plus `mt-auto` below, not this -- it has to be, since
-				    the brand line above alternates between two rungs of
-				    different heights. */}
+				{/* Footer alignment is the parent flex column plus `mt-auto` below,
+				    not this -- it has to be, since the brand line above alternates
+				    between two rungs of different heights. What the reserved two
+				    lines still buy is the gap ABOVE the footer: without it a
+				    one-line excerpt leaves a ragged band of whitespace next to a
+				    two-line neighbour in the same row. */}
 				<p className="t-b-2  line-clamp-2 min-h-[2lh] max-w-[42ch] leading-snug text-foreground/60">
 					{product.excerpt}
 				</p>

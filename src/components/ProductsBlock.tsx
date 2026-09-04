@@ -59,6 +59,11 @@ export default async function ProductsBlock({
 						}
 						index={index}
 						compact={true}
+						// Two-up from the phone up, unlike every other product grid,
+						// so the default's `(max-width: 640px) 100vw` would fetch an
+						// image twice as wide as the slot -- four times the pixels --
+						// on every phone.
+						sizes="(max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw"
 						// Deliberately no `priority`: exactly one image per page is the LCP
 						// candidate, and this module has no idea whether the page above it
 						// already claimed that. Guessing here would demote the real one.

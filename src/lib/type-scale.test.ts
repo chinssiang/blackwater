@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { globSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { cn, TYPE_SCALE_CLASSES } from '@/lib/utils';
 
@@ -11,13 +12,34 @@ import { cn, TYPE_SCALE_CLASSES } from '@/lib/utils';
 const CSS = readFileSync(new URL('../globals.css', import.meta.url), 'utf8');
 
 describe('TYPE_SCALE_CLASSES', () => {
-	it('lists exactly the t-* classes globals.css defines', () => {
-		const defined = [...CSS.matchAll(/^\s*\.(t-[a-z0-9-]+)\s*\{/gm)].map(
-			([, name]) => name
-		);
+	it('lists exactly the t-* rules globals.css gives a font-size', () => {
+		// Matched on the DECLARATION, not the name: registering a `t-*` that sets
+		// no font-size would make it delete a `text-sm` it has nothing to replace.
+		const defined = [...CSS.matchAll(/^\s*\.(t-[a-z0-9-]+)\s*\{([^}]*)\}/gm)]
+			.filter(([, , body]) => /font-size:/.test(body))
+			.map(([, name]) => name);
 
 		expect(defined.length).toBeGreaterThan(0);
 		expect([...defined].sort()).toEqual([...TYPE_SCALE_CLASSES].sort());
+	});
+
+	// The direction that actually bit: `Caption.tsx` asked for `t-l-sm` for
+	// months, a rung that has never existed, and rendered at whatever it
+	// inherited. Nothing above catches that -- it only reads the stylesheet.
+	it('finds no t-* class in src/ that is not a real rung', () => {
+		const rungs = new Set<string>(TYPE_SCALE_CLASSES);
+		const used = new Map<string, string>();
+
+		for (const file of globSync('src/**/*.{ts,tsx}')) {
+			if (file.endsWith('type-scale.test.ts')) continue;
+			for (const [, name] of readFileSync(file, 'utf8').matchAll(
+				/(?<![\w-])(t-(?:h|b|l)-[a-z0-9]+|t-spec)(?![\w-])/g
+			)) {
+				if (!rungs.has(name)) used.set(name, file);
+			}
+		}
+
+		expect(Object.fromEntries(used)).toEqual({});
 	});
 });
 

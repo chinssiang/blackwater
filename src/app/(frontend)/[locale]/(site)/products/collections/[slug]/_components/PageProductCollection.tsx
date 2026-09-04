@@ -67,7 +67,15 @@ export default function PageProductCollection({ data }: Props) {
 			{products && products.length > 0 && (
 				<div className="m-x-max mb-20 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 xl:grid-cols-4 2xl:gap-x-10">
 					{products.map((product, index) => (
-						<ProductCard key={product._id} product={product} index={index} />
+						<ProductCard
+							key={product._id}
+							product={product}
+							index={index}
+							// This grid goes four-up at `xl`, one breakpoint earlier than the
+							// default assumes, so between 1280 and 1536 the default asks for a
+							// third of the viewport to fill a quarter-width card.
+							sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, (min-width: 2000px) 470px, 25vw"
+						/>
 					))}
 				</div>
 			)}
