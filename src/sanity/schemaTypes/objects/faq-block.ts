@@ -1,5 +1,10 @@
 import { HelpCircleIcon } from '@sanity/icons';
 import { defineArrayMember, defineType, defineField } from 'sanity';
+import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
+import {
+	moduleRule,
+	pageModuleHidden,
+} from '@/sanity/schemaTypes/objects/page-module';
 
 // FAQ page module: one rendered block of questions, with a heading and section
 // appearance of its own. Question content lives in gFaq (authored once, both
@@ -29,12 +34,14 @@ export const faqBlock = defineType({
 	title: 'FAQ',
 	type: 'object',
 	icon: HelpCircleIcon,
+	components: pageModuleComponents,
 	fields: [
 		defineField({
 			name: 'heading',
 			type: 'string',
 			title: 'Heading',
-			description: 'Optional section heading, e.g. "Frequently asked questions".',
+			description:
+				'Optional section heading, e.g. "Frequently asked questions".',
 		}),
 		defineField({
 			name: 'source',
@@ -63,13 +70,17 @@ export const faqBlock = defineType({
 				'Sets are managed in Global → FAQ Sets. Both language versions of this page can point at the same set, so reordering it moves both.',
 			hidden: (owner) => sourceOf(owner) !== 'set',
 			// Conditional so a hidden field never blocks publishing — only the one
-			// the editor can actually see.
+			// the editor can actually see. `moduleRule` extends that to the module
+			// itself: a section switched off with the eye button must not hold its
+			// page unpublishable either.
 			validation: (Rule) =>
 				Rule.custom(
-					(value, context) =>
-						sourceOf(context) !== 'set' ||
-						!!value ||
-						'Pick a FAQ set, or switch to hand-picked questions.'
+					moduleRule(
+						(value, context) =>
+							sourceOf(context) !== 'set' ||
+							!!value ||
+							'Pick a FAQ set, or switch to hand-picked questions.'
+					)
 				),
 		}),
 		defineField({
@@ -82,13 +93,18 @@ export const faqBlock = defineType({
 			hidden: (owner) => sourceOf(owner) !== 'picked',
 			validation: (Rule) => [
 				// Unconditional, and load-bearing for the same reason it is on
-				// gFaqList.questions — see the note there.
+				// gFaqList.questions — see the note there. Deliberately NOT wrapped in
+				// moduleRule: an incomplete module is a work-in-progress the eye can
+				// park, but a duplicate reference is a data error that will still be
+				// wrong when the module is switched back on.
 				Rule.unique(),
 				Rule.custom(
-					(value, context) =>
-						sourceOf(context) !== 'picked' ||
-						(Array.isArray(value) && value.length > 0) ||
-						'Pick at least one question, or switch to a FAQ set.'
+					moduleRule(
+						(value, context) =>
+							sourceOf(context) !== 'picked' ||
+							(Array.isArray(value) && value.length > 0) ||
+							'Pick at least one question, or switch to a FAQ set.'
+					)
 				),
 			],
 		}),
@@ -96,6 +112,7 @@ export const faqBlock = defineType({
 			name: 'sectionAppearance',
 			type: 'sectionAppearance',
 		}),
+		pageModuleHidden(),
 	],
 	preview: {
 		select: {

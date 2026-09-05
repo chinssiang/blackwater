@@ -98,6 +98,7 @@
 	--z-index-popover: calc(var(--z-index-overlay) - 1);
 	--z-index-overlay: 100;
 	--z-index-dialog: calc(var(--z-index-overlay) + 1);
+	--z-index-tooltip: calc(var(--z-index-dialog) + 1);
 	--z-index-g-toolbar: 98;
 }
 
@@ -204,28 +205,48 @@
 		--h-header: 42px;
 		--s-section: 80px;
 
-		/* Heading sizes. Fluid because containers run to --container-max (2000px)
-		   while the type used to be a flat pixel value at every width, so a
-		   heading that read correctly on a laptop was a caption on a large
-		   display. The minimums are the previous fixed values, so nothing shrinks
-		   -- with ONE exception: `.wysiwyg h1` was 30px and now floors at 28px
-		   (`--t-size-h1`'s minimum, which is `.t-h-1`'s old value), so an in-prose
-		   h1 loses 2px below ~490px. Accepted deliberately: two sizes for one role
-		   is the drift these tokens exist to end, and 28px is the value the page
-		   titles already used.
+		/* Type sizes shared by more than one rule. A size gets a var only when two
+		   rules render the SAME role -- the `t-*` component token and its `.wysiwyg`
+		   prose twin. Roles that render in exactly one rule keep their clamp inline
+		   below, and two roles that merely share a pixel value keep separate
+		   declarations, so retuning one cannot silently move the other. Each such
+		   pair is reasoned at its own rule.
 
-		   Declared here rather than inline in each rule because two scales need
-		   them -- the `t-h-*` component tokens below and the `.wysiwyg` prose
-		   headings. Those were 28px/24px and 30px/24px respectively for the same
-		   two roles, which is how a `faqBlock` heading ended up 50% larger than
-		   the `eventsBlock` heading beside it on the same page.
+		   Retune here, not in either rule -- h1/h2/h3 were 28/24/16px and 30/24/20px
+		   for the same three roles, which is how a `faqBlock` heading ended up 50%
+		   larger than the `eventsBlock` heading beside it on the same page.
 
-		   h1 and h2 ONLY. The third heading pair is still split -- `.t-h-3` is
-		   16px and `.wysiwyg h3` is 20px -- so the section-heading-to-card-title
-		   ratio varies with the viewport and is not tunable from here. Joining it
-		   needs a call on which of the two sizes wins. */
-		--t-size-h1: clamp(1.75rem, 1.49rem + 1.13vw, 2.5rem);
-		--t-size-h2: clamp(1.5rem, 1.37rem + 0.56vw, 1.875rem);
+		   Every rung ramps across one window, 369px to 1444px, flat outside it --
+		   0.093vw per pixel of travel, so a 2px rung is 0.1861vw and a 4px rung
+		   0.3722vw. Keep new rungs on that slope and give the intercept FOUR
+		   decimals: at three, rounding moves a rung's window by up to 15px and
+		   the ladder stops sharing one. That is not hypothetical -- h1/h2/h3 sat
+		   at three decimals and ended their ramps at 1441/1429/1437px while
+		   every rung below them ended at 1444. CLAUDE.md's type-scale section
+		   carries the reasoning.
+
+		   The ladder, floor -> ceiling:
+
+		     h1   24 -> 28    t-h-1, .wysiwyg h1
+		     h2   22 -> 24    t-h-2, .wysiwyg h2 + blockquote
+		     h3   18 -> 20    t-h-3, .wysiwyg h3        (card titles)
+		     l0   16 -> 17    t-l-0
+		     h4   16 -> 17    .wysiwyg h4
+		     h5   15 -> 16    .wysiwyg h5/h6
+		     b1   14 -> 15    t-b-1, .wysiwyg p/ol/ul
+		     b2   12 -> 13    t-b-2
+		     l1   12 -> 13    t-l-1
+		     spec 11 -> 12    t-spec
+		     l2   11 -> 12    t-l-2
+
+		   `l2` is the one rung that moved at BOTH ends: it was a flat 10px, carrying
+		   43 call sites including ConsentBanner's body copy and the size-chart row
+		   labels. 10px is below the practical floor for uppercase micro-labels,
+		   which have no ascenders or descenders to read shape from. */
+		--t-size-h1: clamp(1.5rem, 1.4142rem + 0.3722vw, 1.75rem);
+		--t-size-h2: clamp(1.375rem, 1.3321rem + 0.1861vw, 1.5rem);
+		--t-size-h3: clamp(1.125rem, 1.0821rem + 0.1861vw, 1.25rem);
+		--t-size-b1: clamp(0.875rem, 0.8536rem + 0.093vw, 0.9375rem);
 
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
 		--width-md: min(100vw - calc(var(--s-contain) * 2), var(--container-md));
@@ -398,7 +419,11 @@
 	.section-paper {
 		--background: var(--section-bg);
 		--card: var(--section-bg);
-		--muted: color-mix(in oklab, var(--section-fg, currentcolor) 12%, transparent);
+		--muted: color-mix(
+			in oklab,
+			var(--section-fg, currentcolor) 12%,
+			transparent
+		);
 	}
 
 	.field-hint-ring {
@@ -445,27 +470,41 @@
 			letter-spacing: -0.04em;
 		}
 
-		h2 {
+		/* The pull quote is the h2 role rendered at a different place in the
+		   flow, not a size of its own -- it was a flat 24px, which is where
+		   --t-size-h2 tops out. Sharing the selector is what keeps a leading or
+		   tracking retune from moving the heading and leaving the quote behind;
+		   the var alone only ever protected the size. */
+		h2,
+		blockquote,
+		blockquote p {
 			font-family: var(--font-default);
 			font-weight: 500;
 			font-size: var(--t-size-h2);
-			line-height: 1;
+			line-height: 1.15;
 			letter-spacing: -0.02em;
 		}
 
 		h3 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 20px;
-			line-height: 1;
+			font-size: var(--t-size-h3);
+			line-height: 1.2;
 			letter-spacing: -0.02em;
 		}
 
+		/* h4 keeps its own rung. It was a flat 18px until b87fac5 folded it in
+		   with h5/h6 at 16px, which left prose with one level where it had two
+		   and made h4 identical to h6. 18px is not the way back, though -- that
+		   is h3's floor, so the two read as one on a phone. 16->17 sits clear of
+		   both. Deliberately its own clamp rather than `.t-l-0`'s, which lands
+		   on the same numbers: a prose heading and an event date are different
+		   roles, and a prose retune must not move a ticket. */
 		h4 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 18px;
-			line-height: 1;
+			font-size: clamp(1rem, 0.9786rem + 0.093vw, 1.0625rem);
+			line-height: 1.2;
 			letter-spacing: -0.02em;
 		}
 
@@ -473,8 +512,8 @@
 		h6 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 16px;
-			line-height: 1;
+			font-size: clamp(0.9375rem, 0.9161rem + 0.093vw, 1rem);
+			line-height: 1.2;
 			letter-spacing: -0.02em;
 		}
 
@@ -504,8 +543,8 @@
 		ul {
 			font-family: var(--font-default);
 			font-weight: 400;
-			font-size: 14px;
-			line-height: 1;
+			font-size: var(--t-size-b1);
+			line-height: 1.5;
 			letter-spacing: -0.02em;
 
 			a {
@@ -539,15 +578,6 @@
 			margin: 30px auto;
 			quotes: '\201C' '\201D' '\2018' '\2019';
 
-			&,
-			p {
-				font-family: var(--font-default);
-				font-weight: 500;
-				font-size: 24px;
-				line-height: 0.9;
-				letter-spacing: -0.02em;
-			}
-
 			p {
 				display: inline;
 				margin: 0;
@@ -576,6 +606,36 @@
 }
 
 @layer components {
+	/* LINE HEIGHT IS A ROLE, NOT A CONSTANT. Every token below used to be
+	   `line-height: 1`, which is a tight-but-defensible display setting on a
+	   heading and a readability failure on anything that wraps: at 1 the
+	   descenders of one line sit on the ascenders of the next. It cost twelve
+	   independent call-site patches at five different values -- `leading-5`,
+	   `leading-[1.4]` twice, `leading-relaxed` four times, `[&_p]:leading-[125%]`
+	   and `leading-snug` four times -- so body prose had five leadings depending
+	   on which page you were on. The value lives here once per role now:
+
+	     prose that wraps (b1, b2, .wysiwyg p)        1.5
+	     labels and metadata (l0, l1, l2, spec)       1.2 - 1.3
+	     headings (h1, h2, h3)                        1.1 - 1.2
+
+	   1.5 is the figure WCAG 1.4.8 asks for within a paragraph and the value
+	   1.4.12 (Text Spacing, AA) expects content to survive a user forcing.
+
+	   A `leading-*` utility still beats these rules, which is the escape hatch --
+	   but of the twelve patches only ProductCard's EXCERPT survives (not its
+	   title, which carries no leading utility), where the leading sets the
+	   reserved height of a `line-clamp-2 min-h-[2lh]` card in a grid rather
+	   than the readability of a paragraph. Header and ToolBar set
+	   `[&_a]:leading-header` on their nav links, which is chrome-height
+	   centring, not type. Anything else is a sign this table is wrong.
+
+	   FONT SIZE is the one property a call site can no longer take by accident:
+	   `cn()` registers these nine class names with tailwind-merge so a `t-*`
+	   deletes an earlier `text-sm`. The reasoning lives with the config in
+	   `src/lib/utils.ts`; adding a rung here means adding it there too, and
+	   `src/lib/type-scale.test.ts` fails if the two disagree. */
+
 	.t-h-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
@@ -588,62 +648,88 @@
 		font-family: var(--font-default);
 		font-weight: 500;
 		font-size: var(--t-size-h2);
-		/* Was 0.9. A line box shorter than the type clips ascenders the moment a
-		   heading wraps, and this token now carries every page-module section
-		   heading (SectionShell), which wraps far more often than the two single
-		   line call sites it had before. 1 is still very tight. */
-		line-height: 1;
+		/* Was 0.9, then 1. A line box shorter than the type clips ascenders the
+		   moment a heading wraps, and this token now carries every page-module
+		   section heading (SectionShell), which wraps far more often than the two
+		   single-line call sites it had before. 1 did not actually clear them at
+		   -0.02em on this face; 1.15 does and is still tight. */
+		line-height: 1.15;
 		letter-spacing: -0.02em;
 	}
 
 	.t-h-3 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 16px;
-		line-height: 1;
+		font-size: var(--t-size-h3);
+		/* The card-title rung -- event tickets, product cards, category labels --
+		   so two-line titles are the norm here, not the exception. */
+		line-height: 1.2;
 		letter-spacing: -0.02em;
 	}
 
 	.t-b-1 {
 		font-family: var(--font-default);
 		font-weight: 400;
-		font-size: 14px;
-		line-height: 1;
+		font-size: var(--t-size-b1);
+		line-height: 1.5;
 		letter-spacing: -0.02em;
 	}
 
 	.t-b-2 {
 		font-family: var(--font-default);
 		font-weight: 400;
-		font-size: 12px;
-		line-height: 1;
+		font-size: clamp(0.75rem, 0.7286rem + 0.093vw, 0.8125rem);
+		line-height: 1.5;
 		letter-spacing: -0.02em;
 	}
 
+	/* Uppercase metadata one rung above `.t-l-1`: event location, date and
+	   start/finish values, the events sticky-bar month, the crew kicker. In the
+	   label family, not the heading family -- these are values and labels, and
+	   they sat on `.t-h-3` only because 482c1e5 renamed a six-level scale down
+	   into three names.
+
+	   Lands on the same 16->17px as `.wysiwyg h4` and deliberately keeps its own
+	   clamp; that rule carries the reasoning. */
+	.t-l-0 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: clamp(1rem, 0.9786rem + 0.093vw, 1.0625rem);
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+	}
+
+	/* `.t-l-1` and `.t-l-2` are set in caps at most call sites (13 of 21 and 32
+	   of 43), and caps carry no ascenders or descenders for the eye to read word
+	   shape from -- they read letter by letter, so they need room between the
+	   letters. Both tracked NEGATIVE until now, which is the display-heading
+	   setting applied to the two rungs it hurts most. They open up toward
+	   `.t-spec`'s existing +0.04em instead. */
 	.t-l-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 12px;
-		line-height: 1;
-		letter-spacing: -0.02em;
+		font-size: clamp(0.75rem, 0.7286rem + 0.093vw, 0.8125rem);
+		line-height: 1.25;
+		letter-spacing: 0.02em;
 	}
 
 	.t-l-2 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 10px;
-		line-height: 1;
-		letter-spacing: -0.012em;
+		font-size: clamp(0.6875rem, 0.6661rem + 0.093vw, 0.75rem);
+		line-height: 1.3;
+		letter-spacing: 0.04em;
 	}
 
 	/* Spec voice: the typewriter face used for curated metadata (prices,
 	   index numerals, brand/category data). Reads as a counter-voice against
-	   the display caps. */
+	   the display caps. Shares `.t-l-2`'s rung by pixels but not by var -- see
+	   the ladder comment in :root. */
 	.t-spec {
 		font-family: var(--font-feature);
 		font-weight: 500;
-		font-size: 11px;
-		line-height: 1;
+		font-size: clamp(0.6875rem, 0.6661rem + 0.093vw, 0.75rem);
+		line-height: 1.25;
 		letter-spacing: 0.04em;
 	}
 }
@@ -732,7 +818,9 @@
 	padding-bottom: calc(var(--section-pb, 0) * var(--spacing));
 
 	@variant sm {
-		padding-top: calc(var(--section-pt-sm, var(--section-pt, 0)) * var(--spacing));
+		padding-top: calc(
+			var(--section-pt-sm, var(--section-pt, 0)) * var(--spacing)
+		);
 		padding-bottom: calc(
 			var(--section-pb-sm, var(--section-pb, 0)) * var(--spacing)
 		);
@@ -875,6 +963,93 @@ body:has([data-not-found]) footer {
 	.animate-page-in {
 		transition: none;
 	}
+}
+
+/* The site header's background, in one place, as a function of
+   --header-progress: 1 everywhere, so the header is its usual 95% paper plus
+   blur-xs; 0 under a full-bleed hero (HeroBlock marks the hero's background
+   wrapper `data-hero-underlay`), so the very first paint is transparent with
+   no post-hydration flip. The hero's own wrapper, HeroUnderlay, then writes
+   the scroll progress inline for as long as it is mounted (HEADER_SOLID_AT
+   there sets how soon it reaches 1) and adds `data-header-solid` once it
+   does. The blur is a step, not a ramp: a
+   backdrop-filter over the animating canvas re-blurs on every wave frame and a
+   ramped radius defeats any caching, so it stays `none` until the paper is
+   solid enough to hide the switch.
+
+   Registered with inherits: false so a progress write invalidates the header
+   alone, not everything inside it. The explicit `1` in the rule below is the
+   fallback where @property is unsupported. */
+@property --header-progress {
+	syntax: '<number>';
+	initial-value: 1;
+	inherits: false;
+}
+
+@layer components {
+	[data-site-header] {
+		--header-progress: 1;
+		background-color: color-mix(
+			in oklab,
+			var(--background) calc(var(--header-progress) * 95%),
+			transparent
+		);
+		backdrop-filter: blur(var(--blur-xs));
+	}
+
+	body:has([data-hero-underlay]) [data-site-header] {
+		--header-progress: 0;
+	}
+
+	body:has([data-hero-underlay]) [data-site-header]:not([data-header-solid]) {
+		backdrop-filter: none;
+	}
+}
+
+/* The canonical note on how the fixed header gets its space. The header is
+   `position: fixed`, so it donates no layout space; the `main` rule below
+   carries it instead. A full-bleed hero is the
+   one thing that wants the header over it rather than above it, so it drops
+   that padding and starts at the very top of the viewport.
+
+   Scoped on `body:has(...)` to match the two header-background rules above
+   verbatim, so the two halves of "this page opens with a full-bleed hero"
+   read the same subtree and cannot disagree. Keyed on the same
+   `data-hero-underlay` marker for the same reason. The attribute is in the
+   prerendered HTML, so this matches on the first paint -- no post-hydration
+   flip. HeroBlock keeps `mt-header-space-0` on the copy, which is what holds
+   the text clear of the header once the section is under it.
+
+   This replaces a negative top margin on the hero, which cancelled the
+   header's flow box back out. That worked only by collapsing its margin
+   THROUGH <main> (no padding or border there to stop it) and so moved
+   <main>'s own box -- meaning any padding later added to <main> would have
+   silently killed the overlap, with no error and nothing to grep for.
+
+   Both rules are unlayered, so `body:has(...) main` beats bare `main` on
+   specificity alone and neither can be outranked by a Tailwind utility in the
+   utilities layer. Everything from here down is outside every layer, which
+   `.animate-page-in` above relies on for the same reason. */
+main {
+	/* Declared here rather than as a `pt-header-space-0` class on <Main>,
+	   because `cn()` does not classify that custom utility: its
+	   `extendTailwindMerge` config registers the nine `t-*` type rungs and
+	   nothing else, so `cn('pt-header-space-0', 'pt-0')` keeps BOTH and
+	   emission order picks the winner -- a caller's override would silently do
+	   nothing. (This said "bare twMerge with no extendTailwindMerge" before the
+	   type-scale branch added one; the conclusion is unchanged, since only the
+	   rungs are registered.)
+
+	   Spelled out rather than `@apply pt-header-space-0`, which compiles to
+	   nothing here: the utility is functional (`pt-header-space-*`), and
+	   @apply does not resolve one from this rule -- the declaration vanished
+	   with no error and <main> shipped unpadded. Keep this sum in step with
+	   the `*-header-space-*` utilities above if the announcement bar lands. */
+	padding-top: calc(var(--height-header) + var(--height-announcement));
+}
+
+body:has([data-hero-underlay]) main {
+	padding-top: 0;
 }
 
 /* Entrance reveal for page content, staggered via --reveal-delay.

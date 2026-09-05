@@ -2,7 +2,7 @@
 
 import { useRef, useState } from 'react';
 import Link from 'next/link';
-import { Button } from '@/components/ui/Button';
+import { Button, buttonVariants } from '@/components/ui/Button';
 
 const INSTRUCTIONS_LIST = [
 	{
@@ -213,11 +213,7 @@ export function PageEmailSignature({ siteUrl }: PageEmailSignature) {
 				</table>
 			</div>
 
-			<Button
-				aria-label="Click to copy email signature"
-				color="white"
-				onClick={onHandleCopy}
-			>
+			<Button aria-label="Click to copy email signature" onClick={onHandleCopy}>
 				{buttonText}
 			</Button>
 
@@ -226,11 +222,14 @@ export function PageEmailSignature({ siteUrl }: PageEmailSignature) {
 				<ul className="flex flex-wrap justify-center gap-5">
 					{INSTRUCTIONS_LIST.map((item, i) => (
 						<li key={i}>
-							<Button asChild color="white">
-								<Link href={item.url} target="_blank" rel="noreferrer">
-									{item.title}
-								</Link>
-							</Button>
+							<Link
+								href={item.url}
+								target="_blank"
+								rel="noreferrer"
+								className={buttonVariants()}
+							>
+								{item.title}
+							</Link>
 						</li>
 					))}
 				</ul>

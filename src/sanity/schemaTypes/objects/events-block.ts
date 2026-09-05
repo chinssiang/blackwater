@@ -1,5 +1,10 @@
 import { CalendarIcon } from '@sanity/icons';
 import { defineType, defineField } from 'sanity';
+import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
+import {
+	moduleRule,
+	pageModuleHidden,
+} from '@/sanity/schemaTypes/objects/page-module';
 
 // Upcoming-events page module: a compact strip of the events that have not yet
 // happened, pulled automatically rather than curated. Nothing here names an
@@ -27,6 +32,7 @@ export const eventsBlock = defineType({
 	title: 'Upcoming events',
 	type: 'object',
 	icon: CalendarIcon,
+	components: pageModuleComponents,
 	fields: [
 		defineField({
 			name: 'heading',
@@ -89,11 +95,13 @@ export const eventsBlock = defineType({
 					// Both halves validated, and symmetrically: a label with no link is
 					// exactly as silently broken as a link with no label.
 					validation: (Rule) =>
-						Rule.custom((value, context) => {
-							const link = (context.parent as { link?: unknown } | undefined)
-								?.link;
-							return !link || !!value || 'Add a label, or clear the link.';
-						}),
+						Rule.custom(
+							moduleRule((value, context) => {
+								const link = (context.parent as { link?: unknown } | undefined)
+									?.link;
+								return !link || !!value || 'Add a label, or clear the link.';
+							})
+						),
 				}),
 				defineField({
 					name: 'link',
@@ -103,11 +111,13 @@ export const eventsBlock = defineType({
 					// common case here (the component falls back to the events page),
 					// and an empty collapsed object must never block publishing.
 					validation: (Rule) =>
-						Rule.custom((value, context) => {
-							const label = (context.parent as { label?: string } | undefined)
-								?.label;
-							return !label || !!value || 'Add a link, or clear the label.';
-						}),
+						Rule.custom(
+							moduleRule((value, context) => {
+								const label = (context.parent as { label?: string } | undefined)
+									?.label;
+								return !label || !!value || 'Add a link, or clear the label.';
+							})
+						),
 				}),
 			],
 		}),
@@ -115,6 +125,7 @@ export const eventsBlock = defineType({
 			name: 'sectionAppearance',
 			type: 'sectionAppearance',
 		}),
+		pageModuleHidden(),
 	],
 	preview: {
 		select: {

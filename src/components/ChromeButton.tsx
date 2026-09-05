@@ -23,8 +23,8 @@ import { cn } from '@/lib/utils';
  * visibility (`lg:hidden`), minimum widths, and the extra inset an icon-only
  * control needs. Those differ per site and are layout, not vocabulary.
  *
- * Composes with Radix through *their* `asChild`, not one of its own:
- * `<Dialog.Close asChild><ChromeButton …/></Dialog.Close>`.
+ * Composes with Base UI through *their* `render` prop, not one of its own:
+ * `<Dialog.Close render={<ChromeButton …/>}>…</Dialog.Close>`.
  */
 export default function ChromeButton({
 	className,

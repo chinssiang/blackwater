@@ -1,19 +1,14 @@
 import * as React from 'react';
-import { Slot } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
 
-function Badge({
-	className,
-	asChild = false,
-	...props
-}: React.ComponentProps<'span'> & {
-	asChild?: boolean;
-}) {
-	const Comp = asChild ? Slot.Root : 'span';
-
+// A plain <span>, not Base UI's `useRender`: nothing composes a Badge with
+// another element, and the hook costs a ref merge and a props merge on every
+// one -- /products/all renders 24 cards, each with a badge per tag. `ui/Label`
+// is a plain element for the same reason.
+function Badge({ className, ...props }: React.ComponentProps<'span'>) {
 	return (
-		<Comp
+		<span
 			data-slot="badge"
 			className={cn(
 				't-l-2 inline-flex w-fit items-center py-2 px-3 uppercase bg-primary/25 text-primary rounded',

@@ -12,12 +12,16 @@
  * finds and migrates each independently. No sibling merging, unlike the
  * merge-*-i18n scripts.
  *
- * The prepend and the `landingTitle` unset are one patch on purpose: PageHome's
- * transition tail renders the old title only while the document has no hero, so
- * a document that gained a hero but kept its title would render neither.
+ * The prepend and the `landingTitle` unset are one patch on purpose: there is no
+ * longer any fallback that renders `landingTitle`, so a partial run that added
+ * the hero without clearing the field would leave the old title stranded in the
+ * document -- unread, unrendered, and easy to mistake for live copy.
  *
- * Idempotent — a document that already has a heroBlock is skipped, so a re-run
- * is a no-op and a hand-authored hero is never clobbered.
+ * Idempotent — every branch ends with `landingTitle` unset, and the only branch
+ * that reports work requires the field to still be present, so a second run
+ * reports "0 to migrate" and commits nothing. A hand-authored hero is never
+ * clobbered; a stray `landingTitle` beside one is cleared, because leaving it
+ * keeps the site's build guard armed with no way for the operator to disarm it.
  *
  * Deliberately NOT set on the new block: sectionAppearance. Its schema
  * initialValue only applies to blocks created in the Studio, and an empty
@@ -61,9 +65,7 @@ const client = createClient({
 });
 
 async function main() {
-	console.log(
-		`\n${EXECUTE ? 'EXECUTE' : 'DRY RUN'} — dataset "${DATASET}"\n`
-	);
+	console.log(`\n${EXECUTE ? 'EXECUTE' : 'DRY RUN'} — dataset "${DATASET}"\n`);
 
 	const drafts = await client.fetch(
 		`*[_type == "pHome" && _id in path("drafts.**")]{ _id, language }`
@@ -96,15 +98,47 @@ async function main() {
 		const label = `${home._id} (${home.language ?? '—'})`;
 		const modules = Array.isArray(home.pageModules) ? home.pageModules : [];
 
+		// `defined`, not truthiness: distinguishes "field absent" (nothing to do)
+		// from "field present but blank", which is the one shape that genuinely
+		// needs clearing. Conflating them made every branch below fire forever.
+		const hasTitleField =
+			home.landingTitle !== undefined && home.landingTitle !== null;
+		const heading =
+			typeof home.landingTitle === 'string' ? home.landingTitle.trim() : '';
+
 		if (modules.some((m) => m?._type === 'heroBlock')) {
-			console.log(`  skip  ${label} — already has a heroBlock`);
+			// A hand-authored hero means there is nothing to carry -- but a leftover
+			// `landingTitle` still arms the site's build guard, and skipping without
+			// clearing it is what let an operator run the script, read
+			// "0 to migrate", and hit the identical build error on the next deploy.
+			if (hasTitleField) {
+				console.log(
+					`  clear ${label} — has a heroBlock; clearing stray landingTitle`
+				);
+				transaction.patch(home._id, (patch) => patch.unset(['landingTitle']));
+				migrated += 1;
+			} else {
+				console.log(`  skip  ${label} — already has a heroBlock`);
+			}
 			continue;
 		}
 
-		const heading =
-			typeof home.landingTitle === 'string' ? home.landingTitle.trim() : '';
 		if (!heading) {
-			console.log(`  skip  ${label} — no landingTitle to carry`);
+			// Absent field: genuinely nothing to do. Reporting it as work is what
+			// made the run non-idempotent -- after any successful pass the field is
+			// unset, so this branch fired on every later invocation, printing
+			// "2 of 2 to migrate" and committing an empty patch indefinitely. It also
+			// caught healthy homepages built from other module types.
+			if (!hasTitleField) {
+				console.log(`  skip  ${label} — no landingTitle to carry`);
+				continue;
+			}
+
+			// Present but blank (e.g. "   "): clear it so the build guard, which
+			// trims, agrees with this script about the same value.
+			console.log(`  clear ${label} — landingTitle is blank; clearing it`);
+			transaction.patch(home._id, (patch) => patch.unset(['landingTitle']));
+			migrated += 1;
 			continue;
 		}
 
@@ -117,9 +151,7 @@ async function main() {
 		migrated += 1;
 	}
 
-	console.log(
-		`\n${migrated} of ${homes.length} pHome document(s) to migrate.`
-	);
+	console.log(`\n${migrated} of ${homes.length} pHome document(s) to migrate.`);
 
 	if (migrated === 0) return;
 	if (!EXECUTE) {

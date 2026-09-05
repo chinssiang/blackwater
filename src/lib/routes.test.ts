@@ -4,6 +4,7 @@ import {
 	checkIfLinkIsActive,
 	isLightThemePath,
 	shouldHideGlobalNewsletter,
+	shouldShowWeatherWidget,
 } from '@/lib/routes';
 
 // These cover the one thing about this module that is invisible at a call site:
@@ -88,6 +89,36 @@ describe('shouldHideGlobalNewsletter', () => {
 	it('keeps it everywhere else, including descendants of an exact-match entry', () => {
 		expect(shouldHideGlobalNewsletter('/en/contact')).toBe(false);
 		expect(shouldHideGlobalNewsletter('/en/newsletter/thanks')).toBe(false);
+	});
+});
+
+describe('shouldShowWeatherWidget', () => {
+	it('agrees across the prerender and browser forms of the same route', () => {
+		for (const p of ['/en/events/x', '/events/x', '/zh_tw/events/x']) {
+			expect(shouldShowWeatherWidget(p)).toBe(true);
+		}
+		for (const p of ['/en', '/', '/zh_tw']) {
+			expect(shouldShowWeatherWidget(p)).toBe(true);
+		}
+	});
+
+	it('shows on the events index and every single event', () => {
+		expect(shouldShowWeatherWidget('/events')).toBe(true);
+		expect(shouldShowWeatherWidget('/en/events/')).toBe(true);
+		expect(shouldShowWeatherWidget('/en/events/some-race')).toBe(true);
+	});
+
+	// The homepage is an exact match, not a subtree — "/" prefixes every path,
+	// so treating it as one would put the widget on the whole site.
+	it('shows on the homepage without showing on every route below it', () => {
+		expect(shouldShowWeatherWidget('/')).toBe(true);
+		for (const p of ['/products', '/en/contact', '/faq', '/size-guide']) {
+			expect(shouldShowWeatherWidget(p)).toBe(false);
+		}
+	});
+
+	it('does not match a route that merely starts with the same characters', () => {
+		expect(shouldShowWeatherWidget('/events-crew')).toBe(false);
 	});
 });
 

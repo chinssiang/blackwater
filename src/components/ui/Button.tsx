@@ -1,6 +1,5 @@
-import * as React from 'react';
+import { Button as ButtonPrimitive } from '@base-ui/react/button';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { Slot } from 'radix-ui';
 
 import { cn } from '@/lib/utils';
 
@@ -24,7 +23,11 @@ const buttonVariants = cva(
 					'hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50',
 				destructive:
 					'bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40',
-				link: 'text-primary underline-offset-4 hover:underline',
+				// `link` is underlined AT REST with only the decoration colour moving
+				// on hover -- deliberate, not a stray. `hover:underline` (upstream
+				// shadcn's version) can never transition: text-decoration-line is not
+				// animatable, so it snaps whatever transition sits beside it.
+				link: 'text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary',
 			},
 			size: {
 				default:
@@ -48,20 +51,23 @@ const buttonVariants = cva(
 	}
 );
 
+// A link that should LOOK like a button does not go through this component.
+// Base UI's Button owns button semantics: composing an `<a>` through its
+// `render` prop puts `role="button"` on the anchor and hides the link from
+// screen readers' link lists (shadcn's Base UI docs say the same). Put
+// `buttonVariants()` on the link instead, through `cn()` so the caller's
+// overrides still win -- MobileMenu's CTA and AdaSkip are the references.
+// `render` is omitted from the props below so that rule is a compile error
+// rather than a comment someone has to notice.
 function Button({
 	className,
 	variant = 'default',
 	size = 'default',
-	asChild = false,
 	...props
-}: React.ComponentProps<'button'> &
-	VariantProps<typeof buttonVariants> & {
-		asChild?: boolean;
-	}) {
-	const Comp = asChild ? Slot.Root : 'button';
-
+}: Omit<ButtonPrimitive.Props, 'render'> &
+	VariantProps<typeof buttonVariants>) {
 	return (
-		<Comp
+		<ButtonPrimitive
 			data-slot="button"
 			data-variant={variant}
 			data-size={size}

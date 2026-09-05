@@ -50,10 +50,8 @@ export default function SizeChartDialog({
 
 	return (
 		<Dialog>
-			<DialogTrigger asChild>
-				<button type="button" className={SIZE_GUIDE_LINK_CLASS}>
-					{productText.sizeGuide}
-				</button>
+			<DialogTrigger className={SIZE_GUIDE_LINK_CLASS}>
+				{productText.sizeGuide}
 			</DialogTrigger>
 			{/* Widths: this theme rescales Tailwind's container tokens (--container-md
 			    is 900px, not 448px), which comfortably clears a 7-column chart's 792px
@@ -62,25 +60,20 @@ export default function SizeChartDialog({
 			    edge-to-edge between 640px and 900px.
 			    Scrolling is on the table wrapper, not here: the close button is
 			    positioned against this element, so if this element scrolled the X
-			    would slide off the top.
-			    aria-describedby is suppressed because the chart note (rendered inside
-			    SizeChartTable) is the description, and Radix would otherwise warn. */}
+			    would slide off the top. */}
 			<DialogContent
 				className="flex max-h-[85svh] flex-col gap-3 rounded-xl p-4 sm:max-w-[min(var(--container-md),calc(100%-2rem))]"
-				aria-describedby={undefined}
-				// Radix focuses the first tabbable node, which here is the checked
-				// unit radio — and radio groups select on arrow keys, so a reader
-				// pressing ArrowDown to scroll would silently convert every value.
-				onOpenAutoFocus={(event) => {
-					event.preventDefault();
-					titleRef.current?.focus();
-				}}
+				// By default the dialog focuses its first tabbable node, which here is
+				// the checked unit radio — and radio groups select on arrow keys, so a
+				// reader pressing ArrowDown to scroll would silently convert every
+				// value. Land on the title instead.
+				initialFocus={titleRef}
 			>
 				<DialogHeader className="pr-8 text-left">
 					<DialogTitle
 						ref={titleRef}
 						tabIndex={-1}
-						className="t-l-1 uppercase outline-none"
+						className="t-h-3 uppercase outline-none"
 					>
 						{chartTitle}
 					</DialogTitle>

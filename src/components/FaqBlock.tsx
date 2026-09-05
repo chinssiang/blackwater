@@ -23,11 +23,19 @@ type FaqBlockProps = {
 		items?: FaqItem[];
 		sectionAppearance?: any;
 	};
+	headingLevel?: 'h1' | 'h2';
 	className?: string;
 };
 
-export default function FaqBlock({ data, className }: FaqBlockProps) {
+export default function FaqBlock({
+	data,
+	headingLevel = 'h2',
+	className,
+}: FaqBlockProps) {
 	const { heading, items, sectionAppearance } = data || {};
+	// Not SectionShell's `heading` prop (see the note at the render below), so
+	// this module switches the tag itself rather than inheriting the shell's.
+	const Heading = headingLevel;
 
 	const visible = (items ?? []).filter(
 		(i) => i?.question && Array.isArray(i?.answer) && i.answer.length > 0
@@ -52,14 +60,20 @@ export default function FaqBlock({ data, className }: FaqBlockProps) {
 			    `t-h-2 uppercase` the events and products strips use. Both paths read
 			    --t-size-h2, so the two are the same size at every viewport -- they
 			    were not until the prose scale and the token scale were joined. */}
-			{heading && <h2>{heading}</h2>}
-			<Accordion type="single" collapsible>
+			{heading && <Heading>{heading}</Heading>}
+			<Accordion>
 				{visible.map((item, i) => {
 					const value = item._id ?? `faq-${i}`;
 					return (
 						<AccordionItem key={value} value={value}>
-							<AccordionTrigger>{item.question}</AccordionTrigger>
-							<AccordionContent className="[&_p]:leading-[125%]">
+							{/* Same rung as the answer (`.wysiwyg p` reads --t-size-b1);
+							    the trigger's own `font-medium` is what separates them.
+							    Without a rung it sat on Accordion's flat `text-sm` and
+							    the answer grew past the question above ~370px. */}
+							<AccordionTrigger className="t-b-1">
+								{item.question}
+							</AccordionTrigger>
+							<AccordionContent>
 								<CustomPortableText blocks={item.answer} />
 							</AccordionContent>
 						</AccordionItem>

@@ -2699,6 +2699,13 @@
             "name": "sectionAppearance"
           },
           "optional": true
+        },
+        "hidden": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "boolean"
+          },
+          "optional": true
         }
       }
     }
@@ -2738,6 +2745,23 @@
           },
           "optional": true
         },
+        "backgroundEffect": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "union",
+            "of": [
+              {
+                "type": "string",
+                "value": "none"
+              },
+              {
+                "type": "string",
+                "value": "wave"
+              }
+            ]
+          },
+          "optional": true
+        },
         "backgroundImage": {
           "type": "objectAttribute",
           "value": {
@@ -2759,6 +2783,13 @@
           "value": {
             "type": "inline",
             "name": "sectionAppearance"
+          },
+          "optional": true
+        },
+        "hidden": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "boolean"
           },
           "optional": true
         }
@@ -2840,6 +2871,13 @@
           "value": {
             "type": "inline",
             "name": "sectionAppearance"
+          },
+          "optional": true
+        },
+        "hidden": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "boolean"
           },
           "optional": true
         }
@@ -2980,6 +3018,13 @@
             "name": "sectionAppearance"
           },
           "optional": true
+        },
+        "hidden": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "boolean"
+          },
+          "optional": true
         }
       }
     }
@@ -3010,6 +3055,13 @@
           "value": {
             "type": "inline",
             "name": "sectionAppearance"
+          },
+          "optional": true
+        },
+        "hidden": {
+          "type": "objectAttribute",
+          "value": {
+            "type": "boolean"
           },
           "optional": true
         }

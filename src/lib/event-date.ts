@@ -38,8 +38,8 @@ const resolvedTimezones = new Map<string, string>();
  * The broad one is DRAFT MODE, and it is not bad data at all. `timezone` is not
  * on `filterDefault`'s denylist (which lists `status`, not `timezone`) and is
  * neither date-like nor URL-like, so the Presentation tool encodes invisible
- * characters into it for EVERY event — the same trap `readEventDateStatus`
- * documents one field over, and the same rule: clean wherever a value is used
+ * characters into it for EVERY event — the same trap `resolveEventDateStatus`
+ * (`event-status.ts`) documents one field over, and the same rule: clean wherever a value is used
  * as a KEY rather than rendered. Cleaning before judging is also what keeps a
  * Los Angeles event in Los Angeles for editors; treating every encoded value as
  * unusable would quietly move it to Taipei, trading a crash for a wrong answer.
@@ -186,64 +186,6 @@ export function groupEventsByDay<T extends { eventDatetime?: RichDate | null }>(
 		else byDay.set(key, [event]);
 	}
 	return byDay;
-}
-
-/**
- * The `dateStatus` that overrides an event's start time, or null when the date
- * is firm enough to show one.
- *
- * ONE gate for every surface: a TBA, postponed or cancelled event must not
- * render a time or a countdown, and four components deciding that separately is
- * how the same event ends up described two ways on two pages.
- *
- * `stegaClean` is load-bearing, not defensive — the same rule `SizeChartTable`
- * records: clean wherever a value is COMPARED rather than rendered. `dateStatus`
- * is a discriminator that crosses from GROQ into JS as a string, and
- * `filterDefault`'s denylist covers `status` but not `dateStatus`, so in draft
- * mode Sanity encodes invisible characters into it. A raw `=== 'confirmed'` is
- * then false for every event in the Presentation tool, and each one renders its
- * status word where its start time belongs — silently, and only for editors.
- * (The `eventsBlock` window avoids this class of bug by resolving to a number
- * inside GROQ; this field is authored as a string, so it is cleaned here.)
- */
-export function readEventDateStatus(
-	dateStatus: string | null | undefined
-): string | null {
-	const status = stegaClean(dateStatus);
-	if (!status || status === 'confirmed') return null;
-	return status;
-}
-
-/**
- * What an event shows where its start time goes: the formatted time, or the
- * translated reason it has none.
- *
- * Takes the status labels rather than the dictionary so this module stays free
- * of an `en.json` import — the same reason `formatDaysUntilLabel` lives in
- * dictionary.ts instead of here. Pass `t.status`.
- *
- * The label comes from the dictionary, never from `dateStatus` itself: those are
- * the schema's enum tokens (`tba`/`postponed`/`cancelled`), so rendering one raw
- * printed an English word on the Chinese page — and made the `tba` entry
- * unreachable, since a set value is always truthy.
- */
-export function formatEventTimeLabel(
-	event: {
-		eventDatetime?: RichDate | null;
-		dateStatus?: string | null;
-	},
-	formatStr: string,
-	statusLabels: Readonly<Record<string, string>> & { tba: string },
-	locale?: Locale
-): string {
-	const status = readEventDateStatus(event.dateStatus);
-	if (!status) {
-		return event.eventDatetime
-			? formatRichDate(event.eventDatetime, formatStr, locale)
-			: statusLabels.tba;
-	}
-	// An unknown token still falls back to TBA rather than rendering blank.
-	return statusLabels[status] ?? statusLabels.tba;
 }
 
 /**

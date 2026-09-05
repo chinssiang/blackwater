@@ -7,7 +7,7 @@ import { motion, useReducedMotion } from 'motion/react';
 import type { PEventsQueryResult } from 'sanity.types';
 import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 import {
-	formatEventTimeLabel,
+	formatRichDate,
 	getDaysUntilEvent,
 	getTodayKey,
 	groupEventsByDay,
@@ -29,9 +29,10 @@ import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { formatDaysUntilLabel, interpolate } from '@/lib/dictionary';
 import { resolveEventLocation } from '@/lib/event-location';
+import { resolveEventDateStatus } from '@/lib/event-status';
 import { localizePath } from '@/lib/i18n';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
-import { EventStatusItem } from '@/components/EventStatusItem';
+import EventStatusPill from '@/components/EventStatusPill';
 import { EventsCalendar } from './EventsCalendar';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
@@ -273,7 +274,7 @@ export function PageEvents({ data }: PageEventsProps) {
 							delay: 0.3,
 							ease: EASE_HEADER,
 						}}
-						className="t-h-3 uppercase"
+						className="t-l-0 uppercase"
 					>
 						{monthYearDisplay}
 					</motion.p>
@@ -386,6 +387,7 @@ export function PageEvents({ data }: PageEventsProps) {
 									currentDate
 								);
 								const daysUntil = getDaysUntilEvent(eventDatetime, currentDate);
+								const dateStatusInfo = resolveEventDateStatus(dateStatus, t);
 
 								return (
 									<motion.div
@@ -409,7 +411,7 @@ export function PageEvents({ data }: PageEventsProps) {
 									>
 										<Td
 											className={cn(
-												'font-bold uppercase lg:pl-0 t-b-1 lg:flex flex-wrap items-center gap-2.5 text-balance group-hover/row:translate-x-1 transition-transform',
+												'font-bold uppercase lg:pl-0 t-b-1 lg:flex flex-wrap items-center gap-2.5 text-balance transition-transform duration-300 ease-out group-hover/row:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover/row:translate-x-0',
 												{
 													'opacity-30': eventHasEnded,
 												}
@@ -417,7 +419,7 @@ export function PageEvents({ data }: PageEventsProps) {
 										>
 											<p className="text-balance mb-4 lg:mb-0">{title}</p>
 											{subtitle && (
-												<p className="text-muted-foreground text-balance group-hover/row:text-muted">
+												<p className="text-muted-foreground text-balance transition-colors group-hover/row:text-muted">
 													{subtitle}
 												</p>
 											)}
@@ -430,12 +432,13 @@ export function PageEvents({ data }: PageEventsProps) {
 												}
 											)}
 										>
-											{formatEventTimeLabel(
-												item,
-												t.dateFormat,
-												t.status,
-												dateFnsLocale
-											)}
+											{dateStatusInfo.isFirm && eventDatetime
+												? formatRichDate(
+														eventDatetime,
+														t.dateFormat,
+														dateFnsLocale
+													)
+												: dateStatusInfo.label}
 
 											<Link
 												className={cn('p-fill', OVERLAY_LINK_FOCUS)}
@@ -455,7 +458,7 @@ export function PageEvents({ data }: PageEventsProps) {
 										>
 											{displayLocation}
 											{displayLocationLink && (
-												<span className="whitespace-nowrap -translate-y-0.25 ml-1 inline-block group-hover/location:translate-x-0.5 group-hover/location:-translate-y-0.5 transition-transform">
+												<span className="whitespace-nowrap -translate-y-0.25 ml-1 inline-block transition-transform duration-300 ease-out group-hover/location:translate-x-0.5 group-hover/location:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover/location:translate-x-0 motion-reduce:group-hover/location:translate-y-0">
 													&#8203;
 													<ArrowUpRight className="size-2 inline-block" />
 												</span>
@@ -479,8 +482,9 @@ export function PageEvents({ data }: PageEventsProps) {
 											}
 										>
 											{!eventHasEnded && daysUntil !== null && (
-												<EventStatusItem
+												<EventStatusPill
 													key={`in-${daysUntil}-day`}
+													className="py-2"
 													data={{
 														eventStatus: {
 															title: formatDaysUntilLabel(daysUntil, t),
@@ -490,15 +494,19 @@ export function PageEvents({ data }: PageEventsProps) {
 											)}
 											{hasArrayValue(statusList) &&
 												statusList.map((item: any) => (
-													<EventStatusItem
+													<EventStatusPill
 														key={item._key}
 														data={item}
-														className={cn(eventHasEnded ? 'opacity-30' : '')}
+														className={cn(
+															'py-2',
+															eventHasEnded && 'opacity-30'
+														)}
 													/>
 												))}
 											{eventHasEnded && (
-												<EventStatusItem
+												<EventStatusPill
 													key="ended"
+													className="py-2"
 													data={{ eventStatus: { title: t.status.ended } }}
 												/>
 											)}

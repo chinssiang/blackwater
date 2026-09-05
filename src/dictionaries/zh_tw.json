@@ -13,6 +13,49 @@
 	"locationCurrentTime": {
 		"dateFormat": "iii, p"
 	},
+	"weather": {
+		"label": "台北",
+		"observedAt": "更新於 {time}",
+		"metrics": {
+			"feelsLike": "體感溫度",
+			"wind": "風速",
+			"humidity": "濕度",
+			"rain": "降雨",
+			"aqi": "空氣品質"
+		},
+		"units": {
+			"celsius": "°C",
+			"kilometresPerHour": "公里/小時",
+			"percent": "%",
+			"millimetres": "毫米"
+		},
+		"conditions": {
+			"clear": "晴",
+			"mainlyClear": "晴時多雲",
+			"partlyCloudy": "多雲",
+			"overcast": "陰",
+			"fog": "霧",
+			"drizzle": "細雨",
+			"freezingDrizzle": "凍雨（細）",
+			"rain": "雨",
+			"freezingRain": "凍雨",
+			"snow": "雪",
+			"snowGrains": "霰",
+			"showers": "陣雨",
+			"snowShowers": "陣雪",
+			"thunderstorm": "雷雨",
+			"thunderstormHail": "雷雨並有冰雹",
+			"unknown": "未知"
+		},
+		"aqiBands": {
+			"good": "良好",
+			"moderate": "普通",
+			"unhealthySensitive": "對敏感族群不健康",
+			"unhealthy": "對所有族群不健康",
+			"veryUnhealthy": "非常不健康",
+			"hazardous": "危害"
+		}
+	},
 	"events": {
 		"headers": {
 			"codex": "活動",
@@ -43,6 +86,37 @@
 			"label": "近期活動",
 			"previous": "上一批活動",
 			"next": "更多活動"
+		},
+		"related": {
+			"series": "{category} 的其他活動",
+			"seriesGeneric": "最新活動",
+			"venue": "{location} 的其他活動"
+		},
+		"detail": {
+			"location": "地點",
+			"goodToKnow": "注意事項",
+			"startFinish": "起終點",
+			"station": "第 {number} 站",
+			"gettingHere": "前往方式",
+			"headingOut": "離開方式",
+			"notes": "活動說明",
+			"flavorChallenge": "主題挑戰",
+			"exampleImageAlt": "{quest} 範例"
+		},
+		"spec": {
+			"venue": "地點",
+			"distance": "距離",
+			"distanceValue": "{km} 公里",
+			"type": "類型",
+			"entry": "費用",
+			"free": "免費",
+			"ends": "結束",
+			"eventType": {
+				"group-run": "團跑",
+				"race": "競賽",
+				"social": "社交",
+				"trail": "越野跑"
+			}
 		},
 		"dateFormat": "yyyy/MM/dd (iii) HH:mm",
 		"monthYearFormat": "yyyy年M月",

@@ -13,6 +13,49 @@
 	"locationCurrentTime": {
 		"dateFormat": "iii, p"
 	},
+	"weather": {
+		"label": "Taipei",
+		"observedAt": "Updated {time}",
+		"metrics": {
+			"feelsLike": "Feels like",
+			"wind": "Wind",
+			"humidity": "Humidity",
+			"rain": "Rain",
+			"aqi": "AQI"
+		},
+		"units": {
+			"celsius": "°C",
+			"kilometresPerHour": "km/h",
+			"percent": "%",
+			"millimetres": "mm"
+		},
+		"conditions": {
+			"clear": "Clear",
+			"mainlyClear": "Mainly clear",
+			"partlyCloudy": "Partly cloudy",
+			"overcast": "Overcast",
+			"fog": "Fog",
+			"drizzle": "Drizzle",
+			"freezingDrizzle": "Freezing drizzle",
+			"rain": "Rain",
+			"freezingRain": "Freezing rain",
+			"snow": "Snow",
+			"snowGrains": "Snow grains",
+			"showers": "Showers",
+			"snowShowers": "Snow showers",
+			"thunderstorm": "Thunderstorm",
+			"thunderstormHail": "Thunderstorm, hail",
+			"unknown": "Unknown"
+		},
+		"aqiBands": {
+			"good": "Good",
+			"moderate": "Moderate",
+			"unhealthySensitive": "Unhealthy for sensitive groups",
+			"unhealthy": "Unhealthy",
+			"veryUnhealthy": "Very unhealthy",
+			"hazardous": "Hazardous"
+		}
+	},
 	"events": {
 		"headers": {
 			"codex": "codex",
@@ -43,6 +86,37 @@
 			"label": "Upcoming events",
 			"previous": "Previous events",
 			"next": "More events"
+		},
+		"related": {
+			"series": "More in {category}",
+			"seriesGeneric": "Latest events",
+			"venue": "Also at {location}"
+		},
+		"detail": {
+			"location": "Location",
+			"goodToKnow": "Good to know",
+			"startFinish": "Start & Finish",
+			"station": "Station {number}",
+			"gettingHere": "Getting Here",
+			"headingOut": "Heading Out",
+			"notes": "Event Notes",
+			"flavorChallenge": "Flavor Challenge",
+			"exampleImageAlt": "Example of {quest}"
+		},
+		"spec": {
+			"venue": "Venue",
+			"distance": "Distance",
+			"distanceValue": "{km} km",
+			"type": "Type",
+			"entry": "Entry",
+			"free": "Free",
+			"ends": "Ends",
+			"eventType": {
+				"group-run": "Group run",
+				"race": "Race",
+				"social": "Social",
+				"trail": "Trail"
+			}
 		},
 		"dateFormat": "iii, MM.dd.yy, h:mm aaa",
 		"monthYearFormat": "MMMM yyyy",

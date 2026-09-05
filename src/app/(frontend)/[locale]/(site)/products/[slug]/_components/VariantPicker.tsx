@@ -76,7 +76,7 @@ export default function VariantPicker({
 									}
 									onClick={() => onSelect(option.name, value)}
 									className={cn(
-										't-l-2 text-[10px] uppercase',
+										't-l-2 uppercase',
 										'min-h-11 min-w-11 px-3.5',
 										!available &&
 											!selected &&

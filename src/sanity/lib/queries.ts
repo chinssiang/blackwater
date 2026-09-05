@@ -27,6 +27,20 @@ export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 // entries would move the page's lastmod.
 const faqBlockUsesSet = `coalesce(source, "set") != "picked"`;
 
+// Whether a page module is switched on. The eye button on the Studio array row
+// (schemaTypes/components/PageModuleItem.tsx) writes `hidden: true` and unsets
+// it again on the way back, so absent means visible -- no backfill needed.
+// Coalesced for the unset case, same reason as faqBlockUsesSet above; here
+// `hidden == false` and `!hidden` would each drop every untouched module.
+//
+// Applied as the array PREDICATE, not projected as a field, so a switched-off
+// module never reaches JS. That is what makes the rest of the pipeline correct
+// for free: PageHome hands the <h1> to slot 0, which is the first module a
+// visitor actually sees rather than the first one authored; a hidden faqBlock
+// stays out of the FAQPage JSON-LD; and EventsBlock/ProductsBlock never mount to
+// run their own fetches.
+const moduleVisible = `coalesce(hidden, false) == false`;
+
 // `contentUpdatedAt` collects the `_updatedAt` of every document a page RENDERS
 // but does not own, so sitemap.ts can advertise the newest of the two as
 // lastmod. All three sitemap queries carry one; this is the shared reasoning.
@@ -61,9 +75,9 @@ export const SITEMAP_PAGES_QUERY = defineQuery(`
 		"contentUpdatedAt": [
 			faqSet->_updatedAt,
 			faqSet->questions[]->_updatedAt,
-			pageModules[_type == "faqBlock" && ${faqBlockUsesSet}].faqSet->_updatedAt,
-			pageModules[_type == "faqBlock" && ${faqBlockUsesSet}].faqSet->questions[]->_updatedAt,
-			pageModules[_type == "faqBlock" && source == "picked"].questions[]->_updatedAt,
+			pageModules[_type == "faqBlock" && ${moduleVisible} && ${faqBlockUsesSet}].faqSet->_updatedAt,
+			pageModules[_type == "faqBlock" && ${moduleVisible} && ${faqBlockUsesSet}].faqSet->questions[]->_updatedAt,
+			pageModules[_type == "faqBlock" && ${moduleVisible} && source == "picked"].questions[]->_updatedAt,
 			sections[].charts[].chart->_updatedAt
 		]
 	}
@@ -593,7 +607,8 @@ const productCardFields = `
 // that render pageModules cannot drift from what the fragments actually touch.
 //
 // Worth seeing plainly: these are attached to the whole page fetch, so they fan
-// out to every pGeneral page whether or not it carries the module. Publishing one
+// out to every pGeneral page whether or not it carries the module -- or whether
+// the module is switched on, since the tag set is static. Publishing one
 // product expires all of them — /api/revalidate-tag uses `expire: 0`, so that is
 // immediate. That is the price of resolving a module's references inside the page
 // query; it is the same trade faqBlock already makes with gFaq/gFaqList, one
@@ -609,16 +624,26 @@ export const PAGE_MODULE_TAGS = [
 	'settingsBrandColors',
 ] as const;
 
-// Tags for upcomingEventsQuery: eventCardFields derefs locationRef-> and
-// statusList[].eventStatus-> plus its two colour documents, and the query adds
-// categories[0]-> on top of that fragment (pEventCategory). pEventsQuery shares
-// eventCardFields but NOT the category, so it must not carry that tag.
-export const UPCOMING_EVENTS_TAGS = [
+// The types eventCardFields dereferences: locationRef-> plus
+// statusList[].eventStatus-> and its two brand-colour documents. Composed into
+// each consumer's own list rather than restated per query, the way
+// PAGE_MODULE_TAGS serves pageModuleFields -- adding a deref to the fragment
+// then means editing one list, and under `revalidate: false` a type that is
+// dereferenced but untagged freezes that surface until the next deploy.
+//
+// `pEventCategory` is deliberately NOT here: pEventsQuery shares the fragment
+// but projects no category, so it must not carry that tag.
+export const EVENT_CARD_TAGS = [
 	'pEvent',
 	'gLocation',
-	'pEventCategory',
 	'pEventStatus',
 	'settingsBrandColors',
+] as const;
+
+// upcomingEventsQuery adds categories[0]-> on top of the fragment.
+export const UPCOMING_EVENTS_TAGS = [
+	...EVENT_CARD_TAGS,
+	'pEventCategory',
 ] as const;
 
 // `windowDays` rather than the raw `timeWindow` string: stega encodes invisible
@@ -667,7 +692,10 @@ const eventsBlockField = `
 // interpolation depth as freeformField (portableTextContentFields → linkFields →
 // resolvedHrefGroq), which the extractor handles; the sectionAppearance block
 // below is spelled out verbatim for the reason given above it, not copy-paste
-// laziness.
+// laziness. `waveBackground` is resolved to a boolean in GROQ rather than
+// shipping the `backgroundEffect` string: draft mode stega-encodes strings, so
+// comparing against 'wave' in JS would need a stegaClean first -- the
+// windowDays / faqBlock.source treatment.
 const heroBlockField = `
 	_type,
 	_key,
@@ -676,6 +704,7 @@ const heroBlockField = `
 	paragraph[]{
 		${portableTextContentFields}
 	},
+	"waveBackground": backgroundEffect == 'wave',
 	// Narrower than imageBlockMetaFields, which the other image projections use.
 	// That fragment also pulls caption and a link projection, and this object has
 	// neither: hero-block.ts declares its customImage with hasCaptionOption false
@@ -684,15 +713,22 @@ const heroBlockField = `
 	// compiled query and, more to the point, one interpolation level off the
 	// pageHome/pageGeneral chain the note above is about.
 	// (No backticks in here: this comment sits inside a JS template literal.)
-	backgroundImage{
-		image{
-			${imageMetaFields}
-		},
-		customRatio,
-		imageMobile{
-			${imageMetaFields}
-		},
-		customRatioMobile
+	// Conditional on the effect: the schema hides the image while the wave is
+	// selected but keeps the data, and HeroBlock can never render it then, so
+	// the asset refs and lqip strings would be dead payload on every wave hero.
+	// A conditional, not a select() around a fragment, so no interpolation level
+	// is added to the chain the note above is about.
+	backgroundEffect != 'wave' => {
+		backgroundImage{
+			image{
+				${imageMetaFields}
+			},
+			customRatio,
+			imageMobile{
+				${imageMetaFields}
+			},
+			customRatioMobile
+		}
 	},
 	callToAction{
 		label,
@@ -864,14 +900,23 @@ export const productSubmissionConfigQuery = defineQuery(`{
 	"logo": ${byLocale('pProductIndex')}[defined(confirmationEmail.logo.asset)][0].confirmationEmail.logo
 }`);
 
-export const pageHomeQuery = defineQuery(`
+export // `landingTitle` is not rendered: PageHome reads it only to tell "this dataset
+// predates the hero migration" from "this homepage has no modules yet", and the
+// migration unsets it, so it and the schema field retire together.
+//
+// `moduleCount` counts pageModules BEFORE `moduleVisible` filters it. Without it
+// the guard cannot separate "no modules authored" from "every module parked with
+// the eye toggle", so hiding the only module reproduced the unmigrated signature
+// and failed the production build.
+const pageHomeQuery = defineQuery(`
 	${byLocale('pHome')}[0]{
 		${baseFields},
 		${availableLocalesField},
 		"isHomepage": true,
 		landingTitle,
+		"moduleCount": count(pageModules),
 		"textColor": textColor->color,
-		pageModules[]{
+		pageModules[${moduleVisible}]{
 			${pageModuleFields}
 		}
 	}
@@ -900,7 +945,7 @@ export const pageGeneralQuery = defineQuery(`
 		content[]{
 			${portableTextContentFields}
 		},
-		pageModules[]{
+		pageModules[${moduleVisible}]{
 			${pageModuleFields}
 		},
 		_updatedAt
@@ -1002,6 +1047,12 @@ const eventStatusListFields = `
 // and it costs a reference deref per event. upcomingEventsQuery adds it on top
 // of this fragment instead, because the home-page ticket does render it -- see
 // the note there.
+//
+// `slug` IS projected here, unlike `categories`: every surface that renders a
+// ticket renders it as a link to the event -- the /events rows, the home-page
+// carousel and the event page's related strips, whose whole purpose is moving
+// between related runs -- so the fragment is what keeps the three from
+// disagreeing about whether a card opens anything.
 const eventCardFields = `
 	_id,
 	_type,
@@ -1065,6 +1116,98 @@ export const upcomingEventsQuery = defineQuery(`
 	] | order(eventDatetime.utc asc)[0...12]{
 		${eventCardFields},
 		"category": ${locString('categories[0]->title')}
+	}
+`);
+
+// Same deref set as upcomingEventsQuery -- the shared fragment plus a category
+// projection -- but its own const, so the two queries stay free to diverge.
+export const RELATED_EVENTS_TAGS = [
+	...EVENT_CARD_TAGS,
+	'pEventCategory',
+] as const;
+
+// The event page's two related strips: other events in the same series (same
+// category) and other events at the same venue. One query with two projections
+// rather than two queries, so it is one round trip and one cache entry.
+//
+// Anchored on $slug -- the same params the page's own fetch already takes -- so
+// EventRelated owns its data instead of waiting on ids projected out of
+// pageEventSingleQuery. That is the composition rule: a component that needs
+// nothing from its parent's fetch can never be stuck behind it. It also means
+// `categoryTitle` and `locationName` for the two headings come back here rather
+// than being threaded down as props.
+//
+// Fetched by EventRelated, NOT nested in pageEventSingleQuery, and the reason is
+// tags rather than cache keys. /api/revalidate-tag fires revalidateTag(_type)
+// AND revalidateTag(`${_type}:${slug}`), and the page's own read is scoped to
+// `pEvent:${slug}` so publishing event B cannot expire event A's document. This
+// strip MUST expire when B changes, so it needs the broad `pEvent` tag --
+// nesting it would put that tag on the page's own fetch, which generateMetadata
+// awaits through the same cache(), and every publish would then invalidate the
+// metadata of all 178 event pages and pull 8 related rows just to read
+// `sharing`.
+//
+// NO WALL-CLOCK PARAM, deliberately. `order(eventDatetime.utc desc)` already
+// puts anything upcoming first, since a future event carries the largest
+// timestamp, and then walks back through the most recent past. The clock is
+// needed only to split those two halves for display, which orderByRelevance()
+// does in JS -- GROQ cannot, as it needs the event's own timezone and an
+// end-of-day fallback. So nothing rolls this cache key over daily.
+//
+// `^.^` in the series filter reaches the anchor document from inside the array
+// filter's own scope (one extra level), the same shape pageProductSingleQuery's
+// defaultRelatedProducts uses. Verified against both datasets.
+//
+// `!defined(^.categories[0]._ref)` is the fallback for the four events that
+// carry no category at all (bw-94-rr, 1602-fm, 139-cr, bw-96-sc -- the field is
+// unset, not an empty array, so `count(categories) == 0` does NOT find them):
+// the filter degrades to "the latest events overall" rather than matching
+// nothing. Three of the four have no venue either, so without this they are the
+// only pages that would render no strip whatsoever.
+//
+// The venue arm needs `defined(^.locationRef._ref)`, or an event with no
+// referenced venue matches every other event that also has none. It only ever
+// finds locationRef-backed venues; an event whose venue is the one-off
+// `location` string (141-cr, say) correctly gets no venue strip.
+//
+// The venue arm does NOT exclude category siblings in the filter, and that is
+// deliberate. Doing so looks like the obvious efficiency win -- 17 of the 34
+// venue-bearing events share both category and venue with their siblings, so
+// rows are fetched and then dropped by EventRelated's JS dedupe. But measured,
+// filtering them out in GROQ empties the venue strip on those same 17 of 34
+// events: "same programme, same venue, just older" is the most relevant set
+// there is, and the series arm cannot show it because those events fall outside
+// its own slice. So the dedupe stays in JS, where it only removes rows the
+// series strip is actually rendering.
+//
+// [0...6] rather than 8: every row returned becomes a rendered slide, in the
+// HTML and again in the inlined RSC payload, and the carousel shows 4 at its
+// widest (basis-1/4). The house default for an event strip is 5
+// (DEFAULT_EVENT_LIMIT in event-date.ts).
+//
+// eventCardFields is interpolated at the QUERY level, exactly as
+// upcomingEventsQuery does -- a sibling at the same depth, not a new level on
+// the eventStatusListFields -> linkFields -> resolvedHrefGroq chain. Do NOT
+// wrap either projection in a fragment; that is the level that kills the
+// extractor.
+export const relatedEventsQuery = defineQuery(`
+	*[_type == "pEvent" && slug.current == $slug && ${titleVisible}][0]{
+		"categoryTitle": ${locString('categories[0]->title')},
+		"locationName": ${locString('locationRef->name')},
+		"series": *[_type == "pEvent" && _id != ^._id && ${titleVisible}
+			&& (!defined(^.categories[0]._ref)
+				|| count((categories[]._ref)[@ in ^.^.categories[]._ref]) > 0)
+		] | order(eventDatetime.utc desc)[0...6]{
+			${eventCardFields},
+			"category": ${locString('categories[0]->title')}
+		},
+		"venue": *[_type == "pEvent" && _id != ^._id && ${titleVisible}
+			&& defined(^.locationRef._ref)
+			&& locationRef._ref == ^.locationRef._ref
+		] | order(eventDatetime.utc desc)[0...6]{
+			${eventCardFields},
+			"category": ${locString('categories[0]->title')}
+		}
 	}
 `);
 
@@ -1268,8 +1411,12 @@ export const pageProductIndexQuery = defineQuery(`
 	}
 `);
 
+// See the note on pageEventSlugsQuery. This is the one that actually bites
+// today: two published products carry a zh_tw title and no en title, so the
+// unguarded list prerendered /en/products/<slug> for both -- 73KB of noindexed
+// "Page not found" each, in the build output and reachable.
 export const pageProductSlugsQuery = defineQuery(`
-	*[_type == "pProduct" && defined(slug.current)]
+	*[_type == "pProduct" && defined(slug.current) && ${titleVisible}]
 	{"slug": slug.current}
 `);
 
@@ -1429,8 +1576,18 @@ export const pageProductsAllQuery = defineQuery(`
 	}
 `);
 
+// `titleVisible` here, not just `defined(slug.current)`: generateStaticParams
+// runs once per locale, and without the guard it returned every slug for both,
+// so a document visible in only one locale got a prerendered page in the other
+// -- where pageEventSingleQuery (which DOES carry the guard) returns null and
+// the route renders NotFoundContent at HTTP 200. The two queries in that route
+// have to agree about visibility or the build bakes in soft 404s.
+//
+// Measured on this dataset: 0 affected events (all 89 carry an en title, and
+// the guard accepts the en fallback), but 2 affected products -- see the same
+// guard on pageProductSlugsQuery.
 export const pageEventSlugsQuery = defineQuery(`
-	*[_type == "pEvent" && defined(slug.current)]
+	*[_type == "pEvent" && defined(slug.current) && ${titleVisible}]
 	{"slug": slug.current}
 `);
 

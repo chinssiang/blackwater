@@ -1,22 +1,23 @@
+import { stegaClean } from '@sanity/client/stega';
 import CustomPortableText from '@/components/CustomPortableText';
 import CustomLink from '@/components/CustomLink';
 import ImageBlock from '@/components/ImageBlock';
+// The lazy boundary for the canvas; the note in that file says why it exists.
+import { HeroWave } from '@/components/HeroWaveLazy';
+import { HeroUnderlay } from '@/components/HeroUnderlay';
 import SectionShell, {
 	type SectionAppearance,
 } from '@/components/SectionShell';
-import { Button } from '@/components/ui/Button';
+import { buttonVariants } from '@/components/ui/Button';
 import { revealStagger } from '@/lib/animate';
-import { cn } from '@/lib/utils';
+import type { SanityColor } from '@/lib/image-utils';
+import { resolveSectionAppearance } from '@/lib/section-appearance';
+import { cn, hasArrayValue } from '@/lib/utils';
 
-// The page opener: eyebrow, heading, paragraph and an optional call to action
-// over an optional background image.
-//
-// Entrance is the `reveal` utility, not Motion. Both make invisible the default
-// state and need something to execute to undo it, so a hero the browser never
-// paints -- or one whose JS never hydrates -- would strand the page's own
-// heading at opacity: 0. `reveal` puts the hidden value in @starting-style
-// instead, so it is only ever a transition start point. This replaced pHome's
-// <AnimatedTitle>, which was a Motion mount animation on exactly that heading.
+const WAVE_PAPER: SanityColor = {
+	hex: '#0a0a0a',
+	rgb: { r: 10, g: 10, b: 10, a: 1 },
+};
 
 type HeroBlockProps = {
 	data: {
@@ -24,6 +25,8 @@ type HeroBlockProps = {
 		heading?: string | null;
 		paragraph?: any;
 		backgroundImage?: any;
+		// Resolved to a boolean in GROQ (heroBlockField), never the raw string.
+		waveBackground?: boolean | null;
 		callToAction?: {
 			label?: string | null;
 			link?: { href?: unknown; isNewTab?: boolean | null } | null;
@@ -49,6 +52,7 @@ export default function HeroBlock({
 		heading,
 		paragraph,
 		backgroundImage,
+		waveBackground,
 		callToAction,
 		sectionAppearance,
 	} = data || {};
@@ -62,13 +66,35 @@ export default function HeroBlock({
 			: null;
 	const ctaLabel = callToAction?.label;
 
+	// Trimmed and stega-cleaned before anything decides whether there is a
+	// heading. `src/lib/page-modules.ts` used to do this upstream and was deleted
+	// with the old hero fallback; nothing replaced it, so raw truthiness let a
+	// heading an editor had blanked to spaces both defeat the emptiness bail
+	// below AND render `<h1>   </h1>` -- an a11y failure a crawler reads rather
+	// than falling through to the next heading. Draft mode also appends invisible
+	// stega characters, which would make any heading look non-empty. A predicate,
+	// not the rendered value: the raw `heading` is what gets rendered, so visual
+	// editing keeps its stega metadata.
+	const hasHeading = !!stegaClean(heading)?.trim();
+
+	const hasParagraph: boolean = hasArrayValue(paragraph);
+
+	const appearance = waveBackground
+		? { ...sectionAppearance, backgroundColor: WAVE_PAPER }
+		: sectionAppearance;
+	const underlapsHeader =
+		!!waveBackground &&
+		headingLevel === 'h1' &&
+		resolveSectionAppearance(appearance).maxWidthClass === 'w-full';
+
 	// Same bail as the other modules: an empty hero would still reserve a full
 	// viewport of blank page, which is worse than not rendering.
 	if (
 		!eyebrow &&
-		!heading &&
-		!paragraph &&
+		!hasHeading &&
+		!hasParagraph &&
 		!backgroundImage?.image &&
+		!waveBackground &&
 		!(ctaHref && ctaLabel)
 	) {
 		return null;
@@ -76,15 +102,28 @@ export default function HeroBlock({
 
 	return (
 		<SectionShell
-			appearance={sectionAppearance}
+			appearance={appearance}
 			className={cn(
-				'min-h-main relative isolate flex flex-col justify-center overflow-hidden',
+				'relative isolate flex flex-col justify-center overflow-hidden',
+				// The header height is ADDED back on the underlap arm: `--height-main`
+				// subtracts it, and a hero the header floats over gets that space back.
+				underlapsHeader
+					? 'min-h-[calc(var(--height-main)+var(--height-header)+var(--height-announcement))]'
+					: 'min-h-main',
 				className
 			)}
 		>
-			{backgroundImage?.image && (
-				// -z-10 with `isolate` above: the image sits behind the copy without
-				// escaping into the stacking context of whatever follows the section.
+			{waveBackground ? (
+				underlapsHeader ? (
+					<HeroUnderlay>
+						<HeroWave />
+					</HeroUnderlay>
+				) : (
+					<div aria-hidden className="absolute inset-0 -z-10">
+						<HeroWave />
+					</div>
+				)
+			) : backgroundImage?.image ? (
 				<div aria-hidden className="absolute inset-0 -z-10">
 					<ImageBlock
 						imageObj={backgroundImage}
@@ -96,16 +135,21 @@ export default function HeroBlock({
 						// whether the page above it already claimed that.
 					/>
 				</div>
-			)}
+			) : null}
 
-			<div className="max-w-2xl">
+			<div
+				className={cn(
+					'max-w-2xl mx-auto',
+					underlapsHeader && 'mt-header-space-0'
+				)}
+			>
 				{eyebrow && (
 					<p className="t-spec reveal mb-3 uppercase" style={revealStagger(0)}>
 						{eyebrow}
 					</p>
 				)}
 
-				{heading && (
+				{hasHeading && (
 					<Heading
 						className="t-h-1 reveal text-balance uppercase"
 						style={revealStagger(1)}
@@ -114,7 +158,7 @@ export default function HeroBlock({
 					</Heading>
 				)}
 
-				{paragraph && (
+				{hasParagraph && (
 					<div className="wysiwyg reveal mt-4" style={revealStagger(2)}>
 						<CustomPortableText blocks={paragraph} />
 					</div>
@@ -122,16 +166,15 @@ export default function HeroBlock({
 
 				{ctaHref && ctaLabel && (
 					<div className="reveal mt-6" style={revealStagger(3)}>
-						<Button asChild size="lg">
-							<CustomLink
-								link={{
-									href: ctaHref,
-									isNewTab: callToAction?.link?.isNewTab ?? false,
-								}}
-							>
-								{ctaLabel}
-							</CustomLink>
-						</Button>
+						<CustomLink
+							link={{
+								href: ctaHref,
+								isNewTab: callToAction?.link?.isNewTab ?? false,
+							}}
+							className={buttonVariants({ size: 'lg' })}
+						>
+							{ctaLabel}
+						</CustomLink>
 					</div>
 				)}
 			</div>

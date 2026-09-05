@@ -72,15 +72,16 @@ const nextConfig = {
 		// page-navigation crossfade is CSS (`.animate-page-in` in globals.css, replayed
 		// by `key={pathname}` on <Main>) and does not need either flag.
 		//
-		// Both are umbrella barrels pulling far more into a chunk than the few
-		// primitives actually used. Rewriting every call site to `@radix-ui/react-*`
-		// would do the same job with a much larger diff.
+		// `motion/react` is an umbrella barrel pulling far more into a chunk than
+		// the few exports actually used. Base UI needs no entry: every import is a
+		// per-component subpath (`@base-ui/react/dialog`), which is already the
+		// granularity this option manufactures.
 		//
-		// Entries are matched against the import specifier, so these must be the
-		// exact strings the source imports from: `radix-ui` (10 files) and
-		// `motion/react` (12 files). Plain `motion` matches nothing here — no file
-		// imports it — and silently optimizes nothing.
-		optimizePackageImports: ['radix-ui', 'motion/react'],
+		// Entries are matched against the import specifier, so this must be the
+		// exact string the source imports from: `motion/react` (11 files). Plain
+		// `motion` matches nothing here — no file imports it — and silently
+		// optimizes nothing.
+		optimizePackageImports: ['motion/react'],
 	},
 	images: {
 		formats: ['image/avif', 'image/webp'],

@@ -22,6 +22,7 @@ type ProductsBlockProps = {
 		sectionAppearance?: SectionAppearance;
 	};
 	locale: Locale;
+	headingLevel?: 'h1' | 'h2';
 	className?: string;
 };
 
@@ -30,6 +31,7 @@ const DEFAULT_PRODUCT_LIMIT = 4;
 export default async function ProductsBlock({
 	data,
 	locale,
+	headingLevel,
 	className,
 }: ProductsBlockProps) {
 	const { heading, products, limit, sectionAppearance } = data || {};
@@ -45,9 +47,10 @@ export default async function ProductsBlock({
 		<SectionShell
 			appearance={sectionAppearance}
 			heading={heading}
+			headingLevel={headingLevel}
 			className={className}
 		>
-			<div className="grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
+			<div className="grid grid-cols-2 gap-x-6 gap-y-12 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
 				{priced.map((product, index) => (
 					<ProductCard
 						key={product._id}

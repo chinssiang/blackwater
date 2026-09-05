@@ -4,15 +4,16 @@ import { useEffect, useRef, useState } from 'react';
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Dialog } from 'radix-ui';
+import { Dialog } from '@base-ui/react/dialog';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import ChromeButton from '@/components/ChromeButton';
 import { CloseIcon } from '@/components/SvgIcons';
-import { Button } from '@/components/ui/Button';
+import { Button, buttonVariants } from '@/components/ui/Button';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate, pickPlural } from '@/lib/dictionary';
 import { cartOverlay, cartPanel } from '@/lib/animate';
 import { resolveHref } from '@/lib/routes';
+import { cn } from '@/lib/utils';
 import {
 	formatShopifyPrice,
 	shopifyCheckoutUrl,
@@ -24,12 +25,12 @@ import ProductCard from '@/components/ProductCard';
 import CartCountBadge from './CartCountBadge';
 import { useCart } from './CartProvider';
 
-// Right-side cart panel. Built on raw Radix Dialog + Motion to match
+// Right-side cart panel. Built on raw Base UI Dialog + Motion to match
 // MobileMenu — the app's established overlay idiom. (An unused shadcn-style
 // ui/Sheet wrapper once existed as the alternative; it animated differently
 // and has since been deleted.)
 //
-// Split out from CartDrawer so this module — Radix Dialog, Motion, and the whole
+// Split out from CartDrawer so this module — Base UI Dialog, Motion, and the whole
 // ProductCard → ImageBlock → SanityImage tree behind the empty state — is a
 // chunk fetched on first cart open, not part of the shared bundle every route
 // pays for. CartDrawer owns the loading; see the note there.
@@ -346,12 +347,17 @@ export default function CartDrawerPanel({
 	const count = cart?.totalQuantity ?? 0;
 
 	return (
-		<Dialog.Root open={isOpen} onOpenChange={setOpen} modal={true}>
-			<Dialog.Portal forceMount>
-				<AnimatePresence>
-					{isOpen && (
-						<>
-							<Dialog.Overlay asChild forceMount key="cart-overlay">
+		// `modal="trap-focus"`, not `true`, so useScrollLock stays the only writer of
+		// the page's scroll lock -- the reasoning is on that hook.
+		<Dialog.Root open={isOpen} onOpenChange={setOpen} modal="trap-focus">
+			{/* Base UI's Motion recipe (handbook, "Animation"): the controlled `open`
+			    gates the portal inside AnimatePresence so the exit choreography plays,
+			    and `keepMounted` stops Base UI unmounting the panel from under it. */}
+			<AnimatePresence>
+				{isOpen && (
+					<Dialog.Portal keepMounted key="cart">
+						<Dialog.Backdrop
+							render={
 								<motion.div
 									className="fixed inset-0 z-popover bg-black/50"
 									variants={cartOverlay}
@@ -359,8 +365,10 @@ export default function CartDrawerPanel({
 									animate="show"
 									exit="hide"
 								/>
-							</Dialog.Overlay>
-							<Dialog.Content asChild forceMount key="cart-panel">
+							}
+						/>
+						<Dialog.Popup
+							render={
 								<motion.div
 									// `cart-surface` pins the theme tokens this subtree resolves
 									// (background, foreground, border, muted-foreground,
@@ -387,123 +395,136 @@ export default function CartDrawerPanel({
 									exit="hide"
 									custom={reduce}
 									aria-busy={status === 'loading'}
+								/>
+							}
+						>
+							{/* The visible count is a badge, which is aria-hidden — so the
+							    item-count phrasing lives here, and screen readers still get
+							    it in words. */}
+							<Dialog.Description className="sr-only">
+								{count > 0
+									? `${t.title}, ${interpolate(pickPlural(t.itemCount, count), { count })}`
+									: t.title}
+							</Dialog.Description>
+
+							<div className="flex shrink-0 items-center justify-between px-4 h-header">
+								{/* `relative inline-flex` shrinks the title to its text so
+								    the badge hangs off the word, not off the header row. */}
+								<Dialog.Title className="t-b-2 relative inline-flex uppercase">
+									{t.title}
+									{count > 0 && (
+										<CartCountBadge
+											count={count}
+											className="absolute -top-2 -right-4"
+										/>
+									)}
+								</Dialog.Title>
+								<Dialog.Close
+									render={
+										<ChromeButton
+											aria-label={t.close}
+											// The glyph is `size-4`, so padding is what gives this a box: `px-2`
+											// plus ChromeButton's row height make it 32x42. `-mr-2` hands the
+											// padding back to the header row's own `px-4` so the icon stays
+											// exactly where it sat.
+											className="-mr-2 px-2"
+										/>
+									}
 								>
-									{/* The visible count is a badge, which is aria-hidden — so the
-									    item-count phrasing lives here, and screen readers still get
-									    it in words. */}
-									<Dialog.Description className="sr-only">
-										{count > 0
-											? `${t.title}, ${interpolate(pickPlural(t.itemCount, count), { count })}`
-											: t.title}
-									</Dialog.Description>
+									<CloseIcon className="size-4" />
+								</Dialog.Close>
+							</div>
 
-									<div className="flex shrink-0 items-center justify-between px-4 h-header">
-										{/* `relative inline-flex` shrinks the title to its text so
-										    the badge hangs off the word, not off the header row. */}
-										<Dialog.Title className="t-b-2 relative inline-flex uppercase">
-											{t.title}
-											{count > 0 && (
-												<CartCountBadge
-													count={count}
-													className="absolute -top-2 -right-4"
-												/>
-											)}
-										</Dialog.Title>
-										<Dialog.Close asChild>
-											<ChromeButton
-												aria-label={t.close}
-												// The glyph is `size-4`, so padding is what gives this a box: `px-2`
-												// plus ChromeButton's row height make it 32x42. `-mr-2` hands the
-												// padding back to the header row's own `px-4` so the icon stays
-												// exactly where it sat.
-												className="-mr-2 px-2"
-											>
-												<CloseIcon className="size-4" />
-											</ChromeButton>
-										</Dialog.Close>
+							{/* `lines.length === 0` alone used to decide this, which told a shopper
+							    their cart was empty whenever the read had not landed or had failed.
+							    `cart` cannot answer that: null is also a real empty cart. */}
+							{status === 'loading' ? (
+								<LineItemsSkeleton />
+							) : status === 'error' ? (
+								<LoadError onRetry={refresh} pending={isPending} />
+							) : lines.length === 0 ? (
+								<div className="px-4 min-h-0 flex-1 overflow-y-auto overscroll-contain">
+									{/* The way out of an empty cart, and the ONLY one when no
+									    recommendations are configured: that list comes from settingsCart,
+									    which an editor can leave unset, and this branch used to render the
+									    bare "empty" line with no path to the catalog at all. Above the
+									    recommendations rather than below, so it is reachable without
+									    scrolling past them.
+									
+									    `setOpen(false)` because the drawer otherwise closes on a pathname
+									    change (CartProvider watches it) — and a shopper already on
+									    /products would click this and watch nothing happen. Same idiom
+									    MobileMenu uses on its own links. */}
+									<div className="flex flex-col items-center gap-4 pt-12 pb-10">
+										<p className="t-b-2 text-center uppercase">{t.empty}</p>
+										<Link
+											href={productsHref}
+											onClick={() => setOpen(false)}
+											className="t-b-2 inline-flex min-h-11 items-center uppercase underline underline-offset-4"
+										>
+											{t.browseProducts}
+										</Link>
 									</div>
-
-									{/* `lines.length === 0` alone used to decide this, which told a shopper
-									    their cart was empty whenever the read had not landed or had failed.
-									    `cart` cannot answer that: null is also a real empty cart. */}
-									{status === 'loading' ? (
-										<LineItemsSkeleton />
-									) : status === 'error' ? (
-										<LoadError onRetry={refresh} pending={isPending} />
-									) : lines.length === 0 ? (
-										<div className="px-4 min-h-0 flex-1 overflow-y-auto overscroll-contain">
-											{/* The way out of an empty cart, and the ONLY one when no
-											    recommendations are configured: that list comes from settingsCart,
-											    which an editor can leave unset, and this branch used to render the
-											    bare "empty" line with no path to the catalog at all. Above the
-											    recommendations rather than below, so it is reachable without
-											    scrolling past them.
-											
-											    `setOpen(false)` because the drawer otherwise closes on a pathname
-											    change (CartProvider watches it) — and a shopper already on
-											    /products would click this and watch nothing happen. Same idiom
-											    MobileMenu uses on its own links. */}
-											<div className="flex flex-col items-center gap-4 pt-12 pb-10">
-												<p className="t-b-2 text-center uppercase">{t.empty}</p>
-												<Link
-													href={productsHref}
-													onClick={() => setOpen(false)}
-													className="t-b-2 inline-flex min-h-11 items-center uppercase underline underline-offset-4"
-												>
-													{t.browseProducts}
-												</Link>
-											</div>
-											{recommendations.length > 0 && (
-												<div className="border-t border-border pt-6 pb-8">
-													{settings?.emptyHeading && (
-														<p className="t-b-2 mb-4 uppercase">
-															{settings.emptyHeading}
-														</p>
-													)}
-													<div className="grid grid-cols-2 gap-4">
-														{recommendations.map((product, i) => (
-															<ProductCard
-																key={product._id}
-																product={product}
-																index={i}
-															/>
-														))}
-													</div>
-												</div>
+									{recommendations.length > 0 && (
+										<div className="border-t border-border pt-6 pb-8">
+											{settings?.emptyHeading && (
+												<p className="t-b-2 mb-4 uppercase">
+													{settings.emptyHeading}
+												</p>
 											)}
-										</div>
-									) : (
-										<ul className="px-4 min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain">
-											{lines.map((line) => (
-												<LineItem key={line.id} line={line} />
-											))}
-										</ul>
-									)}
-
-									{cart && lines.length > 0 && (
-										<div className="px-4 flex shrink-0 flex-col gap-3 border-t border-border py-5">
-											<div className="t-b-2 flex items-center justify-between uppercase">
-												<span>{t.subtotal}</span>
-												<span>{formatShopifyPrice(cart.subtotal, locale)}</span>
+											<div className="grid grid-cols-2 gap-4">
+												{recommendations.map((product, i) => (
+													<ProductCard
+														key={product._id}
+														product={product}
+														index={i}
+														// The panel is `w-full max-w-104`, so a card stops
+														// growing at (416 - 32 padding - 16 gap) / 2 =
+														// 184px and only scales below that. The default
+														// string is a full-width page grid and asks for
+														// 25vw here -- 480px of image for a 184px slot on
+														// a wide screen.
+														sizes="(min-width: 448px) 184px, 45vw"
+													/>
+												))}
 											</div>
-											<p className="t-b-2 text-muted-foreground">
-												{t.shippingNote}
-											</p>
-											{/* A link, not a form: the site's `form-action 'self'` CSP
-											    would block a cross-origin form submit. */}
-											<Button asChild size="xl" className="w-full uppercase">
-												<a href={shopifyCheckoutUrl(cart.checkoutUrl, locale)}>
-													{t.checkout}
-												</a>
-											</Button>
 										</div>
 									)}
-								</motion.div>
-							</Dialog.Content>
-						</>
-					)}
-				</AnimatePresence>
-			</Dialog.Portal>
+								</div>
+							) : (
+								<ul className="px-4 min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain">
+									{lines.map((line) => (
+										<LineItem key={line.id} line={line} />
+									))}
+								</ul>
+							)}
+
+							{cart && lines.length > 0 && (
+								<div className="px-4 flex shrink-0 flex-col gap-3 border-t border-border py-5">
+									<div className="t-b-2 flex items-center justify-between uppercase">
+										<span>{t.subtotal}</span>
+										<span>{formatShopifyPrice(cart.subtotal, locale)}</span>
+									</div>
+									<p className="t-b-2 text-muted-foreground">
+										{t.shippingNote}
+									</p>
+									{/* A link, not a form: the site's `form-action 'self'` CSP
+									    would block a cross-origin form submit. */}
+									<a
+										href={shopifyCheckoutUrl(cart.checkoutUrl, locale)}
+										className={cn(
+											buttonVariants({ size: 'xl' }),
+											'w-full uppercase'
+										)}
+									>
+										{t.checkout}
+									</a>
+								</div>
+							)}
+						</Dialog.Popup>
+					</Dialog.Portal>
+				)}
+			</AnimatePresence>
 		</Dialog.Root>
 	);
 }

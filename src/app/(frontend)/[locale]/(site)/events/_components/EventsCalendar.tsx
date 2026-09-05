@@ -22,7 +22,7 @@ import {
 	pickPlural,
 } from '@/lib/dictionary';
 import {
-	formatEventTimeLabel,
+	formatRichDate,
 	getDaysUntilEvent,
 	getEventEndInstant,
 	getTodayKey,
@@ -30,13 +30,11 @@ import {
 	groupEventsByDay,
 } from '@/lib/event-date';
 import { resolveEventLocation } from '@/lib/event-location';
+import { resolveEventDateStatus } from '@/lib/event-status';
 import { resolveHref } from '@/lib/routes';
 import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import type { PEventsQueryResult } from 'sanity.types';
-import {
-	EventStatusItem,
-	type StatusListItem,
-} from '@/components/EventStatusItem';
+import EventStatusPill from '@/components/EventStatusPill';
 
 type EventListItem = NonNullable<PEventsQueryResult>['eventList'][number];
 
@@ -452,12 +450,11 @@ function DayCell({
  */
 function useEventTimeLabel(event: EventListItem, formatStr: string): string {
 	const t = useTranslations('events');
-	return formatEventTimeLabel(
-		event,
-		formatStr,
-		t.status,
-		DATE_FNS_LOCALES[useLocale()]
-	);
+	const locale = useLocale();
+	const status = resolveEventDateStatus(event.dateStatus, t);
+	return status.isFirm && event.eventDatetime
+		? formatRichDate(event.eventDatetime, formatStr, DATE_FNS_LOCALES[locale])
+		: status.label;
 }
 
 /**
@@ -602,7 +599,7 @@ function DayEventRow({
 					    two days out cannot say "in 2 days" in one view and nothing in
 					    the other, on one page behind one toggle. */}
 					{!hasEnded && daysUntil !== null && (
-						<EventStatusItem
+						<EventStatusPill
 							data={{
 								eventStatus: { title: formatDaysUntilLabel(daysUntil, t) },
 							}}
@@ -610,14 +607,14 @@ function DayEventRow({
 					)}
 					{hasArrayValue(statusList) &&
 						statusList.map((item) => (
-							<EventStatusItem
+							<EventStatusPill
 								key={item._key}
-								data={item as StatusListItem}
+								data={item}
 								className={cn(hasEnded && 'opacity-30')}
 							/>
 						))}
 					{hasEnded && (
-						<EventStatusItem
+						<EventStatusPill
 							data={{ eventStatus: { title: t.status.ended } }}
 						/>
 					)}

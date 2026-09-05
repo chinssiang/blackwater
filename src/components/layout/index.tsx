@@ -2,7 +2,10 @@
 
 import React, { useLayoutEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { isLightThemePath, shouldHideGlobalNewsletter } from '@/lib/routes';
+import {
+	shouldHideGlobalNewsletter,
+	shouldShowWeatherWidget,
+} from '@/lib/routes';
 import type { LayoutData } from '@/sanity/lib/siteData';
 import { CartProvider } from '@/components/cart/CartProvider';
 import CartDrawer from '@/components/cart/CartDrawer';
@@ -12,6 +15,7 @@ import { Header } from './Header';
 import { Newsletter } from './Newsletter';
 import { ToolBar } from './ToolBar';
 import { Main } from './Main';
+import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 // `features` is a static import on purpose. Loading it lazily saves nothing
 // here: LazyMotion's features only supply capabilities to the lightweight `m.*`
 // components, and nothing in this repo uses those — every call site imports the
@@ -31,8 +35,11 @@ export function Layout({ children, siteData }: LayoutProps) {
 	const { header, footer, newsletter, siteTitle, mobileMenu, toolbar } =
 		siteData || {};
 	const pathname = usePathname();
-	const isLightSection = isLightThemePath(pathname);
 	const hideNewsletter = shouldHideGlobalNewsletter(pathname);
+	// The widget's route policy lives in one tested predicate rather than in the
+	// pages that happen to want it -- see its note in routes.ts.
+	const showWeather = shouldShowWeatherWidget(pathname);
+
 	// SPA pageview tracking lives in HeadTrackingCode — the one component
 	// allowed to talk to gtag, so it stays behind the consent gate.
 
@@ -68,7 +75,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 		<CartProvider>
 			<LazyMotion features={domAnimation}>
 				<AdaSkip />
-				<Header data={headerData} isLightHeader={isLightSection} />
+				<Header data={headerData} />
 				<Main key={pathname} className="animate-page-in">
 					{children}
 					{!hideNewsletter && (
@@ -83,6 +90,8 @@ export function Layout({ children, siteData }: LayoutProps) {
 				</Main>
 				<Footer data={footerData} />
 				{!toolbar?.hideToolbar && <ToolBar menu={toolbar?.toolbarMenu} />}
+				{showWeather && <WeatherWidget />}
+
 				<CartDrawer settings={siteData?.cart} />
 			</LazyMotion>
 		</CartProvider>

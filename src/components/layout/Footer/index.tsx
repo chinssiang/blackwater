@@ -88,7 +88,7 @@ export function Footer({ data }: { data: FooterProps }) {
 				)}
 				{copyright && (
 					<small
-						className="reveal t-l-2 lg:t-l-1 flex gap-2 uppercase text-foreground/60"
+						className="reveal t-l-2 flex gap-2 uppercase text-foreground/60"
 						style={
 							{
 								'--reveal-duration': '0.3s',

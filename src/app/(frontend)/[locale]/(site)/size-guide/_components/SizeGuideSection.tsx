@@ -74,7 +74,7 @@ export function SizeGuideSection({
 			const hash = safeDecodeHash(window.location.hash.slice(1));
 			if (!hash || !ownValues.includes(hash)) return;
 			setActive(hash);
-			// The wrapper is always mounted, unlike the panel Radix is about to
+			// The wrapper is always mounted, unlike the panel Base UI is about to
 			// mount, so scrolling it carries no race.
 			sectionRef.current?.scrollIntoView();
 		};
@@ -137,7 +137,7 @@ export function SizeGuideSection({
 				</TabsList>
 
 				{/* The slug id lives on this always-mounted wrapper, NOT on
-				    TabsContent: Radix unmounts inactive panels entirely (so their ids
+				    TabsContent: Base UI unmounts inactive panels entirely (so their ids
 				    would vanish from the DOM), and a custom id on TabsContent would
 				    replace the generated one every trigger's aria-controls points at. */}
 				{tabs.map((tab) => (
