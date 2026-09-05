@@ -6,7 +6,6 @@ import ImageBlock from '@/components/ImageBlock';
 import { revealStagger } from '@/lib/animate';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { ArrowRight } from '@/components/SvgIcons';
 
@@ -34,16 +33,6 @@ type ProductCardProps = {
 	 */
 	priority?: boolean;
 	/**
-	 * Renders the title at the metadata rung (`t-l-0`, 16px) instead of the 20px
-	 * card title, for containers too narrow for it. Opt-in rather than a
-	 * breakpoint: the card cannot measure its container. See the cart drawer.
-	 *
-	 * Type density only. It is NOT a stand-in for how wide the slot is -- its
-	 * two callers, `productsBlock` and the cart drawer, differ by more than 2x
-	 * above 640px. Pass `sizes` for that.
-	 */
-	compact?: boolean;
-	/**
 	 * The `sizes` attribute for the card image, when this grid is not the
 	 * standard one `DEFAULT_CARD_SIZES` describes. The card cannot derive this:
 	 * how many columns there are at each breakpoint, and how wide the container
@@ -54,13 +43,17 @@ type ProductCardProps = {
 };
 
 /**
- * The grid five of the eight call sites share: one card below 640px, two to
- * 1024, three to 1536, four beyond, and never wider than 470px once the page
- * hits its own max width. The three shaped differently -- `ProductsBlock`, the
- * cart drawer and the collection page -- each pass their own and say why.
+ * The grid every product listing now shares: two cards up to 1024px, three to
+ * 1536, four beyond, and never wider than 470px once the page hits its own max
+ * width. There is no phone clause, because two-up below 640px is still half the
+ * viewport -- the `100vw` this carried until the grids went two-up at base was
+ * asking for an image twice as wide as the slot on every phone.
+ *
+ * Two call sites are shaped differently and pass their own: the cart drawer
+ * (a fixed 416px panel) and the collection page (four-up at `xl`, not `2xl`).
  */
 const DEFAULT_CARD_SIZES =
-	'(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw';
+	'(max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw';
 
 // Renders each category title as its own link to its category page, separated
 // by ", ". Sits above the card's stretched overlay link (relative z-10) so the
@@ -110,7 +103,6 @@ export default function ProductCard({
 	product,
 	index = 0,
 	priority = false,
-	compact,
 	sizes,
 }: ProductCardProps) {
 	const locale = useLocale();
@@ -132,6 +124,25 @@ export default function ProductCard({
 			style={revealStagger(index)}
 		>
 			<div className="relative aspect-square overflow-hidden bg-background rounded">
+				{product.badge && product.badge.length > 0 && (
+					// Absolute at every breakpoint. In flow it is a sibling of an
+					// `h-full` image inside this `aspect-square overflow-hidden` box,
+					// so its own height pushed the image down and the frame clipped
+					// the same amount off the bottom.
+					//
+					// `z-10` is required, not decorative, because this sits BEFORE the
+					// image in the DOM: the image takes a transform on group-hover,
+					// which makes it paint as its own stacking context at level 0, and
+					// an auto-z-index badge would then be painted underneath it for as
+					// long as the pointer is over the card.
+					<div className="absolute top-4 left-0 z-10 flex flex-col items-start gap-1.5">
+						{product.badge.map((b) => (
+							<Badge key={b}>
+								{(t.badges as Record<string, string>)[b] ?? b}
+							</Badge>
+						))}
+					</div>
+				)}
 				{product.mainImage ? (
 					<ImageBlock
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:-translate-y-2 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
@@ -143,22 +154,20 @@ export default function ProductCard({
 				) : (
 					<div className="h-full w-full" />
 				)}
-
-				{product.badge && product.badge.length > 0 && (
-					<div className="absolute top-4 left-0 flex flex-col items-start gap-1.5">
-						{product.badge.map((b) => (
-							<Badge key={b}>
-								{(t.badges as Record<string, string>)[b] ?? b}
-							</Badge>
-						))}
-					</div>
-				)}
 			</div>
 
 			{/* Info */}
 			<div className="mt-4 flex flex-1 flex-col space-y-3">
-				<div className="flex gap-2 justify-between items-center">
+				<div className="flex gap-2 justify-between sm:items-center flex-col sm:flex-row">
 					{brandLabel ? (
+						// `t-b-1` (14px) replaces `t-b-2 sm:text-sm`, which was 12px on
+						// mobile and 14px above `sm`. Desktop is unchanged; mobile grows to
+						// match it. One token, not a token plus a breakpoint override -- the
+						// note on the title below says why that pairing misfires here.
+						//
+						// No `whitespace-nowrap` either: the grid is two-up on mobile, so
+						// this shares roughly 163px with the price, and a brand like "New
+						// Balance Redux" has to be allowed to wrap.
 						<p className="t-b-1 flex-1 text-foreground">{brandLabel}</p>
 					) : (
 						hasCategories && (
@@ -187,12 +196,17 @@ export default function ProductCard({
 					)}
 				</div>
 				{product.title && (
-					<h3
-						className={cn(
-							compact ? 't-l-0' : 't-h-3',
-							'line-clamp-2 text-balance uppercase'
-						)}
-					>
+					// One type token, no raw `text-*` override beside it. The .t-* classes
+					// live in @layer components rather than being @utility, so a `sm:text-*`
+					// utility beside one wins on layer order for font-size alone and leaves
+					// the token's weight and tracking in place -- a hybrid matching no token
+					// in globals.css.
+					//
+					// `t-l-0` is 16px and `t-l-1` is 12px; the two are otherwise identical
+					// (weight 500, line-height 1, tracking -0.02em). So `t-l-1 sm:text-base`
+					// was already 16px above `sm`, and this is a mobile-only change: 12px to
+					// 16px, at the ~163-184px a card gets in the two-up grid.
+					<h3 className="t-l-0 line-clamp-2 text-balance uppercase">
 						{product.title}
 					</h3>
 				)}

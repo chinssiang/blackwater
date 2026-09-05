@@ -17,7 +17,11 @@ import { scrollDisable, scrollEnable } from '@/lib/utils';
  *
  * Lives here rather than in each overlay because the lock is global: two
  * consumers with different restore semantics would fight over the same
- * `<html>`/`<body>` styles.
+ * `<html>`/`<body>` styles. It is also why both consumers open their Base UI
+ * dialog with `modal="trap-focus"` rather than `modal`: `trap-focus` still
+ * traps focus and hides the rest of the page from assistive tech, but leaves
+ * Base UI's own scroll lock off, so this hook stays the only writer of those
+ * inline styles.
  */
 export function useScrollLock(locked: boolean, onRestore?: () => void) {
 	// Held in a ref so the listener pair registers once, no matter how the

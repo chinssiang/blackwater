@@ -13,6 +13,49 @@
 	"locationCurrentTime": {
 		"dateFormat": "iii, p"
 	},
+	"weather": {
+		"label": "Taipei",
+		"observedAt": "Updated {time}",
+		"metrics": {
+			"feelsLike": "Feels like",
+			"wind": "Wind",
+			"humidity": "Humidity",
+			"rain": "Rain",
+			"aqi": "AQI"
+		},
+		"units": {
+			"celsius": "°C",
+			"kilometresPerHour": "km/h",
+			"percent": "%",
+			"millimetres": "mm"
+		},
+		"conditions": {
+			"clear": "Clear",
+			"mainlyClear": "Mainly clear",
+			"partlyCloudy": "Partly cloudy",
+			"overcast": "Overcast",
+			"fog": "Fog",
+			"drizzle": "Drizzle",
+			"freezingDrizzle": "Freezing drizzle",
+			"rain": "Rain",
+			"freezingRain": "Freezing rain",
+			"snow": "Snow",
+			"snowGrains": "Snow grains",
+			"showers": "Showers",
+			"snowShowers": "Snow showers",
+			"thunderstorm": "Thunderstorm",
+			"thunderstormHail": "Thunderstorm, hail",
+			"unknown": "Unknown"
+		},
+		"aqiBands": {
+			"good": "Good",
+			"moderate": "Moderate",
+			"unhealthySensitive": "Unhealthy for sensitive groups",
+			"unhealthy": "Unhealthy",
+			"veryUnhealthy": "Very unhealthy",
+			"hazardous": "Hazardous"
+		}
+	},
 	"events": {
 		"headers": {
 			"codex": "codex",

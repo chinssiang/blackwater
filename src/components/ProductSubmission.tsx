@@ -150,11 +150,7 @@ function ProductField({
 									setIsFocused(false);
 								}}
 							/>
-							<FieldStatus
-								fieldState={fieldState}
-								isFocused={isFocused}
-								isShowErrorOnFocus
-							/>
+							<FieldStatus fieldState={fieldState} isFocused={isFocused} />
 						</div>
 					</FieldContent>
 				</Field>
@@ -430,7 +426,7 @@ export function ProductSubmission() {
 	if (useMobileDialog) {
 		return (
 			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogTrigger asChild>{fab}</DialogTrigger>
+				<DialogTrigger render={fab} />
 				<DialogContent className="max-h-[85svh] gap-3 overflow-y-auto rounded-xl p-4">
 					<DialogHeader className="pr-8 text-left">
 						<DialogTitle>{t.title}</DialogTitle>
@@ -455,13 +451,13 @@ export function ProductSubmission() {
 	// Desktop: keep the FAB + popover anchored to the trigger.
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
-			<PopoverTrigger asChild>{fab}</PopoverTrigger>
+			<PopoverTrigger render={fab} />
 			<PopoverContent
 				side="top"
 				align="end"
 				sideOffset={8}
 				collisionPadding={12}
-				className="z-popover w-80 max-h-(--radix-popover-content-available-height) gap-3 overflow-y-auto p-4"
+				className="w-80 max-h-(--available-height) gap-3 overflow-y-auto p-4"
 			>
 				<PopoverHeader>
 					<PopoverTitle>{t.title}</PopoverTitle>

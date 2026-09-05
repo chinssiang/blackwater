@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { Dialog } from 'radix-ui';
+import { Dialog } from '@base-ui/react/dialog';
 import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import type { SiteDataQueryResult } from 'sanity.types';
 import ChromeButton from '@/components/ChromeButton';
@@ -121,118 +121,126 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 		) : null;
 
 	return (
-		<Dialog.Root open={open} onOpenChange={setOpen} modal={true}>
-			<Dialog.Trigger asChild>
-				<ChromeButton
-					className={cn(
-						'justify-between lg:hidden',
-						locale === 'en' ? 'min-w-14' : 'min-w-11'
-					)}
-					aria-label={open ? t.closeMenu : t.openMenu}
-				>
-					<AnimatedMenuIcon open={open} reduce={reduce} />
-					<span>{t.menu}</span>
-				</ChromeButton>
+		// `modal="trap-focus"`, not `true`, so useScrollLock stays the only writer of
+		// the page's scroll lock -- the reasoning is on that hook.
+		<Dialog.Root open={open} onOpenChange={setOpen} modal="trap-focus">
+			<Dialog.Trigger
+				render={
+					<ChromeButton
+						className={cn(
+							'justify-between lg:hidden',
+							locale === 'en' ? 'min-w-14' : 'min-w-11'
+						)}
+						aria-label={open ? t.closeMenu : t.openMenu}
+					/>
+				}
+			>
+				<AnimatedMenuIcon open={open} reduce={reduce} />
+				<span>{t.menu}</span>
 			</Dialog.Trigger>
 
-			<Dialog.Portal forceMount>
-				<AnimatePresence>
-					{open && (
-						<Dialog.Content asChild forceMount key="mobile-menu">
-							<motion.div
-								className="text-foreground bg-background fixed inset-0 z-popover flex flex-col"
-								variants={mobileMenuPanel}
-								initial="hide"
-								animate="show"
-								exit="hide"
-							>
-								<Dialog.Title className="sr-only">{t.menu}</Dialog.Title>
-								<Dialog.Description className="sr-only">
-									{t.menu}
-								</Dialog.Description>
+			{/* Base UI's Motion recipe (handbook, "Animation"): the controlled `open`
+			    gates the portal inside AnimatePresence so the exit choreography plays,
+			    and `keepMounted` stops Base UI unmounting the panel from under it. */}
+			<AnimatePresence>
+				{open && (
+					<Dialog.Portal keepMounted key="mobile-menu">
+						<Dialog.Popup
+							render={
+								<motion.div
+									className="text-foreground bg-background fixed inset-0 z-popover flex flex-col"
+									variants={mobileMenuPanel}
+									initial="hide"
+									animate="show"
+									exit="hide"
+								/>
+							}
+						>
+							<Dialog.Title className="sr-only">{t.menu}</Dialog.Title>
 
-								{/* Top bar: brand logo (left) + morphing close toggle (right),
-								    aligned to the real header so the logo reads as "stayed". */}
-								<div className="p-x-max h-header flex shrink-0 items-center">
-									<Link
-										href={resolveHref({ documentType: 'pHome', locale })!}
-										aria-label={siteTitle}
-										onClick={() => setOpen(false)}
-										className="text-foreground flex h-full w-24 items-center transition-opacity hover:opacity-90"
-									>
-										<WordmarkSvg className="h-full" />
-										<span className="sr-only">{siteTitle}</span>
-									</Link>
-									<Dialog.Close asChild>
+							{/* Top bar: brand logo (left) + morphing close toggle (right),
+							    aligned to the real header so the logo reads as "stayed". */}
+							<div className="p-x-max h-header flex shrink-0 items-center">
+								<Link
+									href={resolveHref({ documentType: 'pHome', locale })!}
+									aria-label={siteTitle}
+									onClick={() => setOpen(false)}
+									className="text-foreground flex h-full w-24 items-center transition-opacity hover:opacity-90"
+								>
+									<WordmarkSvg className="h-full" />
+									<span className="sr-only">{siteTitle}</span>
+								</Link>
+								<Dialog.Close
+									render={
 										<ChromeButton
 											className={cn(
 												'ml-auto justify-between',
 												locale === 'en' ? 'min-w-14' : 'min-w-11'
 											)}
 											aria-label={t.closeMenu}
-										>
-											<AnimatedMenuIcon open={open} reduce={reduce} />
-											<span>{t.close}</span>
-										</ChromeButton>
-									</Dialog.Close>
-								</div>
+										/>
+									}
+								>
+									<AnimatedMenuIcon open={open} reduce={reduce} />
+									<span>{t.close}</span>
+								</Dialog.Close>
+							</div>
 
-								<div className="px-contain flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+							<div className="px-contain flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
+								<motion.ul
+									className="t-h-2 flex text-foreground flex-col gap-4 pt-6 my-auto uppercase"
+									variants={mobileMenuList}
+									initial="hide"
+									animate="show"
+									exit="hide"
+									custom={reduce}
+								>
+									{primary.map((item, i) => renderItem(item, `p-${i}`))}
+								</motion.ul>
+								{secondary.length > 0 && (
 									<motion.ul
-										className="t-h-2 flex text-foreground flex-col gap-4 pt-6 my-auto uppercase"
+										className="t-b-1 text-foreground flex flex-col gap-2 pt-5 my-auto uppercase"
 										variants={mobileMenuList}
 										initial="hide"
 										animate="show"
 										exit="hide"
 										custom={reduce}
 									>
-										{primary.map((item, i) => renderItem(item, `p-${i}`))}
+										{secondary.map((item, i) => renderItem(item, `s-${i}`))}
 									</motion.ul>
-									{secondary.length > 0 && (
-										<motion.ul
-											className="t-b-1 text-foreground flex flex-col gap-2 pt-5 my-auto uppercase"
-											variants={mobileMenuList}
-											initial="hide"
-											animate="show"
-											exit="hide"
-											custom={reduce}
-										>
-											{secondary.map((item, i) => renderItem(item, `s-${i}`))}
-										</motion.ul>
+								)}
+
+								{/* Footer — language/time + CTA, pinned to the bottom */}
+								<motion.div
+									className="mt-auto flex flex-col gap-4 pt-8 pb-6"
+									variants={mobileMenuList}
+									initial="hide"
+									animate="show"
+									exit="hide"
+									custom={reduce}
+								>
+									<LanguageSwitcher onSelect={() => setOpen(false)} />
+
+									{hasCta && ctaLink && (
+										<motion.div variants={mobileMenuItem} custom={reduce}>
+											<CustomLink
+												link={ctaLink}
+												onLinkClickAction={() => setOpen(false)}
+												className={cn(
+													buttonVariants({ variant: 'default', size: 'xl' }),
+													'w-full'
+												)}
+											>
+												{ctaLabel}
+											</CustomLink>
+										</motion.div>
 									)}
-
-									{/* Footer — language/time + CTA, pinned to the bottom */}
-									<motion.div
-										className="mt-auto flex flex-col gap-4 pt-8 pb-6"
-										variants={mobileMenuList}
-										initial="hide"
-										animate="show"
-										exit="hide"
-										custom={reduce}
-									>
-										<LanguageSwitcher onSelect={() => setOpen(false)} />
-
-										{hasCta && ctaLink && (
-											<motion.div variants={mobileMenuItem} custom={reduce}>
-												<CustomLink
-													link={ctaLink}
-													onLinkClickAction={() => setOpen(false)}
-													className={cn(
-														buttonVariants({ variant: 'default', size: 'xl' }),
-														'w-full'
-													)}
-												>
-													{ctaLabel}
-												</CustomLink>
-											</motion.div>
-										)}
-									</motion.div>
-								</div>
-							</motion.div>
-						</Dialog.Content>
-					)}
-				</AnimatePresence>
-			</Dialog.Portal>
+								</motion.div>
+							</div>
+						</Dialog.Popup>
+					</Dialog.Portal>
+				)}
+			</AnimatePresence>
 		</Dialog.Root>
 	);
 }

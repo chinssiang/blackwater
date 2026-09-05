@@ -189,6 +189,20 @@ const FieldComponentType: React.FC<FieldComponentTypeProps> = ({
 }) => {
 	const { inputType, placeholder, selectOptions } = field || {};
 
+	// One derivation feeding both the `items` prop and the rendered options, so
+	// the label the trigger shows can never drift from the item picked. Memoized
+	// because Base UI keys its store on `items` by identity: a fresh array each
+	// render re-runs its layout effect and re-renders <SelectValue>.
+	const options = useMemo(
+		() =>
+			(selectOptions ?? []).map((item) => ({
+				key: item._key,
+				value: item.value ?? '',
+				label: item.title,
+			})),
+		[selectOptions]
+	);
+
 	switch (inputType) {
 		case 'textarea':
 			return (
@@ -203,7 +217,12 @@ const FieldComponentType: React.FC<FieldComponentTypeProps> = ({
 			return (
 				<Select
 					name={field.fieldName ?? undefined}
-					value={controllerField.value || undefined}
+					// `items` lets the trigger show the option's title before the popup has
+					// ever mounted; without it Base UI can only echo the raw value.
+					items={options}
+					// null, not undefined: undefined would flip the select to uncontrolled,
+					// and null is Base UI's "nothing selected", which shows the placeholder.
+					value={controllerField.value || null}
 					onValueChange={controllerField.onChange}
 				>
 					<SelectTrigger
@@ -213,11 +232,11 @@ const FieldComponentType: React.FC<FieldComponentTypeProps> = ({
 						<SelectValue placeholder={placeholder ?? undefined} />
 					</SelectTrigger>
 
-					<SelectContent side="bottom" position="popper">
+					<SelectContent side="bottom" alignItemWithTrigger={false}>
 						<SelectGroup>
-							{selectOptions?.map((item) => (
-								<SelectItem key={item._key} value={item.value ?? ''}>
-									{item.title}
+							{options.map((item) => (
+								<SelectItem key={item.key} value={item.value}>
+									{item.label}
 								</SelectItem>
 							))}
 						</SelectGroup>
@@ -286,7 +305,6 @@ const FormItem: React.FC<FormItemProps> = ({ form, field }) => {
 								<FieldStatus
 									fieldState={fieldState}
 									isFocused={isFocused}
-									isShowErrorOnFocus={true}
 									className={cn({
 										'top-5': inputType === 'textarea',
 									})}

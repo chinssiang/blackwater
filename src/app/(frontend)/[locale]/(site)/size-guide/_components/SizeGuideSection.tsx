@@ -38,7 +38,7 @@ const safeDecodeHash = (hash: string) => {
 };
 
 const TRIGGER_CLASS =
-	'rounded-full border border-foreground px-3.5 py-1.5 t-l-1 uppercase whitespace-nowrap transition-colors data-[state=active]:bg-foreground data-[state=active]:text-background data-[state=inactive]:bg-transparent data-[state=inactive]:hover:bg-foreground/5';
+	'rounded-full border border-foreground px-3.5 py-1.5 t-l-1 uppercase whitespace-nowrap transition-colors data-active:bg-foreground data-active:text-background not-data-active:bg-transparent not-data-active:hover:bg-foreground/5';
 
 export function SizeGuideSection({
 	section,
@@ -77,7 +77,7 @@ export function SizeGuideSection({
 			const hash = safeDecodeHash(window.location.hash.slice(1));
 			if (!hash || !ownValues.includes(hash)) return;
 			setActive(hash);
-			// The wrapper is always mounted, unlike the panel Radix is about to
+			// The wrapper is always mounted, unlike the panel Base UI is about to
 			// mount, so scrolling it carries no race.
 			sectionRef.current?.scrollIntoView();
 		};
@@ -139,7 +139,7 @@ export function SizeGuideSection({
 				</TabsList>
 
 				{/* The slug id lives on this always-mounted wrapper, NOT on
-				    TabsContent: Radix unmounts inactive panels entirely (so their ids
+				    TabsContent: Base UI unmounts inactive panels entirely (so their ids
 				    would vanish from the DOM), and a custom id on TabsContent would
 				    replace the generated one every trigger's aria-controls points at. */}
 				{tabs.map((tab) => (

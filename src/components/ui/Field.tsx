@@ -106,56 +106,35 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
 function FieldStatus({
 	fieldState = {},
 	isFocused,
-	isShowErrorOnFocus = false,
 	className,
 }: {
 	fieldState?: any;
 	isFocused?: boolean;
-	isShowErrorOnFocus?: boolean;
 	className?: string;
 }) {
 	const showError = fieldState.invalid && !!fieldState.error;
 	const [isTooltipTriggered, setIsTooltipTriggered] = useState(false);
 
-	return isShowErrorOnFocus ? (
-		<Tooltip open={(!!showError && isFocused) || isTooltipTriggered}>
+	// Nothing to anchor a tooltip to until there is an error. Base UI's trigger
+	// renders whatever `render` is given, so the icon is that element rather
+	// than a child that may be absent -- and a field with no error mounts no
+	// tooltip at all.
+	if (!showError) return null;
+
+	return (
+		<Tooltip open={isFocused || isTooltipTriggered}>
 			<TooltipTrigger
 				className={cn('absolute top-1/2 right-2 -translate-y-1/2', className)}
-				asChild
-			>
-				{showError && (
+				render={
 					<HiOutlineInformationCircle
 						className="text-error h-5 w-5"
 						onMouseEnter={() => setIsTooltipTriggered(true)}
 						onMouseLeave={() => setIsTooltipTriggered(false)}
 					/>
-				)}
-			</TooltipTrigger>
+				}
+			/>
 			<TooltipContent
-				className="pointer-events-none z-[calc(var(--z-index-dialog)+1)]"
-				align="end"
-				sideOffset={-2}
-			>
-				<p>{fieldState.error?.message}</p>
-			</TooltipContent>
-		</Tooltip>
-	) : (
-		<Tooltip open={isTooltipTriggered}>
-			<TooltipTrigger
-				className={cn('absolute top-1/2 right-2 -translate-y-1/2', className)}
-				asChild
-			>
-				{showError && (
-					<HiOutlineInformationCircle
-						className="text-error h-5 w-5"
-						onMouseEnter={() => setIsTooltipTriggered(true)}
-						onMouseLeave={() => setIsTooltipTriggered(false)}
-						onClick={() => setIsTooltipTriggered((prev) => !prev)}
-					/>
-				)}
-			</TooltipTrigger>
-			<TooltipContent
-				className="pointer-events-none z-[calc(var(--z-index-dialog)+1)]"
+				className="pointer-events-none"
 				align="end"
 				sideOffset={-2}
 			>

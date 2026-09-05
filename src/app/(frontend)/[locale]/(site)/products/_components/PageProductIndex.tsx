@@ -13,7 +13,7 @@ import ProductCard from '@/components/ProductCard';
 import ProductCategoriesGrid from './ProductCategoriesGrid';
 import type { PageProductIndexQueryResult } from 'sanity.types';
 import type { WithoutPageMetadata } from '@/lib/defineMetadata';
-import { Button } from '@/components/ui/Button';
+import { buttonVariants } from '@/components/ui/Button';
 
 type Props = {
 	data: WithoutPageMetadata<NonNullable<PageProductIndexQueryResult>>;
@@ -165,7 +165,7 @@ export function PageProductIndex({ data }: Props) {
 						<CollectionMasthead collection={collection} />
 
 						{products && products.length > 0 && (
-							<div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
+							<div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-12 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
 								{products.map((product, productIndex) => (
 									<ProductCard
 										key={product._id}
@@ -208,7 +208,7 @@ export function PageProductIndex({ data }: Props) {
 						)}
 					</div>
 
-					<div className="mt-8 grid grid-cols-1 gap-x-6 gap-y-12 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
+					<div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-12 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:gap-x-10 2xl:grid-cols-4">
 						{allProductsList.map((product, productIndex) => (
 							<ProductCard
 								key={product._id}
@@ -220,13 +220,15 @@ export function PageProductIndex({ data }: Props) {
 					</div>
 
 					<div className="mt-20 flex justify-center lg:mt-30">
-						<Button
-							asChild
-							size="lg"
-							className="t-l-1 whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6"
+						<Link
+							href={allProductsHref}
+							className={cn(
+								buttonVariants({ size: 'lg' }),
+								't-l-1 whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6'
+							)}
 						>
-							<Link href={allProductsHref}>{t.moreProducts}</Link>
-						</Button>
+							{t.moreProducts}
+						</Link>
 					</div>
 				</section>
 			)}
