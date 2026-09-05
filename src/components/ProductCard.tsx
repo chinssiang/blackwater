@@ -6,7 +6,6 @@ import ImageBlock from '@/components/ImageBlock';
 import { revealStagger } from '@/lib/animate';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
-import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/Badge';
 import { ArrowRight } from '@/components/SvgIcons';
 
@@ -104,7 +103,17 @@ export default function ProductCard({
 		>
 			<div className="relative aspect-square overflow-hidden bg-background rounded">
 				{product.badge && product.badge.length > 0 && (
-					<div className="sm:absolute sm:top-4 left-0 flex flex-col items-start gap-1.5 relative">
+					// Absolute at every breakpoint. In flow it is a sibling of an
+					// `h-full` image inside this `aspect-square overflow-hidden` box,
+					// so its own height pushed the image down and the frame clipped
+					// the same amount off the bottom.
+					//
+					// `z-10` is required, not decorative, because this sits BEFORE the
+					// image in the DOM: the image takes a transform on group-hover,
+					// which makes it paint as its own stacking context at level 0, and
+					// an auto-z-index badge would then be painted underneath it for as
+					// long as the pointer is over the card.
+					<div className="absolute top-4 left-0 z-10 flex flex-col items-start gap-1.5">
 						{product.badge.map((b) => (
 							<Badge key={b}>
 								{(t.badges as Record<string, string>)[b] ?? b}
@@ -129,9 +138,15 @@ export default function ProductCard({
 			<div className="mt-4 flex-1 space-y-3">
 				<div className="flex gap-2 justify-between sm:items-center flex-col sm:flex-row">
 					{brandLabel ? (
-						<p className="t-b-2 sm:text-sm flex-1 text-foreground whitespace-nowrap">
-							{brandLabel}
-						</p>
+						// `t-b-1` (14px) replaces `t-b-2 sm:text-sm`, which was 12px on
+						// mobile and 14px above `sm`. Desktop is unchanged; mobile grows to
+						// match it. One token, not a token plus a breakpoint override -- the
+						// note on the title below says why that pairing misfires here.
+						//
+						// No `whitespace-nowrap` either: the grid is two-up on mobile, so
+						// this shares roughly 163px with the price, and a brand like "New
+						// Balance Redux" has to be allowed to wrap.
+						<p className="t-b-1 flex-1 text-foreground">{brandLabel}</p>
 					) : (
 						hasCategories && (
 							<CategoryLinks
@@ -153,11 +168,17 @@ export default function ProductCard({
 					)}
 				</div>
 				{product.title && (
-					<h3
-						className={cn(
-							't-l-1 sm:text-base line-clamp-2 text-balance uppercase'
-						)}
-					>
+					// One type token, no raw `text-*` override beside it. The .t-* classes
+					// live in @layer components rather than being @utility, so a `sm:text-*`
+					// utility beside one wins on layer order for font-size alone and leaves
+					// the token's weight and tracking in place -- a hybrid matching no token
+					// in globals.css.
+					//
+					// `t-l-0` is 16px and `t-l-1` is 12px; the two are otherwise identical
+					// (weight 500, line-height 1, tracking -0.02em). So `t-l-1 sm:text-base`
+					// was already 16px above `sm`, and this is a mobile-only change: 12px to
+					// 16px, at the ~163-184px a card gets in the two-up grid.
+					<h3 className="t-l-0 line-clamp-2 text-balance uppercase">
 						{product.title}
 					</h3>
 				)}

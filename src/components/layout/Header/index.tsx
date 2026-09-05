@@ -17,13 +17,7 @@ type HeaderProps = GHeader & {
 	mobileMenu?: SiteDataQueryResult['mobileMenu'];
 };
 
-export function Header({
-	data,
-	isLightHeader = false,
-}: {
-	data: HeaderProps;
-	isLightHeader?: boolean;
-}) {
+export function Header({ data }: { data: HeaderProps }) {
 	const { siteTitle, menu, mobileMenu } = data || {};
 	const locale = useLocale();
 	// No scroll logic here. Over a full-bleed hero the header's background is a
@@ -37,8 +31,10 @@ export function Header({
 			className={cn(
 				// No bg-*/backdrop-* utility here: the background is the
 				// `[data-site-header]` rules in globals.css, so it has one home.
-				'p-x-max h-header sticky top-0 z-header grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none',
-				isLightHeader && 'theme-light'
+				// `fixed`, not `sticky`: out of flow, so a full-bleed hero can start at
+				// the top of the viewport and this floats over it. `inset-x-0` rather
+				// than `w-full` — out of flow there is no parent to be 100% of.
+				'p-x-max h-header fixed inset-x-0 top-0 z-header grid grid-cols-2 lg:grid-cols-3 items-center leading-none'
 			)}
 		>
 			{menu && (

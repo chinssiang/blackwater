@@ -2,9 +2,7 @@ import { stegaClean } from '@sanity/client/stega';
 import CustomPortableText from '@/components/CustomPortableText';
 import CustomLink from '@/components/CustomLink';
 import ImageBlock from '@/components/ImageBlock';
-
 // The lazy boundary for the canvas; the note in that file says why it exists.
-import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 import { HeroWave } from '@/components/HeroWaveLazy';
 import { HeroUnderlay } from '@/components/HeroUnderlay';
 import SectionShell, {
@@ -59,8 +57,6 @@ export default function HeroBlock({
 		sectionAppearance,
 	} = data || {};
 
-	const showWeather = true;
-
 	const Heading = headingLevel;
 	// `href` arrives as `unknown`: resolvedHrefGroq is a select() typegen cannot
 	// narrow. A CTA whose link resolves to nothing renders as no CTA at all.
@@ -109,8 +105,10 @@ export default function HeroBlock({
 			appearance={appearance}
 			className={cn(
 				'relative isolate flex flex-col justify-center overflow-hidden',
+				// The header height is ADDED back on the underlap arm: `--height-main`
+				// subtracts it, and a hero the header floats over gets that space back.
 				underlapsHeader
-					? '-mt-[calc(var(--height-header)+var(--height-announcement))] min-h-[calc(var(--height-main)+var(--height-header)+var(--height-announcement))]'
+					? 'min-h-[calc(var(--height-main)+var(--height-header)+var(--height-announcement))]'
 					: 'min-h-main',
 				className
 			)}
@@ -180,7 +178,6 @@ export default function HeroBlock({
 					</div>
 				)}
 			</div>
-			{showWeather && <WeatherWidget />}
 		</SectionShell>
 	);
 }

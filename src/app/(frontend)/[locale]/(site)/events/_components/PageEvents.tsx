@@ -14,7 +14,6 @@ import {
 	getRichDateYearMonth,
 	isEventEnded,
 } from '@/lib/event-date';
-import { WeatherWidget } from '@/components/WeatherWidget';
 import { ArrowUpRight } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
 import { fadeAnim } from '@/lib/animate';
@@ -65,7 +64,6 @@ export function PageEvents({ data }: PageEventsProps) {
 	const common = useTranslations('common');
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
 	const prefersReducedMotion = useReducedMotion();
-	const showWeather = true;
 
 	// The initialiser re-runs on the client during hydration, so `currentDate`
 	// holds the real clock from the first client render even though the
@@ -417,7 +415,6 @@ export function PageEvents({ data }: PageEventsProps) {
 			) : (
 				<p className="py-8 text-center">{t.emptyMonth}</p>
 			)}
-			{/* {showWeather && <WeatherWidget />} */}
 		</div>
 	);
 }

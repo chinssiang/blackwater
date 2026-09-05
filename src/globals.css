@@ -949,6 +949,49 @@ body:has([data-not-found]) footer {
 	}
 }
 
+/* The canonical note on how the fixed header gets its space. The header is
+   `position: fixed`, so it donates no layout space; the `main` rule below
+   carries it instead. A full-bleed hero is the
+   one thing that wants the header over it rather than above it, so it drops
+   that padding and starts at the very top of the viewport.
+
+   Scoped on `body:has(...)` to match the two header-background rules above
+   verbatim, so the two halves of "this page opens with a full-bleed hero"
+   read the same subtree and cannot disagree. Keyed on the same
+   `data-hero-underlay` marker for the same reason. The attribute is in the
+   prerendered HTML, so this matches on the first paint -- no post-hydration
+   flip. HeroBlock keeps `mt-header-space-0` on the copy, which is what holds
+   the text clear of the header once the section is under it.
+
+   This replaces a negative top margin on the hero, which cancelled the
+   header's flow box back out. That worked only by collapsing its margin
+   THROUGH <main> (no padding or border there to stop it) and so moved
+   <main>'s own box -- meaning any padding later added to <main> would have
+   silently killed the overlap, with no error and nothing to grep for.
+
+   Both rules are unlayered, so `body:has(...) main` beats bare `main` on
+   specificity alone and neither can be outranked by a Tailwind utility in the
+   utilities layer. Everything from here down is outside every layer, which
+   `.animate-page-in` above relies on for the same reason. */
+main {
+	/* Declared here rather than as a `pt-header-space-0` class on <Main>,
+	   because `cn()` is bare twMerge with no extendTailwindMerge: it does not
+	   classify that custom utility, so `cn('pt-header-space-0', 'pt-0')` keeps
+	   BOTH and emission order picks the winner -- a caller's override would
+	   silently do nothing.
+
+	   Spelled out rather than `@apply pt-header-space-0`, which compiles to
+	   nothing here: the utility is functional (`pt-header-space-*`), and
+	   @apply does not resolve one from this rule -- the declaration vanished
+	   with no error and <main> shipped unpadded. Keep this sum in step with
+	   the `*-header-space-*` utilities above if the announcement bar lands. */
+	padding-top: calc(var(--height-header) + var(--height-announcement));
+}
+
+body:has([data-hero-underlay]) main {
+	padding-top: 0;
+}
+
 /* Entrance reveal for page content, staggered via --reveal-delay.
 
    This drives the visibility of the price and the buy button, so the visible

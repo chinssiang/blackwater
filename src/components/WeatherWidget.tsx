@@ -15,7 +15,11 @@ import {
 
 /**
  * Current Taipei conditions, pinned bottom-right on the homepage and the
- * /events subtree (the predicate is `shouldShowWeatherWidget` in routes.ts).
+ * /events subtree. Mounted once by <Layout> in the always-mounted chrome and
+ * gated there on `shouldShowWeatherWidget` (routes.ts) -- never rendered from a
+ * page module, so it cannot appear twice on a page or drift from the predicate
+ * its tests cover. `fixed`, so the corner it claims is the viewport's; the
+ * bottom offset clears the mobile ToolBar the way the Footer's padding does.
  *
  * Always import this from `@/components/WeatherWidgetLazy` — see the note there.
  *
@@ -104,7 +108,7 @@ export function WeatherWidget() {
 	];
 
 	return (
-		<div className="text-foreground bg-background/85 backdrop-blur-xs border-foreground/36 right-contain bottom-1 absolute z-g-toolbar w-(--width-max) sm:max-w-64 border max-sm:left-contain">
+		<div className="text-foreground bg-background/85 backdrop-blur-xs border-foreground/36 right-contain fixed bottom-[calc(var(--height-g-toolbar)+1rem)] lg:bottom-6 z-g-toolbar w-(--width-max) sm:max-w-64 border max-sm:left-contain">
 			<button
 				type="button"
 				onClick={() => setIsOpen((open) => !open)}
@@ -116,18 +120,25 @@ export function WeatherWidget() {
 				)}
 			>
 				<span className="t-b-2 uppercase">{t.label}</span>
-				<span className="t-b-2 tabular-nums ml-auto">
-					{Math.round(temperature)}
-					{t.units.celsius}
+				{/* One flex child, so `justify-between` on the button above actually
+				    spreads label against this cluster. No `ml-auto` in here: an auto
+				    margin consumes all free space BEFORE justify-content is applied,
+				    which is what made that class inert. */}
+				<span className="flex items-baseline gap-2">
+					<span className="t-b-2 tabular-nums">
+						{Math.round(temperature)}
+						{t.units.celsius}
+					</span>
+					<span className="t-b-2 text-foreground/80 uppercase">
+						( {condition} )
+					</span>
+					<Plus
+						className={cn(
+							'size-3 shrink-0 transition-transform motion-reduce:transition-none',
+							{ 'rotate-45': isOpen }
+						)}
+					/>
 				</span>
-				<span className="t-b-2 text-foreground/80 uppercase">
-					( {condition} )
-				</span>
-				<Plus
-					className={cn('size-3 ml-auto transition-transform', {
-						'rotate-45': isOpen,
-					})}
-				/>
 			</button>
 
 			<div
