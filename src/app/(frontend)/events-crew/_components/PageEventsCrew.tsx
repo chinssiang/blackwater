@@ -1,6 +1,7 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { resolveEventLocation } from '@/lib/event-location';
 import { hasArrayValue } from '@/lib/utils';
 import { buildRgbaCssString } from '@/lib/image-utils';
 import { buttonVariants } from '@/components/ui/Button';
@@ -316,16 +317,13 @@ function EventCard({
 		subtitle,
 		eventDatetime,
 		endDatetime,
-		location,
-		locationLink,
-		locationRef,
 		categories,
 		teamAssignments,
 		teamNotes,
 	} = event;
 
-	const displayLocation = locationRef?.name || location;
-	const displayLocationLink = locationRef?.mapLink || locationLink;
+	const { name: displayLocation, mapLink: displayLocationLink } =
+		resolveEventLocation(event);
 
 	const ended = isEventEnded(eventDatetime, endDatetime, now);
 	const dateInfo = eventDatetime ? formatEventDate(eventDatetime) : null;

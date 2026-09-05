@@ -14,10 +14,11 @@ import type {
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { getRichDateYearMonth } from '@/lib/event-date';
 import { PageEventCrew } from './_components/PageEventsCrew';
+import { FALLBACK_TIMEZONE } from '@/lib/event-date';
 
 // Crew months are bucketed by their Asia/Taipei local month, so the GROQ range
 // boundaries must be expressed as Taipei wall-clock midnights converted to UTC.
-const CREW_TIMEZONE = 'Asia/Taipei';
+const CREW_TIMEZONE = FALLBACK_TIMEZONE;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 

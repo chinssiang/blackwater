@@ -1,8 +1,83 @@
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
+import { stegaClean } from '@sanity/client/stega';
 import type { Locale } from 'date-fns';
 import type { RichDate } from 'sanity.types';
+// Type-only, so this stays a leaf at runtime: `calendar.ts` owns the shape of a
+// civil date, this file owns which timezone a stored value is read in.
+import type { DayKey } from '@/lib/calendar';
 
-const FALLBACK_TIMEZONE = 'Asia/Taipei';
+/**
+ * The timezone an event is read in when its stored `richDate` carries none —
+ * and, more broadly, the club's own timezone.
+ *
+ * Exported because it was declared three times: here, in `buildEventName.ts`
+ * (which names events for structured data) and as `CREW_TIMEZONE` on the crew
+ * page (which buckets months). Three literals meant the day an event is filed
+ * under, the day it is judged to have ended, and the day its structured data
+ * claims could drift apart on a relocation or a second chapter — silently, and
+ * with every test still passing, since each suite passes its own `TZ` in.
+ */
+export const FALLBACK_TIMEZONE = 'Asia/Taipei';
+
+/**
+ * Memoised so the validity probe below is paid once per distinct zone name.
+ * Keyed on the CLEANED value on purpose: a stega-encoded string is unique per
+ * document per field, so keying on the raw one would grow an entry per event
+ * per render in draft mode instead of holding the handful of real names.
+ */
+const resolvedTimezones = new Map<string, string>();
+
+/**
+ * The timezone a stored `richDate` is read in: its own when `Intl` can use it,
+ * the club's when it cannot.
+ *
+ * Two unrelated bad values reach the same `RangeError` out of `Intl`, and every
+ * reader below runs during render — so one of them took the whole page to its
+ * error boundary rather than degrading the single row it belongs to.
+ *
+ * The broad one is DRAFT MODE, and it is not bad data at all. `timezone` is not
+ * on `filterDefault`'s denylist (which lists `status`, not `timezone`) and is
+ * neither date-like nor URL-like, so the Presentation tool encodes invisible
+ * characters into it for EVERY event — the same trap `resolveEventDateStatus`
+ * (`event-status.ts`) documents one field over, and the same rule: clean wherever a value is used
+ * as a KEY rather than rendered. Cleaning before judging is also what keeps a
+ * Los Angeles event in Los Angeles for editors; treating every encoded value as
+ * unusable would quietly move it to Taipei, trading a crash for a wrong answer.
+ *
+ * The narrow one is a stored value that was never IANA — `GMT+8`, `Taipei`,
+ * `UTC+08:00` from a hand-edit or an import. Nothing cheap tells those apart
+ * from a valid alias like `Etc/GMT-8` or a bare `UTC`, both of which must keep
+ * working, so validity is simply whatever `Intl` accepts.
+ */
+export function resolveEventTimezone(
+	timezone: string | null | undefined
+): string {
+	const cleaned = stegaClean(timezone);
+	if (!cleaned) return FALLBACK_TIMEZONE;
+
+	const cached = resolvedTimezones.get(cleaned);
+	if (cached) return cached;
+
+	let resolved = FALLBACK_TIMEZONE;
+	try {
+		// Constructing one is the only cheap way to ask Intl whether it knows the
+		// zone; the instance is discarded.
+		new Intl.DateTimeFormat('en-US', { timeZone: cleaned });
+		resolved = cleaned;
+	} catch {
+		// The cache means this reports each bad value once, not once per render.
+		if (process.env.NODE_ENV !== 'production') {
+			console.warn(
+				`[event-date] unusable richDate.timezone ${JSON.stringify(
+					cleaned
+				)} — reading it in ${FALLBACK_TIMEZONE}`
+			);
+		}
+	}
+
+	resolvedTimezones.set(cleaned, resolved);
+	return resolved;
+}
 
 /**
  * Format a `richDate` value in its own stored timezone, so the editor's
@@ -15,7 +90,7 @@ export function formatRichDate(
 	locale?: Locale
 ): string {
 	if (!value?.utc) return '';
-	const timezone = value.timezone || FALLBACK_TIMEZONE;
+	const timezone = resolveEventTimezone(value.timezone);
 	return formatInTimeZone(
 		value.utc,
 		timezone,
@@ -45,10 +120,72 @@ export function getRichDateYearMonth(
 	value: RichDate | null | undefined
 ): { year: number; month: number } | null {
 	if (!value?.utc) return null;
-	const timezone = value.timezone || FALLBACK_TIMEZONE;
+	const timezone = resolveEventTimezone(value.timezone);
 	const yyyyMM = formatInTimeZone(value.utc, timezone, 'yyyy-MM');
 	const [year, month] = yyyyMM.split('-').map(Number);
 	return { year, month: month - 1 };
+}
+
+/**
+ * The civil date a `richDate` falls on, in the event's OWN stored timezone.
+ *
+ * The day-granular sibling of `getRichDateYearMonth` above, and the reduction
+ * the calendar grid buckets by. The event's timezone rather than the viewer's
+ * is the whole point: an event authored for 07:00 in Taipei belongs on the 5th
+ * for everyone looking at it, including a viewer in Los Angeles for whom that
+ * instant is still the 4th.
+ */
+export function getRichDateDayKey(
+	value: RichDate | null | undefined
+): DayKey | null {
+	// Via `getRichDateInstant` so an unparseable `utc` is rejected here rather
+	// than thrown out of `formatInTimeZone`.
+	const instant = getRichDateInstant(value);
+	if (!instant) return null;
+	return formatInTimeZone(
+		instant,
+		resolveEventTimezone(value?.timezone),
+		'yyyy-MM-dd'
+	);
+}
+
+/**
+ * Today's civil date, in the timezone the events are read in.
+ *
+ * `now` is a parameter for the same reason it is on `isEventEnded`. The
+ * timezone defaults to the club's rather than the viewer's so the calendar's
+ * "today" marker lands on the same cell as an event starting at 07:00 Taipei —
+ * marking it by the viewer's timezone is exactly the confusion it exists to
+ * avoid.
+ */
+export function getTodayKey(now: Date, timezone = FALLBACK_TIMEZONE): DayKey {
+	return formatInTimeZone(now, timezone, 'yyyy-MM-dd');
+}
+
+/**
+ * Events bucketed by the civil day they start on, in input order.
+ *
+ * Start day only, deliberately: an event with an `endDatetime` days later would
+ * otherwise paint a band across the calendar grid, and the multi-day events
+ * this has to show are race weekends and training blocks — things a visitor
+ * looks up by when they BEGIN. A spanning-bar layout is a different component,
+ * not a flag on this one.
+ *
+ * Input order is preserved (the queries hand us events ascending by start
+ * instant), so each day's list reads chronologically without a second sort.
+ */
+export function groupEventsByDay<T extends { eventDatetime?: RichDate | null }>(
+	events: readonly T[] | null | undefined
+): Map<DayKey, T[]> {
+	const byDay = new Map<DayKey, T[]>();
+	for (const event of events || []) {
+		const key = getRichDateDayKey(event.eventDatetime);
+		if (!key) continue;
+		const bucket = byDay.get(key);
+		if (bucket) bucket.push(event);
+		else byDay.set(key, [event]);
+	}
+	return byDay;
 }
 
 /**
@@ -67,7 +204,7 @@ export function getRichDateEndOfDayInstant(
 	// than thrown out of `formatInTimeZone` and up through the page render.
 	const instant = getRichDateInstant(value);
 	if (!instant) return null;
-	const timezone = value?.timezone || FALLBACK_TIMEZONE;
+	const timezone = resolveEventTimezone(value?.timezone);
 	const day = formatInTimeZone(instant, timezone, 'yyyy-MM-dd');
 	const date = fromZonedTime(`${day}T23:59:59.999`, timezone);
 	return Number.isNaN(date.getTime()) ? null : date;
@@ -89,11 +226,29 @@ export function isEventEnded(
 	endDatetime: RichDate | null | undefined,
 	now: Date
 ): boolean {
-	const end =
-		getRichDateInstant(endDatetime) ??
-		getRichDateEndOfDayInstant(eventDatetime);
+	const end = getEventEndInstant(eventDatetime, endDatetime);
 	if (!end) return false;
 	return end < now;
+}
+
+/**
+ * The instant an event is over — the authored end time, or the end of its start
+ * day in its own timezone.
+ *
+ * The clock-INDEPENDENT half of `isEventEnded`, split out so a caller rendering
+ * many events against a ticking clock can resolve it once instead of once per
+ * tick. It is not cheap: the end-of-day fallback (the common case, since most
+ * events carry no `endDatetime`) costs two `Intl.DateTimeFormat` conversions,
+ * and a calendar month re-running that for every visible event every minute is
+ * pure waste — the answer only changes when the event does.
+ */
+export function getEventEndInstant(
+	eventDatetime: RichDate | null | undefined,
+	endDatetime: RichDate | null | undefined
+): Date | null {
+	return (
+		getRichDateInstant(endDatetime) ?? getRichDateEndOfDayInstant(eventDatetime)
+	);
 }
 
 /**
@@ -115,7 +270,7 @@ export function getRichDateDaysUntil(
 ): number | null {
 	const instant = getRichDateInstant(value);
 	if (!instant) return null;
-	const timezone = value?.timezone || FALLBACK_TIMEZONE;
+	const timezone = resolveEventTimezone(value?.timezone);
 	const toUtcDays = (date: Date) => {
 		const [year, month, day] = formatInTimeZone(date, timezone, 'yyyy-MM-dd')
 			.split('-')

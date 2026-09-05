@@ -119,7 +119,25 @@
 			}
 		},
 		"dateFormat": "yyyy/MM/dd (iii) HH:mm",
-		"monthYearFormat": "yyyy年M月"
+		"monthYearFormat": "yyyy年M月",
+		"view": {
+			"label": "活動檢視方式",
+			"list": "列表",
+			"calendar": "日曆"
+		},
+		"calendar": {
+			"gridLabel": "{month}的活動",
+			"weekdayFormat": "EEE",
+			"weekdayNarrowFormat": "EEEEE",
+			"dayFormat": "yyyy年M月d日 EEEE",
+			"dayHeadingFormat": "M月d日 EEEE",
+			"timeFormat": "HH:mm",
+			"today": "今天",
+			"dayPanelLabel": "所選日期的活動",
+			"selectDay": "{day}，{events}",
+			"eventCount": { "one": "{count} 個活動", "other": "{count} 個活動" },
+			"moreEvents": "還有 {count} 個"
+		}
 	},
 	"products": {
 		"categoriesTitle": "分類",

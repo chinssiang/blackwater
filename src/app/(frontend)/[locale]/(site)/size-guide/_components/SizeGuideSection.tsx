@@ -37,9 +37,6 @@ const safeDecodeHash = (hash: string) => {
 	}
 };
 
-const TRIGGER_CLASS =
-	'rounded-full border border-foreground px-3.5 py-1.5 t-l-1 uppercase whitespace-nowrap transition-colors data-active:bg-foreground data-active:text-background not-data-active:bg-transparent not-data-active:hover:bg-foreground/5';
-
 export function SizeGuideSection({
 	section,
 	displayUnit,
@@ -131,7 +128,8 @@ export function SizeGuideSection({
 						<TabsTrigger
 							key={tab.value}
 							value={tab.value}
-							className={TRIGGER_CLASS}
+							variant="pill"
+							size="md"
 						>
 							{tab.label}
 						</TabsTrigger>

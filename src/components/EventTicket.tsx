@@ -18,6 +18,7 @@ import {
 	SECTION_INSET_TRAILING_SLIDE,
 } from '@/lib/utils';
 import type { Locale } from '@/lib/i18n';
+import { resolveEventLocation } from '@/lib/event-location';
 
 // Typed structurally rather than off any one query result, because the two
 // surfaces that render a ticket -- the eventsBlock carousel and the event
@@ -70,16 +71,11 @@ export function EventTicket({
 		slug,
 		eventDatetime,
 		dateStatus,
-		location,
-		locationLink,
-		locationRef,
 		statusList,
 	} = event;
 
-	// locationRef is the preferred source; `location`/`locationLink` are the
-	// one-off fallback the schema hides once a venue is referenced.
-	const displayLocation = locationRef?.name || location;
-	const displayLocationLink = locationRef?.mapLink || locationLink;
+	const { name: displayLocation, mapLink: displayLocationLink } =
+		resolveEventLocation(event);
 	const href = slug
 		? resolveHref({ documentType: 'pEvent', slug, locale })
 		: null;
