@@ -8,6 +8,8 @@ import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 import { Badge } from '@/components/ui/Badge';
 import { ArrowRight } from '@/components/SvgIcons';
+import ProductCardAddToCart from '@/components/ProductCardAddToCart';
+import type { CardAddToCart } from '@/lib/shopify/types';
 
 type Category = { _id: string; title?: string | null; slug?: string | null };
 
@@ -22,6 +24,17 @@ type ProductCardProps = {
 		categories?: Array<Category> | null;
 		brands?: Array<{ _id: string; title?: string | null }> | null;
 		mainImage?: any;
+		/**
+		 * Quick-add descriptor, written onto the card by `applyCardPrices` when
+		 * Shopify resolved the handle and the product is simple enough to sell
+		 * from a card. Absent for an unlinked product, an unreachable or
+		 * unconfigured Shopify, and anything with two or more option groups — all
+		 * of which keep the plain "View" affordance.
+		 */
+		addToCart?: CardAddToCart | null;
+		/** Live Shopify availability — never `pProduct.soldOut`, which is the
+		 * detail page's editorial override and is not projected onto cards. */
+		outOfStock?: boolean | null;
 	};
 	index?: number;
 	/**
@@ -231,15 +244,33 @@ export default function ProductCard({
 					<span className="t-spec text-foreground font-semibold">
 						{product.price ?? ''}
 					</span>
-					<span
-						aria-hidden
-						className="t-l-2 inline-flex items-center gap-1 uppercase text-foreground/65 transition-colors duration-200 group-hover:text-accent-foreground"
-					>
-						{t.view}
-						<span className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
-							<ArrowRight className="size-[1.1em]" />
+					{/* Three states, in precedence order: sell it, say it is gone, or
+					    fall back to the link the whole card already is. The sold-out
+					    line is NOT aria-hidden, unlike the "View" branch: that one is
+					    decoration for a link the overlay anchor already names, while
+					    this is the only place a card says a product cannot be bought.
+					    It carries no hover for the same reason -- a state change with
+					    nothing behind it is a false affordance. */}
+					{product.addToCart ? (
+						<ProductCardAddToCart
+							addToCart={product.addToCart}
+							productTitle={product.title ?? ''}
+						/>
+					) : product.outOfStock ? (
+						<span className="t-l-2 uppercase text-foreground/45">
+							{t.soldOut}
 						</span>
-					</span>
+					) : (
+						<span
+							aria-hidden
+							className="t-l-2 inline-flex items-center gap-1 uppercase text-foreground/65 transition-colors duration-200 group-hover:text-accent-foreground"
+						>
+							{t.view}
+							<span className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
+								<ArrowRight className="size-[1.1em]" />
+							</span>
+						</span>
+					)}
 				</div>
 			</div>
 

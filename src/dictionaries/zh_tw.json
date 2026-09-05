@@ -230,6 +230,8 @@
 		"empty": "您的購物車是空的。",
 		"browseProducts": "瀏覽商品",
 		"addToCart": "加入購物車",
+		"add": "加入",
+		"addAriaLabel": "將 {product} 加入購物車",
 		"adding": "加入中…",
 		"added": "已加入購物車",
 		"selectSize": "請選擇尺寸",

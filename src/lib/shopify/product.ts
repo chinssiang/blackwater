@@ -6,8 +6,10 @@ import { getDictionary } from '@/lib/dictionary.server';
 import { isShopifyConfigured, shopifyStorefrontFetch } from './client';
 import {
 	LOCALE_SHOPIFY_CONTEXT,
+	deriveCardAddToCart,
 	formatShopifyPrice,
 	shopifyGidToId,
+	type CardAddToCart,
 	type CardCommerce,
 	type ProductCommerce,
 	type ShopifyMoney,
@@ -26,8 +28,17 @@ import {
 const REVALIDATE: false = false;
 
 // Aliased product(handle:) lookups per request — one round trip per chunk
-// while keeping well under Next's 128-tags-per-fetch cache limit.
+// while keeping well under Next's 128-tags-per-fetch cache limit. Also the knob
+// to reach for if the card query below ever gets throttled: it multiplies every
+// per-product subselection in that query.
 const CARD_CHUNK_SIZE = 40;
+
+// Variants requested per card, for the quick-add control only. Generous for a
+// size run (XXS-4XL is ten) while bounding a 40-handle chunk. A product that
+// comes back holding exactly this many is indistinguishable from a truncated
+// one, so it gets no quick-add rather than a partial size list — see
+// `cardAddToCart` below.
+const CARD_VARIANT_LIMIT = 20;
 
 // Gallery ceiling. Bounds the RSC payload and the dot indicator row rather than
 // the store: real products carry one or two images. Only the detail page asks
@@ -173,7 +184,37 @@ export const getProductCommerce = cache(
 type GqlCardProduct = Pick<
 	GqlProduct,
 	'handle' | 'availableForSale' | 'priceRange'
->;
+> & {
+	// Narrower than GqlProduct's: the card needs an id, stock and the option
+	// values to label a chip with. No price, no compare-at, no title.
+	variants: {
+		nodes: Array<{
+			id: string;
+			availableForSale: boolean;
+			selectedOptions: Array<{ name: string; value: string }>;
+		}>;
+	};
+};
+
+/**
+ * The quick-add descriptor for one card, or null when the card should keep its
+ * plain "View" link. Wraps the pure `deriveCardAddToCart` with the one rule
+ * that belongs to the query rather than to the data: a product holding exactly
+ * CARD_VARIANT_LIMIT variants may have been truncated, and half a size run is
+ * worse than none.
+ */
+function cardAddToCart(product: GqlCardProduct): CardAddToCart | null {
+	const nodes = product.variants.nodes;
+	if (nodes.length >= CARD_VARIANT_LIMIT) return null;
+	return deriveCardAddToCart({
+		availableForSale: product.availableForSale,
+		variants: nodes.map((v) => ({
+			gid: v.id,
+			availableForSale: v.availableForSale,
+			selectedOptions: v.selectedOptions,
+		})),
+	});
+}
 
 function buildCardQuery(handles: string[]): string {
 	// Storefront API has no products-by-handles lookup, so alias one
@@ -188,6 +229,13 @@ function buildCardQuery(handles: string[]): string {
 			priceRange {
 				minVariantPrice ${MONEY_FRAGMENT}
 				maxVariantPrice ${MONEY_FRAGMENT}
+			}
+			variants(first: ${CARD_VARIANT_LIMIT}) {
+				nodes {
+					id
+					availableForSale
+					selectedOptions { name value }
+				}
 			}
 		}`
 		)
@@ -252,6 +300,7 @@ export async function getCardCommerce(
 						availableForSale: product.availableForSale,
 						minPrice: product.priceRange.minVariantPrice,
 						maxPrice: product.priceRange.maxVariantPrice,
+						addToCart: cardAddToCart(product),
 					});
 				}
 			} catch (err) {
@@ -266,6 +315,13 @@ export async function getCardCommerce(
 type CardLike = {
 	shopifyHandle?: string | null;
 	price?: string | null;
+	addToCart?: CardAddToCart | null;
+	/**
+	 * Live Shopify availability. Named apart from `pProduct.soldOut` on purpose:
+	 * that field is the editorial override the detail page ORs on top, and it is
+	 * deliberately not projected onto cards.
+	 */
+	outOfStock?: boolean | null;
 };
 
 function liveCardPrice(
@@ -279,10 +335,14 @@ function liveCardPrice(
 }
 
 /**
- * Replaces each card's manual `price` string with its live Shopify price
- * (formatted, "From X" for variant ranges). Cards without a resolvable handle
- * keep their manual price — the shape is unchanged, so ProductCard needs no
- * awareness of Shopify at all.
+ * Rewrites each card's manual `price` string with its live Shopify price
+ * (formatted, "From X" for variant ranges) and attaches what the card needs to
+ * sell: a quick-add descriptor and live availability.
+ *
+ * Cards without a resolvable handle are returned untouched, and so is every
+ * card when the lookup failed or Shopify is unconfigured — so an unlinked
+ * product, an outage and a missing token all land on the same place: the manual
+ * price and the plain "View" link.
  */
 export function applyCardPrices<T extends CardLike | null>(
 	products: ReadonlyArray<T> | null | undefined,
@@ -299,8 +359,14 @@ export function applyCardPrices<T extends CardLike | null>(
 			: null;
 		const card = handle ? commerce.get(handle) : null;
 		if (!card) return product;
-		// Same shape with only `price` rewritten — safe for the generic.
-		return { ...product, price: liveCardPrice(card, locale, fromTemplate) } as T;
+		// Only fields CardLike declares are written, so the cast stays honest for
+		// the generic.
+		return {
+			...product,
+			price: liveCardPrice(card, locale, fromTemplate),
+			addToCart: card.addToCart,
+			outOfStock: !card.availableForSale,
+		} as T;
 	});
 }
 

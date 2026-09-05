@@ -146,12 +146,43 @@ export function shopifyCheckoutUrl(checkoutUrl: string, locale: Locale): string 
 	}
 }
 
-// Lean payload for listing cards: display price + availability only.
+/**
+ * Everything a listing card needs to put something in the cart, and nothing
+ * more. Deliberately not `ProductCommerce`: a card would then carry variant
+ * prices, compare-at prices, images and full option lists into every grid's RSC
+ * payload, all of it unread.
+ *
+ * `direct` — the product has no real options (Shopify models that as a lone
+ * "Default Title" variant), so there is one unambiguous merchandise id and the
+ * card adds on click.
+ *
+ * `options` — exactly ONE option group, whose values fit a row of chips.
+ * Products with two or more groups get no descriptor at all: a card cannot
+ * represent a two-dimensional choice, and guessing one is how the wrong variant
+ * ends up in someone's cart. Those keep the plain "View" link to the detail
+ * page, where VariantPicker lives.
+ */
+export type CardAddToCart =
+	| { kind: 'direct'; merchandiseId: string }
+	| {
+			kind: 'options';
+			/** The Shopify option name, e.g. "Size" — labels the chip row. */
+			optionName: string;
+			values: Array<{
+				value: string;
+				merchandiseId: string;
+				availableForSale: boolean;
+			}>;
+	  };
+
+// Lean payload for listing cards: display price + availability + whatever the
+// card needs to add to the cart.
 export type CardCommerce = {
 	handle: string;
 	availableForSale: boolean;
 	minPrice: ShopifyMoney;
 	maxPrice: ShopifyMoney;
+	addToCart: CardAddToCart | null;
 };
 
 // Locale → Shopify Markets context. `en` intentionally omits the country so it
@@ -259,4 +290,72 @@ export function pickInitialVariant(
 			null
 		);
 	return cheapestAvailable ?? variants[0] ?? null;
+}
+
+/**
+ * What a listing card can offer, derived from the lean variant list the batched
+ * card query returns. Null means the card shows its ordinary "View" link:
+ * the product is sold out, has nothing addable, or carries two or more option
+ * groups — a card has one row for chips, so a two-dimensional choice belongs on
+ * the detail page with VariantPicker rather than being guessed at here.
+ *
+ * Pure, and separate from the fetch, so the rules above are testable without a
+ * Storefront round trip. The caller owns one thing this cannot know: whether
+ * the variant list it was handed is complete (see CARD_VARIANT_LIMIT).
+ */
+export function deriveCardAddToCart(product: {
+	availableForSale: boolean;
+	variants: Array<{
+		gid: string;
+		availableForSale: boolean;
+		selectedOptions: ShopifySelectedOption[];
+	}>;
+}): CardAddToCart | null {
+	if (!product.availableForSale || product.variants.length === 0) return null;
+
+	// Option names in the order Shopify returns them, read off the variants
+	// rather than a separate `options` selection: `selectedOptions` already
+	// carries both halves, and one fewer subselection keeps the batched card
+	// query — one aliased lookup per handle — cheap.
+	const optionNames: string[] = [];
+	for (const variant of product.variants) {
+		for (const option of variant.selectedOptions) {
+			if (!optionNames.includes(option.name)) optionNames.push(option.name);
+		}
+	}
+
+	// Drop Shopify's placeholder group. Same idea as `hasOnlyDefaultVariant`
+	// above, expressed over variants: a group is a placeholder when every
+	// variant sits on "Default Title" for it.
+	const realNames = optionNames.filter(
+		(name) =>
+			!product.variants.every((variant) =>
+				variant.selectedOptions.some(
+					(o) => o.name === name && o.value === 'Default Title'
+				)
+			)
+	);
+
+	if (realNames.length === 0) {
+		// Nothing to choose. More than one variant with no real option is
+		// malformed data, not a card we can add from.
+		return product.variants.length === 1
+			? { kind: 'direct', merchandiseId: product.variants[0].gid }
+			: null;
+	}
+	if (realNames.length > 1) return null;
+
+	const optionName = realNames[0];
+	const values: Extract<CardAddToCart, { kind: 'options' }>['values'] = [];
+	for (const variant of product.variants) {
+		const option = variant.selectedOptions.find((o) => o.name === optionName);
+		if (!option) continue;
+		if (values.some((v) => v.value === option.value)) continue;
+		values.push({
+			value: option.value,
+			merchandiseId: variant.gid,
+			availableForSale: variant.availableForSale,
+		});
+	}
+	return values.length > 0 ? { kind: 'options', optionName, values } : null;
 }

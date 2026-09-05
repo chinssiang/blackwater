@@ -236,6 +236,8 @@
 		"empty": "Your cart is empty.",
 		"browseProducts": "Browse products",
 		"addToCart": "Add to cart",
+		"add": "Add",
+		"addAriaLabel": "Add {product} to cart",
 		"adding": "Adding…",
 		"added": "Added to cart",
 		"selectSize": "Select a size",
