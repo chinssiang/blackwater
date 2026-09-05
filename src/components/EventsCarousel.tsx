@@ -1,5 +1,7 @@
 'use client';
 
+import { useCallback, useRef } from 'react';
+
 import {
 	Carousel,
 	CarouselContent,
@@ -50,6 +52,32 @@ export default function EventsCarousel({
 	nextLabel,
 	children,
 }: EventsCarouselProps) {
+	// The strip is full-bleed: `SECTION_INSET_START` is a padding on the TRACK,
+	// not on `CarouselContent`'s `overflow-hidden` viewport, so tickets keep
+	// running off both screen edges as they scroll rather than being clipped at
+	// the inset. The cost is that the inset travels with the track.
+	//
+	// embla measures every snap as `containerRect.start - slideRect.start`, so a
+	// leading track padding lands in snap 0 and in no other: `ScrollContain`
+	// pins the first snap to the scroll bound, and every later snap puts its
+	// group flush at x=0, hard against the screen edge. A custom `align` is the
+	// lever -- embla adds its return value to every snap
+	// (`ScrollSnaps.measureAligned`), so returning the inset restores it at each
+	// one. Snap 0 stays put (`-inset + inset = 0`, and it is pinned to the bound
+	// regardless) and the LAST snap is pinned to the opposite bound, which is
+	// where `last:mr-contain` on the slide -- read as embla's end gap -- lands
+	// the final ticket at the matching inset on the right.
+	//
+	// It is read back off the track rather than recomputed from `--padding-max`
+	// in JS so the CSS stays the single definition; embla rebuilds its engine on
+	// every resize, so this re-reads with it.
+	const trackRef = useRef<HTMLDivElement>(null);
+	const alignToInset = useCallback(() => {
+		const track = trackRef.current;
+		if (!track) return 0;
+		return parseFloat(getComputedStyle(track).paddingLeft) || 0;
+	}, []);
+
 	// `dragFree` is deliberately NOT set. It is embla's opt-out of snapping: a
 	// drag rests wherever momentum dies, which left a ticket half past the
 	// viewport edge looking clipped. Off (the default), a drag settles on a snap
@@ -67,14 +95,17 @@ export default function EventsCarousel({
 	// with the trailing inset instead of over-scrolling into dead space.
 	return (
 		<Carousel
-			opts={{ align: 'start', slidesToScroll: 'auto' }}
+			opts={{ align: alignToInset, slidesToScroll: 'auto' }}
 			aria-label={label}
 		>
 			{/* `gap-6` rather than the primitive's per-slide padding plus a
 			    negative track margin: that idiom fights the leading inset, which has
 			    to stay a real padding so the first ticket lines up with the heading.
 			    `ml-0` drops the primitive's default `-ml-4` for the same reason. */}
-			<CarouselContent className={cn(SECTION_INSET_START, 'ml-0 gap-6')}>
+			<CarouselContent
+				ref={trackRef}
+				className={cn(SECTION_INSET_START, 'ml-0 gap-6')}
+			>
 				{children}
 			</CarouselContent>
 			<div className={cn('mt-4 flex justify-end gap-2', SECTION_INSET)}>
