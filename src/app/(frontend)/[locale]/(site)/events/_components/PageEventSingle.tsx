@@ -17,6 +17,7 @@ import {
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 import { REVEAL_SOFT } from '@/lib/animate';
 import type { Locale } from '@/lib/i18n';
+import { resolveEventLocation } from '@/lib/event-location';
 import type { PageEventSingleQueryResult } from 'sanity.types';
 import EventStations, { type EventStationsData } from './EventStations';
 import ExternalTextLink from './ExternalTextLink';
@@ -194,19 +195,10 @@ function EventSpecs({
 	dateFnsLocale: (typeof DATE_FNS_LOCALES)[Locale];
 	t: EventDict;
 }) {
-	const {
-		locationRef,
-		location,
-		locationLink,
-		distanceKm,
-		eventType,
-		isFree,
-		endDatetime,
-		dateStatus,
-	} = data;
+	const { distanceKm, eventType, isFree, endDatetime, dateStatus } = data;
 
-	const displayLocation = locationRef?.name || location;
-	const displayLocationLink = locationRef?.mapLink || locationLink;
+	const { name: displayLocation, mapLink: displayLocationLink } =
+		resolveEventLocation(data);
 	// Gated on the same firmness as every other date on this page: without it a
 	// cancelled event's masthead reads CANCELLED while the band below states
 	// when it finishes.
