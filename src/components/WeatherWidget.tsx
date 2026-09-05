@@ -108,7 +108,7 @@ export function WeatherWidget() {
 	];
 
 	return (
-		<div className="text-foreground bg-background/85 backdrop-blur-xs border-foreground/36 right-contain fixed bottom-[calc(var(--height-g-toolbar)+1rem)] lg:bottom-6 z-g-toolbar w-(--width-max) sm:max-w-64 border max-sm:left-contain">
+		<div className="text-foreground bg-background/85 backdrop-blur-xs border-foreground/36 right-contain absolute bottom-[calc(var(--height-g-toolbar)+1rem)] lg:bottom-6 z-g-toolbar w-(--width-max) sm:max-w-64 border max-sm:left-contain">
 			<button
 				type="button"
 				onClick={() => setIsOpen((open) => !open)}

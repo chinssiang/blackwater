@@ -15,14 +15,6 @@ import { Header } from './Header';
 import { Newsletter } from './Newsletter';
 import { ToolBar } from './ToolBar';
 import { Main } from './Main';
-import { WeatherWidget } from '@/components/WeatherWidgetLazy';
-// `features` is a static import on purpose. Loading it lazily saves nothing
-// here: LazyMotion's features only supply capabilities to the lightweight `m.*`
-// components, and nothing in this repo uses those — every call site imports the
-// full `motion.*`, which bundles its own feature set (ToolBar, Newsletter,
-// MobileMenu and CartDrawerPanel all do, inside this same always-mounted
-// shell). A lazy bundle would add an async chunk fetch for zero byte saving.
-// Migrate those call sites to `m.*` first if this is ever worth revisiting.
 import { LazyMotion, domAnimation } from 'motion/react';
 
 type LayoutProps = {
@@ -90,7 +82,6 @@ export function Layout({ children, siteData }: LayoutProps) {
 				</Main>
 				<Footer data={footerData} />
 				{!toolbar?.hideToolbar && <ToolBar menu={toolbar?.toolbarMenu} />}
-				{showWeather && <WeatherWidget />}
 
 				<CartDrawer settings={siteData?.cart} />
 			</LazyMotion>
