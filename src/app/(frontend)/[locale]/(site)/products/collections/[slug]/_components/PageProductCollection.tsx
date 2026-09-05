@@ -74,7 +74,7 @@ export default function PageProductCollection({ data }: Props) {
 							// This grid goes four-up at `xl`, one breakpoint earlier than the
 							// default assumes, so between 1280 and 1536 the default asks for a
 							// third of the viewport to fill a quarter-width card.
-							sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, (min-width: 2000px) 470px, 25vw"
+							sizes="(max-width: 1024px) 50vw, (max-width: 1280px) 33vw, (min-width: 2000px) 470px, 25vw"
 						/>
 					))}
 				</div>

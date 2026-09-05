@@ -1,4 +1,5 @@
 import { stegaClean } from '@sanity/client/stega';
+import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 import CustomPortableText from '@/components/CustomPortableText';
 import CustomLink from '@/components/CustomLink';
 import ImageBlock from '@/components/ImageBlock';
@@ -178,6 +179,7 @@ export default function HeroBlock({
 					</div>
 				)}
 			</div>
+			<WeatherWidget />
 		</SectionShell>
 	);
 }

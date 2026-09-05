@@ -210,7 +210,7 @@ export function PageEvents({ data }: PageEventsProps) {
 							disabled={!hasPrevious}
 							aria-label={t.aria.previousMonth}
 							variant="ghost"
-							className="uppercase text-xs font-normal cursor-pointer hover:opacity-60"
+							className="uppercase t-l-2 font-normal cursor-pointer hover:opacity-60"
 						>
 							<ArrowLeft />
 							{t.aria.previousMonth}
@@ -221,7 +221,7 @@ export function PageEvents({ data }: PageEventsProps) {
 							disabled={!hasNext}
 							aria-label={t.aria.nextMonth}
 							variant="ghost"
-							className="uppercase text-xs font-normal cursor-pointer hover:opacity-60"
+							className="uppercase t-l-2 font-normal cursor-pointer hover:opacity-60"
 						>
 							{t.aria.nextMonth}
 							<ArrowRight className="size-3.5" />
