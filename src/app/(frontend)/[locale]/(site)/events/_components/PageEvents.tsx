@@ -294,7 +294,7 @@ export function PageEvents({ data }: PageEventsProps) {
 									disabled={!hasPrevious}
 									aria-label={t.aria.previousMonth}
 									variant="ghost"
-									className="uppercase text-xs font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
+									className="uppercase t-l-2 font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
 								>
 									<ArrowLeft />
 									{/* Label hidden, not dropped: the button keeps its
@@ -310,7 +310,7 @@ export function PageEvents({ data }: PageEventsProps) {
 									disabled={!hasNext}
 									aria-label={t.aria.nextMonth}
 									variant="ghost"
-									className="uppercase text-xs font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
+									className="uppercase t-l-2 font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
 								>
 									<span className="max-sm:hidden">{t.aria.nextMonth}</span>
 									<ArrowRight className="size-3.5" />

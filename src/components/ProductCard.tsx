@@ -208,10 +208,13 @@ export default function ProductCard({
 					// the token's weight and tracking in place -- a hybrid matching no token
 					// in globals.css.
 					//
-					// `t-l-0` is 16px and `t-l-1` is 12px; the two are otherwise identical
-					// (weight 500, line-height 1, tracking -0.02em). So `t-l-1 sm:text-base`
-					// was already 16px above `sm`, and this is a mobile-only change: 12px to
-					// 16px, at the ~163-184px a card gets in the two-up grid.
+					// `t-l-0` runs 16->17px and `t-l-1` 12->13px, and they are NOT otherwise
+					// identical: `t-l-0` is line-height 1.2 / tracking -0.02em against
+					// `t-l-1`'s 1.25 / +0.02em, since the label rungs opened their tracking
+					// up when the ladder was rebuilt. So this is not purely a size change --
+					// `t-l-1 sm:text-base` was 16px above `sm` but carried the label
+					// tracking with it. At the ~163-184px a card gets in the two-up grid the
+					// title wants the tighter heading tracking, which is `t-l-0`'s.
 					<h3 className="t-l-0 line-clamp-2 text-balance uppercase">
 						{product.title}
 					</h3>
@@ -223,7 +226,7 @@ export default function ProductCard({
 				    lines still buy is the gap ABOVE the footer: without it a
 				    one-line excerpt leaves a ragged band of whitespace next to a
 				    two-line neighbour in the same row. */}
-				<p className="t-b-2  line-clamp-2 min-h-[2lh] max-w-[42ch] leading-snug text-foreground/60">
+				<p className="t-b-2 line-clamp-2 min-h-[2lh] max-w-[42ch] leading-snug text-foreground/60">
 					{product.excerpt}
 				</p>
 

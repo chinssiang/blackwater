@@ -242,5 +242,10 @@ export const INLINE_LINK_FOCUS =
 	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring';
 
 export const SECTION_INSET = 'p-x-max';
+// A padding on the carousel TRACK, deliberately not on the viewport: the
+// viewport stays full-bleed so slides run off both screen edges. That means
+// this inset scrolls away with the track, and its consumer has to add it back
+// to every snap through embla's `align` -- see EventsCarousel, which reads
+// this padding back off the track rather than restating `--padding-max`.
 export const SECTION_INSET_START = 'pl-(--padding-max)';
 export const SECTION_INSET_TRAILING_SLIDE = 'last:mr-contain';

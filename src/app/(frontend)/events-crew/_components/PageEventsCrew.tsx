@@ -226,7 +226,7 @@ export function PageEventCrew({
 												setSelectedMemberSlug(isActive ? null : member.slug)
 											}
 											className={cn(
-												'flex items-center gap-1 px-2 lg:px-2.5 py-1 rounded-full text-sm whitespace-nowrap shrink-0 transition-all cursor-pointer',
+												'flex items-center gap-1 px-2 lg:px-2.5 py-1 rounded-full t-b-2 whitespace-nowrap shrink-0 transition-all cursor-pointer',
 												isActive
 													? 'bg-white/30 text-foreground ring-1 ring-white/20'
 													: 'bg-white/4 text-muted-foreground hover:bg-white/25 hover:text-foreground'
