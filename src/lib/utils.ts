@@ -31,8 +31,8 @@ export const TYPE_SCALE_CLASSES = [
  *
  * The conflict is deliberately ONE-WAY: a `t-*` clears a font-size or
  * `leading-*` utility before it, but one after a `t-*` clears nothing. A token
- * is meant to be overridable at a call site -- ProductCard's `leading-snug`,
- * `font-medium` and an explicit `text-*` all still work -- so registering the
+ * is meant to be overridable at a call site -- a `leading-*`, `font-medium` or
+ * an explicit `text-*` written after one all still work -- so registering the
  * conflict in both directions would close the escape hatch the tokens are
  * designed around.
  *

@@ -1,6 +1,5 @@
 'use client';
 
-import { Fragment } from 'react';
 import Link from 'next/link';
 import ImageBlock from '@/components/ImageBlock';
 import { revealStagger } from '@/lib/animate';
@@ -11,17 +10,13 @@ import { ArrowRight } from '@/components/SvgIcons';
 import ProductCardAddToCart from '@/components/ProductCardAddToCart';
 import type { CardAddToCart } from '@/lib/shopify/types';
 
-type Category = { _id: string; title?: string | null; slug?: string | null };
-
 type ProductCardProps = {
 	product: {
 		_id: string;
 		slug?: string | null;
 		title?: string | null;
 		badge?: string[] | null;
-		excerpt?: string | null;
 		price?: string | null;
-		categories?: Array<Category> | null;
 		brands?: Array<{ _id: string; title?: string | null }> | null;
 		mainImage?: any;
 		/**
@@ -74,50 +69,6 @@ type ProductCardProps = {
 const DEFAULT_CARD_SIZES =
 	'(max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw';
 
-// Renders each category title as its own link to its category page, separated
-// by ", ". Sits above the card's stretched overlay link (relative z-10) so the
-// individual links stay clickable. Categories without a slug fall back to text.
-function CategoryLinks({
-	categories,
-	className,
-}: {
-	categories: Category[];
-	className?: string;
-}) {
-	const locale = useLocale();
-	return (
-		<p className={className}>
-			{categories.map((c, i) => (
-				<Fragment key={c._id}>
-					{i > 0 && ', '}
-					{c.slug ? (
-						<Link
-							href={
-								resolveHref({
-									documentType: 'pProductCategory',
-									slug: c.slug,
-									locale,
-								})!
-							}
-							// py-2 is the tap target, not decoration: `.t-spec` is
-							// 11px/1, so the bare inline box was 11px against WCAG's 24px
-							// minimum. Vertical padding on an inline element grows the hit
-							// area without disturbing the ", " separated line flow (inline
-							// boxes ignore vertical padding when sizing the line). py-1.5
-							// lands on 23px — one pixel short — so this is py-2 → 27px.
-							className="relative z-10 py-2 underline-offset-4 duration-200 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background transition-colors"
-						>
-							{c.title}
-						</Link>
-					) : (
-						c.title
-					)}
-				</Fragment>
-			))}
-		</p>
-	);
-}
-
 export default function ProductCard({
 	product,
 	index = 0,
@@ -126,16 +77,10 @@ export default function ProductCard({
 }: ProductCardProps) {
 	const locale = useLocale();
 	const t = useTranslations('products');
-	const categories = product.categories?.filter((c) => Boolean(c.title)) ?? [];
-	const hasCategories = categories.length > 0;
 	const brandLabel = product.brands
 		?.map((b) => b.title)
 		.filter(Boolean)
 		.join(', ');
-	// Brand leads the meta. When there's no brand, the categories step up as the
-	// kicker so the top line is never empty; otherwise categories are demoted
-	// below the title (the tag slot).
-	const showCategoryTag = Boolean(brandLabel && hasCategories);
 
 	return (
 		<article
@@ -176,44 +121,14 @@ export default function ProductCard({
 			</div>
 
 			{/* Info */}
-			<div className="mt-4 flex flex-1 flex-col space-y-3">
-				<div className="flex gap-2 justify-between sm:items-center flex-col sm:flex-row">
-					{brandLabel ? (
-						// `t-b-1` (14px) replaces `t-b-2 sm:text-sm`, which was 12px on
-						// mobile and 14px above `sm`. Desktop is unchanged; mobile grows to
-						// match it. One token, not a token plus a breakpoint override -- the
-						// note on the title below says why that pairing misfires here.
-						//
-						// No `whitespace-nowrap` either: the grid is two-up on mobile, so
-						// this shares roughly 163px with the price, and a brand like "New
-						// Balance Redux" has to be allowed to wrap.
-						<p className="t-b-1 flex-1 text-foreground">{brandLabel}</p>
-					) : (
-						hasCategories && (
-							<CategoryLinks
-								categories={categories}
-								// -my-2 py-2 matches the anchor's padding so the enlarged tap
-								// target stays inside this row's own box instead of
-								// overhanging into blank card space, where it would sit above
-								// the card's stretched overlay link and steal its clicks. The
-								// negative margin keeps the visual rhythm unchanged.
-								className="t-spec -my-2 flex-1 py-2 uppercase text-foreground"
-							/>
-						)
-					)}
-					{showCategoryTag && (
-						<CategoryLinks
-							categories={categories}
-							// /60 not /50: on the force-light product routes the
-							// background is #f2f2f2, where foreground/50 lands on
-							// #7e7e7e = 3.63:1 and fails AA. /60 is #676767 = 5.0:1.
-							// That arithmetic holds for those routes only -- inside a
-							// SectionShell both the ink and the ground are the
-							// editor's, and no alpha can promise a ratio there.
-							className="t-spec -my-2 py-2 uppercase text-foreground/60"
-						/>
-					)}
-				</div>
+			<div className="mt-4 flex flex-1 flex-col space-y-2">
+				{brandLabel && (
+					// `t-b-1` (14px) replaces `t-b-2 sm:text-sm`, which was 12px on
+					// mobile and 14px above `sm`. Desktop is unchanged; mobile grows to
+					// match it. One token, not a token plus a breakpoint override -- the
+					// note on the title below says why that pairing misfires here.
+					<p className="t-b-1 text-foreground">{brandLabel}</p>
+				)}
 				{product.title && (
 					// One type token, no raw `text-*` override beside it. The .t-* classes
 					// live in @layer components rather than being @utility, so a `sm:text-*`
@@ -229,16 +144,6 @@ export default function ProductCard({
 						{product.title}
 					</h3>
 				)}
-
-				{/* Footer alignment is the parent flex column plus `mt-auto` below,
-				    not this -- it has to be, since the brand line above alternates
-				    between two rungs of different heights. What the reserved two
-				    lines still buy is the gap ABOVE the footer: without it a
-				    one-line excerpt leaves a ragged band of whitespace next to a
-				    two-line neighbour in the same row. */}
-				<p className="t-b-2  line-clamp-2 min-h-[2lh] max-w-[42ch] leading-snug text-foreground/60">
-					{product.excerpt}
-				</p>
 
 				<div className="mt-auto flex items-baseline justify-between gap-3">
 					<span className="t-spec text-foreground font-semibold">
@@ -275,8 +180,10 @@ export default function ProductCard({
 			</div>
 
 			{/* Stretched overlay link: covers the whole card so any neutral area
-			   navigates to the product, while the category links above (z-10)
-			   stay individually clickable. Avoids nesting <a> inside <a>. */}
+			   navigates to the product. Its `z-0` is load-bearing, not tidy-up
+			   fodder: the quick-add trigger in the footer is `relative z-10` and
+			   has to stay above this to take its own clicks. Avoids nesting <a>
+			   inside <a>. */}
 			<Link
 				href={
 					resolveHref({

@@ -582,16 +582,10 @@ const productCardFields = `
 	_type,
 	"title": ${locString('title')},
 	"slug": slug.current,
-	"excerpt": ${locString('excerpt')},
 	badge,
 	price,
 	purchaseLink,
 	${shopifyHandleField},
-	categories[]->{
-		_id,
-		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-		"slug": slug.current
-	},
 	brands[]->{ _id, title, "slug": slug.current },
 	mainImage {
 		${imageBlockMetaFields}
@@ -1343,6 +1337,15 @@ const productStaticSectionFields = `
 const productBaseFields = `
 	${productCardFields},
 	${i18nSharingFields('mainImage.image', 'excerpt')},
+	// Detail-page only: the breadcrumb and the related-grid heading read
+	// categories[0]. Lists never render them, so this stays out of
+	// productCardFields, where it cost a reference join per card across nine
+	// grids -- including siteData's cart recommendations, which every page pays.
+	categories[]->{
+		_id,
+		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+		"slug": slug.current
+	},
 	soldOut,
 	"content": ${locPT('content')}[]{
 		${portableTextContentFields}

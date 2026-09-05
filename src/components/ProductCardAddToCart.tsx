@@ -29,10 +29,12 @@ type Props = {
 /**
  * Sits where the card's "View" affordance sits, and is styled to match it.
  *
- * `relative z-10` puts it above the card's stretched overlay link (`z-0`), the
- * same way CategoryLinks does — and `-my-2 py-2` grows the tap target past
- * WCAG's 24px minimum without disturbing the footer row, for the reason spelled
- * out on that component.
+ * `relative z-10` puts it above the card's stretched overlay link (`z-0`), so
+ * the control takes its own clicks rather than navigating. `-my-2 py-2` grows
+ * the tap target past WCAG's 24px minimum: `.t-l-2` is 11px, so the bare inline
+ * box fell well short. The negative margin keeps that growth inside the footer
+ * row's own box, so the enlarged hit area neither shifts the row nor overhangs
+ * into blank card space where it would steal the overlay link's clicks.
  *
  * The label never changes while a request is out: on a two-up mobile grid the
  * card gives this ~80px beside the price, and swapping in a longer word would

@@ -73,7 +73,7 @@ describe('cn() and the type tokens', () => {
 		expect(cn('text-lg leading-none font-semibold', 't-h-3')).toBe(
 			'font-semibold t-h-3'
 		);
-		// ...and still yields to a deliberate one after it (ProductCard's card).
+		// ...and still yields to a deliberate one after it.
 		expect(cn('t-b-2', 'leading-snug')).toBe('t-b-2 leading-snug');
 	});
 
