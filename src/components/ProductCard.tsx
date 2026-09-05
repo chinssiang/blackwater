@@ -38,6 +38,12 @@ type ProductCardProps = {
 	 * how many columns there are at each breakpoint, and how wide the container
 	 * is, are facts only the grid holds -- and `sectionAppearance` can narrow a
 	 * `productsBlock` section without the card ever seeing it.
+	 *
+	 * Inert on an art-directed product: `productCardFields` projects
+	 * `mainImage.imageMobile`, and when that is set `ImageBlock` renders a
+	 * <picture> whose <source>s carry a single full-width Sanity URL and no
+	 * `sizes` at all. Pre-existing, and worth knowing before trusting a payload
+	 * number measured on a product without a mobile crop.
 	 */
 	sizes?: string;
 };

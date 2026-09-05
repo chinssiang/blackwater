@@ -217,11 +217,13 @@
 		   larger than the `eventsBlock` heading beside it on the same page.
 
 		   Every rung ramps across one window, 369px to 1444px, flat outside it --
-		   0.093vw per pixel of travel. Keep new rungs on that slope and give the
-		   intercept FOUR decimals: at three, rounding moves a rung's window by up
-		   to 10px and the ladder stops sharing one. `h2` predates the rule, is
-		   ~10px early at both ends, and is left as tuned. CLAUDE.md's type-scale
-		   section carries the reasoning.
+		   0.093vw per pixel of travel, so a 2px rung is 0.1861vw and a 4px rung
+		   0.3722vw. Keep new rungs on that slope and give the intercept FOUR
+		   decimals: at three, rounding moves a rung's window by up to 15px and
+		   the ladder stops sharing one. That is not hypothetical -- h1/h2/h3 sat
+		   at three decimals and ended their ramps at 1441/1429/1437px while
+		   every rung below them ended at 1444. CLAUDE.md's type-scale section
+		   carries the reasoning.
 
 		   The ladder, floor -> ceiling:
 
@@ -241,9 +243,9 @@
 		   43 call sites including ConsentBanner's body copy and the size-chart row
 		   labels. 10px is below the practical floor for uppercase micro-labels,
 		   which have no ascenders or descenders to read shape from. */
-		--t-size-h1: clamp(1.5rem, 1.414rem + 0.373vw, 1.75rem);
-		--t-size-h2: clamp(1.375rem, 1.333rem + 0.187vw, 1.5rem);
-		--t-size-h3: clamp(1.125rem, 1.082rem + 0.187vw, 1.25rem);
+		--t-size-h1: clamp(1.5rem, 1.4142rem + 0.3722vw, 1.75rem);
+		--t-size-h2: clamp(1.375rem, 1.3321rem + 0.1861vw, 1.5rem);
+		--t-size-h3: clamp(1.125rem, 1.0821rem + 0.1861vw, 1.25rem);
 		--t-size-b1: clamp(0.875rem, 0.8536rem + 0.093vw, 0.9375rem);
 
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));

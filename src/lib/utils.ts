@@ -25,11 +25,16 @@ export const TYPE_SCALE_CLASSES = [
 ] as const;
 
 /**
- * The conflict is deliberately ONE-WAY: a `t-*` clears a font-size utility
- * before it, but a font-size utility after a `t-*` clears nothing. A token is
- * meant to be overridable at a call site -- `leading-*`, `font-medium` and an
- * explicit `text-*` all still work -- so registering the conflict in both
- * directions would close the escape hatch the tokens are designed around.
+ * A rung sets BOTH font-size and line-height, so both groups are registered:
+ * `DialogTitle`'s base `leading-none` used to survive a `t-h-3` beside it and
+ * leave the size-chart title clipping at line-height 1.
+ *
+ * The conflict is deliberately ONE-WAY: a `t-*` clears a font-size or
+ * `leading-*` utility before it, but one after a `t-*` clears nothing. A token
+ * is meant to be overridable at a call site -- ProductCard's `leading-snug`,
+ * `font-medium` and an explicit `text-*` all still work -- so registering the
+ * conflict in both directions would close the escape hatch the tokens are
+ * designed around.
  *
  * One trap it cannot see: tailwind-merge resolves conflicts only WITHIN a
  * modifier scope, so a token beside a responsive pair keeps the half it did
@@ -42,7 +47,7 @@ export const TYPE_SCALE_CLASSES = [
 const twMerge = extendTailwindMerge<'type-scale'>({
 	extend: {
 		classGroups: { 'type-scale': [...TYPE_SCALE_CLASSES] },
-		conflictingClassGroups: { 'type-scale': ['font-size'] },
+		conflictingClassGroups: { 'type-scale': ['font-size', 'leading'] },
 	},
 });
 

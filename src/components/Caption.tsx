@@ -20,7 +20,7 @@ export default function Caption({
 			)}
 		>
 			<span className={cn('size-2 rounded-xl', classNameDot)}></span>
-			<span className="leading-none">{caption}</span>
+			<span>{caption}</span>
 		</p>
 	);
 }

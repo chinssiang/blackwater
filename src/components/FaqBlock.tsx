@@ -66,7 +66,13 @@ export default function FaqBlock({
 					const value = item._id ?? `faq-${i}`;
 					return (
 						<AccordionItem key={value} value={value}>
-							<AccordionTrigger>{item.question}</AccordionTrigger>
+							{/* Same rung as the answer (`.wysiwyg p` reads --t-size-b1);
+							    the trigger's own `font-medium` is what separates them.
+							    Without a rung it sat on Accordion's flat `text-sm` and
+							    the answer grew past the question above ~370px. */}
+							<AccordionTrigger className="t-b-1">
+								{item.question}
+							</AccordionTrigger>
 							<AccordionContent>
 								<CustomPortableText blocks={item.answer} />
 							</AccordionContent>
