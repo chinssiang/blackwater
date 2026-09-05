@@ -108,9 +108,7 @@ export default function HeroBlock({
 				'relative isolate flex flex-col justify-center overflow-hidden',
 				// The header height is ADDED back on the underlap arm: `--height-main`
 				// subtracts it, and a hero the header floats over gets that space back.
-				underlapsHeader
-					? 'min-h-[calc(var(--height-main)+var(--height-header)+var(--height-announcement))]'
-					: 'min-h-main',
+				underlapsHeader ? 'min-h-[90vh]' : 'min-h-main',
 				className
 			)}
 		>
