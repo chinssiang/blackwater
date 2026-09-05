@@ -13,6 +13,18 @@ import {
 
 export type MaxWidth = 'none' | 'xl' | 'l' | 'm' | 's' | 'xs';
 
+// The same ceilings in pixels. A grid inside a narrowed section needs them to
+// size its images: `sizes` is resolved by the browser before any layout exists,
+// so a vw figure alone always describes the FULL-width case. Kept beside the
+// class map for the reason stated below -- the two have to agree.
+export const MAX_WIDTH_PX: Record<Exclude<MaxWidth, 'none'>, number> = {
+	xl: 1280,
+	l: 1024,
+	m: 768,
+	s: 576,
+	xs: 320,
+};
+
 const MAX_WIDTH_CLASSES: Record<MaxWidth, string> = {
 	none: 'w-full',
 	xl: 'max-w-7xl',

@@ -14,12 +14,56 @@ describe('TYPE_SCALE_CLASSES', () => {
 	it('lists exactly the t-* rules globals.css gives a font-size', () => {
 		// Matched on the DECLARATION, not the name: registering a `t-*` that sets
 		// no font-size would make it delete a `text-sm` it has nothing to replace.
-		const defined = [...CSS.matchAll(/^\s*\.(t-[a-z0-9-]+)\s*\{([^}]*)\}/gm)]
+		//
+		// Whole rules, not `^\s*\.t-… {`: that shape only ever sees a rung that is
+		// the sole selector on its line, so `.t-l-1,\n.t-l-2 { … }` would be
+		// invisible here AND absent from the list, and the comparison below would
+		// pass on exactly the drift it exists to catch. Comments are stripped
+		// first, because the selector capture reaches back over them and several
+		// of them name rungs in prose.
+		const defined = [
+			...CSS.replace(/\/\*[\s\S]*?\*\//g, '').matchAll(/([^{}]*)\{([^{}]*)\}/g),
+		]
 			.filter(([, , body]) => /font-size:/.test(body))
-			.map(([, name]) => name);
+			.flatMap(([, selectors]) =>
+				[...selectors.matchAll(/\.(t-[a-z0-9-]+)(?![\w-])/g)].map(([, n]) => n)
+			);
 
 		expect(defined.length).toBeGreaterThan(0);
 		expect([...defined].sort()).toEqual([...TYPE_SCALE_CLASSES].sort());
+	});
+
+	// The `:root` comment states this invariant and nothing enforced it: "give
+	// the intercept FOUR decimals: at three, rounding moves a rung's window by up
+	// to 15px and the ladder stops sharing one. That is not hypothetical --
+	// h1/h2/h3 sat at three decimals and ended their ramps at 1441/1429/1437px."
+	// A rung written on a wrong slope, or rounded to three decimals, reproduces
+	// exactly that while every other test in this file still passes.
+	it('ramps every rung across one shared viewport window', () => {
+		const ROOT_PX = 16;
+		const rungs = [
+			...CSS.matchAll(
+				/clamp\(\s*([\d.]+)rem,\s*([\d.]+)rem\s*\+\s*([\d.]+)vw,\s*([\d.]+)rem\s*\)/g
+			),
+		].map(([, min, intercept, slope, max]) => {
+			// Where the middle term crosses each end of the clamp, in px of viewport.
+			const perPx = Number(slope) / 100;
+			const base = Number(intercept) * ROOT_PX;
+			return {
+				start: (Number(min) * ROOT_PX - base) / perPx,
+				end: (Number(max) * ROOT_PX - base) / perPx,
+			};
+		});
+
+		// Every `clamp()` in the stylesheet is a type size today; if a non-type one
+		// is ever added this needs scoping to the font-size declarations.
+		expect(rungs.length).toBeGreaterThan(8);
+
+		const spread = (ns: number[]) => Math.max(...ns) - Math.min(...ns);
+		// 5px: the three-decimal regression above spread the ends by 15px, and the
+		// current values sit inside 1px at both edges.
+		expect(spread(rungs.map((r) => r.start))).toBeLessThan(5);
+		expect(spread(rungs.map((r) => r.end))).toBeLessThan(5);
 	});
 
 	// The direction that actually bit: `Caption.tsx` asked for `t-l-sm` for
@@ -88,5 +132,39 @@ describe('cn() and the type tokens', () => {
 
 	it('resolves two tokens to the last one', () => {
 		expect(cn('t-h-2', 't-h-3')).toBe('t-h-3');
+	});
+
+	// The one trap the merge cannot see, pinned so it stays a known quantity:
+	// tailwind-merge resolves conflicts only WITHIN a modifier scope, so a token
+	// beside a responsive pair takes the unprefixed half and leaves the other
+	// standing. `<Input>`'s base is `text-base … md:text-sm`, so a rung on one
+	// would render the field below 16px on a phone and iOS would zoom on focus.
+	it('cannot clear a font-size behind a modifier', () => {
+		expect(cn('text-base md:text-sm', 't-b-2')).toBe('md:text-sm t-b-2');
+	});
+});
+
+// ...which is why nothing may put a rung on those two. The assertion above only
+// describes the merge; this is what stops the combination reaching the DOM.
+describe('the responsive-pair trap', () => {
+	it('puts no type token on <Input> or <Textarea>', () => {
+		const SRC = new URL('..', import.meta.url);
+		const offenders: string[] = [];
+
+		for (const file of readdirSync(SRC, {
+			recursive: true,
+			encoding: 'utf8',
+		})) {
+			if (!/\.tsx$/.test(file)) continue;
+			for (const [tag] of readFileSync(new URL(file, SRC), 'utf8').matchAll(
+				/<(?:Input|Textarea)\b[^>]*>/g
+			)) {
+				if (/\bt-(?:h|b|l)-[a-z0-9]+\b|\bt-spec\b/.test(tag)) {
+					offenders.push(`${file}: ${tag.slice(0, 80)}`);
+				}
+			}
+		}
+
+		expect(offenders).toEqual([]);
 	});
 });
