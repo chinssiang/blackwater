@@ -70,7 +70,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 				<div>
 					<h2 className="t-h-2 uppercase text-balance">{collection.title}</h2>
 					{collection.description && (
-						<p className="t-b-1 mt-3 max-w-[60ch] leading-relaxed text-foreground/70">
+						<p className="t-b-1 mt-3 max-w-[60ch] text-foreground/70">
 							{collection.description}
 						</p>
 					)}
@@ -135,7 +135,7 @@ export function PageProductIndex({ data }: Props) {
 					<h1 className="text-balance t-h-1 uppercase max-w-sm">{title}</h1>
 				)}
 				{description && (
-					<p className="t-b-1 mt-7 max-w-[60ch] leading-relaxed text-foreground/70 lg:mt-9">
+					<p className="t-b-1 mt-7 max-w-[60ch] text-foreground/70 lg:mt-9">
 						{description}
 					</p>
 				)}
@@ -202,7 +202,7 @@ export function PageProductIndex({ data }: Props) {
 							</Link>
 						</div>
 						{allProducts?.description && (
-							<p className="t-b-1 mt-3 max-w-[60ch] leading-relaxed text-foreground/70">
+							<p className="t-b-1 mt-3 max-w-[60ch] text-foreground/70">
 								{allProducts.description}
 							</p>
 						)}
@@ -224,7 +224,7 @@ export function PageProductIndex({ data }: Props) {
 							href={allProductsHref}
 							className={cn(
 								buttonVariants({ size: 'lg' }),
-								't-l-1 text-xs whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6'
+								't-l-1 whitespace-nowrap uppercase pointer-coarse:min-h-11 px-6'
 							)}
 						>
 							{t.moreProducts}

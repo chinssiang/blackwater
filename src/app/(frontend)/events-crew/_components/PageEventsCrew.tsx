@@ -76,12 +76,9 @@ function MonthNavLink({
 	href: string | null;
 	children: ReactNode;
 }) {
-	// text-[10px] is load-bearing: t-l-2 sets the size in @layer components, but
-	// buttonVariants' base text-sm is a utility and wins the cascade. Not a
-	// duplicate.
 	const className = cn(
 		buttonVariants({ variant: 'ghost', size: 'sm' }),
-		'uppercase t-l-2 text-[10px]'
+		'uppercase t-l-2'
 	);
 
 	if (!href) return <span className={className}>{children}</span>;
@@ -245,7 +242,7 @@ export function PageEventCrew({
 													/>
 												</div>
 											) : (
-												<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[8px] font-semibold">
+												<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[10px] font-semibold">
 													{displayName.charAt(0)}
 												</span>
 											)}

@@ -73,7 +73,7 @@ export default function SizeChartDialog({
 					<DialogTitle
 						ref={titleRef}
 						tabIndex={-1}
-						className="t-l-1 uppercase outline-none"
+						className="t-h-3 uppercase outline-none"
 					>
 						{chartTitle}
 					</DialogTitle>

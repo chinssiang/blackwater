@@ -32,7 +32,34 @@ type ProductCardProps = {
 	 * delay. The caller decides which card qualifies (see PageProductIndex).
 	 */
 	priority?: boolean;
+	/**
+	 * The `sizes` attribute for the card image, when this grid is not the
+	 * standard one `DEFAULT_CARD_SIZES` describes. The card cannot derive this:
+	 * how many columns there are at each breakpoint, and how wide the container
+	 * is, are facts only the grid holds -- and `sectionAppearance` can narrow a
+	 * `productsBlock` section without the card ever seeing it.
+	 *
+	 * Inert on an art-directed product: `productCardFields` projects
+	 * `mainImage.imageMobile`, and when that is set `ImageBlock` renders a
+	 * <picture> whose <source>s carry a single full-width Sanity URL and no
+	 * `sizes` at all. Pre-existing, and worth knowing before trusting a payload
+	 * number measured on a product without a mobile crop.
+	 */
+	sizes?: string;
 };
+
+/**
+ * The grid every product listing now shares: two cards up to 1024px, three to
+ * 1536, four beyond, and never wider than 470px once the page hits its own max
+ * width. There is no phone clause, because two-up below 640px is still half the
+ * viewport -- the `100vw` this carried until the grids went two-up at base was
+ * asking for an image twice as wide as the slot on every phone.
+ *
+ * Two call sites are shaped differently and pass their own: the cart drawer
+ * (a fixed 416px panel) and the collection page (four-up at `xl`, not `2xl`).
+ */
+const DEFAULT_CARD_SIZES =
+	'(max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw';
 
 // Renders each category title as its own link to its category page, separated
 // by ", ". Sits above the card's stretched overlay link (relative z-10) so the
@@ -82,6 +109,7 @@ export default function ProductCard({
 	product,
 	index = 0,
 	priority = false,
+	sizes,
 }: ProductCardProps) {
 	const locale = useLocale();
 	const t = useTranslations('products');
@@ -126,7 +154,7 @@ export default function ProductCard({
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:-translate-y-2 motion-reduce:transition-none motion-reduce:group-hover:translate-y-0"
 						imageObj={product.mainImage}
 						alt={product.title ?? ''}
-						sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1536px) 33vw, (min-width: 2000px) 470px, 25vw"
+						sizes={sizes ?? DEFAULT_CARD_SIZES}
 						priority={priority}
 					/>
 				) : (
@@ -135,7 +163,7 @@ export default function ProductCard({
 			</div>
 
 			{/* Info */}
-			<div className="mt-4 flex-1 space-y-3">
+			<div className="mt-4 flex flex-1 flex-col space-y-3">
 				<div className="flex gap-2 justify-between sm:items-center flex-col sm:flex-row">
 					{brandLabel ? (
 						// `t-b-1` (14px) replaces `t-b-2 sm:text-sm`, which was 12px on
@@ -163,6 +191,12 @@ export default function ProductCard({
 					{showCategoryTag && (
 						<CategoryLinks
 							categories={categories}
+							// /60 not /50: on the force-light product routes the
+							// background is #f2f2f2, where foreground/50 lands on
+							// #7e7e7e = 3.63:1 and fails AA. /60 is #676767 = 5.0:1.
+							// That arithmetic holds for those routes only -- inside a
+							// SectionShell both the ink and the ground are the
+							// editor's, and no alpha can promise a ratio there.
 							className="t-spec -my-2 py-2 uppercase text-foreground/60"
 						/>
 					)}
@@ -183,8 +217,12 @@ export default function ProductCard({
 					</h3>
 				)}
 
-				{/* Always reserves two lines so cards in the same row keep an
-				   equal height and their footers align. */}
+				{/* Footer alignment is the parent flex column plus `mt-auto` below,
+				    not this -- it has to be, since the brand line above alternates
+				    between two rungs of different heights. What the reserved two
+				    lines still buy is the gap ABOVE the footer: without it a
+				    one-line excerpt leaves a ragged band of whitespace next to a
+				    two-line neighbour in the same row. */}
 				<p className="t-b-2  line-clamp-2 min-h-[2lh] max-w-[42ch] leading-snug text-foreground/60">
 					{product.excerpt}
 				</p>

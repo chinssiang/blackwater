@@ -478,6 +478,13 @@ export default function CartDrawerPanel({
 														key={product._id}
 														product={product}
 														index={i}
+														// The panel is `w-full max-w-104`, so a card stops
+														// growing at (416 - 32 padding - 16 gap) / 2 =
+														// 184px and only scales below that. The default
+														// string is a full-width page grid and asks for
+														// 25vw here -- 480px of image for a 184px slot on
+														// a wide screen.
+														sizes="(min-width: 448px) 184px, 45vw"
 													/>
 												))}
 											</div>

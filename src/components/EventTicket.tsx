@@ -128,12 +128,10 @@ export function EventTicket({
 			    icon's meaning. The stretched link plus the heading's ink change
 			    carries the affordance. */}
 			<div className="mt-3 px-4">
-				<h3 className="t-l-0 group-hover:text-foreground/60 leading-snug text-balance uppercase transition-colors">
+				<h3 className="t-l-0 group-hover:text-foreground/60 text-balance uppercase transition-colors">
 					{heading}
 				</h3>
-				{/* `.t-spec` is line-height 1 and this wraps on the narrow mobile
-				    card (zh_tw dates are longer), which clips ascenders. */}
-				<p className="t-spec text-foreground/60 mt-1.5 leading-snug uppercase">
+				<p className="t-spec text-foreground/60 mt-1.5 uppercase">
 					{dateStatusInfo.isFirm && eventDatetime
 						? formatRichDate(eventDatetime, t.dateFormat, dateFnsLocale)
 						: dateStatusInfo.label}
@@ -145,7 +143,7 @@ export function EventTicket({
 					// `items-start` + flex, not an inline icon: the venue wraps to two
 					// lines on the narrow mobile card, and this keeps the pin on the
 					// first line with the text hanging beside it rather than under it.
-					<p className="t-spec flex items-start gap-1.5 leading-snug uppercase">
+					<p className="t-spec flex items-start gap-1.5 uppercase">
 						<MapPin className="mt-px size-3 shrink-0" aria-hidden />
 						{displayLocationLink ? (
 							<a

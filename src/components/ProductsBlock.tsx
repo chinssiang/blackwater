@@ -58,6 +58,9 @@ export default async function ProductsBlock({
 							product as React.ComponentProps<typeof ProductCard>['product']
 						}
 						index={index}
+						// Deliberately no `priority`: exactly one image per page is the LCP
+						// candidate, and this module has no idea whether the page above it
+						// already claimed that. Guessing here would demote the real one.
 					/>
 				))}
 			</div>
