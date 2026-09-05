@@ -1,11 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import type { RichDate } from 'sanity.types';
 import { vercelStegaCombine } from '@vercel/stega';
+import { formatInTimeZone } from 'date-fns-tz';
 import {
+	FALLBACK_TIMEZONE,
 	formatEventTimeLabel,
+	formatRichDate,
 	getDaysUntilEvent,
 	getRichDateDayKey,
+	getRichDateYearMonth,
 	readEventDateStatus,
+	resolveEventTimezone,
 	getTodayKey,
 	groupEventsByDay,
 	isEventEnded,
@@ -327,12 +332,15 @@ describe('formatEventTimeLabel', () => {
 	});
 
 	it('falls back to TBA for an undated event or an unknown token', () => {
-		expect(
-			formatEventTimeLabel({ eventDatetime: null }, 'HH:mm', labels)
-		).toBe('TBA');
+		expect(formatEventTimeLabel({ eventDatetime: null }, 'HH:mm', labels)).toBe(
+			'TBA'
+		);
 		expect(
 			formatEventTimeLabel(
-				{ eventDatetime: taipei('2026-09-05T19:30'), dateStatus: 'rescheduled' },
+				{
+					eventDatetime: taipei('2026-09-05T19:30'),
+					dateStatus: 'rescheduled',
+				},
 				'HH:mm',
 				labels
 			)
@@ -353,5 +361,142 @@ describe('formatEventTimeLabel', () => {
 				labels
 			)
 		).toBe('19:30');
+	});
+});
+
+describe('resolveEventTimezone', () => {
+	// Two different bad inputs reach the same `RangeError` out of `Intl`, and
+	// because every reader below runs during render, ONE of them took the whole
+	// page to its error boundary rather than degrading its own row.
+	//
+	//   1. Draft mode, which is the broad one. `timezone` is not on
+	//      `filterDefault`'s denylist (it lists `status`, not `timezone`) and is
+	//      neither date-like nor URL-like, so the Presentation tool encodes
+	//      invisible characters into it — for EVERY event, not a rare one.
+	//   2. A stored value that was never IANA to begin with: `GMT+8`, `Taipei`,
+	//      `UTC+08:00`, from a hand-edit or an import.
+	const unusable = ['GMT+8', 'Taipei', 'UTC+08:00', ' ', 'Not/AZone'];
+
+	const encoded = (value: string) =>
+		vercelStegaCombine(value, { origin: 'sanity.io', href: '/studio' });
+
+	it('guards the premise: Intl really does reject these', () => {
+		// Without this, every test below could pass for the wrong reason if one
+		// of these values quietly became valid.
+		for (const timezone of [...unusable, encoded(TZ)]) {
+			expect(() =>
+				formatInTimeZone(new Date('2026-09-05T00:00:00Z'), timezone, 'yyyy')
+			).toThrow(RangeError);
+		}
+	});
+
+	it('keeps a timezone Intl can actually use', () => {
+		expect(resolveEventTimezone(TZ)).toBe(TZ);
+		expect(resolveEventTimezone('America/Los_Angeles')).toBe(
+			'America/Los_Angeles'
+		);
+		// Aliases and non-region zones are valid IANA input too, so a membership
+		// test against a curated list would wrongly reject them.
+		expect(resolveEventTimezone('UTC')).toBe('UTC');
+		expect(resolveEventTimezone('Etc/GMT-8')).toBe('Etc/GMT-8');
+	});
+
+	it('falls back when the value is missing', () => {
+		expect(resolveEventTimezone(null)).toBe(FALLBACK_TIMEZONE);
+		expect(resolveEventTimezone(undefined)).toBe(FALLBACK_TIMEZONE);
+		expect(resolveEventTimezone('')).toBe(FALLBACK_TIMEZONE);
+	});
+
+	it('falls back instead of throwing on a value Intl rejects', () => {
+		for (const timezone of unusable) {
+			expect(resolveEventTimezone(timezone)).toBe(FALLBACK_TIMEZONE);
+		}
+	});
+
+	it('cleans stega before judging, so draft mode keeps the real zone', () => {
+		// The half that would be easy to get wrong: collapsing every encoded
+		// value to the fallback would silently move a Los Angeles event into
+		// Taipei for editors, which is a wrong answer rather than a crash.
+		expect(resolveEventTimezone(encoded(TZ))).toBe(TZ);
+		expect(resolveEventTimezone(encoded('America/Los_Angeles'))).toBe(
+			'America/Los_Angeles'
+		);
+	});
+});
+
+describe('readers survive an unusable stored timezone', () => {
+	const encodedTaipei = vercelStegaCombine(TZ, {
+		origin: 'sanity.io',
+		href: '/studio',
+	});
+
+	/** The same instant, restamped with a timezone the readers cannot use. */
+	const restamp = (value: RichDate, timezone: string): RichDate => ({
+		...value,
+		timezone,
+	});
+
+	// 07:00 Taipei — 23:00 UTC the previous day, so a fallback that resolved in
+	// the runtime timezone instead would visibly land on the 4th.
+	const good = taipei('2026-09-05T07:00');
+	const broken = restamp(good, 'GMT+8');
+	const drafted = restamp(good, encodedTaipei);
+
+	it('formatRichDate renders in the fallback rather than throwing', () => {
+		expect(formatRichDate(broken, 'yyyy-MM-dd HH:mm')).toBe('2026-09-05 07:00');
+		expect(formatRichDate(drafted, 'yyyy-MM-dd HH:mm')).toBe(
+			'2026-09-05 07:00'
+		);
+	});
+
+	it('getRichDateDayKey still buckets the event onto its own day', () => {
+		expect(getRichDateDayKey(broken)).toBe('2026-09-05');
+		expect(getRichDateDayKey(drafted)).toBe('2026-09-05');
+	});
+
+	it('getRichDateYearMonth still reports the local month', () => {
+		expect(getRichDateYearMonth(broken)).toEqual({ year: 2026, month: 8 });
+		expect(getRichDateYearMonth(drafted)).toEqual({ year: 2026, month: 8 });
+	});
+
+	it('groupEventsByDay keeps the event instead of dropping the grid', () => {
+		const byDay = groupEventsByDay([
+			{ _id: 'broken', eventDatetime: broken },
+			{ _id: 'drafted', eventDatetime: drafted },
+		]);
+		expect(byDay.get('2026-09-05')?.map((e) => e._id)).toEqual([
+			'broken',
+			'drafted',
+		]);
+	});
+
+	it('isEventEnded still uses the end-of-day fallback', () => {
+		// 23:59:59.999 Taipei on the 5th, so mid-afternoon that day is not over
+		// and the next morning is.
+		expect(
+			isEventEnded(broken, null, new Date('2026-09-05T15:00:00+08:00'))
+		).toBe(false);
+		expect(
+			isEventEnded(broken, null, new Date('2026-09-06T09:00:00+08:00'))
+		).toBe(true);
+		expect(
+			isEventEnded(drafted, null, new Date('2026-09-05T15:00:00+08:00'))
+		).toBe(false);
+	});
+
+	it('getDaysUntilEvent still counts in whole local days', () => {
+		// Inside the 3-day pill window, so the count itself is asserted rather
+		// than the `null` every far-off event returns either way.
+		const soon = taipei('2026-09-01T07:00');
+		expect(getDaysUntilEvent(restamp(soon, 'GMT+8'), NOW)).toBe(2);
+		expect(getDaysUntilEvent(restamp(soon, encodedTaipei), NOW)).toBe(2);
+	});
+
+	it('formatEventTimeLabel still shows the time', () => {
+		expect(
+			formatEventTimeLabel({ eventDatetime: drafted }, 'HH:mm', {
+				tba: 'TBA',
+			})
+		).toBe('07:00');
 	});
 });

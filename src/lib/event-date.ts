@@ -20,6 +20,66 @@ import type { DayKey } from '@/lib/calendar';
 export const FALLBACK_TIMEZONE = 'Asia/Taipei';
 
 /**
+ * Memoised so the validity probe below is paid once per distinct zone name.
+ * Keyed on the CLEANED value on purpose: a stega-encoded string is unique per
+ * document per field, so keying on the raw one would grow an entry per event
+ * per render in draft mode instead of holding the handful of real names.
+ */
+const resolvedTimezones = new Map<string, string>();
+
+/**
+ * The timezone a stored `richDate` is read in: its own when `Intl` can use it,
+ * the club's when it cannot.
+ *
+ * Two unrelated bad values reach the same `RangeError` out of `Intl`, and every
+ * reader below runs during render — so one of them took the whole page to its
+ * error boundary rather than degrading the single row it belongs to.
+ *
+ * The broad one is DRAFT MODE, and it is not bad data at all. `timezone` is not
+ * on `filterDefault`'s denylist (which lists `status`, not `timezone`) and is
+ * neither date-like nor URL-like, so the Presentation tool encodes invisible
+ * characters into it for EVERY event — the same trap `readEventDateStatus`
+ * documents one field over, and the same rule: clean wherever a value is used
+ * as a KEY rather than rendered. Cleaning before judging is also what keeps a
+ * Los Angeles event in Los Angeles for editors; treating every encoded value as
+ * unusable would quietly move it to Taipei, trading a crash for a wrong answer.
+ *
+ * The narrow one is a stored value that was never IANA — `GMT+8`, `Taipei`,
+ * `UTC+08:00` from a hand-edit or an import. Nothing cheap tells those apart
+ * from a valid alias like `Etc/GMT-8` or a bare `UTC`, both of which must keep
+ * working, so validity is simply whatever `Intl` accepts.
+ */
+export function resolveEventTimezone(
+	timezone: string | null | undefined
+): string {
+	const cleaned = stegaClean(timezone);
+	if (!cleaned) return FALLBACK_TIMEZONE;
+
+	const cached = resolvedTimezones.get(cleaned);
+	if (cached) return cached;
+
+	let resolved = FALLBACK_TIMEZONE;
+	try {
+		// Constructing one is the only cheap way to ask Intl whether it knows the
+		// zone; the instance is discarded.
+		new Intl.DateTimeFormat('en-US', { timeZone: cleaned });
+		resolved = cleaned;
+	} catch {
+		// The cache means this reports each bad value once, not once per render.
+		if (process.env.NODE_ENV !== 'production') {
+			console.warn(
+				`[event-date] unusable richDate.timezone ${JSON.stringify(
+					cleaned
+				)} — reading it in ${FALLBACK_TIMEZONE}`
+			);
+		}
+	}
+
+	resolvedTimezones.set(cleaned, resolved);
+	return resolved;
+}
+
+/**
  * Format a `richDate` value in its own stored timezone, so the editor's
  * intended wall-clock time is shown regardless of the runtime timezone.
  * Returns an empty string when the value has no usable instant.
@@ -30,7 +90,7 @@ export function formatRichDate(
 	locale?: Locale
 ): string {
 	if (!value?.utc) return '';
-	const timezone = value.timezone || FALLBACK_TIMEZONE;
+	const timezone = resolveEventTimezone(value.timezone);
 	return formatInTimeZone(
 		value.utc,
 		timezone,
@@ -60,7 +120,7 @@ export function getRichDateYearMonth(
 	value: RichDate | null | undefined
 ): { year: number; month: number } | null {
 	if (!value?.utc) return null;
-	const timezone = value.timezone || FALLBACK_TIMEZONE;
+	const timezone = resolveEventTimezone(value.timezone);
 	const yyyyMM = formatInTimeZone(value.utc, timezone, 'yyyy-MM');
 	const [year, month] = yyyyMM.split('-').map(Number);
 	return { year, month: month - 1 };
@@ -84,7 +144,7 @@ export function getRichDateDayKey(
 	if (!instant) return null;
 	return formatInTimeZone(
 		instant,
-		value?.timezone || FALLBACK_TIMEZONE,
+		resolveEventTimezone(value?.timezone),
 		'yyyy-MM-dd'
 	);
 }
@@ -202,7 +262,7 @@ export function getRichDateEndOfDayInstant(
 	// than thrown out of `formatInTimeZone` and up through the page render.
 	const instant = getRichDateInstant(value);
 	if (!instant) return null;
-	const timezone = value?.timezone || FALLBACK_TIMEZONE;
+	const timezone = resolveEventTimezone(value?.timezone);
 	const day = formatInTimeZone(instant, timezone, 'yyyy-MM-dd');
 	const date = fromZonedTime(`${day}T23:59:59.999`, timezone);
 	return Number.isNaN(date.getTime()) ? null : date;
@@ -245,8 +305,7 @@ export function getEventEndInstant(
 	endDatetime: RichDate | null | undefined
 ): Date | null {
 	return (
-		getRichDateInstant(endDatetime) ??
-		getRichDateEndOfDayInstant(eventDatetime)
+		getRichDateInstant(endDatetime) ?? getRichDateEndOfDayInstant(eventDatetime)
 	);
 }
 
@@ -269,7 +328,7 @@ export function getRichDateDaysUntil(
 ): number | null {
 	const instant = getRichDateInstant(value);
 	if (!instant) return null;
-	const timezone = value?.timezone || FALLBACK_TIMEZONE;
+	const timezone = resolveEventTimezone(value?.timezone);
 	const toUtcDays = (date: Date) => {
 		const [year, month, day] = formatInTimeZone(date, timezone, 'yyyy-MM-dd')
 			.split('-')
