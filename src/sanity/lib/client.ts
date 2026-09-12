@@ -28,6 +28,28 @@ export const client = createClient({
 				return false;
 			}
 
+			// `pProduct.badge` holds schema tokens (`new`, `founders-pick`), never
+			// display text: they key the `products.badges` dictionary and the rank
+			// cards order by. Encoded, the dictionary lookup misses and the raw
+			// slug renders in its place.
+			//
+			// NOT the free win `timezone` above is, though: that value is never
+			// rendered, so editors lose nothing. A badge IS rendered, and it is the
+			// only surface for this field on a listing — so opting out also drops
+			// its Presentation click-to-edit target. The trade is worth it because
+			// the encoded chip showed the slug rather than the label, but it is a
+			// trade.
+			//
+			// `at(-2)`, not `at(-1)`: this is an array of plain strings, so the
+			// last path segment is the member's index. Make it an array of objects
+			// and this arm stops matching — and if such a member carries a `title`,
+			// the arm ABOVE force-encodes it, which `filterDefault` could otherwise
+			// have declined. Either way the raw slugs come back, silently and only
+			// for editors.
+			if (props.sourcePath.at(-2) === 'badge') {
+				return false;
+			}
+
 			return props.filterDefault(props);
 		},
 	},

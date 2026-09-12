@@ -11,6 +11,7 @@ import { resolveHref } from '@/lib/routes';
 import SizeChartDialog, { SIZE_GUIDE_LINK_CLASS } from './SizeChartDialog';
 import { isRenderable } from '@/components/SizeChartTable';
 import { Badge } from '@/components/ui/Badge';
+import { badgeLabel, sortBadges } from '@/lib/product-badges';
 import {
 	Accordion,
 	AccordionItem,
@@ -76,6 +77,8 @@ export default function PageProductSingle({
 		metadata,
 		sizeChart,
 	} = data || {};
+
+	const sortedBadges = sortBadges(badge);
 
 	// One decision, made here: a chart with a table opens in place, and one
 	// without falls back to the size guide page. The dialog owns no part of this
@@ -169,15 +172,13 @@ export default function PageProductSingle({
 				</div>
 
 				<div className="p-x-max flex flex-col lg:col-span-5 lg:pl-0 lg:pt-2">
-					{badge && badge.length > 0 && (
+					{sortedBadges.length > 0 && (
 						<div
 							className="reveal mb-4 flex flex-wrap gap-1.5"
 							style={{ '--reveal-delay': '0.08s' } as CSSProperties}
 						>
-							{badge.map((b: string) => (
-								<Badge key={b}>
-									{(productText.badges as Record<string, string>)[b] ?? b}
-								</Badge>
+							{sortedBadges.map((b) => (
+								<Badge key={b}>{badgeLabel(b, productText.badges)}</Badge>
 							))}
 						</div>
 					)}

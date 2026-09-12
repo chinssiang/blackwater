@@ -4,6 +4,7 @@ import {
 	requireSomeValue,
 	maxLengthPerLanguage,
 } from '@/lib/i18n';
+import { PRODUCT_BADGE_OPTIONS } from '@/lib/product-badges';
 import { resolveHref } from '@/lib/routes';
 import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
 import { StarIcon, ImageIcon } from '@sanity/icons';
@@ -22,9 +23,7 @@ import { ShopifyProductInput } from '@/sanity/schemaTypes/components/ShopifyProd
  * gone — there are no siblings). Synchronous, so validators need no network.
  */
 function linkedToShopify(context: ValidationContext): boolean {
-	const doc = context.document as
-		| { shopify?: { handle?: string } }
-		| undefined;
+	const doc = context.document as { shopify?: { handle?: string } } | undefined;
 	return Boolean(doc?.shopify?.handle);
 }
 
@@ -142,16 +141,12 @@ export const pProduct = defineType({
 		defineField({
 			name: 'badge',
 			title: 'Badge',
+			description:
+				'All of these show on listing cards, in the order listed here. Each extra badge can add another line over the product image on a phone, so use them sparingly.',
 			type: 'array',
 			of: [defineArrayMember({ type: 'string' })],
-			options: {
-				list: [
-					{ title: "Founder's Pick", value: 'founders-pick' },
-					{ title: 'Most Popular', value: 'most-popular' },
-					{ title: "Editor's Choice", value: 'editors-choice' },
-					{ title: 'New', value: 'new' },
-				],
-			},
+			options: { list: [...PRODUCT_BADGE_OPTIONS] },
+			validation: (Rule) => Rule.unique(),
 		}),
 		defineField({
 			name: 'excerpt',
@@ -346,7 +341,8 @@ export const pProduct = defineType({
 			name: 'seoTitle',
 			title: 'SEO Title',
 			type: 'internationalizedArrayString',
-			description: 'Overrides the meta title per language. Falls back to Title.',
+			description:
+				'Overrides the meta title per language. Falls back to Title.',
 			fieldset: 'seo',
 		}),
 		defineField({
