@@ -13,17 +13,36 @@ type Sharing =
 	| null
 	| undefined;
 
+// Favicon edge length, used for both the Sanity transform and nothing else —
+// one constant so the two can't drift.
+const FAVICON_SIZE = 256;
+
+// Serve a Sanity-hosted icon from our own origin. Favicons are fetched with
+// credentials, so a raw cdn.sanity.io URL made the browser attach the
+// `sanitySession` cookie to a third-party host. /api/favicon streams the bytes
+// unchanged rather than going through /_next/image, whose Accept-based fallback
+// re-encodes to JPEG and would flatten a transparent PNG onto a solid
+// background. Keeping the asset in Sanity means editors can still change it.
+function sameOrigin(image: unknown): string {
+	const url = imageBuilder
+		.image(image as never)
+		.width(FAVICON_SIZE)
+		.height(FAVICON_SIZE)
+		.url();
+	return `/api/favicon?url=${encodeURIComponent(url)}`;
+}
+
 export function buildBaseMetadata(locale: Locale, sharing: Sharing): Metadata {
 	const siteTitle = sharing?.siteTitle || '';
 
 	const siteFavicon = sharing?.favicon || false;
 	const siteFaviconUrl = siteFavicon
-		? imageBuilder.image(siteFavicon as never).width(256).height(256).url()
+		? sameOrigin(siteFavicon)
 		: '/favicon.ico';
 
 	const siteFaviconLight = sharing?.faviconLight || false;
 	const siteFaviconLightUrl = siteFaviconLight
-		? imageBuilder.image(siteFaviconLight as never).width(256).height(256).url()
+		? sameOrigin(siteFaviconLight)
 		: siteFaviconUrl;
 
 	const shareGraphic = sharing?.shareGraphic?.asset;

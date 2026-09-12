@@ -1,5 +1,5 @@
 import { Layout } from '@/components/layout';
-import { getCachedSiteData } from '@/sanity/lib/siteData';
+import { getCachedSiteData, pickLayoutData } from '@/sanity/lib/siteData';
 
 // The site chrome (Header, Newsletter, Footer, ToolBar). Lives in a route group
 // so that [locale]/not-found.tsx — which sits outside (site) — renders without
@@ -14,5 +14,5 @@ export default async function SiteLayout({
 }) {
 	const { locale } = await params;
 	const { data } = await getCachedSiteData(locale);
-	return <Layout siteData={data}>{children}</Layout>;
+	return <Layout siteData={pickLayoutData(data)}>{children}</Layout>;
 }

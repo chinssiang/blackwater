@@ -2,6 +2,7 @@ import { imageBuilder } from '@/sanity/lib/image';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
 import { buildEventName } from '@/lib/buildEventName';
+import { resolveEventLocation } from '@/lib/event-location';
 import { type Locale, htmlLangFor, DEFAULT_LOCALE } from '@/lib/i18n';
 
 const EVENT_STATUS_MAP: Record<string, string> = {
@@ -62,12 +63,16 @@ export default function defineEventJsonLd({
 		data?.sharing?.metaDesc || data?.excerpt || data?.subtitle || undefined;
 	const isMultiLocation = data?.format === 'multi-location';
 
-	// Prefer the structured location reference (carries address + geo) for
-	// single-location events; fall back to the free-text location.
+	// Through `resolveEventLocation`, like every rendered surface: this file is
+	// the one the helper's own note names as the copy that matters, because
+	// structured data disagreeing with the page it annotates is invisible until
+	// someone reads the markup. `address`/`geo` still come off the ref directly —
+	// they are the reference's own fields, not part of the precedence rule.
 	const ref = data?.locationRef;
+	const venue = resolveEventLocation(data);
 	const location = isMultiLocation
 		? buildPlace(data?.startEndLocation?.name, data?.startEndLocation?.link)
-		: buildPlace(ref?.name || data?.location, ref?.mapLink || data?.locationLink, {
+		: buildPlace(venue.name, venue.mapLink, {
 				address: ref?.address,
 				geo: ref?.geo,
 			});
@@ -103,7 +108,7 @@ export default function defineEventJsonLd({
 
 	const locationName = isMultiLocation
 		? data?.startEndLocation?.name
-		: ref?.name || data?.location;
+		: venue.name;
 
 	return {
 		'@context': 'https://schema.org',

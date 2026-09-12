@@ -6,7 +6,7 @@ import {
 	DENY_ALL,
 	GRANT_ALL,
 	parseConsentCookie,
-	readConsentClient,
+	readConsentRawClient,
 	toConsentModeSignals,
 	writeConsentClient,
 } from './consent';
@@ -93,17 +93,20 @@ describe('client cookie round-trip', () => {
 		document.cookie = `${CONSENT_COOKIE}=; Path=/; Max-Age=0`;
 	});
 
-	it('writes a decision that readConsentClient can recover', () => {
+	// The reader is split in two so useConsent can compare the RAW cookie
+	// between snapshots — parsing first would hand useSyncExternalStore a fresh
+	// object every time and loop it. The round trip is the composition.
+	it('writes a decision the raw reader and parser can recover', () => {
 		writeConsentClient({ analytics: true, marketing: false });
-		const read = readConsentClient();
-		expect(read).toMatchObject({
+		expect(parseConsentCookie(readConsentRawClient())).toMatchObject({
 			analytics: true,
 			marketing: false,
 			v: CONSENT_VERSION,
 		});
 	});
 
-	it('returns null before any decision is written', () => {
-		expect(readConsentClient()).toBeNull();
+	it('reads null before any decision is written', () => {
+		expect(readConsentRawClient()).toBeNull();
+		expect(parseConsentCookie(readConsentRawClient())).toBeNull();
 	});
 });

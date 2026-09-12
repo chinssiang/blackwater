@@ -1,33 +1,21 @@
 import { MetadataRoute } from 'next';
 import { client } from '@/sanity/lib/client';
 import {
-	SITEMAP_PAGES_QUERY,
-	SITEMAP_EVENTS_QUERY,
-	SITEMAP_PRODUCTS_QUERY,
-} from '@/sanity/lib/queries';
-import { resolveHref } from '@/lib/routes';
-import {
-	type Locale,
-	DEFAULT_LOCALE,
-	htmlLangFor,
-	isLocale,
-} from '@/lib/i18n';
-
-type SitemapDoc = {
-	_type: string;
-	slug: string | null;
-	_updatedAt: string;
-	language?: string;
-};
-
-const QUERIES: Record<string, string> = {
-	pages: SITEMAP_PAGES_QUERY,
-	events: SITEMAP_EVENTS_QUERY,
-	products: SITEMAP_PRODUCTS_QUERY,
-};
+	QUERIES,
+	SITEMAP_IDS,
+	SITEMAP_TAGS,
+	SYNTHETIC_ROUTES,
+	docLocales,
+	isSitemapId,
+	lastModifiedFor,
+	localizedEntries,
+	newestOf,
+	type SitemapDoc,
+} from '@/lib/sitemaps';
+import { type Locale, LOCALES } from '@/lib/i18n';
 
 export async function generateSitemaps() {
-	return [{ id: 'pages' }, { id: 'events' }, { id: 'products' }];
+	return SITEMAP_IDS.map((id) => ({ id }));
 }
 
 export default async function sitemap({
@@ -36,11 +24,32 @@ export default async function sitemap({
 	id: Promise<string>;
 }): Promise<MetadataRoute.Sitemap> {
 	const resolvedId = await id;
-	const query = QUERIES[resolvedId];
-	if (!query) return [];
+	if (!isSitemapId(resolvedId)) return [];
 
 	try {
-		const docs = (await client.fetch<SitemapDoc[]>(query)) ?? [];
+		const docs =
+			(await client
+				// useCdn: false because this read is tag-cached under revalidate:false.
+				// Through the CDN, the re-fetch a tag invalidation triggers can return
+				// data up to ~60s stale and then persist until the next invalidation —
+				// the case src/sanity/lib/client.ts's own comment warns about.
+				.withConfig({ useCdn: false })
+				.fetch<SitemapDoc[]>(
+					QUERIES[resolvedId],
+					{},
+					{
+						next: {
+							revalidate: false,
+							tags: SITEMAP_TAGS[resolvedId],
+						},
+					}
+				)) ?? [];
+
+		// One walk of each row's contentUpdatedAt, reused by the grouping loop
+		// below and by every synthetic route's newestOf.
+		const dates = new Map<SitemapDoc, Date>();
+		for (const doc of docs) dates.set(doc, lastModifiedFor(doc));
+		const dateOf = (doc: SitemapDoc) => dates.get(doc) ?? lastModifiedFor(doc);
 
 		// Group documents by their URL identity (type + slug).
 		// Each group may contain multiple rows — one per locale.
@@ -57,45 +66,38 @@ export default async function sitemap({
 		for (const group of grouped.values()) {
 			const { _type, slug } = group[0];
 
-			// Determine which locales have a Sanity document in this group
-			const availableLocales: Locale[] = [
-				...new Set(
-					group.map((d) => (isLocale(d.language) ? d.language : DEFAULT_LOCALE))
-				),
-			];
+			// Which locales this group's page exists in — one row per locale for
+			// document-level types, one row carrying all locales for field-level
+			// ones.
+			const locales: Locale[] = [...new Set(group.flatMap(docLocales))];
 
-			// Build reusable hreflang map for all entries in this group
-			const languages: Record<string, string> = {};
-			for (const l of availableLocales) {
-				const href = resolveHref({ documentType: _type, slug, locale: l });
-				if (href)
-					languages[htmlLangFor(l)] = new URL(
-						href,
-						process.env.SITE_URL
-					).toString();
-			}
-			const defaultHref = resolveHref({ documentType: _type, slug, locale: DEFAULT_LOCALE });
-			if (defaultHref)
-				languages['x-default'] = new URL(defaultHref, process.env.SITE_URL).toString();
+			entries.push(
+				...localizedEntries({
+					documentType: _type,
+					slug,
+					locales,
+					lastModified: (locale) =>
+						dateOf(
+							group.find((d) => docLocales(d).includes(locale)) ?? group[0]
+						),
+				})
+			);
+		}
 
-			// Emit one sitemap entry per available locale
-			for (const locale of availableLocales) {
-				const href = resolveHref({ documentType: _type, slug, locale });
-				if (!href) continue;
-
-				const row =
-					group.find((d) =>
-						(isLocale(d.language) ? d.language : DEFAULT_LOCALE) === locale
-					) ?? group[0];
-
-				entries.push({
-					url: new URL(href, process.env.SITE_URL).toString(),
-					lastModified: new Date(row._updatedAt),
-					changeFrequency: 'weekly' as const,
-					priority: 0.8,
-					alternates: { languages },
-				});
-			}
+		for (const route of SYNTHETIC_ROUTES) {
+			if (route.sitemap !== resolvedId) continue;
+			entries.push(
+				...localizedEntries({
+					documentType: route.documentType,
+					slug: null,
+					// Every locale, matching the `availableLocales: [...LOCALES]` these
+					// pages hand to defineMetadata — the sitemap and the page's own
+					// hreflang must not disagree about where it exists.
+					locales: [...LOCALES],
+					lastModified: (locale) =>
+						newestOf(docs, route.lists, locale, dateOf),
+				})
+			);
 		}
 
 		return entries;

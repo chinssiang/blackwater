@@ -23,6 +23,7 @@ export interface SanityImageData {
 			aspectRatio?: number | null;
 		} | null;
 		mimeType?: string | null;
+		isOpaque?: boolean | null;
 	} | null;
 }
 
@@ -55,7 +56,7 @@ function SanityImage({
 	if (!image) return null;
 
 	const { metadata, altText } = image;
-	const { dimensions, lqip } = metadata || {};
+	const { dimensions, lqip, isOpaque, mimeType } = metadata || {};
 	const { width: rawWidth, aspectRatio } = dimensions || {};
 	const width = rawWidth ?? undefined;
 	const height = width
@@ -74,6 +75,22 @@ function SanityImage({
 
 	const useFill = fill || !width || !height;
 
+	// Only opaque images get the blur-up placeholder. Next builds it from an SVG
+	// filter whose feFlood (black by default) fills every transparent pixel, so
+	// an alpha PNG — every cut-out product shot — renders a black cloud that
+	// `background-size: cover` stretches past the artwork and the container's
+	// overflow then slices at a hard edge.
+	//
+	// `=== true`, not `!== false`: an absent value means *unknown*, and the two
+	// wrong guesses aren't symmetric. Guessing "opaque" shows that black halo;
+	// guessing "transparent" only skips a fade-in. JPEG is the exception worth
+	// spelling out — the format has no alpha channel at all, so it is opaque by
+	// definition. That keeps the placeholder working for cached GROQ payloads
+	// serialized before `isOpaque` joined the projection, which would otherwise
+	// lose their blur-up until the route or tag is revalidated.
+	const canBlur =
+		Boolean(lqip) && (isOpaque === true || mimeType === 'image/jpeg');
+
 	return (
 		<Image
 			src={src}
@@ -85,8 +102,8 @@ function SanityImage({
 			priority={priority}
 			fetchPriority={priority ? 'high' : undefined}
 			alt={imageAlt}
-			blurDataURL={lqip || undefined}
-			placeholder={lqip ? 'blur' : undefined}
+			blurDataURL={canBlur ? lqip! : undefined}
+			placeholder={canBlur ? 'blur' : undefined}
 			onError={() => {
 				setError(true);
 				setIsLoaded(false);

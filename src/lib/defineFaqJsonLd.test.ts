@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import defineFaqJsonLd, { collectFaqItems } from './defineFaqJsonLd';
 
 describe('collectFaqItems', () => {
-	it('flattens items across all faqList modules', () => {
+	it('flattens items across all faqBlock modules', () => {
 		const items = collectFaqItems([
-			{ _type: 'faqList', items: [{ question: 'Q1', answerText: 'A1' }] },
+			{ _type: 'faqBlock', items: [{ question: 'Q1', answerText: 'A1' }] },
 			{ _type: 'freeform' } as any,
 			{
-				_type: 'faqList',
+				_type: 'faqBlock',
 				items: [
 					{ question: 'Q2', answerText: 'A2' },
 					{ question: 'Q3', answerText: 'A3' },
@@ -20,7 +20,7 @@ describe('collectFaqItems', () => {
 	it('returns an empty array for non-array or empty input', () => {
 		expect(collectFaqItems(null)).toEqual([]);
 		expect(collectFaqItems(undefined)).toEqual([]);
-		expect(collectFaqItems([{ _type: 'faqList' }])).toEqual([]);
+		expect(collectFaqItems([{ _type: 'faqBlock' }])).toEqual([]);
 	});
 });
 

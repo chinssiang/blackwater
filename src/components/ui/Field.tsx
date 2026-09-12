@@ -6,43 +6,10 @@ import {
 	TooltipTrigger,
 } from '@/components/ui/Tooltip';
 import { HiOutlineInformationCircle } from 'react-icons/hi2';
-import { useMemo } from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/Label';
-import { Separator } from '@/components/ui/Separator';
-
-function FieldSet({ className, ...props }: React.ComponentProps<'fieldset'>) {
-	return (
-		<fieldset
-			data-slot="field-set"
-			className={cn(
-				'gap-4 has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3 flex flex-col',
-				className
-			)}
-			{...props}
-		/>
-	);
-}
-
-function FieldLegend({
-	className,
-	variant = 'legend',
-	...props
-}: React.ComponentProps<'legend'> & { variant?: 'legend' | 'label' }) {
-	return (
-		<legend
-			data-slot="field-legend"
-			data-variant={variant}
-			className={cn(
-				'mb-1.5 font-medium data-[variant=label]:text-sm data-[variant=legend]:text-base',
-				className
-			)}
-			{...props}
-		/>
-	);
-}
 
 function FieldGroup({ className, ...props }: React.ComponentProps<'div'>) {
 	return (
@@ -121,19 +88,6 @@ function FieldLabel({
 	);
 }
 
-function FieldTitle({ className, ...props }: React.ComponentProps<'div'>) {
-	return (
-		<div
-			data-slot="field-label"
-			className={cn(
-				'gap-2 text-sm font-medium group-data-[disabled=true]/field:opacity-50 flex w-fit items-center leading-snug',
-				className
-			)}
-			{...props}
-		/>
-	);
-}
-
 function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
 	return (
 		<p
@@ -149,140 +103,38 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
 	);
 }
 
-function FieldSeparator({
-	children,
-	className,
-	...props
-}: React.ComponentProps<'div'> & {
-	children?: React.ReactNode;
-}) {
-	return (
-		<div
-			data-slot="field-separator"
-			data-content={!!children}
-			className={cn(
-				'-my-2 h-5 text-sm group-data-[variant=outline]/field-group:-mb-2 relative',
-				className
-			)}
-			{...props}
-		>
-			<Separator className="absolute inset-0 top-1/2" />
-			{children && (
-				<span
-					className="text-muted-foreground px-2 bg-background relative mx-auto block w-fit"
-					data-slot="field-separator-content"
-				>
-					{children}
-				</span>
-			)}
-		</div>
-	);
-}
-
-function FieldError({
-	className,
-	children,
-	errors,
-	...props
-}: React.ComponentProps<'div'> & {
-	errors?: Array<{ message?: string } | undefined>;
-}) {
-	const content = useMemo(() => {
-		if (children) {
-			return children;
-		}
-
-		if (!errors?.length) {
-			return null;
-		}
-
-		const uniqueErrors = [
-			...new Map(errors.map((error) => [error?.message, error])).values(),
-		];
-
-		if (uniqueErrors?.length == 1) {
-			return uniqueErrors[0]?.message;
-		}
-
-		return (
-			<ul className="ml-4 flex list-disc flex-col gap-1">
-				{uniqueErrors.map(
-					(error, index) =>
-						error?.message && <li key={index}>{error.message}</li>
-				)}
-			</ul>
-		);
-	}, [children, errors]);
-
-	if (!content) {
-		return null;
-	}
-
-	return (
-		<div
-			role="alert"
-			data-slot="field-error"
-			className={cn('text-destructive text-sm font-normal', className)}
-			{...props}
-		>
-			{content}
-		</div>
-	);
-}
-
 function FieldStatus({
 	fieldState = {},
 	isFocused,
-	isShowErrorOnFocus = false,
 	className,
 }: {
 	fieldState?: any;
 	isFocused?: boolean;
-	isShowErrorOnFocus?: boolean;
 	className?: string;
 }) {
 	const showError = fieldState.invalid && !!fieldState.error;
 	const [isTooltipTriggered, setIsTooltipTriggered] = useState(false);
 
-	return isShowErrorOnFocus ? (
-		<Tooltip open={(!!showError && isFocused) || isTooltipTriggered}>
+	// Nothing to anchor a tooltip to until there is an error. Base UI's trigger
+	// renders whatever `render` is given, so the icon is that element rather
+	// than a child that may be absent -- and a field with no error mounts no
+	// tooltip at all.
+	if (!showError) return null;
+
+	return (
+		<Tooltip open={isFocused || isTooltipTriggered}>
 			<TooltipTrigger
 				className={cn('absolute top-1/2 right-2 -translate-y-1/2', className)}
-				asChild
-			>
-				{showError && (
+				render={
 					<HiOutlineInformationCircle
 						className="text-error h-5 w-5"
 						onMouseEnter={() => setIsTooltipTriggered(true)}
 						onMouseLeave={() => setIsTooltipTriggered(false)}
 					/>
-				)}
-			</TooltipTrigger>
+				}
+			/>
 			<TooltipContent
-				className="pointer-events-none z-[calc(var(--z-index-dialog)+1)]"
-				align="end"
-				sideOffset={-2}
-			>
-				<p>{fieldState.error?.message}</p>
-			</TooltipContent>
-		</Tooltip>
-	) : (
-		<Tooltip open={isTooltipTriggered}>
-			<TooltipTrigger
-				className={cn('absolute top-1/2 right-2 -translate-y-1/2', className)}
-				asChild
-			>
-				{showError && (
-					<HiOutlineInformationCircle
-						className="text-error h-5 w-5"
-						onMouseEnter={() => setIsTooltipTriggered(true)}
-						onMouseLeave={() => setIsTooltipTriggered(false)}
-						onClick={() => setIsTooltipTriggered((prev) => !prev)}
-					/>
-				)}
-			</TooltipTrigger>
-			<TooltipContent
-				className="pointer-events-none z-[calc(var(--z-index-dialog)+1)]"
+				className="pointer-events-none"
 				align="end"
 				sideOffset={-2}
 			>
@@ -296,12 +148,7 @@ export {
 	Field,
 	FieldLabel,
 	FieldDescription,
-	FieldError,
 	FieldGroup,
-	FieldLegend,
-	FieldSeparator,
-	FieldSet,
 	FieldContent,
-	FieldTitle,
 	FieldStatus,
 };

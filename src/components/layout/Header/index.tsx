@@ -5,10 +5,9 @@ import Link from 'next/link';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
 import Menu from '@/components/Menu';
 import MobileMenu from '@/components/MobileMenu';
+import CartButton from '@/components/cart/CartButton';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { LocationCurrentTime } from '@/components/LocationCurrentTime';
 import { cn } from '@/lib/utils';
-import { useWindowScroll } from '@/hooks/useWindowScroll';
 import { useLocale } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
 
@@ -18,21 +17,24 @@ type HeaderProps = GHeader & {
 	mobileMenu?: SiteDataQueryResult['mobileMenu'];
 };
 
-export function Header({
-	data,
-	isLightHeader = false,
-}: {
-	data: HeaderProps;
-	isLightHeader?: boolean;
-}) {
+export function Header({ data }: { data: HeaderProps }) {
 	const { siteTitle, menu, mobileMenu } = data || {};
 	const locale = useLocale();
+	// No scroll logic here. Over a full-bleed hero the header's background is a
+	// function of `--header-progress` (the `[data-site-header]` rules in
+	// globals.css), and the hero's own wrapper, HeroUnderlay, writes that
+	// progress onto this element for as long as the hero is mounted.
 
 	return (
 		<header
+			data-site-header
 			className={cn(
-				'p-x-max h-header sticky top-0 z-header grid w-full grid-cols-2 lg:grid-cols-3 items-center leading-none transition-colors bg-background/95 backdrop-blur-xs',
-				isLightHeader && 'theme-light'
+				// No bg-*/backdrop-* utility here: the background is the
+				// `[data-site-header]` rules in globals.css, so it has one home.
+				// `fixed`, not `sticky`: out of flow, so a full-bleed hero can start at
+				// the top of the viewport and this floats over it. `inset-x-0` rather
+				// than `w-full` — out of flow there is no parent to be 100% of.
+				'p-x-max h-header fixed inset-x-0 top-0 z-header grid grid-cols-2 lg:grid-cols-3 items-center leading-none'
 			)}
 		>
 			{menu && (
@@ -51,13 +53,9 @@ export function Header({
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
 			<div className="ml-auto flex text-foreground gap-3">
-				<div className="hidden items-center gap-3 lg:flex">
-					<LanguageSwitcher />
-					<div className="t-b-2 flex items-center gap-1 uppercase">
-						<LocationCurrentTime />
-						<span>(TPE)</span>
-					</div>
-				</div>
+				<LanguageSwitcher className="max-lg:hidden" />
+
+				<CartButton />
 				<MobileMenu data={mobileMenu} siteTitle={siteTitle} />
 			</div>
 		</header>

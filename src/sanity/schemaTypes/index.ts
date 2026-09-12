@@ -9,6 +9,8 @@ import { pBlogIndex } from './documents/p-blog-index';
 import { gTeamMember } from './documents/g-team-member';
 import { gLocation } from './documents/g-location';
 import { gFaq } from './documents/g-faq';
+import { gFaqList } from './documents/g-faq-list';
+import { gSizeChart } from './documents/g-size-chart';
 import { gTag } from './documents/g-tag';
 import { pEvent } from './documents/p-event';
 import { pEventCategory } from './documents/p-event-category';
@@ -30,7 +32,10 @@ import { socialLink } from './objects/social-link';
 import { gAnnouncement } from './singletons/g-announcement';
 import { eventStation } from './objects/event-station';
 import { freeform } from './objects/freeform';
-import { faqList } from './objects/faq';
+import { faqBlock } from './objects/faq-block';
+import { eventsBlock } from './objects/events-block';
+import { heroBlock } from './objects/hero-block';
+import { productsBlock } from './objects/products-block';
 import { gAuthor } from './singletons/g-author';
 import { gFooter } from './singletons/g-footer';
 import { gHeader } from './singletons/g-header';
@@ -40,9 +45,11 @@ import { p404 } from './singletons/p-404';
 import { pContact } from './singletons/p-contact';
 import { pProductIndex } from './singletons/p-product-index';
 import { pFaq } from './singletons/p-faq';
+import { pSizeGuide } from './singletons/p-size-guide';
 import { pNewsletter } from './singletons/p-newsletter';
 import { pHome } from './singletons/p-home';
 // Singletons
+import { settingsCart } from './singletons/settings-cart';
 import { settingsBrandColors } from './singletons/settings-color';
 import { settingsConsent } from './singletons/settings-consent';
 import { settingsGeneral } from './singletons/settings-general';
@@ -57,6 +64,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	settingsRedirect,
 	settingsIntegration,
 	settingsConsent,
+	settingsCart,
 	gNewsletter,
 	gAnnouncement,
 	gHeader,
@@ -75,11 +83,14 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	gTeamMember,
 	gLocation,
 	gFaq,
+	gFaqList,
+	gSizeChart,
 	pEventCategory,
 	pEvents,
 	pEventStatus,
 	pContact,
 	pFaq,
+	pSizeGuide,
 	pNewsletter,
 	pProductIndex,
 	pProduct,
@@ -89,7 +100,10 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	gTag,
 	eventStation,
 	freeform,
-	faqList,
+	faqBlock,
+	eventsBlock,
+	heroBlock,
+	productsBlock,
 	formField,
 	link(),
 	navDropdown,

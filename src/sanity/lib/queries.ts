@@ -1,34 +1,155 @@
 import { defineQuery } from 'next-sanity';
 import { resolvedHrefGroq } from '@/lib/routes';
+import { LOCALES } from '@/lib/i18n';
+
+// Every locale, as a GROQ array literal. Spelled out rather than derived from
+// LOCALES because the extractor substitutes syntax instead of executing JS:
+// arrow-function calls with a concise body resolve fine (see `locString` below),
+// but `LOCALES.map(...).join(...)` does not — same constraint as
+// `resolvedHrefGroq`. The assignment below is a compile-time guard: adding a
+// locale to LOCALES breaks the build here until this literal is updated, rather
+// than silently dropping that locale from the sitemap.
+const ALL_LOCALES_GROQ = '["en", "zh_tw"]';
+const _localesCovered: typeof LOCALES = ['en', 'zh_tw'] as const;
+void _localesCovered;
 export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 
+// Which faqBlock modules render their SET rather than their hand-picked list.
+// Mirrors the `select(source == "picked" => ..., faqSet->questions)` in
+// faqBlockField: the set arm is the fallback, so a module written through the
+// API with no `source` counts as a set. Written with coalesce rather than a
+// bare `source != "picked"` so it does not lean on GROQ's null-comparison
+// semantics for the unset case.
+//
+// The discriminator is load-bearing, not tidiness: a hidden field keeps its
+// data, so a module switched from picked to set still carries its orphaned
+// `questions` array. Read unconditionally, an edit to one of those unrendered
+// entries would move the page's lastmod.
+const faqBlockUsesSet = `coalesce(source, "set") != "picked"`;
+
+// Whether a page module is switched on. The eye button on the Studio array row
+// (schemaTypes/components/PageModuleItem.tsx) writes `hidden: true` and unsets
+// it again on the way back, so absent means visible -- no backfill needed.
+// Coalesced for the unset case, same reason as faqBlockUsesSet above; here
+// `hidden == false` and `!hidden` would each drop every untouched module.
+//
+// Applied as the array PREDICATE, not projected as a field, so a switched-off
+// module never reaches JS. That is what makes the rest of the pipeline correct
+// for free: PageHome hands the <h1> to slot 0, which is the first module a
+// visitor actually sees rather than the first one authored; a hidden faqBlock
+// stays out of the FAQPage JSON-LD; and EventsBlock/ProductsBlock never mount to
+// run their own fetches.
+const moduleVisible = `coalesce(hidden, false) == false`;
+
+// `contentUpdatedAt` collects the `_updatedAt` of every document a page RENDERS
+// but does not own, so sitemap.ts can advertise the newest of the two as
+// lastmod. All three sitemap queries carry one; this is the shared reasoning.
+//
+// A document's own timestamp only moves when that document is edited, while
+// these pages are largely made of other documents — /faq's entire body is
+// `faqSet->questions[]->`, /size-guide's is `chart->`. So rewriting an answer or
+// a measurement changed the page while pFaq/pSizeGuide sat still, and the
+// sitemap kept telling crawlers there was nothing new to fetch. Same gap on any
+// pHome/pGeneral carrying a faqBlock module, through either of its two sources.
+//
+// Whatever a query dereferences here must ALSO be in that sitemap's
+// SITEMAP_TAGS: the fetch is `revalidate: false`, so an untagged type never
+// recomputes the sitemap and the freshly-correct expression never runs.
+//
+// Deliberately NOT included: list membership (a category page's products, an
+// index's entries) and site-wide presentational settings like brand colors.
+// Both are real render inputs, but they would bump every sibling page's lastmod
+// on any single edit, which is the same crying-wolf failure in the other
+// direction.
+//
+// GROQ flattens chained array traversals, so each line below yields either a
+// scalar or a FLAT array — the only nesting is the literal's own, which is why
+// sitemap.ts needs exactly one level of unwrapping.
 export const SITEMAP_PAGES_QUERY = defineQuery(`
-	*[_type in ["pHome", "pGeneral", "pContact", "pFaq"]
+	*[_type in ["pHome", "pGeneral", "pContact", "pFaq", "pSizeGuide", "pNewsletter"]
 		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
 		_type,
 		"slug": slug.current,
 		_updatedAt,
-		language
+		language,
+		"contentUpdatedAt": [
+			faqSet->_updatedAt,
+			faqSet->questions[]->_updatedAt,
+			pageModules[_type == "faqBlock" && ${moduleVisible} && ${faqBlockUsesSet}].faqSet->_updatedAt,
+			pageModules[_type == "faqBlock" && ${moduleVisible} && ${faqBlockUsesSet}].faqSet->questions[]->_updatedAt,
+			pageModules[_type == "faqBlock" && ${moduleVisible} && source == "picked"].questions[]->_updatedAt,
+			sections[].charts[].chart->_updatedAt
+		]
 	}
 `);
 
-export const SITEMAP_EVENTS_QUERY = defineQuery(`
-	*[_type in ["pEvents", "pEvent"]
-		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
-		_type,
-		"slug": slug.current,
-		_updatedAt,
-		language
-	}
-`);
+// Which locales a field-level i18n array actually carries copy for.
+//
+// `defined(value)` is load-bearing: the internationalizedArray plugin is
+// configured with defaultLanguages: ['en'], and it patches a valueless
+// `{_key, language: 'en'}` item into any i18n array it mounts that lacks the
+// default language. So merely opening a zh-only product in the Studio would
+// otherwise make it advertise an `en` hreflang + sitemap URL that 404s, because
+// `productTitleVisible` (correctly) requires an actual value.
+//
+// Declared here, above its first use in SITEMAP_PRODUCTS_QUERY, so the sitemap
+// and the hreflang projection below share one definition of "translated into".
+export const localesWithValue = (field: string) =>
+	`${field}[defined(value)].language`;
 
+// `locales` carries which locales each entry exists in, because the four types
+// signal it differently: document-level types (pProductIndex, and un-merged
+// product docs during the transition) carry `language`; field-level types
+// (pProduct/pProductCollection post-merge) signal per-locale presence via
+// title[].language; pProductCategory has an i18n-array title too but its pages
+// render an English fallback for every locale, so it advertises all of them.
+// Without this, field-level types' zh_tw URLs silently vanish from the sitemap
+// — categories had exactly that bug.
 export const SITEMAP_PRODUCTS_QUERY = defineQuery(`
 	*[_type in ["pProductIndex", "pProduct", "pProductCategory", "pProductCollection"]
-		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)] {
+		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)
+		&& (disableIndex != true)] {
 		_type,
 		"slug": slug.current,
 		_updatedAt,
-		language
+		"contentUpdatedAt": [
+			sizeChart->_updatedAt,
+			categories[]->_updatedAt,
+			collections[]->_updatedAt,
+			brands[]->_updatedAt,
+			whenReachForIt.list[_type == "reference"]->_updatedAt,
+			metadata[].list[_type == "reference"]->_updatedAt
+		],
+		"locales": select(
+			defined(language) => [language],
+			_type == "pProductCategory" => ${ALL_LOCALES_GROQ},
+			${localesWithValue('title')}
+		)
+	}
+`);
+
+// Both event types are field-level localized, so neither carries `language` —
+// `locales` is what tells sitemap.ts which URLs to emit. pEvent derives it from
+// title[].language, so a zh-only event contributes only its zh_tw URL; pEvents
+// is the index page, which renders an English fallback in every locale and so
+// advertises all of them (same reasoning as pProductCategory above). Reading
+// `language` here instead would silently drop every zh_tw event URL.
+export const SITEMAP_EVENTS_QUERY = defineQuery(`
+	*[_type in ["pEvents", "pEvent"]
+		&& (!defined(sharing.disableIndex) || sharing.disableIndex == false)
+		&& (disableIndex != true)] {
+		_type,
+		"slug": slug.current,
+		_updatedAt,
+		"contentUpdatedAt": [
+			locationRef->_updatedAt,
+			categories[]->_updatedAt,
+			statusList[].eventStatus->_updatedAt
+		],
+		"locales": select(
+			_type == "pEvents" => ${ALL_LOCALES_GROQ},
+			${localesWithValue('title')}
+		)
 	}
 `);
 
@@ -128,7 +249,11 @@ export const imageMetaFields = `
   "metadata": asset->metadata {
     lqip,
     dimensions,
-    mimeType
+    isOpaque,
+    // From the asset, not the metadata object: sanity.imageMetadata has no
+    // mimeType, so projecting it here resolved to null and left SanityImage's
+    // JPEG fallback unreachable.
+    "mimeType": ^.asset->mimeType
   }
 `;
 
@@ -174,6 +299,17 @@ const portableTextContentFields = `
 	}
 `;
 
+// The `sectionAppearance { ..., backgroundColor->color, textColor->color }`
+// projection below is repeated verbatim in all five page-module fragments, and
+// it has to stay that way. Hoisting it into its own const — the obvious dedup —
+// adds one level of interpolation to a chain (pageHomeQuery → pageModuleFields →
+// the module fragment → here) that already reaches portableTextContentFields →
+// linkFields → resolvedHrefGroq, and the Sanity query extractor then dies with
+// "Maximum call stack size exceeded" on pageHomeQuery and pageGeneralQuery
+// specifically. Those two lose their generated result types while every other
+// query still resolves, so the failure is quiet: `npm run typegen` reports
+// success and only the error line above the summary names it.
+
 const freeformField = `
 	_type,
 	_key,
@@ -187,22 +323,73 @@ const freeformField = `
 	}
 `;
 
-// Projects a gFaq entry. Each gFaq is a single-locale document (document-level
-// i18n), so no coalesce is needed — referencing pages resolve same-locale docs.
+// Localized string/text: current locale, falling back to English.
+//
+// Defined here rather than with the other field-level i18n helpers further down
+// because `gFaqItemFields` below calls it at module init, and a `const` declared
+// after that point would be in its temporal dead zone. Hoisting it by making it
+// a `function` declaration is NOT an option: the Sanity query extractor
+// resolves arrow calls with a CONCISE body and rejects a block body outright
+// ("Unsupported expression type: BlockStatement"), which silently drops every
+// query in this file from typegen — same constraint that keeps `resolvedHrefGroq`
+// hand-written.
+const locString = (field: string) =>
+	`coalesce(${field}[language == $locale][0].value, ${field}[language == "en"][0].value)`;
+
+// Localized Portable Text. Resolution is identical to `locString` — the alias
+// exists only to mark, at the call site, that what comes back is a block array
+// the caller still has to project with `[]{ ... }`.
+const locPT = locString;
+
+// Projects a gFaq entry. One document per question carries every language in
+// inline internationalizedArrays, so both prose fields resolve through the
+// current locale with an English fallback — an entry translated into only one
+// language still renders rather than leaving a blank accordion row.
 // `answer` is rich text (for rendering); `answerText` is flattened plain text
 // for FAQPage JSON-LD.
 const gFaqItemFields = `
 	_id,
-	question,
-	"answer": answer[]{ ${portableTextContentFields} },
-	"answerText": pt::text(answer)
+	"question": ${locString('question')},
+	"answer": ${locPT('answer')}[]{ ${portableTextContentFields} },
+	"answerText": pt::text(${locPT('answer')})
 `;
 
-const faqListField = `
+// gSizeChart is deliberately NOT document-localized — the measurements are
+// locale-invariant, so the numbers are stored once. Only the text fields are
+// translated, via the inline internationalizedArray coalesce pattern: the fit
+// note and each measurement's label.
+const gSizeChartFields = `
+	_id,
+	title,
+	"slug": slug.current,
+	unit,
+	sizes,
+	rows[]{
+		_key,
+		"label": ${locString('label')},
+		values[]{ _key, size, min, max }
+	},
+	"note": ${locString('note')}
+`;
+
+// A faqBlock names EITHER a set or its own hand-picked questions, and `items`
+// stays flat either way — both <FaqBlock> and collectFaqItems consume a flat
+// array, so the discriminator never escapes GROQ.
+//
+// `select()` picks the reference ARRAY and the deref/projection is applied once
+// outside it, rather than repeating gFaqItemFields in both arms — that fragment
+// expands to ~5KB of GROQ, which every page query carrying a faqBlock would
+// otherwise ship twice. Not `coalesce`: a hidden field keeps its data, so a
+// stale `questions` array would win over the set the editor actually chose.
+//
+// The set arm is the fallback, not `picked`: a module written through the API
+// with no `source` still renders its set. See gFaqList's header for why the list
+// is a document rather than an inline array.
+const faqBlockField = `
 	_type,
 	_key,
 	heading,
-	"items": questions[]->{
+	"items": select(source == "picked" => questions, faqSet->questions)[]->{
 		${gFaqItemFields}
 	},
 	sectionAppearance {
@@ -210,15 +397,6 @@ const faqListField = `
 		"backgroundColor": backgroundColor->color,
 		"textColor": textColor->color
 	}
-`;
-
-const pageModuleFields = `
-	_type == 'freeform' => {
-		${freeformField}
-	},
-	_type == 'faqList' => {
-		${faqListField}
-	},
 `;
 
 const formField = `
@@ -241,14 +419,6 @@ const formField = `
 const byLocale = (type: string) =>
 	`*[_type == "${type}" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)`;
 
-// Helper GROQ filter clause for locale-aware *listings*: include a doc if it's in
-// the current locale, OR it's the English/undefined fallback AND no current-locale
-// version with the same slug exists. Translated product docs share their slug, so
-// this deduplicates a list to one entry per product/collection (locale preferred,
-// English fallback) — the list equivalent of byLocale's single-doc resolution.
-const productLocaleFilter = (type: string) =>
-	`(language == $locale || ((language == "en" || !defined(language)) && !(slug.current in *[_type == "${type}" && language == $locale].slug.current)))`;
-
 // Inline projection field: lists which locale codes have a translated document.
 // Uses GROQ implication — if the parent doc has a slug, narrow to that slug;
 // for slug-less singletons the condition is vacuously true and only type is matched.
@@ -260,10 +430,29 @@ const availableLocalesField = `
 ].language
 `;
 
+// The Klaviyo list a signup goes to: this locale's gNewsletter document if it
+// carries one, else the next document `byLocale` prefers (English, then a
+// language-less legacy singleton). Both the form's `signupEnabled` gate and
+// /api/newsletter/subscribe read THIS expression, so they cannot disagree about
+// whether a signup is possible — gating the form on its own document's field
+// instead is what left /zh_tw with no footer form at all.
+//
+// `!= ""` is load-bearing: GROQ's `defined("")` is true, so without it a blank
+// id would both satisfy the gate and shadow the working English fallback. A
+// whitespace-only id still slips through (GROQ has no trim) and reaches Klaviyo
+// as a bad list — catching that belongs in schema validation, not here, so that
+// the editor who pasted it is the one who hears about it.
+const newsletterListId = `${byLocale(
+	'gNewsletter'
+)}[defined(klaviyoListID) && klaviyoListID != ""][0].klaviyoListID`;
+
 // Reusable projection for the gNewsletter signup form. Shared by siteDataQuery
 // (footer form) and pageNewsletterQuery (dedicated /newsletter page).
+// The list id itself deliberately stays out: the client no longer chooses the
+// list, and this object is handed to <Layout>, i.e. serialized into every page's
+// RSC payload.
 const newsletterFormFields = `
-	klaviyoListID,
+	"signupEnabled": defined(${newsletterListId}),
 	heading,
 	subheading,
 	submitButtonText,
@@ -274,6 +463,326 @@ const newsletterFormFields = `
 	successBody,
 	errorHeading,
 	errorBody,
+`;
+
+// ---------------------------------------------------------------------------
+// FIELD-level i18n helpers, shared by the product family (pProduct /
+// pProductCollection / pProductCategory), the event family (pEvent /
+// pEvents / pEventCategory) and gFaq.
+//
+// One document carries every language — prose lives in internationalizedArrays,
+// everything else (handle, price, dates, venue, refs, images) exists once. For
+// products this mirrors Shopify's own model, where a product is a single entity
+// and language is a query-time context. For events it mirrors reality: an event
+// is one occurrence with one start time and one venue, which two documents could
+// (and did) disagree about.
+//
+// Both families are fully migrated in every dataset, so these projections read
+// the merged shape only. The `select(defined(language) => <old field>)` tails
+// that carried the product queries through their migration are gone; documents
+// that still carry `language` are the DOCUMENT-level types (pProductIndex,
+// pHome, gHeader …), which are resolved by `byLocale` above and never touch
+// these helpers.
+// ---------------------------------------------------------------------------
+
+// `locString` and `locPT` belong to this section but are DEFINED FURTHER UP,
+// just above `gFaqItemFields` — see the note there.
+
+// Visibility guard for merged docs: shown in a locale only when they carry a
+// title in that locale or in English. This preserves the doc-level behavior
+// exactly — a zh-only doc never leaks onto English pages (it used to have no
+// `en` document; now it has no `en` title), while an en-only doc renders its
+// English fallback everywhere. Shared by the product and event queries.
+const titleVisible = `(defined(title[language == $locale][0].value) || defined(title[language == "en"][0].value))`;
+
+// The same guard applied AFTER a dereference, for editor-curated reference
+// arrays (relatedProducts, collection products, cart recommendations). Those
+// pickers are unfiltered — products are language-agnostic documents, so there
+// is nothing to filter them by in the Studio — which means a zh-only product
+// can be picked into a list rendered on an English page. Without this it comes
+// through as a card with a null title linking to a URL that 404s, since
+// pageProductSingleQuery does carry the guard.
+// The parentheses are load-bearing: `refs[defined(@->)]->[<cond>]` parses but
+// does NOT filter (verified against the API — 6 refs in, 6 out), silently
+// producing exactly the leak this guards against. Wrapping the dereference
+// first makes the trailing bracket a filter over the resulting array.
+const visibleProducts = (refField: string) =>
+	`(${refField}[defined(@->)]->)[${titleVisible}]`;
+
+// Which locales this merged doc is translated into — feeds hreflang and the
+// sitemap. Old-shape docs keep the sibling-document lookup. See
+// `localesWithValue` above for why the new-shape arm filters on `defined(value)`.
+const productAvailableLocalesField = `
+"availableLocales": ${localesWithValue('title')}
+`;
+
+// The Shopify handle is commerce identity: one product, one handle, every
+// language renders from it (localized prices come from Markets @inContext).
+// The sibling lookup is transition-only, and is guarded like every other tail
+// so a merged doc short-circuits to its own handle: unguarded it would re-run a
+// correlated pProduct scan per card forever — including inside siteDataQuery's
+// cart recommendations, which render on every page of the site.
+const shopifyHandleField = `
+	"shopifyHandle": shopify.handle
+`;
+
+// SEO block for field-level types, shaped exactly like baseFields' `sharing`
+// so defineMetadata needs no awareness of the field-level model. New docs use
+// the seo fieldset (seoTitle/seoDescription/shareGraphic/disableIndex); the
+// retired `sharing` object it replaced no longer exists on these documents.
+//
+// Belongs only on a query's TOP-LEVEL document, never in a card or list item:
+// nothing renders a card's SEO block, and each copy costs two `settingsGeneral`
+// subqueries (share graphic + site title). Inside a 45-card listing that was 90
+// subqueries and a full metadata block per card serialized to the client, all
+// of it unread.
+//
+// `descFallback` names the localized prose field the meta description falls back
+// to (excerpt for products and events, description for collections) — every
+// schema promises that in the SEO Description field's help text, and
+// pProductCategory already implements it. It sits BEFORE the transition tail
+// deliberately: on an un-merged doc the i18n-array access yields null, so
+// `sharing.metaDesc` still wins there rather than being shadowed by an
+// old-shape plain excerpt.
+//
+// Both parameters are required and must be passed as string LITERALS: Sanity's
+// static query extractor evaluates this template without running JS, so neither
+// a ternary nor a default parameter value survives it (a default fails with
+// "Could not find binding for node"). Types with no image or description
+// fallback pass the literal 'noFallback' — an attribute no document has, so
+// GROQ resolves that coalesce arm to null and skips it.
+const i18nSharingFields = (imageFallback: string, descFallback: string) => `
+	"sharing": {
+		"disableIndex": disableIndex,
+		"metaTitle": coalesce(seoTitle[language == $locale][0].value, seoTitle[language == "en"][0].value),
+		"metaDesc": coalesce(
+			seoDescription[language == $locale][0].value,
+			seoDescription[language == "en"][0].value,
+			${descFallback}[language == $locale][0].value,
+			${descFallback}[language == "en"][0].value
+		),
+		"shareGraphic": coalesce(
+			shareGraphic,
+			${imageFallback},
+			*[_type == "settingsGeneral"][0].shareGraphic
+		),
+		"siteTitle": coalesce(
+			*[_type == "settingsGeneral"][0].siteTitle[language == $locale][0].value,
+			*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value
+		),
+	}
+`;
+
+// Sort key for product-family lists: English title (stable across locales,
+// matching the Studio ordering), falling back to the old-shape plain title.
+const productTitleOrder = `title[language == "en"][0].value`;
+
+const productCardFields = `
+	_id,
+	_type,
+	"title": ${locString('title')},
+	"slug": slug.current,
+	badge,
+	price,
+	purchaseLink,
+	${shopifyHandleField},
+	brands[]->{ _id, title, "slug": slug.current },
+	mainImage {
+		${imageBlockMetaFields}
+	}
+`;
+
+// Placed here, not up with freeformField/faqBlockField, because productsBlockField
+// interpolates productCardFields, titleVisible and visibleProducts: every fragment
+// in this file is evaluated at module init, so a const used above its declaration
+// is a use-before-declare the compiler rejects (TS2448). Same constraint
+// locString's note describes.
+// Every document type the page-module fragments dereference, so the two routes
+// that render pageModules cannot drift from what the fragments actually touch.
+//
+// Worth seeing plainly: these are attached to the whole page fetch, so they fan
+// out to every pGeneral page whether or not it carries the module -- or whether
+// the module is switched on, since the tag set is static. Publishing one
+// product expires all of them — /api/revalidate-tag uses `expire: 0`, so that is
+// immediate. That is the price of resolving a module's references inside the page
+// query; it is the same trade faqBlock already makes with gFaq/gFaqList, one
+// higher-churn type. Event tags are NOT here: <EventsBlock> owns its own fetch
+// (upcomingEventsQuery) and carries them itself.
+export const PAGE_MODULE_TAGS = [
+	'gFaq',
+	'gFaqList',
+	'pProduct',
+	'pProductCollection',
+	'pProductCategory',
+	'pBrand',
+	'settingsBrandColors',
+] as const;
+
+// The types eventCardFields dereferences: locationRef-> plus
+// statusList[].eventStatus-> and its two brand-colour documents. Composed into
+// each consumer's own list rather than restated per query, the way
+// PAGE_MODULE_TAGS serves pageModuleFields -- adding a deref to the fragment
+// then means editing one list, and under `revalidate: false` a type that is
+// dereferenced but untagged freezes that surface until the next deploy.
+//
+// `pEventCategory` is deliberately NOT here: pEventsQuery shares the fragment
+// but projects no category, so it must not carry that tag.
+export const EVENT_CARD_TAGS = [
+	'pEvent',
+	'gLocation',
+	'pEventStatus',
+	'settingsBrandColors',
+] as const;
+
+// upcomingEventsQuery adds categories[0]-> on top of the fragment.
+export const UPCOMING_EVENTS_TAGS = [
+	...EVENT_CARD_TAGS,
+	'pEventCategory',
+] as const;
+
+// `windowDays` rather than the raw `timeWindow` string: stega encodes invisible
+// metadata into every string in draft mode, so a discriminator that crosses into
+// JS has to be cleaned before it is compared — and one that is forgotten fails
+// silently. Numbers are untouched by stega, so resolving the radio here removes
+// the hazard rather than defending against it, the same way faqBlock and
+// productsBlock keep their `source` inside GROQ. -1 means "no window".
+//
+// The events themselves are NOT projected here. They are not a dereference of
+// anything this page holds — they are an independent global query with a time
+// bound — so <EventsBlock> fetches them itself (upcomingEventsQuery below).
+// Nesting them here put `$upcomingFrom` on every pGeneral page's cache key and
+// the three event tags on every pGeneral page's fetch, for a module almost none
+// of them carry.
+// The `callToAction` projection below is the same shape heroBlockField uses. It
+// is a SIBLING of that fragment at the same interpolation depth (linkFields ->
+// resolvedHrefGroq), not another level on the chain -- the distinction matters,
+// because one more level here makes the query extractor blow its stack on
+// pageHomeQuery and pageGeneralQuery ALONE while still reporting success,
+// silently dropping just those two result types. Verify both still generate
+// after touching it.
+//
+// Kept out of the template literal: anything inside the backticks is shipped to
+// Sanity in the request body of every uncached fetch of both page queries.
+const eventsBlockField = `
+	_type,
+	_key,
+	heading,
+	"windowDays": select(timeWindow == "week" => 7, timeWindow == "month" => 30, -1),
+	limit,
+	callToAction{
+		label,
+		link {
+			${linkFields}
+		}
+	},
+	sectionAppearance {
+		...,
+		"backgroundColor": backgroundColor->color,
+		"textColor": textColor->color
+	}
+`;
+
+// The hero module. `paragraph` and the CTA link put this at the same
+// interpolation depth as freeformField (portableTextContentFields → linkFields →
+// resolvedHrefGroq), which the extractor handles; the sectionAppearance block
+// below is spelled out verbatim for the reason given above it, not copy-paste
+// laziness. `waveBackground` is resolved to a boolean in GROQ rather than
+// shipping the `backgroundEffect` string: draft mode stega-encodes strings, so
+// comparing against 'wave' in JS would need a stegaClean first -- the
+// windowDays / faqBlock.source treatment.
+const heroBlockField = `
+	_type,
+	_key,
+	eyebrow,
+	heading,
+	paragraph[]{
+		${portableTextContentFields}
+	},
+	"waveBackground": backgroundEffect == 'wave',
+	// Narrower than imageBlockMetaFields, which the other image projections use.
+	// That fragment also pulls caption and a link projection, and this object has
+	// neither: hero-block.ts declares its customImage with hasCaptionOption false
+	// and no link option, and the image renders aria-hidden behind the copy.
+	// Dropping the link arm keeps the ~2KB resolvedHrefGroq select() out of the
+	// compiled query and, more to the point, one interpolation level off the
+	// pageHome/pageGeneral chain the note above is about.
+	// (No backticks in here: this comment sits inside a JS template literal.)
+	// Conditional on the effect: the schema hides the image while the wave is
+	// selected but keeps the data, and HeroBlock can never render it then, so
+	// the asset refs and lqip strings would be dead payload on every wave hero.
+	// A conditional, not a select() around a fragment, so no interpolation level
+	// is added to the chain the note above is about.
+	backgroundEffect != 'wave' => {
+		backgroundImage{
+			image{
+				${imageMetaFields}
+			},
+			customRatio,
+			imageMobile{
+				${imageMetaFields}
+			},
+			customRatioMobile
+		}
+	},
+	callToAction{
+		label,
+		link {
+			${linkFields}
+		}
+	},
+	sectionAppearance {
+		...,
+		"backgroundColor": backgroundColor->color,
+		"textColor": textColor->color
+	}
+`;
+
+// A productsBlock names EITHER a collection or its own hand-picked list, and
+// `products` stays flat either way — the discriminator never escapes GROQ, the
+// same shape faqBlockField uses and for the same reason: <ProductsBlock> and its
+// Shopify price lookup both consume one flat array.
+//
+// Same select()-fallback reasoning as faqBlockField above, with the arms swapped
+// to match this module's `initialValue: 'picked'`.
+//
+// visibleProducts(), not hand-rolled brackets: its parentheses are what make the
+// trailing filter a filter (see its own note above). Passing a select() into it
+// is new — every other caller passes a plain field name — and it was verified
+// against the API to filter rather than silently pass everything through.
+//
+// Capped at 8, matching the `limit` field's ceiling: card grids are the heaviest
+// thing these pages render.
+const productsBlockField = `
+	_type,
+	_key,
+	heading,
+	limit,
+	"products": ${visibleProducts('select(source == "collection" => collection->products, products)')}[0...8]{
+		${productCardFields}
+	},
+	sectionAppearance {
+		...,
+		"backgroundColor": backgroundColor->color,
+		"textColor": textColor->color
+	}
+`;
+
+const pageModuleFields = `
+	_type == 'freeform' => {
+		${freeformField}
+	},
+	_type == 'faqBlock' => {
+		${faqBlockField}
+	},
+	_type == 'eventsBlock' => {
+		${eventsBlockField}
+	},
+	_type == 'heroBlock' => {
+		${heroBlockField}
+	},
+	_type == 'productsBlock' => {
+		${productsBlockField}
+	},
 `;
 
 export const siteDataQuery = defineQuery(`{
@@ -345,8 +854,7 @@ export const siteDataQuery = defineQuery(`{
 		},
 		"integrations": *[_type == "settingsIntegration"][0]{
 			gaIDs,
-			gtmIDs,
-			klaviyoCompanyId
+			gtmIDs
 		},
 		"consent": *[_type == "settingsConsent"][0]{
 			enabled,
@@ -365,6 +873,12 @@ export const siteDataQuery = defineQuery(`{
 			"privacyPolicyLink": privacyPolicyLink{ ${linkFields} },
 			"cookiePolicyLink": cookiePolicyLink{ ${linkFields} }
 		},
+		"cart": ${byLocale('settingsCart')}[0]{
+			emptyHeading,
+			"recommendedProducts": ${visibleProducts('recommendedProducts')}{
+				${productCardFields}
+			}
+		},
 	}
 `);
 
@@ -380,14 +894,23 @@ export const productSubmissionConfigQuery = defineQuery(`{
 	"logo": ${byLocale('pProductIndex')}[defined(confirmationEmail.logo.asset)][0].confirmationEmail.logo
 }`);
 
-export const pageHomeQuery = defineQuery(`
+export // `landingTitle` is not rendered: PageHome reads it only to tell "this dataset
+// predates the hero migration" from "this homepage has no modules yet", and the
+// migration unsets it, so it and the schema field retire together.
+//
+// `moduleCount` counts pageModules BEFORE `moduleVisible` filters it. Without it
+// the guard cannot separate "no modules authored" from "every module parked with
+// the eye toggle", so hiding the only module reproduced the unmigrated signature
+// and failed the production build.
+const pageHomeQuery = defineQuery(`
 	${byLocale('pHome')}[0]{
 		${baseFields},
 		${availableLocalesField},
 		"isHomepage": true,
 		landingTitle,
+		"moduleCount": count(pageModules),
 		"textColor": textColor->color,
-		pageModules[]{
+		pageModules[${moduleVisible}]{
 			${pageModuleFields}
 		}
 	}
@@ -416,7 +939,7 @@ export const pageGeneralQuery = defineQuery(`
 		content[]{
 			${portableTextContentFields}
 		},
-		pageModules[]{
+		pageModules[${moduleVisible}]{
 			${pageModuleFields}
 		},
 		_updatedAt
@@ -442,8 +965,7 @@ export const pageContactQuery = defineQuery(`
 			successMessage,
 			errorMessage,
 			sendToEmail,
-			emailSubject,
-			formFailureNotificationEmail
+			emailSubject
 		},
 		legalConsent[]{
 			${portableTextContentFields}
@@ -456,8 +978,28 @@ export const pageFaqQuery = defineQuery(`
 		${baseFields},
 		${availableLocalesField},
 		intro,
-		"items": *[_type == "gFaq" && language == $locale] | order(order asc){
+		"items": faqSet->questions[]->{
 			${gFaqItemFields}
+		}
+	}
+`);
+
+export const pageSizeGuideQuery = defineQuery(`
+	${byLocale('pSizeGuide')}[0]{
+		${baseFields},
+		${availableLocalesField},
+		intro,
+		footnote,
+		sections[]{
+			_key,
+			title,
+			"charts": charts[]{
+				_key,
+				label,
+				"chart": chart->{
+					${gSizeChartFields}
+				}
+			}
 		}
 	}
 `);
@@ -472,81 +1014,203 @@ export const pageNewsletterQuery = defineQuery(`
 	}
 `);
 
+// Status badges, shared by the listing and the detail page — both render the
+// same pill with the same link.
+const eventStatusListFields = `
+	statusList[]{
+		_key,
+		link {
+			${linkFields}
+		},
+		eventStatus-> {
+			_id,
+			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+			"slug": slug.current,
+			statusTextColor->{...color},
+			statusBgColor->{...color}
+		}
+	}
+`;
+
+// Event listing. One document per event now, so the old two-arm union (current
+// locale, plus English/undefined whose slug had no current-locale sibling) is
+// gone: there is nothing to deduplicate, and `titleVisible` alone decides
+// whether an event appears in this locale.
+//
+// `categories` is deliberately NOT projected here: /events renders no category,
+// and it costs a reference deref per event. upcomingEventsQuery adds it on top
+// of this fragment instead, because the home-page ticket does render it -- see
+// the note there.
+//
+// `slug` IS projected here, unlike `categories`: every surface that renders a
+// ticket renders it as a link to the event -- the /events rows, the home-page
+// carousel and the event page's related strips, whose whole purpose is moving
+// between related runs -- so the fragment is what keeps the three from
+// disagreeing about whether a card opens anything.
+const eventCardFields = `
+	_id,
+	_type,
+	"title": ${locString('title')},
+	"slug": slug.current,
+	"subtitle": ${locString('subtitle')},
+	eventDatetime,
+	endDatetime,
+	dateStatus,
+	"location": ${locString('location')},
+	locationLink,
+	locationRef->{
+		"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
+		mapLink,
+	},
+	${eventStatusListFields}
+`;
+
 export const pEventsQuery = defineQuery(`
-	${byLocale('pEvents')}[0]{
-		${baseFields},
-		${availableLocalesField},
-		"eventList": (
-			*[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff]{
-				${baseFields},
-				subtitle,
-				eventDatetime,
-				dateStatus,
-				location,
-				locationLink,
-				locationRef->{
-					"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
-					mapLink,
-				},
-				categories[]-> {
-					_id,
-					title,
-					"slug": slug.current,
-					categoryColor->{...color}
-				},
-				statusList[]{
-					_key,
-					link {
-						${linkFields}
-					},
-					eventStatus-> {
-						_id,
-						"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-						"slug": slug.current,
-						statusTextColor->{...color},
-						statusBgColor->{...color}
-					}
-				}
-			}
-			+ *[
-				_type == "pEvent"
-				&& (language == "en" || !defined(language))
-				&& eventDatetime.utc >= $cutoff
-				&& !(slug.current in *[_type == "pEvent" && language == $locale && eventDatetime.utc >= $cutoff].slug.current)
-			]{
-				${baseFields},
-				subtitle,
-				eventDatetime,
-				dateStatus,
-				location,
-				locationLink,
-				locationRef->{
-					"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
-					mapLink,
-				},
-				categories[]-> {
-					_id,
-					title,
-					"slug": slug.current,
-					categoryColor->{...color}
-				},
-				statusList[]{
-					_key,
-					link {
-						${linkFields}
-					},
-					eventStatus-> {
-						_id,
-						"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-						"slug": slug.current,
-						statusTextColor->{...color},
-						statusBgColor->{...color}
-					}
-				}
-			}
-		) | order(eventDatetime.utc asc),
+	*[_type == "pEvents"][0]{
+		_id,
+		_type,
+		"title": ${locString('title')},
+		"slug": slug.current,
+		${i18nSharingFields('noFallback', 'noFallback')},
+		"availableLocales": ${ALL_LOCALES_GROQ},
+		"eventList": *[_type == "pEvent" && eventDatetime.utc >= $cutoff && ${titleVisible}]{
+			${eventCardFields}
+		} | order(eventDatetime.utc asc),
 	}
 `);
+
+// The eventsBlock module's own read, kept out of the page queries: these events
+// are not a dereference of anything the page holds, so nesting them there put
+// `$upcomingFrom` on every pGeneral page's cache key and the three event tags on
+// every pGeneral page's fetch.
+//
+// `$upcomingFrom` is a payload bound, not the answer. selectUpcomingEvents() in
+// src/lib/event-date.ts decides what is actually upcoming, because that needs the
+// event's own timezone and an end-of-day fallback when endDatetime is blank —
+// neither expressible in GROQ. So the bound is day-granular and a day slack,
+// which also sidesteps a lexicographic trap: `utc` compares as a string (as
+// pEventsQuery does too) and Sanity omits zero milliseconds while
+// Date#toISOString does not, so "…:00Z" > "…:00.000Z".
+//
+// coalesce(endDatetime, eventDatetime) keeps a multi-day event that is still
+// running even though it started before the bound. Capped at 12: rows come back
+// ascending and the window is an upper bound on that same ordering, so the only
+// rows fetched-then-discarded are ones that ended inside the bound's ~24-48h of
+// slack. 10 (the schema ceiling) plus two spare covers that; each extra row
+// costs a locationRef deref plus three more per status entry.
+// `category` is projected HERE and not in eventCardFields: /events shares that
+// fragment and renders no category, so projecting it there put the field in
+// every row of the /events client payload, a deref per row, and a
+// pEventCategory tag on that page's fetch, all for nothing. It is the decoder
+// for the title codes -- an event titled "161 RR" is a "Road Run (RR)". [0], not
+// the array: the ticket shows one. (Outside the backticks, so it is not sent.)
+export const upcomingEventsQuery = defineQuery(`
+	*[_type == "pEvent" && ${titleVisible}
+		&& coalesce(endDatetime.utc, eventDatetime.utc) >= $upcomingFrom
+	] | order(eventDatetime.utc asc)[0...12]{
+		${eventCardFields},
+		"category": ${locString('categories[0]->title')}
+	}
+`);
+
+// Same deref set as upcomingEventsQuery -- the shared fragment plus a category
+// projection -- but its own const, so the two queries stay free to diverge.
+export const RELATED_EVENTS_TAGS = [
+	...EVENT_CARD_TAGS,
+	'pEventCategory',
+] as const;
+
+// The event page's two related strips: other events in the same series (same
+// category) and other events at the same venue. One query with two projections
+// rather than two queries, so it is one round trip and one cache entry.
+//
+// Anchored on $slug -- the same params the page's own fetch already takes -- so
+// EventRelated owns its data instead of waiting on ids projected out of
+// pageEventSingleQuery. That is the composition rule: a component that needs
+// nothing from its parent's fetch can never be stuck behind it. It also means
+// `categoryTitle` and `locationName` for the two headings come back here rather
+// than being threaded down as props.
+//
+// Fetched by EventRelated, NOT nested in pageEventSingleQuery, and the reason is
+// tags rather than cache keys. /api/revalidate-tag fires revalidateTag(_type)
+// AND revalidateTag(`${_type}:${slug}`), and the page's own read is scoped to
+// `pEvent:${slug}` so publishing event B cannot expire event A's document. This
+// strip MUST expire when B changes, so it needs the broad `pEvent` tag --
+// nesting it would put that tag on the page's own fetch, which generateMetadata
+// awaits through the same cache(), and every publish would then invalidate the
+// metadata of all 178 event pages and pull 8 related rows just to read
+// `sharing`.
+//
+// NO WALL-CLOCK PARAM, deliberately. `order(eventDatetime.utc desc)` already
+// puts anything upcoming first, since a future event carries the largest
+// timestamp, and then walks back through the most recent past. The clock is
+// needed only to split those two halves for display, which orderByRelevance()
+// does in JS -- GROQ cannot, as it needs the event's own timezone and an
+// end-of-day fallback. So nothing rolls this cache key over daily.
+//
+// `^.^` in the series filter reaches the anchor document from inside the array
+// filter's own scope (one extra level), the same shape pageProductSingleQuery's
+// defaultRelatedProducts uses. Verified against both datasets.
+//
+// `!defined(^.categories[0]._ref)` is the fallback for the four events that
+// carry no category at all (bw-94-rr, 1602-fm, 139-cr, bw-96-sc -- the field is
+// unset, not an empty array, so `count(categories) == 0` does NOT find them):
+// the filter degrades to "the latest events overall" rather than matching
+// nothing. Three of the four have no venue either, so without this they are the
+// only pages that would render no strip whatsoever.
+//
+// The venue arm needs `defined(^.locationRef._ref)`, or an event with no
+// referenced venue matches every other event that also has none. It only ever
+// finds locationRef-backed venues; an event whose venue is the one-off
+// `location` string (141-cr, say) correctly gets no venue strip.
+//
+// The venue arm does NOT exclude category siblings in the filter, and that is
+// deliberate. Doing so looks like the obvious efficiency win -- 17 of the 34
+// venue-bearing events share both category and venue with their siblings, so
+// rows are fetched and then dropped by EventRelated's JS dedupe. But measured,
+// filtering them out in GROQ empties the venue strip on those same 17 of 34
+// events: "same programme, same venue, just older" is the most relevant set
+// there is, and the series arm cannot show it because those events fall outside
+// its own slice. So the dedupe stays in JS, where it only removes rows the
+// series strip is actually rendering.
+//
+// [0...6] rather than 8: every row returned becomes a rendered slide, in the
+// HTML and again in the inlined RSC payload, and the carousel shows 4 at its
+// widest (basis-1/4). The house default for an event strip is 5
+// (DEFAULT_EVENT_LIMIT in event-date.ts).
+//
+// eventCardFields is interpolated at the QUERY level, exactly as
+// upcomingEventsQuery does -- a sibling at the same depth, not a new level on
+// the eventStatusListFields -> linkFields -> resolvedHrefGroq chain. Do NOT
+// wrap either projection in a fragment; that is the level that kills the
+// extractor.
+export const relatedEventsQuery = defineQuery(`
+	*[_type == "pEvent" && slug.current == $slug && ${titleVisible}][0]{
+		"categoryTitle": ${locString('categories[0]->title')},
+		"locationName": ${locString('locationRef->name')},
+		"series": *[_type == "pEvent" && _id != ^._id && ${titleVisible}
+			&& (!defined(^.categories[0]._ref)
+				|| count((categories[]._ref)[@ in ^.^.categories[]._ref]) > 0)
+		] | order(eventDatetime.utc desc)[0...6]{
+			${eventCardFields},
+			"category": ${locString('categories[0]->title')}
+		},
+		"venue": *[_type == "pEvent" && _id != ^._id && ${titleVisible}
+			&& defined(^.locationRef._ref)
+			&& locationRef._ref == ^.locationRef._ref
+		] | order(eventDatetime.utc desc)[0...6]{
+			${eventCardFields},
+			"category": ${locString('categories[0]->title')}
+		}
+	}
+`);
+
+// /events-crew renders outside the [locale] segment, so these queries have no
+// $locale to resolve against. They pick zh_tw first, falling back to English —
+// the crew is Taiwan-based and the roster is written in Chinese. `locationRef`
+// already did this; the rest joined it when the event family became field-level.
+const crewString = (field: string) =>
+	`coalesce(${field}[language == "zh_tw"][0].value, ${field}[language == "en"][0].value)`;
 
 export const eventCrewMonthsQuery = defineQuery(`
 	*[_type == "pEvent" && defined(teamAssignments) && defined(eventDatetime.utc)] | order(eventDatetime.utc asc) {
@@ -574,24 +1238,29 @@ export const eventCrewByMonthQuery = defineQuery(`
 		&& ($memberSlug == "" || $memberSlug in teamAssignments[].members[]->slug.current)
 	] | order(eventDatetime.utc asc) {
 		_id,
-		title,
+		"title": ${crewString('title')},
 		"sharing":{},
-		subtitle,
+		"subtitle": ${crewString('subtitle')},
 		eventDatetime,
+		endDatetime,
 		dateStatus,
-		location,
+		"location": ${crewString('location')},
 		locationLink,
-		teamNotes,
+		locationRef->{
+			"name": ${crewString('name')},
+			mapLink
+		},
+		"teamNotes": ${crewString('teamNotes')},
 		categories[]-> {
 			_id,
-			title,
+			"title": ${crewString('title')},
 			"slug": slug.current,
 			categoryColor->{...color}
 		},
 		teamAssignments[] {
 			_key,
 			group,
-			note,
+			"note": ${crewString('note')},
 			role-> {
 				_id,
 				title,
@@ -608,105 +1277,16 @@ export const eventCrewByMonthQuery = defineQuery(`
 	}
 `);
 
-const blogPostBaseFields = `
-	${baseFields},
-	author->{name},
-	categories[]-> {
-		_id,
-		title,
-		"slug": slug.current,
-		categoryColor->{...color}
-	}
-`;
-
-export const blogPostCardFields = `${blogPostBaseFields}, excerpt`;
-
-export const blogPostFullFields = `
-	${blogPostBaseFields},
-	content[]{
-		${portableTextContentFields}
-	},
-	"relatedBlogs": relatedBlogs[]->{
-		${blogPostCardFields}
-	}
-`;
-
-export const articleListAllQuery = `
-	"articleList": *[_type == "pBlog"] | order(_updatedAt desc) [0...12] {
-		${blogPostCardFields}
-	}
-`;
-
-const blogIndexBaseQuery = `
-	${baseFields},
-	"slug": "blog",
-	itemsPerPage,
-	paginationMethod,
-	loadMoreButtonLabel,
-	infiniteScrollCompleteLabel,
-	"itemsTotalCount": count(*[_type == "pBlog"])
-`;
-
-export const pageBlogIndexQuery = defineQuery(`
-	${byLocale('pBlogIndex')}[0]{
-		${blogIndexBaseQuery}
-	}
-`);
-
-export const pageBlogIndexWithArticleDataSSGQuery = defineQuery(`
-	${byLocale('pBlogIndex')}[0]{
-		${blogIndexBaseQuery},
-		${articleListAllQuery}
-	}
-`);
-
-export const pageBlogPaginationMethodQuery = defineQuery(`
-	{
-		"articleTotalNumber": count(*[_type == "pBlog"]),
-		"itemsPerPage": *[_type == "pBlogIndex"][0].itemsPerPage
-	}`);
-
-export const pageBlogSlugsQuery = defineQuery(`
-  *[_type == "pBlog" && defined(slug.current)]
-  {"slug": slug.current}
-`);
-
-export const pageBlogSingleQuery = defineQuery(`
-	*[_type == "pBlog" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
-		${blogPostFullFields},
-		"defaultRelatedBlogs": *[_type == "pBlog"
-			&& count(categories[@._ref in ^.^.categories[]._ref ]) > 0
-			&& _id != ^._id
-		] | order(publishedAt desc, _createdAt desc) [0...2] {
-			${blogPostCardFields}
-		}
-	}
-`);
-
-const productCardFields = `
-	${baseFields},
-	excerpt,
-	badge,
-	price,
-	purchaseLink,
-	categories[]->{
-		_id,
-		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-		"slug": slug.current
-	},
-	brands[]->{ _id, title, "slug": slug.current },
-	mainImage {
-		${imageBlockMetaFields}
-	}
-`;
-
+// Inside nested projections the document's transition discriminator is
+// reached through ^ (one hop per scope): ^.language from a direct object or
+// array item, ^.^.language from a list item inside one.
 const productMetadataFields = `
 	metadata[]{
 		_key,
-		title,
+		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value, select(defined(^.language) => title)),
 		contentType,
 		contentType == "richText" => {
-			"richText": richText[]{ ${portableTextContentFields} }
+			"richText": coalesce(richText[language == $locale][0].value, richText[language == "en"][0].value, select(defined(^.language) => richText))[]{ ${portableTextContentFields} }
 		},
 		contentType == "list" => {
 			"list": list[]{
@@ -719,19 +1299,21 @@ const productMetadataFields = `
 						"slug": slug.current
 					}
 				},
-				_type == "textItem" => { text }
+				_type == "textItem" => {
+					"text": coalesce(text[language == $locale][0].value, text[language == "en"][0].value, select(defined(^.^.language) => text))
+				}
 			}
 		}
 	}
 `;
 
 const productStaticSectionFields = `
-	whyUseIt[]{ ${portableTextContentFields} },
-	whoIsItFor[]{ ${portableTextContentFields} },
+	"whyUseIt": ${locPT('whyUseIt')}[]{ ${portableTextContentFields} },
+	"whoIsItFor": ${locPT('whoIsItFor')}[]{ ${portableTextContentFields} },
 	whenReachForIt{
 		contentType,
 		contentType == "richText" => {
-			"richText": richText[]{ ${portableTextContentFields} }
+			"richText": coalesce(richText[language == $locale][0].value, richText[language == "en"][0].value, select(defined(^.language) => richText))[]{ ${portableTextContentFields} }
 		},
 		contentType == "list" => {
 			"list": list[]{
@@ -744,7 +1326,9 @@ const productStaticSectionFields = `
 						"slug": slug.current
 					}
 				},
-				_type == "textItem" => { text }
+				_type == "textItem" => {
+					"text": coalesce(text[language == $locale][0].value, text[language == "en"][0].value, select(defined(^.^.language) => text))
+				}
 			}
 		}
 	}
@@ -752,7 +1336,18 @@ const productStaticSectionFields = `
 
 const productBaseFields = `
 	${productCardFields},
-	content[]{
+	${i18nSharingFields('mainImage.image', 'excerpt')},
+	// Detail-page only: the breadcrumb and the related-grid heading read
+	// categories[0]. Lists never render them, so this stays out of
+	// productCardFields, where it cost a reference join per card across nine
+	// grids -- including siteData's cart recommendations, which every page pays.
+	categories[]->{
+		_id,
+		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+		"slug": slug.current
+	},
+	soldOut,
+	"content": ${locPT('content')}[]{
 		${portableTextContentFields}
 	},
 	${productStaticSectionFields},
@@ -767,10 +1362,20 @@ const productCategoriesFields = `
 		coverImage {
 			${imageBlockMetaFields}
 		},
-		"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
+		"count": count(*[_type == "pProduct" && references(^._id) && ${titleVisible}])
 	}
 `;
 
+// Card counts are deliberately small; the index is a shop window, not the
+// catalogue. `allProductsList` is 8 (not 24) because both the "All Products"
+// link and the "More Products" button below that grid go to the paginated
+// /products/all, and each collection strip is 4 — exactly one row of the widest
+// grid (2xl:grid-cols-4) — with the collection's own page holding the full set.
+// At 24 + 8-per-strip the index shipped 58 cards / 58 <img> / 1,429 DOM nodes in
+// a 532KB document 34,497px tall on mobile, which is what put Speed Index at
+// 20.9s. Keep the rationale out here: anything inside the template literal is
+// query payload sent to Sanity on every request and is baked into the generated
+// types.
 export const pageProductIndexQuery = defineQuery(`
 	${byLocale('pProductIndex')}[0]{
 		${baseFields},
@@ -782,58 +1387,97 @@ export const pageProductIndexQuery = defineQuery(`
 			title,
 			description
 		},
-		"allProductsList": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}]
-			| order(_createdAt desc)[0...24]{
+		"allProductsList": *[_type == "pProduct" && ${titleVisible}]
+			| order(_createdAt desc)[0...8]{
 			${productCardFields}
 		},
 		"collections": collections[]->{
-			"loc": *[_type == "pProductCollection"
-				&& slug.current == ^.slug.current
-				&& (language == $locale || language == "en" || !defined(language))
-			] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
-				_id,
-				title,
-				description,
-				"slug": slug.current,
-				coverImage {
-					${imageBlockMetaFields}
-				},
-				"products": products[0...8]->{
-					${productCardFields}
-				}
+			_id,
+			"title": ${locString('title')},
+			"description": ${locString('description')},
+			"slug": slug.current,
+			coverImage {
+				${imageBlockMetaFields}
+			},
+			"products": ${visibleProducts('products')}[0...4]{
+				${productCardFields}
 			}
-		}.loc,
+		},
 		categories[]->{_id,
 			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
 			"slug": slug.current,
 			coverImage {
 				${imageBlockMetaFields}
 			},
-			"count": count(*[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}])
+			"count": count(*[_type == "pProduct" && references(^._id) && ${titleVisible}])
 		}
 	}
 `);
 
+// See the note on pageEventSlugsQuery. This is the one that actually bites
+// today: two published products carry a zh_tw title and no en title, so the
+// unguarded list prerendered /en/products/<slug> for both -- 73KB of noindexed
+// "Page not found" each, in the build output and reachable.
 export const pageProductSlugsQuery = defineQuery(`
-	*[_type == "pProduct" && defined(slug.current)]
+	*[_type == "pProduct" && defined(slug.current) && ${titleVisible}]
 	{"slug": slug.current}
 `);
 
 export const pageProductSingleQuery = defineQuery(`
-	*[_type == "pProduct" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
+	*[_type == "pProduct" && slug.current == $slug && ${titleVisible}][0]{
 		${productBaseFields},
-		${availableLocalesField},
-		"relatedProducts": relatedProducts[]->{
+		${productAvailableLocalesField},
+		"sizeChart": sizeChart->{
+			${gSizeChartFields}
+		},
+		"relatedProducts": ${visibleProducts('relatedProducts')}{
 			${productCardFields}
 		},
 		"defaultRelatedProducts": *[_type == "pProduct"
 			&& count(categories[@._ref in ^.^.categories[]._ref]) > 0
 			&& _id != ^._id
-			&& ${productLocaleFilter('pProduct')}
+			&& ${titleVisible}
 		] | order(_createdAt desc) [0...3] {
 			${productCardFields}
 		}
 	}
+`);
+
+// Shopify handle → Sanity slug, for the cart drawer's line-item links. Shopify
+// knows only its own handle; product routes are keyed on the Sanity slug, and
+// the two are deliberately independent. Resolved per cart response rather than
+// captured when the line is added, because an editor can rename a slug at any
+// time and a stored copy would then point at a 404.
+//
+// `productTitleVisible` is not optional here: pageProductSingleQuery carries it,
+// so a product untranslated in $locale 404s on that locale's route. Without the
+// same guard a zh-only line added on the zh_tw route would render a link into
+// that 404 once the shopper switched to English — the leak described above the
+// fragment. A line whose product is invisible in this locale simply resolves to
+// no slug, and the drawer renders its thumbnail unlinked.
+export const productSlugsByShopifyHandleQuery = defineQuery(`
+	*[_type == "pProduct"
+		&& defined(slug.current)
+		&& shopify.handle in $handles
+		&& ${titleVisible}
+	]{
+		"handle": shopify.handle,
+		"slug": slug.current
+	}
+`);
+
+// Server-side config for the back-in-stock notify API route: the single global
+// Klaviyo list all "notify when back in stock" signups subscribe to. Product
+// identity is carried per signup as Klaviyo event properties, not stored here.
+export const backInStockConfigQuery = defineQuery(`
+	*[_type == "settingsIntegration"][0]{ "listId": klaviyoBackInStockListId }
+`);
+
+// Server-side list resolution for /api/newsletter/subscribe — same reasoning as
+// backInStockConfigQuery: the client never chooses the Klaviyo list. Same
+// expression as the form's `signupEnabled` gate, so the two cannot drift.
+export const newsletterConfigQuery = defineQuery(`
+	{ "listId": ${newsletterListId} }
 `);
 
 export const pageProductCollectionSlugsQuery = defineQuery(`
@@ -842,11 +1486,15 @@ export const pageProductCollectionSlugsQuery = defineQuery(`
 `);
 
 export const pageProductCollectionSingleQuery = defineQuery(`
-	*[_type == "pProductCollection" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
-		${baseFields},
-		${availableLocalesField},
-		description,
-		"products": products[]->{
+	*[_type == "pProductCollection" && slug.current == $slug && ${titleVisible}][0]{
+		_id,
+		_type,
+		"title": ${locString('title')},
+		"slug": slug.current,
+		${i18nSharingFields('coverImage.image', 'description')},
+		${productAvailableLocalesField},
+		"description": ${locString('description')},
+		"products": ${visibleProducts('products')}{
 			${productCardFields}
 		},
 		${productCategoriesFields}
@@ -855,7 +1503,7 @@ export const pageProductCollectionSingleQuery = defineQuery(`
 
 export const pageProductCategoriesIndexQuery = defineQuery(`
 	{
-		"productCount": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')}]),
+		"productCount": count(*[_type == "pProduct" && ${titleVisible}]),
 		${productCategoriesFields},
 		"sharing": {
 			"shareGraphic": *[_type == "settingsGeneral"][0].shareGraphic,
@@ -900,7 +1548,7 @@ export const pageProductCategorySingleQuery = defineQuery(`
 		coverImage {
 			${imageBlockMetaFields}
 		},
-		"products": *[_type == "pProduct" && references(^._id) && ${productLocaleFilter('pProduct')}] | order(title asc) {
+		"products": *[_type == "pProduct" && references(^._id) && ${titleVisible}] | order(${productTitleOrder} asc) {
 			${productCardFields}
 		}
 	}
@@ -908,10 +1556,10 @@ export const pageProductCategorySingleQuery = defineQuery(`
 
 export const pageProductCollectionsIndexQuery = defineQuery(`
 	{
-		"collections": *[_type == "pProductCollection" && ${productLocaleFilter('pProductCollection')}] | order(title asc) {
+		"collections": *[_type == "pProductCollection" && ${titleVisible}] | order(${productTitleOrder} asc) {
 			_id,
-			title,
-			description,
+			"title": ${locString('title')},
+			"description": ${locString('description')},
 			"slug": slug.current,
 			coverImage {
 				${imageBlockMetaFields}
@@ -923,33 +1571,47 @@ export const pageProductCollectionsIndexQuery = defineQuery(`
 
 export const pageProductsAllQuery = defineQuery(`
 	{
-		"products": *[_type == "pProduct" && ${productLocaleFilter('pProduct')}] | order(title asc) [$start...$end] {
+		"products": *[_type == "pProduct" && ${titleVisible}] | order(${productTitleOrder} asc) [$start...$end] {
 			${productCardFields}
 		},
-		"total": count(*[_type == "pProduct" && ${productLocaleFilter('pProduct')}]),
+		"total": count(*[_type == "pProduct" && ${titleVisible}]),
 		${productCategoriesFields}
 	}
 `);
 
+// `titleVisible` here, not just `defined(slug.current)`: generateStaticParams
+// runs once per locale, and without the guard it returned every slug for both,
+// so a document visible in only one locale got a prerendered page in the other
+// -- where pageEventSingleQuery (which DOES carry the guard) returns null and
+// the route renders NotFoundContent at HTTP 200. The two queries in that route
+// have to agree about visibility or the build bakes in soft 404s.
+//
+// Measured on this dataset: 0 affected events (all 89 carry an en title, and
+// the guard accepts the en fallback), but 2 affected products -- see the same
+// guard on pageProductSlugsQuery.
 export const pageEventSlugsQuery = defineQuery(`
-	*[_type == "pEvent" && defined(slug.current)]
+	*[_type == "pEvent" && defined(slug.current) && ${titleVisible}]
 	{"slug": slug.current}
 `);
 
 export const pageEventSingleQuery = defineQuery(`
-	*[_type == "pEvent" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
-		${baseFields},
-		${availableLocalesField},
+	*[_type == "pEvent" && slug.current == $slug && ${titleVisible}][0]{
+		_id,
+		_type,
+		"title": ${locString('title')},
+		"slug": slug.current,
+		${i18nSharingFields('heroImage.image', 'excerpt')},
+		"availableLocales": ${localesWithValue('title')},
 		format,
-		subtitle,
-		excerpt,
+		"subtitle": ${locString('subtitle')},
+		"excerpt": ${locString('excerpt')},
 		eventDatetime,
 		endDatetime,
 		dateStatus,
 		eventType,
 		distanceKm,
 		isFree,
-		location,
+		"location": ${locString('location')},
 		locationLink,
 		locationRef->{
 			"name": coalesce(name[language == $locale][0].value, name[language == "en"][0].value),
@@ -958,33 +1620,32 @@ export const pageEventSingleQuery = defineQuery(`
 			geo
 		},
 		heroImage{${imageBlockMetaFields}},
-		highlights[]{label, value},
-		startEndLocation,
-		categories[]->{ _id, title, "slug": slug.current },
-		statusList[]{
-			_key,
-			link {
-				${linkFields}
-			},
-			eventStatus->{
-				_id,
-				"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-				statusTextColor->{...color},
-				statusBgColor->{...color}
-			}
+		highlights[]{
+			"label": ${locString('label')},
+			"value": ${locString('value')}
 		},
+		startEndLocation{
+			"name": ${locString('name')},
+			link
+		},
+		categories[]->{
+			_id,
+			"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+			"slug": slug.current
+		},
+		${eventStatusListFields},
 		stations[]{
-			name,
-			distance,
-			locationName,
+			"name": ${locString('name')},
+			"distance": ${locString('distance')},
+			"locationName": ${locString('locationName')},
 			locationLink,
-			questTitle,
-			questInstructions,
+			"questTitle": ${locString('questTitle')},
+			"questInstructions": ${locString('questInstructions')},
 			questExampleImage{${imageBlockMetaFields}},
-			directionsIn,
-			directionsOut
+			"directionsIn": ${locString('directionsIn')},
+			"directionsOut": ${locString('directionsOut')}
 		},
-		content[]{
+		"content": ${locPT('content')}[]{
 			${portableTextContentFields}
 		}
 	}

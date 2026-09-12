@@ -26,6 +26,13 @@ export const settingsIntegration = defineType({
 			name: 'klaviyoCompanyId',
 			type: 'string',
 		},
+		{
+			title: 'Klaviyo Back-in-Stock List ID',
+			description:
+				'Single Klaviyo list that all "notify when back in stock" signups subscribe to. Product identity is captured per signup as event properties, so you segment by product in Klaviyo.',
+			name: 'klaviyoBackInStockListId',
+			type: 'string',
+		},
 	],
 	preview: {
 		prepare() {

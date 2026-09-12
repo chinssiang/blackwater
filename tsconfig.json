@@ -26,11 +26,12 @@
 	},
 	"include": [
 		".next/types/**/*.ts",
-		"/next-env.d.ts",
+		"next-env.d.ts",
 		".next/dev/types/**/*.ts",
+		"**/*.ts",
+		"**/*.tsx",
 		"**/*.mts",
 		"src/app/sitemap.ts",
-		"src/types/react-experimental.d.ts",
 		"sanity.types.ts"
 	],
 	"exclude": ["node_modules"]

@@ -3,27 +3,26 @@ import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundC
 import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
-import { pEventsQuery } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import { EVENT_CARD_TAGS, pEventsQuery } from '@/sanity/lib/queries';
+import defineMetadata, {
+	normalizeLocales,
+	omitPageMetadata,
+} from '@/lib/defineMetadata';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
 import { buildEventName } from '@/lib/buildEventName';
-import { formatRichDate } from '@/lib/event-date';
+import { resolveEventLocation } from '@/lib/event-location';
 import JsonLd from '@/components/JsonLd';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
-import type { RichDate } from 'sanity.types';
+import type { PEventsQueryResult } from 'sanity.types';
 import { PageEvents } from './_components/PageEvents';
 
 const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 
-type EventListItem = {
-	title?: string;
-	subtitle?: string;
-	slug?: string;
-	location?: string;
-	locationRef?: { name?: string | null } | null;
-	eventDatetime?: RichDate | null;
-};
+// Derived, not hand-written: the ItemList reads a subset of the projected
+// fields, and pinning it to the query result means adding a field to
+// `eventCardFields` can never silently drift from what this consumes.
+type EventListItem = NonNullable<PEventsQueryResult>['eventList'][number];
 
 function defineEventsItemListJsonLd(
 	eventList: Array<EventListItem>,
@@ -31,7 +30,11 @@ function defineEventsItemListJsonLd(
 ): Record<string, unknown> | null {
 	const itemListElement = (eventList || [])
 		.map((event, i) => {
-			const href = resolveHref({ documentType: 'pEvent', slug: event?.slug, locale });
+			const href = resolveHref({
+				documentType: 'pEvent',
+				slug: event?.slug,
+				locale,
+			});
 			if (!event?.title || !href) return null;
 			return {
 				'@type': 'ListItem',
@@ -40,7 +43,7 @@ function defineEventsItemListJsonLd(
 					{
 						title: event.title,
 						subtitle: event.subtitle,
-						location: event.locationRef?.name || event.location,
+						location: resolveEventLocation(event).name,
 						eventDatetime: event.eventDatetime?.utc,
 						timezone: event.eventDatetime?.timezone,
 					},
@@ -66,19 +69,40 @@ function defineEventsItemListJsonLd(
 // accumulate over the years.
 const EVENTS_PAST_WINDOW_MONTHS = 12;
 
+// This page's output depends on the wall clock (the cutoff below, and the ended
+// state each row renders), so tag-based invalidation alone is not enough -- with
+// no content edits the prerendered HTML would keep serving build-time state.
+// Composes with the `pEvents`/`pEvent` tags rather than replacing them.
+export const revalidate = 3600;
+
 function getEventsCutoff(): string {
 	const cutoff = new Date();
+	// To the FIRST of the month before shifting: the calendar's own past bound is
+	// a whole month index, so a cutoff that kept today's day-of-month left the
+	// earliest reachable month part-fetched — days 1..6 rendering as empty cells
+	// that assert nothing happened, which is the one claim that bound exists to
+	// prevent. Setting the date first also stops `setMonth` rolling off a short
+	// month when today is the 29th-31st.
+	cutoff.setDate(1);
 	cutoff.setMonth(cutoff.getMonth() - EVENTS_PAST_WINDOW_MONTHS);
 	cutoff.setHours(0, 0, 0, 0);
 	return cutoff.toISOString();
 }
 
-const getCachedEventsData = cache(async (locale: string) =>
-	sanityFetch({
-		query: pEventsQuery,
-		params: { locale, cutoff: getEventsCutoff() },
-		tags: ['pEvents', 'pEvent'],
-	})
+// Annotated, not inferred: `pEventsQuery` is built from interpolated helpers, so
+// TypeScript cannot fold it into the string literal that indexes Sanity's
+// query→result map, and `data` would silently arrive as `any`.
+const getCachedEventsData = cache(
+	async (locale: string): Promise<{ data: PEventsQueryResult }> =>
+		sanityFetch({
+			query: pEventsQuery,
+			params: { locale, cutoff: getEventsCutoff() },
+			// EVENT_CARD_TAGS covers what eventCardFields dereferences; this page
+			// adds its own singleton on top. Composed rather than restated so a
+			// deref added to the fragment cannot be tagged on the other event
+			// surfaces and missed here.
+			tags: [...EVENT_CARD_TAGS, 'pEvents'],
+		})
 );
 
 type Props = { params: Promise<{ locale: string }> };
@@ -101,24 +125,6 @@ export default async function Page(props: Props) {
 	if (!data) return <NotFoundContent locale={locale} />;
 
 	const { eventList } = data || {};
-	const groupedEvents = eventList.reduce(
-		(
-			acc: Record<string, (typeof eventList)[number][]>,
-			event: (typeof eventList)[number]
-		) => {
-			const key =
-				formatRichDate(event.eventDatetime, 'yyyy_MMMM').toLowerCase() ||
-				'unknown';
-
-			if (!acc[key]) {
-				acc[key] = [];
-			}
-			acc[key].push(event);
-
-			return acc;
-		},
-		{}
-	);
 
 	const cleanList = stegaClean(eventList);
 	const itemListJsonLd = defineEventsItemListJsonLd(
@@ -129,7 +135,7 @@ export default async function Page(props: Props) {
 	return (
 		<>
 			{itemListJsonLd && <JsonLd data={itemListJsonLd} />}
-			<PageEvents data={{ groupedEvents, ...data }} />
+			<PageEvents data={omitPageMetadata(data)} />
 		</>
 	);
 }

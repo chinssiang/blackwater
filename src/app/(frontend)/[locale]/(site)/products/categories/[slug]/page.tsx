@@ -7,11 +7,12 @@ import {
 	pageProductCategorySingleQuery,
 	pageProductCategorySlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata from '@/lib/defineMetadata';
+import defineMetadata, { omitPageMetadata, notFoundMetadata } from '@/lib/defineMetadata';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
 import JsonLd from '@/components/JsonLd';
+import { withLiveCardPrices } from '@/lib/shopify/product';
 import { type Locale, LOCALES } from '@/lib/i18n';
 import PageProductCategory from './_components/PageProductCategory';
 
@@ -24,6 +25,10 @@ export async function generateStaticParams() {
 		query: pageProductCategorySlugsQuery,
 		perspective: 'published',
 		stega: false,
+		// Without a tag this list caches forever under the catch-all 'sanity'
+		// tag, which nothing invalidates — so a build could reuse a stale slug
+		// list and skip prerendering a newly published document.
+		tags: ['pProductCategory'],
 	});
 	return data ?? [];
 }
@@ -32,7 +37,8 @@ const getCachedCategoryData = cache(async (slug: string, locale: string) =>
 	sanityFetch({
 		query: pageProductCategorySingleQuery,
 		params: { slug, locale },
-		tags: ['pProductCategory', 'pProduct'],
+		// pBrand: productCardFields derefs brands[]->.
+		tags: ['pProductCategory', 'pProduct', 'pBrand'],
 	})
 );
 
@@ -40,6 +46,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 	const { slug, locale } = await params;
 	const { data } = await getCachedCategoryData(slug, locale);
 	const cleanData = stegaClean(data);
+	// Missing/untranslated document → the page renders NotFoundContent at HTTP
+	// 200, so de-index it rather than letting defineMetadata default to index.
+	if (!cleanData) return notFoundMetadata();
 	return defineMetadata({
 		data: cleanData,
 		locale: locale as Locale,
@@ -55,7 +64,13 @@ export default async function Page({ params }: Props) {
 	if (!data) return <NotFoundContent locale={locale} />;
 
 	const cleanData = stegaClean(data);
-	const dict = await getDictionary(locale as Locale);
+	// Independent: a local dictionary import and a Storefront round trip. Awaited
+	// in sequence, the dictionary sat in front of the network call for no reason.
+	const [dict, products] = await Promise.all([
+		getDictionary(locale as Locale),
+		withLiveCardPrices(data.products, locale as Locale),
+	]);
+
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
 		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: locale as Locale }) },
 		{ name: dict.breadcrumb.products, path: resolveHref({ documentType: 'pProductIndex', locale: locale as Locale }) },
@@ -66,7 +81,7 @@ export default async function Page({ params }: Props) {
 	return (
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
-			<PageProductCategory data={data} />
+			<PageProductCategory data={omitPageMetadata({ ...data, products })} />
 		</>
 	);
 }

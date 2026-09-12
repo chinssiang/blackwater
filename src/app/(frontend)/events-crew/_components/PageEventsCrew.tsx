@@ -1,9 +1,10 @@
 'use client';
 
 import { cn } from '@/lib/utils';
+import { resolveEventLocation } from '@/lib/event-location';
 import { hasArrayValue } from '@/lib/utils';
 import { buildRgbaCssString } from '@/lib/image-utils';
-import { Button } from '@/components/ui/Button';
+import { buttonVariants } from '@/components/ui/Button';
 import { ArrowLeft, ArrowRight, X } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -12,9 +13,9 @@ import type {
 	EventCrewMembersQueryResult,
 	RichDate,
 } from 'sanity.types';
-import { formatRichDate, getRichDateInstant } from '@/lib/event-date';
+import { formatRichDate, isEventEnded } from '@/lib/event-date';
 import SanityImage from '@/components/SanityImage';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, type ReactNode } from 'react';
 
 type EventItem = NonNullable<EventCrewByMonthQueryResult>[number];
 
@@ -38,12 +39,9 @@ function formatEventDate(datetime: RichDate) {
 	};
 }
 
-function isEventEnded(eventDatetime: RichDate | null | undefined): boolean {
-	const eventDateEndOfDay = getRichDateInstant(eventDatetime);
-	if (!eventDateEndOfDay) return false;
-	eventDateEndOfDay.setHours(23, 59, 59, 999);
-	return eventDateEndOfDay < new Date();
-}
+// Crew often have this page open through an event, so the ended badge is
+// re-evaluated on a timer rather than only at render.
+const CLOCK_TICK_MS = 60 * 1000;
 
 function keyToMonthParam(key: string): string {
 	const [year, month] = key.split('_');
@@ -65,6 +63,37 @@ interface PageEventCrewProps {
 	selectedMember: UniqueMember | null;
 }
 
+/**
+ * One arrow in the month pager. Renders a plain <span> when there is no month
+ * that way, rather than a link that is styled as disabled: `pointer-events-none`
+ * does not take an anchor out of the tab order and `aria-disabled` is only
+ * advisory, so a keyboard user could still reach the arrow and navigate to the
+ * `#` placeholder. No target, no link — the same shape `ui/Pagination` uses.
+ */
+function MonthNavLink({
+	href,
+	children,
+}: {
+	href: string | null;
+	children: ReactNode;
+}) {
+	const className = cn(
+		buttonVariants({ variant: 'ghost', size: 'sm' }),
+		'uppercase t-l-2'
+	);
+
+	if (!href) return <span className={className}>{children}</span>;
+
+	return (
+		<Link
+			href={href}
+			className={cn(className, 'cursor-pointer hover:opacity-60')}
+		>
+			{children}
+		</Link>
+	);
+}
+
 export function PageEventCrew({
 	events,
 	activeKey,
@@ -74,6 +103,14 @@ export function PageEventCrew({
 }: PageEventCrewProps) {
 	const router = useRouter();
 	const [scrolled, setScrolled] = useState(false);
+	// This page renders per request, so the initial value is current on both
+	// sides; the interval is what keeps a long-open tab honest.
+	const [now, setNow] = useState(() => new Date());
+
+	useEffect(() => {
+		const timer = setInterval(() => setNow(new Date()), CLOCK_TICK_MS);
+		return () => clearInterval(timer);
+	}, []);
 
 	const setSelectedMemberSlug = useCallback(
 		(slug: string | null) => {
@@ -140,16 +177,14 @@ export function PageEventCrew({
 						<span
 							className={cn(
 								'uppercase text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
-								scrolled ? 't-b-1' : 't-h-3'
+								scrolled ? 't-b-1' : 't-l-0'
 							)}
 						>
 							Crew briefing
 						</span>
+						{/* Size is deliberately scroll-invariant; only the kicker responds. */}
 						<h1
-							className={cn(
-								'font-bold tracking-tight animate-fade-in transition-all duration-300',
-								scrolled ? 't-h-3' : 't-h-3'
-							)}
+							className="t-l-0 font-bold animate-fade-in"
 							style={{ animationDelay: '0.15s' }}
 						>
 							{monthDisplay}
@@ -157,37 +192,15 @@ export function PageEventCrew({
 					</div>
 					{availableMonthKeys.length > 0 && (
 						<nav className="flex items-center gap-1 shrink-0">
-							<Button
-								asChild
-								variant="ghost"
-								size="sm"
-								className={cn(
-									'uppercase t-l-2 cursor-pointer hover:opacity-60',
-									{ 'pointer-events-none': !prevHref }
-								)}
-								disabled={!prevHref}
-							>
-								<Link href={prevHref || '#'}>
-									<ArrowLeft className="size-3.5" />
-									Prev
-								</Link>
-							</Button>
+							<MonthNavLink href={prevHref}>
+								<ArrowLeft className="size-3.5" />
+								Prev
+							</MonthNavLink>
 							<span className="text-white/20 text-xs select-none">/</span>
-							<Button
-								asChild
-								variant="ghost"
-								size="sm"
-								className={cn(
-									'uppercase t-l-2 cursor-pointer hover:opacity-60',
-									{ 'pointer-events-none': !nextHref }
-								)}
-								disabled={!nextHref}
-							>
-								<Link href={nextHref || '#'}>
-									Next
-									<ArrowRight className="size-3.5" />
-								</Link>
-							</Button>
+							<MonthNavLink href={nextHref}>
+								Next
+								<ArrowRight className="size-3.5" />
+							</MonthNavLink>
 						</nav>
 					)}
 				</div>
@@ -213,7 +226,7 @@ export function PageEventCrew({
 												setSelectedMemberSlug(isActive ? null : member.slug)
 											}
 											className={cn(
-												'flex items-center gap-1 px-2 lg:px-2.5 py-1 rounded-full text-sm whitespace-nowrap shrink-0 transition-all cursor-pointer',
+												'flex items-center gap-1 px-2 lg:px-2.5 py-1 rounded-full t-b-2 whitespace-nowrap shrink-0 transition-all cursor-pointer',
 												isActive
 													? 'bg-white/30 text-foreground ring-1 ring-white/20'
 													: 'bg-white/4 text-muted-foreground hover:bg-white/25 hover:text-foreground'
@@ -230,7 +243,7 @@ export function PageEventCrew({
 													/>
 												</div>
 											) : (
-												<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[8px] font-semibold">
+												<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[10px] font-semibold">
 													{displayName.charAt(0)}
 												</span>
 											)}
@@ -271,6 +284,7 @@ export function PageEventCrew({
 							event={event}
 							index={index}
 							highlightMemberSlug={selectedMember?.slug || null}
+							now={now}
 						/>
 					))}
 				</div>
@@ -291,23 +305,27 @@ function EventCard({
 	event,
 	index,
 	highlightMemberSlug,
+	now,
 }: {
 	event: EventItem;
 	index: number;
 	highlightMemberSlug: string | null;
+	now: Date;
 }) {
 	const {
 		title,
 		subtitle,
 		eventDatetime,
-		location,
-		locationLink,
+		endDatetime,
 		categories,
 		teamAssignments,
 		teamNotes,
 	} = event;
 
-	const ended = isEventEnded(eventDatetime);
+	const { name: displayLocation, mapLink: displayLocationLink } =
+		resolveEventLocation(event);
+
+	const ended = isEventEnded(eventDatetime, endDatetime, now);
 	const dateInfo = eventDatetime ? formatEventDate(eventDatetime) : null;
 
 	const categoryTitle = categories?.[0]?.title;
@@ -372,18 +390,20 @@ function EventCard({
 								{dateInfo.display}
 							</span>
 						)}
-						{location &&
-							(locationLink ? (
+						{displayLocation &&
+							(displayLocationLink ? (
 								<a
-									href={locationLink}
+									href={displayLocationLink}
 									target="_blank"
 									rel="noopener noreferrer"
 									className="t-b-1 text-muted-foreground underline underline-offset-2 decoration-white/20 hover:text-foreground hover:decoration-white/40 transition-colors"
 								>
-									{location}
+									{displayLocation}
 								</a>
 							) : (
-								<span className="t-b-1 text-muted-foreground">{location}</span>
+								<span className="t-b-1 text-muted-foreground">
+									{displayLocation}
+								</span>
 							))}
 					</div>
 				</div>

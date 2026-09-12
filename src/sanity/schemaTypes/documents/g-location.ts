@@ -1,6 +1,6 @@
 import { PinIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
-import { pickLocalizedValue } from '@/lib/i18n';
+import { pickLocalizedValue, pickValueForLocale } from '@/lib/i18n';
 
 export const gLocation = defineType({
 	title: 'Location',
@@ -83,12 +83,13 @@ export const gLocation = defineType({
 			name: 'name',
 		},
 		prepare({ name }) {
-			const zhName = Array.isArray(name)
-				? name.find((entry) => entry?.language === 'zh_tw')?.value
-				: undefined;
+			// See the note in g-faq.ts: repeating the Chinese as both title and
+			// subtitle on an untranslated entry hides the missing translation.
+			const en = pickValueForLocale(name, 'en');
+			const zh = pickValueForLocale(name, 'zh_tw');
 			return {
-				title: pickLocalizedValue(name) || 'Untitled',
-				subtitle: zhName || undefined,
+				title: en || zh || 'Untitled',
+				subtitle: en ? zh : undefined,
 				media: PinIcon,
 			};
 		},

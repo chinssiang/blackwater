@@ -1,21 +1,23 @@
+import { Suspense } from 'react';
+import DraftModeTools from '@/components/DraftModeTools';
+import { SanityLive } from '@/sanity/lib/live';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { stegaClean } from '@sanity/client/stega';
-import { VisualEditing } from 'next-sanity/visual-editing';
 import localFont from 'next/font/local';
 import { Toaster } from 'sonner';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { htmlLangFor, type Locale } from '@/lib/i18n';
-import { SanityLive } from '@/sanity/lib/live';
 import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
-import DraftModeToast from '@/components/DraftModeToast';
-import HeadTrackingCode from '@/components/layout/HeadTrackingCode';
+import HeadTrackingCode, {
+	type TrackingIntegrations,
+} from '@/components/layout/HeadTrackingCode';
 import ConsentBanner, {
 	type ConsentSettings,
 } from '@/components/consent/ConsentBanner';
 import JsonLd from '@/components/JsonLd';
 import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
-import type { ConsentState } from '@/lib/consent';
+import type { Dictionary } from '@/lib/dictionary';
 import '@/globals.css';
 
 const fontABCDisplay = localFont({
@@ -45,14 +47,20 @@ const baselTypewriter = localFont({
 export default function HtmlShell({
 	locale,
 	siteData,
-	consent,
+	consentFallback,
 	isDraftModeEnabled,
+	// Opt-in, and only the [locale] subtree opts in. The shells that render this
+	// from outside that subtree — /email-signature, /events-crew and the root
+	// 404 — have never loaded analytics, and an internal crew tool is not a
+	// place to start collecting pageviews.
+	enableTracking = false,
 	children,
 }: {
 	locale: Locale;
 	siteData: unknown;
-	consent?: ConsentState | null;
+	consentFallback: Dictionary['consent'];
 	isDraftModeEnabled: boolean;
+	enableTracking?: boolean;
 	children: React.ReactNode;
 }) {
 	const cleanData = stegaClean(siteData) as
@@ -61,6 +69,12 @@ export default function HtmlShell({
 				consent?: ConsentSettings;
 		  }
 		| undefined;
+	// Only the three ids the tags need, not all of siteData: HeadTrackingCode is
+	// a client component, so whatever it receives is serialized into the RSC
+	// payload. Read raw rather than from cleanData to keep the previous behavior.
+	const integrations = (
+		siteData as { integrations?: TrackingIntegrations } | undefined
+	)?.integrations;
 	const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 	const siteJsonLd = defineSiteJsonLd({
 		sharing: cleanData?.sharing,
@@ -71,11 +85,11 @@ export default function HtmlShell({
 	return (
 		<html
 			lang={htmlLangFor(locale)}
-			className={`${fontABCDisplay.variable} ${baselTypewriter.variable} bg-background`}
+			className={`${fontABCDisplay.variable} ${baselTypewriter.variable} bg-background scrollbar-gutter-stable`}
 			data-scroll-behavior="smooth"
 			suppressHydrationWarning
 		>
-			<head>
+			<body className="antialiased">
 				<meta
 					httpEquiv="Content-Type"
 					charSet="UTF-8"
@@ -83,33 +97,52 @@ export default function HtmlShell({
 				/>
 				<meta httpEquiv="X-UA-Compatible" content="IE=edge" />
 				<link rel="preconnect" href="https://cdn.sanity.io" />
-				<HeadTrackingCode siteData={siteData as never} consent={consent} />
+				{enableTracking && <HeadTrackingCode integrations={integrations} />}
 				{siteJsonLd && <JsonLd data={siteJsonLd} />}
-			</head>
-
-			<body className="antialiased">
 				<ReactQueryProvider>
 					<ThemeProvider>
 						{children}
 						<Toaster />
+						{/* Server-only by construction — src/sanity/lib/live.ts has the why.
+						    The gate buys REQUESTS, not bytes: next-sanity's live.js
+						    top-level-imports its own client half and every route already
+						    imports sanityFetch from live.ts, so that chunk reaches published
+						    traffic either way (measured: identical script set with and without
+						    this element). What it prevents is the subscription — <SanityLive>
+						    for anonymous visitors on Next 16 + next-sanity 12 causes a
+						    prefetch/revalidate cascade, 4–10x request overage.
+						    See https://www.sanity.io/docs/help/nextjs-16-sanitylive-status
+						    Deliberately sitewide, /events-crew and /email-signature included,
+						    though Presentation cannot target those: an editor who arrives
+						    holding the draft cookie still needs the toast's way back out.
+						    While mounted it is not side-effect-free for published traffic —
+						    next-sanity's revalidateSyncTags Server Action expires shared
+						    `sanity:*` tags on every live event, so an open Presentation session
+						    also invalidates prerendered pages. <Suspense> is error and
+						    suspension containment only (there is no error.tsx under src/app);
+						    it neither rescues nor threatens static generation. `refreshOnFocus`
+						    is NOT passed — the client half gates every refresh helper on
+						    `!draftModeEnabled`, so the prop is inert behind this gate. */}
 						{isDraftModeEnabled && (
-							<>
-								{/* Live Content API: only subscribe in draft mode. For
-								    published traffic, content stays fresh via the
-								    /api/revalidate-tag webhook. Rendering <SanityLive>
-								    for anonymous visitors on Next.js 16 + next-sanity 12
-								    triggers a prefetch/revalidate cascade (4–10x request
-								    overage). See https://www.sanity.io/docs/help/nextjs-16-sanitylive-status */}
-								<SanityLive refreshOnFocus />
-								<DraftModeToast />
-								<VisualEditing />
-							</>
+							<Suspense fallback={null}>
+								<SanityLive />
+							</Suspense>
 						)}
+						<DraftModeTools enabled={isDraftModeEnabled} />
+						{/* Deliberately NOT consent-gated, unlike GA/GTM. Neither package
+						    touches document.cookie, localStorage, sessionStorage or
+						    indexedDB (verified in their dist bundles) — they beacon to the
+						    first-party /_vercel/insights and /_vercel/speed endpoints. With
+						    no storage on the visitor's device there is no ePrivacy 5(3)
+						    consent trigger, and aggregate audience/performance measurement
+						    rests on legitimate interest. Gating Speed Insights would also
+						    make it useless: Core Web Vitals from a consenting-only subset
+						    is a biased sample of the very thing it exists to measure. */}
 						<Analytics />
 						<SpeedInsights />
 						<ConsentBanner
 							settings={cleanData?.consent ?? null}
-							initialConsent={consent ?? null}
+							fallback={consentFallback}
 						/>
 					</ThemeProvider>
 				</ReactQueryProvider>

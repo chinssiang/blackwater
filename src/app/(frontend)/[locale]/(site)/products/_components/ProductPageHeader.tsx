@@ -1,9 +1,7 @@
 'use client';
 
-import { Fragment } from 'react';
+import { Fragment, type CSSProperties } from 'react';
 import Link from 'next/link';
-import { motion } from 'motion/react';
-import { useReveal } from '@/hooks/useReveal';
 import { pickPlural, interpolate } from '@/lib/dictionary';
 
 type CountForms = { one: string; other: string };
@@ -31,8 +29,6 @@ export default function ProductPageHeader({
 	counts,
 	lede,
 }: Props) {
-	const reveal = useReveal();
-
 	const segments = (counts ?? [])
 		.filter(
 			(c): c is { count: number; forms: CountForms; href?: string | null } =>
@@ -44,10 +40,9 @@ export default function ProductPageHeader({
 		}));
 
 	return (
-		<motion.header
-			className="mb-12 lg:mb-20"
-			{...reveal}
-			transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
+		<header
+			className="m-x-max reveal mb-12 lg:mb-20"
+			style={{ '--reveal-duration': '0.8s' } as CSSProperties}
 		>
 			{kicker && (
 				<p className="t-l-2 mb-4 uppercase text-foreground/65">{kicker}</p>
@@ -55,9 +50,7 @@ export default function ProductPageHeader({
 
 			<div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
 				{title && (
-					<h1 className="max-w-[18ch] text-balance text-[clamp(2rem,6vw,3.75rem)] uppercase leading-[0.95] tracking-[-0.02em]">
-						{title}
-					</h1>
+					<h1 className="max-w-[18ch] text-balance t-h-1 uppercase">{title}</h1>
 				)}
 				{segments.length > 0 && (
 					<p className="t-spec whitespace-nowrap text-foreground/65">
@@ -85,10 +78,8 @@ export default function ProductPageHeader({
 			</div>
 
 			{lede && (
-				<p className="t-b-1 mt-6 max-w-[62ch] leading-relaxed text-foreground/70">
-					{lede}
-				</p>
+				<p className="t-b-1 mt-6 max-w-[62ch] text-foreground/70">{lede}</p>
 			)}
-		</motion.header>
+		</header>
 	);
 }

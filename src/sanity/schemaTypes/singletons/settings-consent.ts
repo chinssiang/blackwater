@@ -85,7 +85,10 @@ export const settingsConsent = defineType({
 			name: 'marketingTitle',
 			type: 'internationalizedArrayString',
 			title: 'Marketing — Title',
-			description: 'Gates Klaviyo onsite tracking.',
+			description:
+				'Gates advertising signals (Google Consent Mode ad_storage, ' +
+				'ad_user_data, ad_personalization) and, together with Analytics, ' +
+				'whether the Google Tag Manager container loads at all.',
 			group: 'categories',
 		}),
 		defineField({

@@ -11,22 +11,76 @@ import {
 	isLocale,
 } from '@/lib/i18n';
 
+// `null` as well as `undefined` throughout: GROQ projects a missing field as
+// null, so a page that passes a properly typed query result — rather than the
+// `any` most of them still infer — would otherwise fail to compile here. Every
+// read below goes through `||`, which treats the two the same.
 type Props = {
+	// Nullable as a whole, not just per field: the body already destructures
+	// `data || {}`, so a missing document has always been supported at runtime —
+	// requiring an object only forced callers to invent an empty one.
 	data: {
 		sharing?: any;
-		title?: string;
-		isHomepage?: boolean;
-		_type?: string;
-		slug?: string;
-	};
+		title?: string | null;
+		isHomepage?: boolean | null;
+		_type?: string | null;
+		slug?: string | null;
+	} | null;
 	locale?: Locale;
 	availableLocales?: Locale[];
 };
+
+/**
+ * Drops the fields only `generateMetadata` reads — the `sharing` block (meta
+ * title/description, share graphic, site title) and `availableLocales` — before
+ * a page's data crosses into a client component.
+ *
+ * Both are projected by the page queries because `generateMetadata` needs them,
+ * but no client component renders either: without this they are serialized into
+ * the RSC payload of every listing page for nothing. The product detail page
+ * avoids the same cost by picking its fields explicitly; listing pages spread
+ * their whole query result, so they strip instead.
+ *
+ * The return type drops them too, rather than lying with `T`: a component that
+ * later reaches for `data.sharing` should fail to compile here, not throw on
+ * `undefined` in the browser.
+ */
+export type WithoutPageMetadata<T> = Omit<T, 'sharing' | 'availableLocales'>;
+
+export function omitPageMetadata<T extends object>(
+	data: T
+): WithoutPageMetadata<T> {
+	const { sharing, availableLocales, ...rest } = data as T & {
+		sharing?: unknown;
+		availableLocales?: unknown;
+	};
+	void sharing;
+	void availableLocales;
+	return rest;
+}
 
 export function normalizeLocales(raw: unknown): Locale[] {
 	const arr = Array.isArray(raw) ? raw : [];
 	const filtered = [...new Set(arr.filter(isLocale))] as Locale[];
 	return filtered.length > 0 ? filtered : [DEFAULT_LOCALE];
+}
+
+/**
+ * Metadata for a soft 404 — a route that renders <NotFoundContent /> inline and
+ * therefore answers HTTP 200. Without this, `defineMetadata` sees no `sharing`
+ * object, reads `disableIndex` as undefined and advertises `index: true`, so a
+ * "Page not found" body gets indexed. Callers use this on every branch that
+ * renders NotFoundContent instead of real data.
+ */
+export function notFoundMetadata(): Metadata {
+	return {
+		title: 'Page not found',
+		robots: {
+			index: false,
+			follow: false,
+			googleBot: { index: false, follow: false },
+		},
+	};
 }
 
 export default function defineMetadata({
@@ -51,10 +105,26 @@ export default function defineMetadata({
 
 	const disableIndex = sharing?.disableIndex;
 
+	// Which locale actually owns this content. When the requested locale has no
+	// translation the page still renders — an English fallback is friendlier than
+	// a 404 — but then this URL and the owning locale's URL serve *identical*
+	// bytes, so they are true duplicates and only one may be canonical.
+	//
+	// Canonical rather than noindex: it consolidates ranking signals onto the URL
+	// that owns the content, and if Google disagrees it still indexes something
+	// sensible. It also composes with the hreflang map below, which already omits
+	// the fallback locale — declaring hreflang="zh-TW" for a page serving English
+	// would be a false claim about that URL.
+	const canonicalLocale = availableLocales.includes(locale)
+		? locale
+		: availableLocales.includes(DEFAULT_LOCALE)
+			? DEFAULT_LOCALE
+			: (availableLocales[0] ?? locale);
+
 	const pageRoute = resolveHref({
 		documentType: _type ?? null,
 		slug: slug ?? null,
-		locale,
+		locale: canonicalLocale,
 	});
 
 	const canonicalUrl = pageRoute
