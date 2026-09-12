@@ -1,9 +1,12 @@
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
 
-// Unit tests only — pure modules under src/lib. There is no jsdom/RTL setup
-// here on purpose: the things worth pinning are the locale/path helpers whose
-// edge cases are invisible at the call site, not component rendering.
+// Unit tests only. There is no RTL setup here on purpose: the things worth
+// pinning are the locale/path/date helpers whose edge cases are invisible at the
+// call site, not component rendering. The default environment is Node; a file
+// that genuinely needs a DOM (consent.test.ts reads document.cookie) opts itself
+// in with a `// @vitest-environment jsdom` comment rather than making every
+// other file pay for one.
 export default defineConfig({
 	resolve: {
 		alias: {
@@ -35,6 +38,15 @@ export default defineConfig({
 			// Running the suite in a negative-offset zone is what makes those tests
 			// able to fail. CI sets no TZ, so without this it inherits UTC.
 			TZ: 'America/Los_Angeles',
+			// Deliberately NOT the production domain. Most SITE_URL readers carry
+			// their own `|| 'https://blackwaterrc.com'` fallback, so setting the
+			// real value here would make "read the env var" and "silently fell
+			// back" indistinguishable in every assertion. A sentinel makes a
+			// missing fallback visible: defineMetadata.ts interpolates
+			// `${process.env.SITE_URL}` bare, and with no value at all it emits the
+			// string "undefined/about" into a canonical tag rather than throwing.
+			// Same reason sitemaps.test.ts picks its own non-production host.
+			SITE_URL: 'https://example.test',
 		},
 	},
 });

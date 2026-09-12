@@ -23,8 +23,14 @@ export type ConsentState = ConsentCategories & {
 	ts: number;
 };
 
-export const DENY_ALL: ConsentCategories = { analytics: false, marketing: false };
-export const GRANT_ALL: ConsentCategories = { analytics: true, marketing: true };
+export const DENY_ALL: ConsentCategories = {
+	analytics: false,
+	marketing: false,
+};
+export const GRANT_ALL: ConsentCategories = {
+	analytics: true,
+	marketing: true,
+};
 
 // Parse the raw cookie value into a consent decision, or null when there's no
 // valid current-version decision (so the banner should prompt).
@@ -76,7 +82,9 @@ export function readConsentRawClient(): string | null {
 // conservative: localhost, IP literals and single-label hosts get null, because
 // browsers reject Domain attributes there and a rejected Set-Cookie would lose
 // the decision entirely.
-function consentCookieDomain(): string | null {
+// Exported so anything that has to expire this cookie derives its Domain the
+// same way the writer did — a delete only matches on (name, domain, path).
+export function consentCookieDomain(): string | null {
 	const host = window.location.hostname;
 	if (
 		host === 'localhost' ||

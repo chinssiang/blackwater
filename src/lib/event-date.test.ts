@@ -9,6 +9,7 @@ import {
 	getNextDayStartInstant,
 	getNextEventClockTransition,
 	getRichDateDayKey,
+	getRichDateInstant,
 	getRichDateYearMonth,
 	resolveEventTimezone,
 	getTodayKey,
@@ -603,5 +604,74 @@ describe('readers survive an unusable stored timezone', () => {
 		const soon = taipei('2026-09-01T07:00');
 		expect(getDaysUntilEvent(restamp(soon, 'GMT+8'), NOW)).toBe(2);
 		expect(getDaysUntilEvent(restamp(soon, encodedTaipei), NOW)).toBe(2);
+	});
+});
+
+// The three readers above that main's blocks reach only indirectly, through the
+// unusable-timezone backstop. Asserted directly here so a regression in one of
+// them names itself rather than surfacing as a fallback test failing.
+describe('formatRichDate', () => {
+	it('returns an empty string when there is no usable instant', () => {
+		expect(formatRichDate(null, 'yyyy')).toBe('');
+		expect(formatRichDate(undefined, 'yyyy')).toBe('');
+		expect(formatRichDate({ _type: 'richDate' }, 'yyyy')).toBe('');
+	});
+
+	it('formats in the stored timezone, not the runtime one', () => {
+		// 16:00 on the 4th in Los Angeles (the suite's TZ) and still the 4th in
+		// UTC, but already the 5th in Taipei.
+		expect(formatRichDate(taipei('2026-09-05T07:00'), 'yyyy-MM-dd')).toBe(
+			'2026-09-05'
+		);
+	});
+
+	it('falls back to the club timezone when none is stored', () => {
+		expect(
+			formatRichDate(
+				{ _type: 'richDate', utc: '2026-09-04T23:00:00.000Z' },
+				'yyyy-MM-dd'
+			)
+		).toBe('2026-09-05');
+	});
+});
+
+describe('getRichDateInstant', () => {
+	it('returns the stored UTC instant', () => {
+		expect(getRichDateInstant(taipei('2026-09-05T07:00'))?.toISOString()).toBe(
+			'2026-09-04T23:00:00.000Z'
+		);
+	});
+
+	it('returns null for a missing, empty or unparseable value', () => {
+		expect(getRichDateInstant(null)).toBeNull();
+		expect(getRichDateInstant({ _type: 'richDate' })).toBeNull();
+		expect(
+			getRichDateInstant({ _type: 'richDate', utc: 'not-a-date' })
+		).toBeNull();
+	});
+});
+
+describe('getRichDateYearMonth', () => {
+	it('reports a 0-based month index', () => {
+		expect(getRichDateYearMonth(taipei('2026-09-05T07:00'))).toEqual({
+			year: 2026,
+			month: 8,
+		});
+	});
+
+	it('decides the month in the stored timezone at a month boundary', () => {
+		// 2026-10-01 01:00 Taipei is 2026-09-30 17:00 UTC and 10:00 on the 30th in
+		// the suite's own zone — so a month resolved anywhere but Taipei reports
+		// September. A case on the other side of the boundary would NOT test this:
+		// 09-30 23:00 Taipei is September in Taipei, UTC and Los Angeles alike.
+		expect(getRichDateYearMonth(taipei('2026-10-01T01:00'))).toEqual({
+			year: 2026,
+			month: 9,
+		});
+	});
+
+	it('returns null when there is no usable instant', () => {
+		expect(getRichDateYearMonth(null)).toBeNull();
+		expect(getRichDateYearMonth({ _type: 'richDate' })).toBeNull();
 	});
 });

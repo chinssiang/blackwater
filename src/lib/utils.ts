@@ -74,9 +74,29 @@ export function hasArrayValue<T>(arr: T[] | null | undefined): arr is T[] {
 // --- UTILITIES / FORMAT ---
 
 /**
+ * Escapes the five characters that are significant in HTML text and attributes.
+ * Ampersand goes first, or the entities written by the later replacements would
+ * themselves be escaped.
+ */
+export function escapeHtml(value: string): string {
+	return value
+		.replaceAll('&', '&amp;')
+		.replaceAll('<', '&lt;')
+		.replaceAll('>', '&gt;')
+		.replaceAll('"', '&quot;')
+		.replaceAll("'", '&#39;');
+}
+
+/**
  * Converts a simple object's key-value pairs into a formatted HTML string with `<br>` separators.
  * Key names are converted to title case.
  * If a string is provided, it is returned as-is.
+ *
+ * Keys and values are HTML-escaped: the only caller builds an email body out of
+ * submitted form fields, so an unescaped value would render as live markup in
+ * the recipient's mail client. A string argument is passed through unchanged —
+ * that branch is for copy that is already HTML.
+ *
  * @param obj - The object (or string) to format.
  * @returns The HTML string.
  */
@@ -92,7 +112,7 @@ export function formatObjectToHtml(obj: Record<string, any> | string): string {
 				.replace(/^./, (str) => str.toUpperCase()) // capitalize first letter
 				.replace(/\?/g, ''); // remove question marks from key
 
-			return `${formattedKey}: ${value}`;
+			return `${escapeHtml(formattedKey)}: ${escapeHtml(String(value))}`;
 		})
 		.join('<br>');
 }
@@ -130,7 +150,10 @@ type ReferralParams = {
  * can attribute the visit to us. Preserves existing query/hash and never clobbers
  * params already present on the URL. Returns the input unchanged if it can't be parsed.
  */
-export function appendReferralParams(url: string, params: ReferralParams): string {
+export function appendReferralParams(
+	url: string,
+	params: ReferralParams
+): string {
 	try {
 		const parsed = new URL(url);
 		const utm: Record<string, string | undefined> = {

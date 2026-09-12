@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { stripLocaleFromHref, stripLocaleFromPathname } from '@/lib/i18n';
 import {
+	DOCUMENT_ROUTES,
 	checkIfLinkIsActive,
 	isLightThemePath,
+	resolveHref,
+	resolvedHrefGroq,
 	shouldHideGlobalNewsletter,
 	shouldShowWeatherWidget,
 } from '@/lib/routes';
@@ -212,5 +215,76 @@ describe('checkIfLinkIsActive', () => {
 		expect(
 			checkIfLinkIsActive({ pathName: '/products', url: '/products' })
 		).toBe(true);
+	});
+});
+
+describe('resolveHref', () => {
+	it('returns undefined without a document type', () => {
+		expect(resolveHref({ documentType: null })).toBeUndefined();
+	});
+
+	it('resolves a non-slug route to its static path', () => {
+		expect(resolveHref({ documentType: 'pHome' })).toBe('/');
+		expect(resolveHref({ documentType: 'pContact' })).toBe('/contact');
+	});
+
+	it('appends the slug for slug-based routes', () => {
+		expect(resolveHref({ documentType: 'pProduct', slug: 'cap' })).toBe(
+			'/products/cap'
+		);
+		expect(resolveHref({ documentType: 'pEvent', slug: 'race-1' })).toBe(
+			'/events/race-1'
+		);
+	});
+
+	it('falls back to "/<slug>" for an unknown type that carries one', () => {
+		expect(resolveHref({ documentType: 'somethingElse', slug: 'foo' })).toBe(
+			'/foo'
+		);
+		expect(resolveHref({ documentType: 'somethingElse' })).toBeUndefined();
+	});
+
+	it('prefixes a non-default locale and leaves the default bare', () => {
+		expect(resolveHref({ documentType: 'pHome', locale: 'zh_tw' })).toBe(
+			'/zh_tw'
+		);
+		expect(
+			resolveHref({ documentType: 'pProduct', slug: 'cap', locale: 'zh_tw' })
+		).toBe('/zh_tw/products/cap');
+		expect(resolveHref({ documentType: 'pContact', locale: 'en' })).toBe(
+			'/contact'
+		);
+	});
+});
+
+// resolvedHrefGroq is hand-maintained beside DOCUMENT_ROUTES — the extractor
+// cannot derive it, so nothing but this check notices when the two drift. Both
+// directions matter: a type added to DOCUMENT_ROUTES and not to the literal
+// resolves to null in every menu, and an arm left in the literal for a type that
+// is gone keeps GROQ resolving a URL that resolveHref() now sends to its
+// `/<slug>` fallback. Asserted as set equality so neither can be missed.
+describe('resolvedHrefGroq stays in sync with DOCUMENT_ROUTES', () => {
+	// Synthetic routes back no document, so they deliberately have no GROQ arm.
+	// They are the entries carrying a "Synthetic route" comment in routes.ts.
+	const SYNTHETIC_TYPES = [
+		'pProductsAllIndex',
+		'pProductCategoriesIndex',
+		'pProductCollectionsIndex',
+	];
+
+	const routedTypes = DOCUMENT_ROUTES.map((r) => r.type).filter(
+		(type) => !SYNTHETIC_TYPES.includes(type)
+	);
+	const groqTypes = Array.from(
+		resolvedHrefGroq.matchAll(/_type == "([^"]+)"/g),
+		(m) => m[1]
+	);
+
+	it('has a GROQ arm for every non-synthetic routed type', () => {
+		expect([...groqTypes].sort()).toEqual([...routedTypes].sort());
+	});
+
+	it('reads some arms at all, so the regex above cannot silently match nothing', () => {
+		expect(groqTypes.length).toBeGreaterThan(5);
 	});
 });
