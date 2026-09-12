@@ -1,4 +1,6 @@
 import PageModules from '@/components/PageModules';
+import { heroBlockIsRenderable } from '@/components/HeroBlock';
+import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 import type { Locale } from '@/lib/i18n';
 
 interface PageHomeProps {
@@ -70,6 +72,15 @@ export default function PageHome({ data, locale }: PageHomeProps) {
 		console.error(`[PageHome] ${message}`);
 	}
 
+	// One weather widget per page, owned by the first hero that will actually
+	// RENDER — a builder of [freeform, heroBlock] still gets one, which gating on
+	// slot 0 would not, and an empty placeholder hero no longer wins the election
+	// and then returns null with the page's only widget. Same predicate HeroBlock
+	// bails on, per the `<SizeChartTable>.isRenderable()` idiom.
+	const widgetHeroKey = pageModules?.find(
+		(module) => module._type === 'heroBlock' && heroBlockIsRenderable(module)
+	)?._key;
+
 	return (
 		<>
 			{pageModules?.map((module, index) => (
@@ -82,8 +93,17 @@ export default function PageHome({ data, locale }: PageHomeProps) {
 					// filtered out in GROQ (`moduleVisible`), so slot 0 is what a visitor
 					// actually sees.
 					headingLevel={index === 0 ? 'h1' : undefined}
+					ownsWeatherWidget={!!widgetHeroKey && module._key === widgetHeroKey}
 				/>
 			))}
+			{/* The homepage always carries the widget, which is why
+			    `shouldShowWeatherWidget` no longer needs to name "/" and cannot
+			    double up with the hero copy. Dropping that route rule on the premise
+			    that the homepage opens with a hero left prod — whose pHome documents
+			    still have no pageModules at all — with no widget in either locale,
+			    and did the same for any homepage opening with another module type or
+			    whose hero is switched off. */}
+			{!widgetHeroKey && <WeatherWidget className="fixed lg:bottom-6" />}
 		</>
 	);
 }

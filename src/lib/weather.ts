@@ -15,6 +15,123 @@
 export const TAIPEI_COORDS = { latitude: 25.033, longitude: 121.5654 } as const;
 export const TAIPEI_TIMEZONE = 'Asia/Taipei';
 
+/**
+ * The freshness budget, as arithmetic rather than as two numbers in two files
+ * joined by a comment. Each term is a real constraint:
+ */
+
+/** Open-Meteo buckets `current` into 15-minute slots (its `interval: 900`). */
+const UPSTREAM_BUCKET_MS = 15 * 60_000;
+
+/**
+ * The Next Data Cache window in the route handler. Every term below is spent
+ * SERIALLY on one response, so each one has to be counted once — an earlier
+ * version charged this number once while the chain spent it twice (Data Cache
+ * AND CDN), which put a served body 36 minutes past an observation under a
+ * 30-minute contract. A response that arrives already stale floors
+ * `msUntilStale`, so the widget re-fetches every 30s against the same edge
+ * entry and never converges. Raising any window without raising the budget
+ * brings that straight back.
+ */
+export const WEATHER_CACHE_SECONDS = 300;
+
+/** The CDN `s-maxage` in the same handler's `Cache-Control`. */
+export const CDN_CACHE_SECONDS = 300;
+
+/**
+ * The CDN `stale-while-revalidate`. Counted too: it is time the edge may keep
+ * serving a body it knows is expired, which ages the observation exactly as
+ * `s-maxage` does.
+ */
+export const CDN_STALE_WHILE_REVALIDATE_SECONDS = 60;
+
+/** Everything the edge may add after the handler has returned. */
+const CDN_WINDOW_MS =
+	(CDN_CACHE_SECONDS + CDN_STALE_WHILE_REVALIDATE_SECONDS) * 1_000;
+
+/**
+ * Headroom over the worst case. Must be positive: at zero a response that spent
+ * every window arrives exactly at the threshold, so the widget re-fetches on
+ * arrival instead of converging.
+ */
+const BUDGET_SLACK_MS = 4 * 60_000;
+
+/**
+ * The contract for the widget's "Updated HH:MM" line: a visitor must never read
+ * an observation older than this. 30 minutes, as the sum of every window the
+ * observation passes through. `weather.test.ts` pins the sum.
+ */
+export const MAX_SNAPSHOT_AGE_MS =
+	UPSTREAM_BUCKET_MS +
+	WEATHER_CACHE_SECONDS * 1_000 +
+	CDN_WINDOW_MS +
+	BUDGET_SLACK_MS;
+
+/**
+ * The threshold the ROUTE judges a cached body against, which is necessarily
+ * tighter than the client's: whatever the handler returns, the edge may hold it
+ * for `CDN_WINDOW_MS` longer before anyone reads it. Checking the client's
+ * number at the origin is what let a 29-minute-old body out of the door and
+ * then be served for 11 minutes more.
+ */
+export const MAX_ORIGIN_SNAPSHOT_AGE_MS = MAX_SNAPSHOT_AGE_MS - CDN_WINDOW_MS;
+
+/**
+ * A small positive floor, so a snapshot that is somehow ALREADY past the budget
+ * schedules one delayed retry rather than a zero-delay timer that re-arms
+ * itself as fast as the event loop allows.
+ */
+const MIN_REFRESH_DELAY_MS = 30_000;
+
+/** `setTimeout`'s 32-bit ceiling. Past it the delay wraps and fires at once. */
+const MAX_TIMER_DELAY_MS = 2_147_483_647;
+
+/**
+ * How long until `observedAt` crosses `MAX_SNAPSHOT_AGE_MS` -- the delay the
+ * widget arms its single refresh timer with, on the `getNextEventClockTransition`
+ * model rather than a blind interval.
+ *
+ * Never returns zero or a negative, and never `NaN`: an unparseable timestamp
+ * (a proxy rewriting the body, a future schema change) must degrade to "retry
+ * shortly", never to a hot loop. That is also why the floor is applied to the
+ * parse failure rather than throwing -- this feeds a timer in ambient
+ * decoration, where the correct response to bad input is to try again later.
+ */
+export function msUntilStale(observedAt: string, now: number): number {
+	const observed = Date.parse(observedAt);
+	if (!Number.isFinite(observed)) return MIN_REFRESH_DELAY_MS;
+	return clampRefreshDelay(observed + MAX_SNAPSHOT_AGE_MS - now);
+}
+
+/**
+ * Bounded at BOTH ends, because `setTimeout` truncates its delay to a 32-bit
+ * signed int and fires on the next tick past 2^31-1 ms. A device whose clock is
+ * years in the past (a kiosk after an RTC reset, a VM off a cold snapshot)
+ * yields a delay of decades, which without the ceiling overflows into a ~1ms
+ * timer that re-arms itself — the hot loop the floor was added to prevent,
+ * reached from the other direction.
+ */
+export function clampRefreshDelay(delayMs: number): number {
+	if (!Number.isFinite(delayMs)) return MIN_REFRESH_DELAY_MS;
+	return Math.min(Math.max(delayMs, MIN_REFRESH_DELAY_MS), MAX_TIMER_DELAY_MS);
+}
+
+/**
+ * Whether a snapshot has aged past the contract and needs re-fetching.
+ *
+ * `maxAgeMs` is a parameter because the route judges against a tighter number
+ * than the client does — see `MAX_ORIGIN_SNAPSHOT_AGE_MS`.
+ */
+export function isSnapshotStale(
+	observedAt: string,
+	now: number,
+	maxAgeMs: number = MAX_SNAPSHOT_AGE_MS
+): boolean {
+	const observed = Date.parse(observedAt);
+	if (!Number.isFinite(observed)) return true;
+	return now - observed >= maxAgeMs;
+}
+
 export type WeatherSnapshot = {
 	/** °C */
 	temperature: number;

@@ -1,5 +1,6 @@
 import CustomPortableText from '@/components/CustomPortableText';
 import PageModules from '@/components/PageModules';
+import { heroBlockIsRenderable } from '@/components/HeroBlock';
 import { getDictionary } from '@/lib/dictionary.server';
 import type { Locale } from '@/lib/i18n';
 import { format } from 'date-fns';
@@ -22,6 +23,15 @@ export default async function PageGeneral({ data, locale }: PageGeneralProps) {
 	const dict = await getDictionary(locale);
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
 
+	// One weather widget per page, owned by the first hero that will actually
+	// RENDER — a builder of [freeform, heroBlock] still gets one, which gating on
+	// slot 0 would not, and an empty placeholder hero no longer wins the election
+	// and then returns null with the page's only widget. Same predicate HeroBlock
+	// bails on, per the `<SizeChartTable>.isRenderable()` idiom.
+	const widgetHeroKey = pageModules?.find(
+		(module) => module._type === 'heroBlock' && heroBlockIsRenderable(module)
+	)?._key;
+
 	return (
 		<>
 			<section className="min-h-main flex flex-col lg:flex-row justify-center p-x-max mx-auto py-10 lg:py-17.5 gap-10">
@@ -43,7 +53,13 @@ export default async function PageGeneral({ data, locale }: PageGeneralProps) {
 			</section>
 
 			{pageModules?.map((module) => (
-				<PageModules key={module._key} module={module} locale={locale} />
+				<PageModules
+					key={module._key}
+					module={module}
+					locale={locale}
+					// No headingLevel: the page title above already owns this page's h1.
+					ownsWeatherWidget={!!widgetHeroKey && module._key === widgetHeroKey}
+				/>
 			))}
 		</>
 	);

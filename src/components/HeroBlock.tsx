@@ -40,12 +40,57 @@ type HeroBlockProps = {
 	 * so a hero there is a section heading and stays h2 (the default).
 	 */
 	headingLevel?: 'h1' | 'h2';
+	/**
+	 * Whether this hero carries the page's single weather widget — the page
+	 * component picks the first heroBlock in the array. Nothing caps how many
+	 * heroBlocks a builder may hold, so rendering one per hero would put two on a
+	 * two-hero page, each polling `/api/weather` on its own schedule and showing
+	 * its own timestamp. See the note on `ownsWeatherWidget` in PageModules for
+	 * why this is ownership rather than position.
+	 */
+	ownsWeatherWidget?: boolean;
 	className?: string;
 };
+
+/**
+ * Whether a heroBlock will render anything at all — exported so callers gate on
+ * the SAME condition this component bails on, the idiom `<SizeChartTable>`'s
+ * `isRenderable()` sets. The page components need it to elect which hero owns
+ * the weather widget: electing on `_type` alone handed the widget to an empty
+ * placeholder hero, which then returned null and took the page's only widget
+ * with it while a fully authored hero below rendered without one.
+ *
+ * `stegaClean` on the heading for the reason the note inside the component
+ * gives: draft mode appends invisible characters that make any heading look
+ * non-empty, and this COMPARES rather than renders.
+ */
+export function heroBlockIsRenderable(data: HeroBlockProps['data']): boolean {
+	const {
+		eyebrow,
+		heading,
+		paragraph,
+		backgroundImage,
+		waveBackground,
+		callToAction,
+	} = data || {};
+	const ctaHref =
+		typeof callToAction?.link?.href === 'string'
+			? callToAction.link.href
+			: null;
+	return !!(
+		eyebrow ||
+		stegaClean(heading)?.trim() ||
+		hasArrayValue(paragraph) ||
+		backgroundImage?.image ||
+		waveBackground ||
+		(ctaHref && callToAction?.label)
+	);
+}
 
 export default function HeroBlock({
 	data,
 	headingLevel = 'h2',
+	ownsWeatherWidget = false,
 	className,
 }: HeroBlockProps) {
 	const {
@@ -90,14 +135,7 @@ export default function HeroBlock({
 
 	// Same bail as the other modules: an empty hero would still reserve a full
 	// viewport of blank page, which is worse than not rendering.
-	if (
-		!eyebrow &&
-		!hasHeading &&
-		!hasParagraph &&
-		!backgroundImage?.image &&
-		!waveBackground &&
-		!(ctaHref && ctaLabel)
-	) {
+	if (!heroBlockIsRenderable(data)) {
 		return null;
 	}
 
@@ -184,7 +222,7 @@ export default function HeroBlock({
 					</div>
 				)}
 			</div>
-			<WeatherWidget />
+			{ownsWeatherWidget && <WeatherWidget />}
 		</SectionShell>
 	);
 }

@@ -1,7 +1,10 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Component, type ReactNode } from 'react';
+import { Component, type ComponentProps, type ReactNode } from 'react';
+// Type-only, so it is erased at compile time and the widget stays behind the
+// dynamic() boundary below. A VALUE import here would defeat the whole file.
+import type { WeatherWidget as Widget } from './WeatherWidget';
 
 // <Layout> is the always-mounted chrome, so a static import of the widget from
 // there puts it — and `@/lib/weather` with it — into the shared chunk of every
@@ -48,10 +51,13 @@ class WeatherBoundary extends Component<
 	}
 }
 
-export function WeatherWidget() {
+// Props derived, not restated — this wrapper is the only sanctioned route to the
+// component, so a prop added there and not forwarded here is silently dropped
+// for every caller.
+export function WeatherWidget(props: ComponentProps<typeof Widget>) {
 	return (
 		<WeatherBoundary>
-			<LazyWidget />
+			<LazyWidget {...props} />
 		</WeatherBoundary>
 	);
 }

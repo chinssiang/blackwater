@@ -7,6 +7,7 @@ import {
 	shouldShowWeatherWidget,
 } from '@/lib/routes';
 import type { LayoutData } from '@/sanity/lib/siteData';
+import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 import { CartProvider } from '@/components/cart/CartProvider';
 import CartDrawer from '@/components/cart/CartDrawer';
 import AdaSkip from './AdaSkip';
@@ -28,8 +29,9 @@ export function Layout({ children, siteData }: LayoutProps) {
 		siteData || {};
 	const pathname = usePathname();
 	const hideNewsletter = shouldHideGlobalNewsletter(pathname);
-	// The widget's route policy lives in one tested predicate rather than in the
-	// pages that happen to want it -- see its note in routes.ts.
+	// The CHROME copy only. Pages that open with a hero mount their own inside it
+	// and are excluded from the predicate, so the two never both fire — the note
+	// in routes.ts carries why there are two.
 	const showWeather = shouldShowWeatherWidget(pathname);
 
 	// SPA pageview tracking lives in HeadTrackingCode — the one component
@@ -82,6 +84,11 @@ export function Layout({ children, siteData }: LayoutProps) {
 				</Main>
 				<Footer data={footerData} />
 				{!toolbar?.hideToolbar && <ToolBar menu={toolbar?.toolbarMenu} />}
+
+				{/* `fixed`, so this copy claims the viewport's corner rather than a
+				    section's — it has no hero to sit inside, which is the whole
+				    reason this arm exists. */}
+				{showWeather && <WeatherWidget className="fixed lg:bottom-6" />}
 
 				<CartDrawer settings={siteData?.cart} />
 			</LazyMotion>

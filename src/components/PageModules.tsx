@@ -31,12 +31,27 @@ type PageModulesProps = {
 	 * there.
 	 */
 	headingLevel?: 'h1' | 'h2';
+	/**
+	 * Whether this module owns the page's single weather widget. Decided by the
+	 * page component, which picks the first heroBlock in the array; only
+	 * heroBlock reads it.
+	 *
+	 * Ownership rather than position, and NOT derived from `headingLevel`: both
+	 * pageModules arrays allow any number of heroBlocks with no max(), so
+	 * something has to choose, but "is slot 0" answers the wrong question — a
+	 * builder of [freeform, heroBlock] has a perfectly good hero at index 1 and
+	 * would get no widget at all. `headingLevel` cannot stand in either, since
+	 * PageGeneral renders its own <h1> and passes no level, leaving every one of
+	 * its modules at the 'h2' default.
+	 */
+	ownsWeatherWidget?: boolean;
 };
 
 export default function PageModules({
 	module,
 	locale,
 	headingLevel,
+	ownsWeatherWidget,
 }: PageModulesProps) {
 	const type = module._type;
 
@@ -57,7 +72,13 @@ export default function PageModules({
 			);
 
 		case 'heroBlock':
-			return <HeroBlock data={module} headingLevel={headingLevel} />;
+			return (
+				<HeroBlock
+					data={module}
+					headingLevel={headingLevel}
+					ownsWeatherWidget={ownsWeatherWidget}
+				/>
+			);
 
 		case 'productsBlock':
 			return (
