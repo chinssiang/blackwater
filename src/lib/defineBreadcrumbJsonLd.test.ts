@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import defineBreadcrumbJsonLd from './defineBreadcrumbJsonLd';
 
+// The value vitest.config.ts puts in the environment — deliberately not the
+// production domain, so an assertion here cannot be satisfied by a builder
+// falling back to its own hardcoded default.
+const siteUrl = 'https://example.test';
+
 describe('defineBreadcrumbJsonLd', () => {
 	it('returns null when fewer than two valid crumbs remain', () => {
 		expect(defineBreadcrumbJsonLd([])).toBeNull();
@@ -30,11 +35,11 @@ describe('defineBreadcrumbJsonLd', () => {
 			'@type': 'ListItem',
 			position: 1,
 			name: 'Home',
-			item: 'https://blackwaterrc.com/',
+			item: `${siteUrl}/`,
 		});
 		expect(items[2]).toMatchObject({
 			position: 3,
-			item: 'https://blackwaterrc.com/events/race-1',
+			item: `${siteUrl}/events/race-1`,
 		});
 	});
 });

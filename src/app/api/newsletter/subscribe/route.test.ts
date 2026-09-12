@@ -16,11 +16,14 @@ let ipCounter = 0;
 
 function request(
 	body: unknown,
-	{ ip = `10.0.0.${++ipCounter}` }: { ip?: string } = {}
+	{
+		ip = `10.0.0.${++ipCounter}`,
+		json,
+	}: { ip?: string; json?: () => Promise<unknown> } = {}
 ): NextRequest {
 	return {
 		headers: new Headers({ 'x-forwarded-for': ip }),
-		json: async () => body,
+		json: json ?? (async () => body),
 	} as unknown as NextRequest;
 }
 
@@ -46,13 +49,12 @@ describe('newsletter subscribe POST', () => {
 	});
 
 	it('rejects a body that is not JSON with 400', async () => {
-		const res = {
-			headers: new Headers({ 'x-forwarded-for': `10.0.1.${++ipCounter}` }),
+		const req = request(null, {
 			json: async () => {
 				throw new Error('bad json');
 			},
-		} as unknown as NextRequest;
-		expect((await POST(res)).status).toBe(400);
+		});
+		expect((await POST(req)).status).toBe(400);
 	});
 
 	it('returns 500 when the API key is not configured', async () => {

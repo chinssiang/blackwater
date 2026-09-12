@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import defineEventJsonLd from './defineEventJsonLd';
 
-const siteUrl = 'https://blackwaterrc.com';
+// The value vitest.config.ts puts in the environment — deliberately not the
+// production domain, so an assertion here cannot be satisfied by a builder
+// falling back to its own hardcoded default.
+const siteUrl = 'https://example.test';
 
 describe('defineEventJsonLd', () => {
 	it('builds a SportsEvent with sensible defaults', () => {
@@ -9,7 +12,10 @@ describe('defineEventJsonLd', () => {
 			data: {
 				slug: 'race-1',
 				title: 'BW-1',
-				eventDatetime: { local: '2025-06-23T09:00:00', utc: '2025-06-23T01:00:00.000Z' },
+				eventDatetime: {
+					local: '2025-06-23T09:00:00',
+					utc: '2025-06-23T01:00:00.000Z',
+				},
 			},
 		});
 		expect(ld).toMatchObject({

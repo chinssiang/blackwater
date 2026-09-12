@@ -1,4 +1,5 @@
 import { htmlLangFor, localePrefix, type Locale } from '@/lib/i18n';
+import { escapeHtml } from '@/lib/utils';
 
 // Confirmation email sent to the visitor after a product submission.
 // CMS copy comes from pProductIndex.confirmationEmail (per-field English
@@ -14,7 +15,8 @@ const DEFAULT_TEMPLATES: Record<
 		heading: 'Thanks, {{name}}!',
 		message:
 			"We've received your product submission and will take a look shortly.\n\nHere's a copy of what you sent us.",
-		footer: "You're receiving this email because you submitted a product on our site.",
+		footer:
+			"You're receiving this email because you submitted a product on our site.",
 	},
 	zh_tw: {
 		subject: '我們已收到您的商品推薦',
@@ -40,14 +42,10 @@ const COLOR_FAINT = '#8A8A8A';
 const COLOR_BORDER = '#EBE9E9';
 const COLOR_ACCENT = '#6B5FFF';
 
-export function escapeHtml(value: string): string {
-	return value
-		.replaceAll('&', '&amp;')
-		.replaceAll('<', '&lt;')
-		.replaceAll('>', '&gt;')
-		.replaceAll('"', '&quot;')
-		.replaceAll("'", '&#39;');
-}
+// Re-exported so this module stays the one import site for everything the
+// confirmation email needs; the implementation lives in lib/utils beside
+// formatObjectToHtml, the other builder that must not emit raw user input.
+export { escapeHtml };
 
 const NAME_TOKEN = /\{\{\s*name\s*\}\}/g;
 

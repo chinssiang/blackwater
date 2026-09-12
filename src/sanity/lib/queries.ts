@@ -894,6 +894,16 @@ export const productSubmissionConfigQuery = defineQuery(`{
 	"logo": ${byLocale('pProductIndex')}[defined(confirmationEmail.logo.asset)][0].confirmationEmail.logo
 }`);
 
+// Server-side recipient resolution for /api/contact-form/submit — same reasoning
+// as productSubmissionConfigQuery above: the route sends mail from the site's
+// own SMTP account, so the destination has to come from the CMS rather than from
+// the request body, or the endpoint is an open relay. Per-field English fallback
+// so a locale that has not filled these in still delivers.
+export const contactFormConfigQuery = defineQuery(`{
+	"recipient": ${byLocale('pContact')}[defined(contactForm.sendToEmail)][0].contactForm.sendToEmail,
+	"subject": ${byLocale('pContact')}[defined(contactForm.emailSubject)][0].contactForm.emailSubject
+}`);
+
 export // `landingTitle` is not rendered: PageHome reads it only to tell "this dataset
 // predates the hero migration" from "this homepage has no modules yet", and the
 // migration unsets it, so it and the schema field retire together.

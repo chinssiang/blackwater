@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
 	CONSENT_COOKIE,
 	CONSENT_VERSION,
+	consentCookieDomain,
 	DENY_ALL,
 	GRANT_ALL,
 	parseConsentCookie,
@@ -89,8 +90,16 @@ describe('toConsentModeSignals', () => {
 
 describe('client cookie round-trip', () => {
 	afterEach(() => {
-		// Expire the cookie between tests.
+		// A cookie's identity is (name, domain, path), so the delete has to carry
+		// the same Domain writeConsentClient derived — otherwise it silently
+		// misses and the next test reads this one's decision. Both variants go,
+		// because the writer expires the host-only one before writing a scoped
+		// one and either may be present.
+		const domain = consentCookieDomain();
 		document.cookie = `${CONSENT_COOKIE}=; Path=/; Max-Age=0`;
+		if (domain) {
+			document.cookie = `${CONSENT_COOKIE}=; Path=/; Max-Age=0; Domain=${domain}`;
+		}
 	});
 
 	// The reader is split in two so useConsent can compare the RAW cookie

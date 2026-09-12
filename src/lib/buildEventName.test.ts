@@ -9,20 +9,6 @@ const UTC = '2026-09-04T23:00:00Z';
 const TZ = 'Asia/Taipei';
 
 describe('buildEventName', () => {
-	it('dates the event in its own stored timezone', () => {
-		expect(
-			buildEventName(
-				{
-					title: 'BW-134-rr',
-					location: 'Daan Forest Park',
-					eventDatetime: UTC,
-					timezone: TZ,
-				},
-				'en'
-			)
-		).toBe('BW-134-rr · Daan Forest Park · Sep 5, 2026');
-	});
-
 	it('falls back rather than throwing on a timezone Intl cannot use', () => {
 		// This runs inside JSON-LD generation, so the `RangeError` a stored
 		// `GMT+8` used to raise took the whole page down rather than costing one
@@ -78,6 +64,8 @@ describe('buildEventName', () => {
 		).toBe('BW-134-rr · 2026年9月5日');
 	});
 
+	// Also the timezone assertion: the date is Sep 5 in Taipei and Sep 4 in both
+	// UTC and the suite's own zone, so a date resolved anywhere else fails here.
 	it('joins every part it has, separating the subtitle with an em dash', () => {
 		expect(
 			buildEventName(

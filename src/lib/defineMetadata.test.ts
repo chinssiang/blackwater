@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import defineMetadata, { normalizeLocales } from './defineMetadata';
 
+// defineMetadata is the one SITE_URL reader with no hardcoded fallback, so
+// these assertions are what would catch an unset SITE_URL emitting
+// "undefined/about" into a canonical tag. vitest.config.ts supplies the value.
+const siteUrl = 'https://example.test';
+
 describe('normalizeLocales', () => {
 	it('dedupes and filters to valid locales', () => {
 		expect(normalizeLocales(['en', 'en', 'zh_tw', 'fr'])).toEqual([
@@ -26,15 +31,17 @@ describe('defineMetadata', () => {
 		});
 		expect(meta.title).toBe('About');
 		expect(meta.description).toBe('About us');
-		expect(meta.alternates?.canonical).toBe(
-			'https://blackwaterrc.com/about'
-		);
+		expect(meta.alternates?.canonical).toBe(`${siteUrl}/about`);
 		expect(meta.robots).toMatchObject({ index: true, follow: true });
 	});
 
 	it('disables indexing when disableIndex is set', () => {
 		const meta = defineMetadata({
-			data: { _type: 'pGeneral', slug: 'secret', sharing: { disableIndex: true } },
+			data: {
+				_type: 'pGeneral',
+				slug: 'secret',
+				sharing: { disableIndex: true },
+			},
 		});
 		expect(meta.robots).toMatchObject({ index: false, follow: false });
 	});
@@ -53,9 +60,9 @@ describe('defineMetadata', () => {
 			availableLocales: ['en', 'zh_tw'],
 		});
 		expect(meta.alternates?.languages).toEqual({
-			en: 'https://blackwaterrc.com/about',
-			'zh-TW': 'https://blackwaterrc.com/zh_tw/about',
-			'x-default': 'https://blackwaterrc.com/about',
+			en: `${siteUrl}/about`,
+			'zh-TW': `${siteUrl}/zh_tw/about`,
+			'x-default': `${siteUrl}/about`,
 		});
 	});
 

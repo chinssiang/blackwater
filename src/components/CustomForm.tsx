@@ -13,6 +13,7 @@ import {
 } from 'react-hook-form';
 import * as z from 'zod';
 import { cn, hasArrayValue } from '@/lib/utils';
+import { useLocale } from '@/components/LocaleProvider';
 
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
@@ -324,15 +325,9 @@ export function CustomForm({
 	className,
 	fieldGapX,
 }: CustomFormProps) {
-	const {
-		formTitle,
-		formFields,
-		successMessage,
-		errorMessage,
-		sendToEmail,
-		emailSubject,
-	} = data || {};
+	const { formTitle, formFields, successMessage, errorMessage } = data || {};
 
+	const locale = useLocale();
 	const [formState, setFormState] = useState<FormState>(FORM_STATES.IDLE);
 
 	const defaultValues = useMemo(() => {
@@ -356,9 +351,11 @@ export function CustomForm({
 	const onHandleSubmit = async (formData: FieldValues) => {
 		setFormState(FORM_STATES.SUBMITTING);
 
+		// Deliberately NOT sending sendToEmail/emailSubject: the route resolves
+		// both from pContact itself, so a caller cannot name the recipient. The
+		// locale only picks which pContact translation to read.
 		const bodyData = {
-			sendToEmail: sendToEmail ?? undefined,
-			emailSubject: emailSubject ?? undefined,
+			locale,
 			formData: formData,
 		};
 

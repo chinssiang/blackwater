@@ -618,7 +618,7 @@ describe('formatRichDate', () => {
 	});
 
 	it('formats in the stored timezone, not the runtime one', () => {
-		// 22:00 on the 4th in Los Angeles (the suite's TZ) and still the 4th in
+		// 16:00 on the 4th in Los Angeles (the suite's TZ) and still the 4th in
 		// UTC, but already the 5th in Taipei.
 		expect(formatRichDate(taipei('2026-09-05T07:00'), 'yyyy-MM-dd')).toBe(
 			'2026-09-05'
@@ -660,12 +660,10 @@ describe('getRichDateYearMonth', () => {
 	});
 
 	it('decides the month in the stored timezone at a month boundary', () => {
-		// 2026-09-30 23:00 Taipei is still September there and the 30th in UTC,
-		// but resolved in the runtime zone it would land in the previous day.
-		expect(getRichDateYearMonth(taipei('2026-09-30T23:00'))).toEqual({
-			year: 2026,
-			month: 8,
-		});
+		// 2026-10-01 01:00 Taipei is 2026-09-30 17:00 UTC and 10:00 on the 30th in
+		// the suite's own zone — so a month resolved anywhere but Taipei reports
+		// September. A case on the other side of the boundary would NOT test this:
+		// 09-30 23:00 Taipei is September in Taipei, UTC and Los Angeles alike.
 		expect(getRichDateYearMonth(taipei('2026-10-01T01:00'))).toEqual({
 			year: 2026,
 			month: 9,

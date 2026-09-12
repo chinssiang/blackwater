@@ -258,9 +258,11 @@ describe('resolveHref', () => {
 });
 
 // resolvedHrefGroq is hand-maintained beside DOCUMENT_ROUTES — the extractor
-// cannot derive it, so nothing but this check notices when a new routable type
-// is added to one and not the other. A missing arm is silent: the link picker
-// still offers the type and the menu item resolves to null.
+// cannot derive it, so nothing but this check notices when the two drift. Both
+// directions matter: a type added to DOCUMENT_ROUTES and not to the literal
+// resolves to null in every menu, and an arm left in the literal for a type that
+// is gone keeps GROQ resolving a URL that resolveHref() now sends to its
+// `/<slug>` fallback. Asserted as set equality so neither can be missed.
 describe('resolvedHrefGroq stays in sync with DOCUMENT_ROUTES', () => {
 	// Synthetic routes back no document, so they deliberately have no GROQ arm.
 	// They are the entries carrying a "Synthetic route" comment in routes.ts.
@@ -270,11 +272,19 @@ describe('resolvedHrefGroq stays in sync with DOCUMENT_ROUTES', () => {
 		'pProductCollectionsIndex',
 	];
 
-	it.each(
-		DOCUMENT_ROUTES.map((r) => r.type).filter(
-			(type) => !SYNTHETIC_TYPES.includes(type)
-		)
-	)('has a GROQ case for %s', (type) => {
-		expect(resolvedHrefGroq).toContain(`_type == "${type}"`);
+	const routedTypes = DOCUMENT_ROUTES.map((r) => r.type).filter(
+		(type) => !SYNTHETIC_TYPES.includes(type)
+	);
+	const groqTypes = Array.from(
+		resolvedHrefGroq.matchAll(/_type == "([^"]+)"/g),
+		(m) => m[1]
+	);
+
+	it('has a GROQ arm for every non-synthetic routed type', () => {
+		expect([...groqTypes].sort()).toEqual([...routedTypes].sort());
+	});
+
+	it('reads some arms at all, so the regex above cannot silently match nothing', () => {
+		expect(groqTypes.length).toBeGreaterThan(5);
 	});
 });
