@@ -7,7 +7,6 @@ import {
 	resolveHref,
 	resolvedHrefGroq,
 	shouldHideGlobalNewsletter,
-	shouldShowWeatherWidget,
 } from '@/lib/routes';
 
 // These cover the one thing about this module that is invisible at a call site:
@@ -92,51 +91,6 @@ describe('shouldHideGlobalNewsletter', () => {
 	it('keeps it everywhere else, including descendants of an exact-match entry', () => {
 		expect(shouldHideGlobalNewsletter('/en/contact')).toBe(false);
 		expect(shouldHideGlobalNewsletter('/en/newsletter/thanks')).toBe(false);
-	});
-});
-
-// This governs ONLY the chrome copy that <Layout> mounts. The homepage and any
-// pGeneral page opening with a hero get theirs from <HeroBlock> instead, so a
-// `false` here is not "no widget on that page" — see the note in routes.ts, and
-// weather-widget-mounts.test.ts for the wiring both arms depend on.
-describe('shouldShowWeatherWidget', () => {
-	it('agrees across the prerender and browser forms of the same route', () => {
-		for (const p of ['/en/events/x', '/events/x', '/zh_tw/events/x']) {
-			expect(shouldShowWeatherWidget(p)).toBe(true);
-		}
-	});
-
-	it('shows on the events index and every single event', () => {
-		expect(shouldShowWeatherWidget('/events')).toBe(true);
-		expect(shouldShowWeatherWidget('/en/events/')).toBe(true);
-		expect(shouldShowWeatherWidget('/en/events/some-race')).toBe(true);
-	});
-
-	// The homepage opens with a hero, and that hero mounts its own widget. Were
-	// this true the page would carry TWO, each with its own fetch and its own
-	// timestamp — the duplicate this narrowing exists to prevent.
-	it('does not claim the homepage, which gets its widget from its hero', () => {
-		for (const p of ['/', '/en', '/zh_tw']) {
-			expect(shouldShowWeatherWidget(p)).toBe(false);
-		}
-	});
-
-	it('does not claim routes with no hero and no chrome rule', () => {
-		for (const p of [
-			'/products',
-			'/en/contact',
-			'/faq',
-			'/size-guide',
-			// pGeneral pages: a hero here would mount its own, so the chrome must not.
-			'/en/about',
-			'/some-general-page',
-		]) {
-			expect(shouldShowWeatherWidget(p)).toBe(false);
-		}
-	});
-
-	it('does not match a route that merely starts with the same characters', () => {
-		expect(shouldShowWeatherWidget('/events-crew')).toBe(false);
 	});
 });
 

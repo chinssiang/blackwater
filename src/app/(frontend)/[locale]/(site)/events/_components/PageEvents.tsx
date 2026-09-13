@@ -26,6 +26,7 @@ import { ArrowUpRight } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
 import { tabsTriggerVariants } from '@/components/ui/tabsTriggerVariants';
 import { EASE_OUT_EXPO, fadeAnim } from '@/lib/animate';
+import { WeatherWidgetRail } from '@/components/WeatherWidgetRail';
 import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { formatDaysUntilLabel, interpolate } from '@/lib/dictionary';
@@ -545,8 +546,7 @@ export function PageEvents({ data }: PageEventsProps) {
 													transition={{
 														duration: rowDuration,
 														delay:
-															CONTENT_ENTER_DELAY +
-															index * EVENT_ROW_STAGGER,
+															CONTENT_ENTER_DELAY + index * EVENT_ROW_STAGGER,
 														ease: EASE_OUT_EXPO,
 													}}
 												>
@@ -665,6 +665,10 @@ export function PageEvents({ data }: PageEventsProps) {
 					)}
 				</AnimatePresence>
 			</div>
+			{/* No gutter class: this root's own `p-x-max` already insets the rail,
+			    so `justify-end` lands the pill on the same corner the chrome copy
+			    held. The rail itself is explained in WeatherWidgetRail.tsx. */}
+			<WeatherWidgetRail className="mt-6" />
 		</div>
 	);
 }

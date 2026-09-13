@@ -18,20 +18,30 @@ import {
 } from '@/lib/weather';
 
 /**
- * Current Taipei conditions, pinned bottom-right. Two mount sites, which must
- * never both fire on one page — `shouldShowWeatherWidget` in routes.ts carries
- * that argument, and a third mount belongs there first.
+ * Current Taipei conditions, pinned bottom-right. THREE mount sites, and the
+ * rule that keeps two off one page is ownership of a content region, not a
+ * route: <HeroBlock> mounts one inside the hero that owns it, PageHome mounts a
+ * fallback when no hero does, and the two events pages each mount one through
+ * <WeatherWidgetRail>. There is no route predicate any more -- a fourth mount
+ * belongs to whichever component owns the region it should sit in, and
+ * weather-widget-mounts.test.ts guards the wiring.
  *
- * What matters HERE is only the positioning each site needs. The default is
- * `absolute`, for the <HeroBlock> mount: it anchors to the hero's own
- * `relative isolate` (HeroBlock.tsx, passed through to SectionShell — NOT to
- * SECTION_INSET, which is padding only), so trimming that className sends the
- * widget to whatever positioned ancestor it finds next. <Layout>'s copy has no
- * hero to sit inside and passes `fixed` through `className` instead.
+ * What matters HERE is only the positioning each site needs:
+ *
+ *   - `absolute` (the default), for <HeroBlock>: it anchors to the hero's own
+ *     `relative isolate` (HeroBlock.tsx, passed through to SectionShell -- NOT
+ *     to SECTION_INSET, which is padding only), so trimming that className
+ *     sends the widget to whatever positioned ancestor it finds next.
+ *   - `static`, for <WeatherWidgetRail>, which puts the widget in the rail's
+ *     flow so the rail can align it and cap what it contributes to layout. The
+ *     panel below is in flow, so the box grows upward off its bottom anchor --
+ *     safe only while something else keeps the widget out of the PAGE's flow.
+ *     That file carries the whole argument.
+ *   - `fixed`, only for PageHome's fallback, which has no such box to sit in.
  *
  * The bottom offset clears the mobile ToolBar the way the Footer's padding does.
  *
- * Always import this from `@/components/WeatherWidgetLazy` — see the note there.
+ * Always import this from `@/components/WeatherWidgetLazy` -- see the note there.
  *
  * Fetched in the browser, not on the server: every [locale] route is
  * prerendered, so weather resolved at render time would be baked into the HTML
@@ -43,16 +53,23 @@ import {
  * rules. It also avoids authoring an icon per WMO condition group.
  *
  * Temperature lives in the always-visible pill rather than repeating as a
- * labelled row in the panel — it is the metric with the strongest claim on
+ * labelled row in the panel -- it is the metric with the strongest claim on
  * being readable without a click, and a 208px panel has no room to say it
  * twice.
  */
 type WeatherWidgetProps = {
 	/**
-	 * Overrides for the mount site's positioning — the chrome copy passes
-	 * `fixed` to escape the flow. Merged through cn(), so tailwind-merge resolves
-	 * it against the defaults below (`fixed` beats `absolute`, both being the
-	 * position group) rather than leaving two competing classes to the cascade.
+	 * Overrides for the mount site's positioning -- see the three sites above.
+	 * Merged through cn(), so tailwind-merge resolves it against the defaults
+	 * below (`static` and `fixed` both beat `absolute`, all being the position
+	 * group) rather than leaving two competing classes to the cascade.
+	 *
+	 * Two limits it does NOT resolve, both of which have bitten. It resolves only
+	 * WITHIN a modifier scope, so a bare `bottom-*` here leaves `lg:bottom-2.5`
+	 * below standing. And it does not classify `contain` as an inset value, so a
+	 * `right-auto` here does not delete `right-contain` below: both survive and
+	 * the cascade picks (`-contain` wins). The rail sidesteps both by making the
+	 * widget `static`, where every inset below is inert.
 	 */
 	className?: string;
 };
@@ -60,10 +77,39 @@ type WeatherWidgetProps = {
 /** First retry delay after a failed load; doubles per consecutive failure. */
 const MIN_BACKOFF_MS = 30_000;
 
+/**
+ * The last snapshot any instance resolved, at module scope so it outlives the
+ * component. The widget is mounted by the PAGE now rather than by <Layout>, and
+ * a page subtree unmounts on every client navigation -- so /events -> an event
+ * -> back used to throw the snapshot away three times, and each remount both
+ * refetched (the route sets `max-age=0`, so the browser must revalidate) and
+ * replayed the 500ms entrance from `null`. One value, replaced in place, never
+ * grown; the staleness check below is what keeps it honest.
+ */
+let lastSnapshot: WeatherSnapshot | null = null;
+
+/**
+ * Consecutive failures, at module scope for the same reason as the snapshot:
+ * the counter has to outlive the mount or the backoff below never doubles. Per
+ * mount it reset on every client navigation, so a visitor moving around /events
+ * during an outage re-armed at the 30s floor forever -- exactly the 120
+ * requests an hour the backoff was written to prevent.
+ */
+let failures = 0;
+
 export function WeatherWidget({ className }: WeatherWidgetProps) {
 	const t = useTranslations('weather');
 	const locale = useLocale();
-	const [snapshot, setSnapshot] = useState<WeatherSnapshot | null>(null);
+	// Seeded from the cache, but only while it is still inside the budget this
+	// widget promises -- an unchecked seed renders an arbitrarily old reading, and
+	// the panel states it as a definite "observed at HH:MM", for as long as the
+	// refetch takes. The effect below asks the same question before deciding
+	// whether to refetch at all; this is the render half of it.
+	const [snapshot, setSnapshot] = useState<WeatherSnapshot | null>(() =>
+		lastSnapshot && !isSnapshotStale(lastSnapshot.observedAt, Date.now())
+			? lastSnapshot
+			: null
+	);
 	const [isOpen, setIsOpen] = useState(false);
 	const panelId = useId();
 
@@ -89,8 +135,6 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
 		// controller to mean "a request is in flight" is true forever after the
 		// first load and silently kills the visibility path below.
 		let inFlight = false;
-		// Consecutive failures, for the backoff in `finally`.
-		let failures = 0;
 		// Read by the listeners, which must judge the CURRENT snapshot rather than
 		// close over the one that was on screen when the effect ran.
 		let current: WeatherSnapshot | null = null;
@@ -113,6 +157,7 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
 				const data: WeatherSnapshot = await res.json();
 				if (active.signal.aborted) return;
 				current = data;
+				lastSnapshot = data;
 				failures = 0;
 				setSnapshot(data);
 			} catch (error) {
@@ -168,7 +213,18 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
 			window[fn]('pageshow', refreshIfStale);
 		};
 
-		void load();
+		// A remount with a snapshot still inside its freshness budget re-arms the
+		// timer instead of refetching -- the same question `refreshIfStale` asks,
+		// asked once more on the one path that never asked it.
+		if (lastSnapshot && !isSnapshotStale(lastSnapshot.observedAt, Date.now())) {
+			current = lastSnapshot;
+			timer = setTimeout(
+				load,
+				msUntilStale(lastSnapshot.observedAt, Date.now())
+			);
+		} else {
+			void load();
+		}
 		toggleListeners(true);
 
 		return () => {

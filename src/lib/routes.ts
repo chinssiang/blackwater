@@ -100,46 +100,6 @@ export function isLightThemePath(pathname: string): boolean {
 	);
 }
 
-// Subtrees that carry the Taipei weather widget from the CHROME — each entry
-// matches itself and its descendants, so "/events" covers the index and every
-// single event.
-//
-// This is deliberately NOT the whole story, and was the source of a long-lived
-// drift. The widget has TWO mount sites, because it answers two different
-// questions:
-//
-//   - Structural: <HeroBlock> pins one inside the first hero on the page that
-//     will actually render, so the homepage and any pGeneral page with a hero
-//     anywhere in its builder get it without a route rule. Gated on OWNERSHIP
-//     there ({ownsWeatherWidget}, elected by the page component), not on a path
-//     and not on a position — a [freeform, heroBlock] page still gets one.
-//   - Route: <Layout> mounts one for the subtrees below, which have no hero to
-//     hang it on. This predicate governs only that arm.
-//
-// So the homepage is absent here ON PURPOSE — PageHome mounts its own copy
-// (from its hero, or a fixed fallback when no hero owns one), and listing it
-// here would render a second. It is also why "/" was never listable as a subtree
-// anyway: as a base it prefixes every path.
-const WEATHER_WIDGET_SUBTREES = ['/events'];
-
-/**
- * Whether <Layout> mounts the CHROME copy of the weather widget — see the two
- * mount sites above before adding to this. A path that renders a hero must not
- * appear here, or the page gets two widgets running two independent fetches.
- *
- * Goes through normalizeRoutePath for the reason the section on this file in
- * CLAUDE.md spells out: a prerender's pathname carries the internal "/en"
- * prefix that the client router never produces, so comparing a raw
- * usePathname() here would bake "hidden" into the prerendered HTML of every
- * English page and let hydration pop the widget in afterwards.
- */
-export function shouldShowWeatherWidget(pathname: string): boolean {
-	const normalized = normalizeRoutePath(pathname);
-	return WEATHER_WIDGET_SUBTREES.some(
-		(base) => normalized === base || normalized.startsWith(`${base}/`)
-	);
-}
-
 export function resolveHref({
 	documentType,
 	slug,

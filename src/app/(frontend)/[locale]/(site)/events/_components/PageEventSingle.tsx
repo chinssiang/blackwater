@@ -4,6 +4,7 @@ import {
 	isEventEnded,
 } from '@/lib/event-date';
 import { resolveEventDateStatus } from '@/lib/event-status';
+import { WeatherWidgetRail } from '@/components/WeatherWidgetRail';
 import CustomPortableText from '@/components/CustomPortableText';
 import ImageBlock from '@/components/ImageBlock';
 import EventStatusPill from '@/components/EventStatusPill';
@@ -176,6 +177,16 @@ export default function PageEventSingle({
 
 			<EventBody data={data} t={t} />
 			{relatedSlot}
+
+			{/* `m-x-max` because this root carries no horizontal padding -- its
+			    sections carry their own -- so the rail supplies its own gutter.
+			    PageEvents' copy passes none for exactly the opposite reason.
+
+			    `my`, not `mt` as there: this root has no bottom padding either, and
+			    the rail is its last child, so without a bottom margin the pill sits
+			    flush against the newsletter's border. PageEvents' root ends in
+			    `pb-22.5`, which is already that tail. */}
+			<WeatherWidgetRail className="m-x-max my-10" />
 		</div>
 	);
 }
