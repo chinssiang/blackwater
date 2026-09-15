@@ -494,13 +494,7 @@ export type FormField = {
 	fieldName?: string;
 	fieldLabel?: string;
 	inputType?:
-		| 'text'
-		| 'email'
-		| 'tel'
-		| 'textarea'
-		| 'select'
-		| 'checkbox'
-		| 'file';
+		'text' | 'email' | 'tel' | 'textarea' | 'select' | 'checkbox' | 'file';
 	placeholder?: string;
 	selectOptions?: Array<{
 		option?: string;
@@ -2832,10 +2826,7 @@ export type PageHomeQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -3021,10 +3012,7 @@ export type PageHomeQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -3253,10 +3241,7 @@ export type PageHomeQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -3467,11 +3452,7 @@ export type PageHomeQueryResult = {
 						} | null;
 					} | null;
 					customRatioMobile:
-						| 0.6666666667
-						| 0.7142857143
-						| 1.7777777778
-						| 1
-						| null;
+						0.6666666667 | 0.7142857143 | 1.7777777778 | 1 | null;
 				} | null;
 				callToAction: {
 					label: string | null;
@@ -3496,10 +3477,7 @@ export type PageHomeQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -3702,10 +3680,7 @@ export type PageHomeQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -3892,10 +3867,7 @@ export type PageHomeQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -4269,10 +4241,7 @@ export type PageGeneralQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -4458,10 +4427,7 @@ export type PageGeneralQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -4690,10 +4656,7 @@ export type PageGeneralQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -4904,11 +4867,7 @@ export type PageGeneralQueryResult = {
 						} | null;
 					} | null;
 					customRatioMobile:
-						| 0.6666666667
-						| 0.7142857143
-						| 1.7777777778
-						| 1
-						| null;
+						0.6666666667 | 0.7142857143 | 1.7777777778 | 1 | null;
 				} | null;
 				callToAction: {
 					label: string | null;
@@ -4933,10 +4892,7 @@ export type PageGeneralQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -5139,10 +5095,7 @@ export type PageGeneralQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
@@ -5329,10 +5282,7 @@ export type PageGeneralQueryResult = {
 				sectionAppearance: {
 					_type: 'sectionAppearance';
 					textAlign?:
-						| 'text-center'
-						| 'text-justify'
-						| 'text-left'
-						| 'text-right';
+						'text-center' | 'text-justify' | 'text-left' | 'text-right';
 					maxWidth?: 'l' | 'm' | 'none' | 's' | 'xl' | 'xs';
 					spacingTop?:
 						| 0
