@@ -89,7 +89,7 @@ export default async function PageSlugRoute(props: MetadataProps) {
 	]);
 
 	const { sharing } = data || {};
-	if (!data || sharing.disableIndex === true) return <NotFoundContent locale={params.locale} />;
+	if (!data || sharing?.disableIndex === true) return <NotFoundContent locale={params.locale} />;
 
 	const faqJsonLd = defineFaqJsonLd(collectFaqItems(stegaClean(data.pageModules)));
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([

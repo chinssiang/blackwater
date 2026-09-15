@@ -4,15 +4,21 @@ import CustomLink from '@/components/CustomLink';
 import { buttonVariants } from '@/components/ui/Button';
 import CustomPortableText from '@/components/CustomPortableText';
 
-import { PortableTextBlock } from '@portabletext/types';
+import type { Page404QueryResult } from '@/../sanity.types';
 
-interface Page404Data {
-	heading?: string;
-	paragraph?: PortableTextBlock[];
-	callToAction?: { link: { href: string }; label: string };
-}
+// Picked from the generated query result rather than restated, so a projection
+// change fails `tsc` here instead of silently drifting. The hand-written version
+// this replaces declared every field non-null, which page404Query never
+// guarantees.
+type Page404Data = Pick<
+	NonNullable<Page404QueryResult>,
+	'heading' | 'paragraph' | 'callToAction'
+>;
 
-export function PageNotFound({ data }: { data?: Page404Data }) {
+// `data` accepts null, not just undefined: page404Query is a `[0]` projection,
+// so it yields null on a dataset with no p404 document, and both callers pass
+// the query result straight through. The `data || {}` below already handles it.
+export function PageNotFound({ data }: { data?: Page404Data | null }) {
 	const { heading, paragraph, callToAction } = data || {};
 
 	return (

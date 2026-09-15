@@ -1,6 +1,7 @@
 import sanitizeHtml from 'sanitize-html';
 import { PortableText, PortableTextReactComponents } from '@portabletext/react';
 import type {
+	ArbitraryTypedObject,
 	PortableTextBlock,
 	PortableTextSpan,
 	PortableTextLink,
@@ -93,7 +94,16 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 export default function CustomPortableText({
 	blocks,
 }: {
-	blocks: PortableTextBlock[];
+	// Not `PortableTextBlock[]`. TypeGen emits `children?:` as optional on every
+	// generated block, while @portabletext/types' PortableTextBlock requires it,
+	// so no query result satisfies that type. This is <PortableText>'s own
+	// default value type, which the generated shapes do satisfy - and it is what
+	// admits the custom `image` / `iframe` members handled below, which are
+	// arbitrary typed objects rather than blocks.
+	//
+	// Nullable because most queries project portable text with a `[]{...}` that
+	// yields null on an empty field; the guard below already returns null.
+	blocks?: (PortableTextBlock | ArbitraryTypedObject)[] | null;
 }) {
 	if (!blocks) return null;
 

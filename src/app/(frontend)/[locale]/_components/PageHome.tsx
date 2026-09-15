@@ -2,18 +2,18 @@ import PageModules from '@/components/PageModules';
 import { heroBlockIsRenderable } from '@/components/HeroBlock';
 import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 import type { Locale } from '@/lib/i18n';
+import type { PageHomeQueryResult } from '@/../sanity.types';
 
+// Picked from the generated query result rather than restated, so a projection
+// change fails `tsc` here instead of silently drifting. `landingTitle` is read
+// only by the migration guard below, never rendered; `moduleCount` counts
+// pageModules BEFORE `moduleVisible` filters it, so the guard can tell "no
+// modules authored" from "every module parked with the eye".
 interface PageHomeProps {
-	data: {
-		pageModules?: Array<any>;
-		/** Read only by the migration guard below, never rendered. */
-		landingTitle?: string | null;
-		/**
-		 * pageModules counted BEFORE `moduleVisible` filters it, so the guard can
-		 * tell "no modules authored" from "every module parked with the eye".
-		 */
-		moduleCount?: number | null;
-	};
+	data: Pick<
+		NonNullable<PageHomeQueryResult>,
+		'pageModules' | 'landingTitle' | 'moduleCount'
+	>;
 	locale: Locale;
 }
 

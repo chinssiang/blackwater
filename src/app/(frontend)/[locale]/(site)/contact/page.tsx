@@ -30,7 +30,7 @@ export default async function Page(props: Props) {
 	const { data } = await getCachedContactData(locale);
 	const { sharing } = data || {};
 
-	if (!data || sharing.disableIndex === true) return <NotFoundContent locale={locale} />;
+	if (!data || sharing?.disableIndex === true) return <NotFoundContent locale={locale} />;
 
 	return <PageContact data={data} />;
 }

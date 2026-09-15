@@ -2,7 +2,7 @@ import { stegaClean } from '@sanity/client/stega';
 import {
 	buildRgbaCssString,
 	ensureAccessibleTextColor,
-	type SanityColor,
+	type MaybeSanityColor,
 } from '@/lib/image-utils';
 
 // Turns a Sanity `sectionAppearance` object into the classes, CSS custom
@@ -57,8 +57,14 @@ const DEFAULT_SPACING = 9;
 const DEFAULT_SPACING_DESKTOP = 12;
 
 export type SectionAppearance = {
-	backgroundColor?: SanityColor | null;
-	textColor?: SanityColor | null;
+	// MaybeSanityColor, not SanityColor: typegen projects a brand-colour deref
+	// with every field optional (see its note in image-utils), so no generated
+	// shape satisfies the stricter type and every page module that carries a
+	// sectionAppearance fails to type-check against it. `buildRgbaCssString`
+	// already takes MaybeSanityColor and narrows internally, so the looser type
+	// is what the consumer here was written for.
+	backgroundColor?: MaybeSanityColor;
+	textColor?: MaybeSanityColor;
 	textAlign?: string | null;
 	maxWidth?: MaxWidth | string | null;
 	spacingTop?: number | null;

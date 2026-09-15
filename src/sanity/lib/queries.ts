@@ -25,7 +25,7 @@ export const homeID = defineQuery(`*[_type == "pHome"][0]._id`);
 // data, so a module switched from picked to set still carries its orphaned
 // `questions` array. Read unconditionally, an edit to one of those unrendered
 // entries would move the page's lastmod.
-const faqBlockUsesSet = `coalesce(source, "set") != "picked"`;
+const faqBlockUsesSet = `coalesce(source, "set") != "picked"` as const;
 
 // Whether a page module is switched on. The eye button on the Studio array row
 // (schemaTypes/components/PageModuleItem.tsx) writes `hidden: true` and unsets
@@ -39,7 +39,7 @@ const faqBlockUsesSet = `coalesce(source, "set") != "picked"`;
 // visitor actually sees rather than the first one authored; a hidden faqBlock
 // stays out of the FAQPage JSON-LD; and EventsBlock/ProductsBlock never mount to
 // run their own fetches.
-const moduleVisible = `coalesce(hidden, false) == false`;
+const moduleVisible = `coalesce(hidden, false) == false` as const;
 
 // `contentUpdatedAt` collects the `_updatedAt` of every document a page RENDERS
 // but does not own, so sitemap.ts can advertise the newest of the two as
@@ -94,8 +94,8 @@ export const SITEMAP_PAGES_QUERY = defineQuery(`
 //
 // Declared here, above its first use in SITEMAP_PRODUCTS_QUERY, so the sitemap
 // and the hreflang projection below share one definition of "translated into".
-export const localesWithValue = (field: string) =>
-	`${field}[defined(value)].language`;
+export const localesWithValue = <const F extends string>(field: F) =>
+	`${field}[defined(value)].language` as const;
 
 // `locales` carries which locales each entry exists in, because the four types
 // signal it differently: document-level types (pProductIndex, and un-merged
@@ -153,6 +153,16 @@ export const SITEMAP_EVENTS_QUERY = defineQuery(`
 	}
 `);
 
+// `disableIndex` is projected explicitly even though `...sharing` would usually
+// carry it. The spread only contributes keys on documents that HAVE a `sharing`
+// object, so the projection's type is a union: one branch with disableIndex /
+// metaTitle / metaDesc, one with neither. Reading `sharing.disableIndex` off
+// that union is a type error on the second branch, and optional chaining does
+// not help — the property is absent there, not undefined. Projecting it
+// explicitly gives every branch the same shape (`boolean | null`), which is what
+// the four page routes gating on it need. Keep the explanation out here: a `//`
+// comment inside the template is valid GROQ, but it ships to the API and becomes
+// part of the TypeGen query key.
 const baseFields = `
 	_id,
 	_type,
@@ -160,6 +170,7 @@ const baseFields = `
 	"slug": slug.current,
 	"sharing":{
 		...sharing,
+		"disableIndex": sharing.disableIndex,
 		"shareGraphic": coalesce(
 			sharing.shareGraphic,
 			*[_type == "settingsGeneral"][0].shareGraphic
@@ -169,7 +180,7 @@ const baseFields = `
 			*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value
 		),
 	}
-`;
+` as const;
 
 const linkFields = `
 	_type,
@@ -177,7 +188,7 @@ const linkFields = `
 	"href": ${resolvedHrefGroq},
 	"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
 	isNewTab
-`;
+` as const;
 
 const menuFields = `
 	_id,
@@ -220,7 +231,7 @@ const menuFields = `
 			}
 		}
 	}
-`;
+` as const;
 
 // Projection for a single mobile-menu navItem (flat list, no dropdowns).
 // Mirrors the navItem branch of `menuFields` and reuses `linkFields`.
@@ -238,7 +249,7 @@ const mobileMenuItemFields = `
 	link {
 		${linkFields}
 	}
-`;
+` as const;
 
 export const imageMetaFields = `
 	...,
@@ -255,7 +266,7 @@ export const imageMetaFields = `
     // JPEG fallback unreachable.
     "mimeType": ^.asset->mimeType
   }
-`;
+` as const;
 
 export const imageBlockMetaFields = `
   image{
@@ -270,7 +281,7 @@ export const imageBlockMetaFields = `
 	link{
 		${linkFields}
 	}
-`;
+` as const;
 
 const callToActionFields = `
 	"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
@@ -278,7 +289,7 @@ const callToActionFields = `
 		${linkFields}
 	},
 	"isButton": true
-`;
+` as const;
 
 const portableTextContentFields = `
 	...,
@@ -297,7 +308,7 @@ const portableTextContentFields = `
 			${linkFields}
 		}
 	}
-`;
+` as const;
 
 // The `sectionAppearance { ..., backgroundColor->color, textColor->color }`
 // projection below is repeated verbatim in all five page-module fragments, and
@@ -321,7 +332,7 @@ const freeformField = `
 		"backgroundColor": backgroundColor->color,
 		"textColor": textColor->color
 	}
-`;
+` as const;
 
 // Localized string/text: current locale, falling back to English.
 //
@@ -333,8 +344,8 @@ const freeformField = `
 // ("Unsupported expression type: BlockStatement"), which silently drops every
 // query in this file from typegen — same constraint that keeps `resolvedHrefGroq`
 // hand-written.
-const locString = (field: string) =>
-	`coalesce(${field}[language == $locale][0].value, ${field}[language == "en"][0].value)`;
+const locString = <const F extends string>(field: F) =>
+	`coalesce(${field}[language == $locale][0].value, ${field}[language == "en"][0].value)` as const;
 
 // Localized Portable Text. Resolution is identical to `locString` — the alias
 // exists only to mark, at the call site, that what comes back is a block array
@@ -352,7 +363,7 @@ const gFaqItemFields = `
 	"question": ${locString('question')},
 	"answer": ${locPT('answer')}[]{ ${portableTextContentFields} },
 	"answerText": pt::text(${locPT('answer')})
-`;
+` as const;
 
 // gSizeChart is deliberately NOT document-localized — the measurements are
 // locale-invariant, so the numbers are stored once. Only the text fields are
@@ -370,7 +381,7 @@ const gSizeChartFields = `
 		values[]{ _key, size, min, max }
 	},
 	"note": ${locString('note')}
-`;
+` as const;
 
 // A faqBlock names EITHER a set or its own hand-picked questions, and `items`
 // stays flat either way — both <FaqBlock> and collectFaqItems consume a flat
@@ -397,7 +408,7 @@ const faqBlockField = `
 		"backgroundColor": backgroundColor->color,
 		"textColor": textColor->color
 	}
-`;
+` as const;
 
 const formField = `
 	placeholder,
@@ -412,12 +423,12 @@ const formField = `
 		"title": option,
 		"value": option
 	}
-`;
+` as const;
 
 // Helper GROQ expression: returns the locale-preferred doc from a type,
 // falling back to the English doc (or any doc with no language field yet).
-const byLocale = (type: string) =>
-	`*[_type == "${type}" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)`;
+const byLocale = <const T extends string>(type: T) =>
+	`*[_type == "${type}" && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)` as const;
 
 // Inline projection field: lists which locale codes have a translated document.
 // Uses GROQ implication — if the parent doc has a slug, narrow to that slug;
@@ -428,7 +439,7 @@ const availableLocalesField = `
 	&& (!defined(^.slug.current) || slug.current == ^.slug.current)
 	&& defined(language)
 ].language
-`;
+` as const;
 
 // The Klaviyo list a signup goes to: this locale's gNewsletter document if it
 // carries one, else the next document `byLocale` prefers (English, then a
@@ -444,7 +455,7 @@ const availableLocalesField = `
 // the editor who pasted it is the one who hears about it.
 const newsletterListId = `${byLocale(
 	'gNewsletter'
-)}[defined(klaviyoListID) && klaviyoListID != ""][0].klaviyoListID`;
+)}[defined(klaviyoListID) && klaviyoListID != ""][0].klaviyoListID` as const;
 
 // Reusable projection for the gNewsletter signup form. Shared by siteDataQuery
 // (footer form) and pageNewsletterQuery (dedicated /newsletter page).
@@ -463,7 +474,7 @@ const newsletterFormFields = `
 	successBody,
 	errorHeading,
 	errorBody,
-`;
+` as const;
 
 // ---------------------------------------------------------------------------
 // FIELD-level i18n helpers, shared by the product family (pProduct /
@@ -493,7 +504,7 @@ const newsletterFormFields = `
 // exactly — a zh-only doc never leaks onto English pages (it used to have no
 // `en` document; now it has no `en` title), while an en-only doc renders its
 // English fallback everywhere. Shared by the product and event queries.
-const titleVisible = `(defined(title[language == $locale][0].value) || defined(title[language == "en"][0].value))`;
+const titleVisible = `(defined(title[language == $locale][0].value) || defined(title[language == "en"][0].value))` as const;
 
 // The same guard applied AFTER a dereference, for editor-curated reference
 // arrays (relatedProducts, collection products, cart recommendations). Those
@@ -506,15 +517,15 @@ const titleVisible = `(defined(title[language == $locale][0].value) || defined(t
 // does NOT filter (verified against the API — 6 refs in, 6 out), silently
 // producing exactly the leak this guards against. Wrapping the dereference
 // first makes the trailing bracket a filter over the resulting array.
-const visibleProducts = (refField: string) =>
-	`(${refField}[defined(@->)]->)[${titleVisible}]`;
+const visibleProducts = <const F extends string>(refField: F) =>
+	`(${refField}[defined(@->)]->)[${titleVisible}]` as const;
 
 // Which locales this merged doc is translated into — feeds hreflang and the
 // sitemap. Old-shape docs keep the sibling-document lookup. See
 // `localesWithValue` above for why the new-shape arm filters on `defined(value)`.
 const productAvailableLocalesField = `
 "availableLocales": ${localesWithValue('title')}
-`;
+` as const;
 
 // The Shopify handle is commerce identity: one product, one handle, every
 // language renders from it (localized prices come from Markets @inContext).
@@ -524,7 +535,7 @@ const productAvailableLocalesField = `
 // cart recommendations, which render on every page of the site.
 const shopifyHandleField = `
 	"shopifyHandle": shopify.handle
-`;
+` as const;
 
 // SEO block for field-level types, shaped exactly like baseFields' `sharing`
 // so defineMetadata needs no awareness of the field-level model. New docs use
@@ -575,7 +586,7 @@ const i18nSharingFields = (imageFallback: string, descFallback: string) => `
 
 // Sort key for product-family lists: English title (stable across locales,
 // matching the Studio ordering), falling back to the old-shape plain title.
-const productTitleOrder = `title[language == "en"][0].value`;
+const productTitleOrder = `title[language == "en"][0].value` as const;
 
 const productCardFields = `
 	_id,
@@ -590,7 +601,7 @@ const productCardFields = `
 	mainImage {
 		${imageBlockMetaFields}
 	}
-`;
+` as const;
 
 // Placed here, not up with freeformField/faqBlockField, because productsBlockField
 // interpolates productCardFields, titleVisible and visibleProducts: every fragment
@@ -680,7 +691,7 @@ const eventsBlockField = `
 		"backgroundColor": backgroundColor->color,
 		"textColor": textColor->color
 	}
-`;
+` as const;
 
 // The hero module. `paragraph` and the CTA link put this at the same
 // interpolation depth as freeformField (portableTextContentFields → linkFields →
@@ -735,7 +746,7 @@ const heroBlockField = `
 		"backgroundColor": backgroundColor->color,
 		"textColor": textColor->color
 	}
-`;
+` as const;
 
 // A productsBlock names EITHER a collection or its own hand-picked list, and
 // `products` stays flat either way — the discriminator never escapes GROQ, the
@@ -765,7 +776,7 @@ const productsBlockField = `
 		"backgroundColor": backgroundColor->color,
 		"textColor": textColor->color
 	}
-`;
+` as const;
 
 const pageModuleFields = `
 	_type == 'freeform' => {
@@ -783,7 +794,7 @@ const pageModuleFields = `
 	_type == 'productsBlock' => {
 		${productsBlockField}
 	},
-`;
+` as const;
 
 export const siteDataQuery = defineQuery(`{
 		"announcement": ${byLocale('gAnnouncement')}[0]{
@@ -1040,7 +1051,7 @@ const eventStatusListFields = `
 			statusBgColor->{...color}
 		}
 	}
-`;
+` as const;
 
 // Event listing. One document per event now, so the old two-arm union (current
 // locale, plus English/undefined whose slug had no current-locale sibling) is
@@ -1073,7 +1084,7 @@ const eventCardFields = `
 		mapLink,
 	},
 	${eventStatusListFields}
-`;
+` as const;
 
 export const pEventsQuery = defineQuery(`
 	*[_type == "pEvents"][0]{
@@ -1219,8 +1230,8 @@ export const relatedEventsQuery = defineQuery(`
 // $locale to resolve against. They pick zh_tw first, falling back to English —
 // the crew is Taiwan-based and the roster is written in Chinese. `locationRef`
 // already did this; the rest joined it when the event family became field-level.
-const crewString = (field: string) =>
-	`coalesce(${field}[language == "zh_tw"][0].value, ${field}[language == "en"][0].value)`;
+const crewString = <const F extends string>(field: F) =>
+	`coalesce(${field}[language == "zh_tw"][0].value, ${field}[language == "en"][0].value)` as const;
 
 export const eventCrewMonthsQuery = defineQuery(`
 	*[_type == "pEvent" && defined(teamAssignments) && defined(eventDatetime.utc)] | order(eventDatetime.utc asc) {
@@ -1315,7 +1326,7 @@ const productMetadataFields = `
 			}
 		}
 	}
-`;
+` as const;
 
 const productStaticSectionFields = `
 	"whyUseIt": ${locPT('whyUseIt')}[]{ ${portableTextContentFields} },
@@ -1342,7 +1353,7 @@ const productStaticSectionFields = `
 			}
 		}
 	}
-`;
+` as const;
 
 const productBaseFields = `
 	${productCardFields},
@@ -1362,7 +1373,7 @@ const productBaseFields = `
 	},
 	${productStaticSectionFields},
 	${productMetadataFields}
-`;
+` as const;
 
 const productCategoriesFields = `
 	"categories": *[_type == "pProductCategory"] | order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc) {
@@ -1374,7 +1385,7 @@ const productCategoriesFields = `
 		},
 		"count": count(*[_type == "pProduct" && references(^._id) && ${titleVisible}])
 	}
-`;
+` as const;
 
 // Card counts are deliberately small; the index is a shop window, not the
 // catalogue. `allProductsList` is 8 (not 24) because both the "All Products"

@@ -30,13 +30,15 @@ export async function generateMetadata({
 		getDictionary(locale),
 		getCachedData(locale),
 	]);
-	const clean = stegaClean(data);
 	return defineMetadata({
 		data: {
 			_type: 'pProductCollectionsIndex',
 			title: dict.products.collectionsTitle,
+			// No `...clean?.sharing` spread: pProductCollectionsIndex is a synthetic
+			// route with no backing document, and this query projects only
+			// `collections`. The spread was always undefined, so the dictionary
+			// string below is the whole description, not a fallback under it.
 			sharing: {
-				...clean?.sharing,
 				metaDesc: dict.products.collectionsDescription,
 			},
 		},

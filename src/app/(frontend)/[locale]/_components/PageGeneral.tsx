@@ -3,15 +3,16 @@ import PageModules from '@/components/PageModules';
 import { heroBlockIsRenderable } from '@/components/HeroBlock';
 import { getDictionary } from '@/lib/dictionary.server';
 import type { Locale } from '@/lib/i18n';
+import type { PageGeneralQueryResult } from '@/../sanity.types';
 import { format } from 'date-fns';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 
-interface PageGeneralData {
-	title?: string;
-	content?: any; // TODO: Refine this type if possible, e.g., PortableTextBlock[]
-	pageModules?: Array<any>;
-	_updatedAt?: string;
-}
+// Picked from the generated query result rather than restated, so a projection
+// change fails `tsc` here instead of silently drifting.
+type PageGeneralData = Pick<
+	NonNullable<PageGeneralQueryResult>,
+	'title' | 'content' | 'pageModules' | '_updatedAt'
+>;
 
 interface PageGeneralProps {
 	data: PageGeneralData;
