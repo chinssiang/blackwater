@@ -169,8 +169,6 @@
 		"emptyAllProducts": "Nothing here yet. Picks are added as the club vets new gear.",
 		"emptyCategory": "No picks in this category yet. Check back as the shelf grows.",
 		"emptyCollections": "No collections yet. They group picks around a theme or season.",
-		"kickerCollection": "Collection",
-		"kickerCategory": "Category",
 		"productCount": { "one": "{count} product", "other": "{count} products" },
 		"categoryCount": {
 			"one": "{count} category",

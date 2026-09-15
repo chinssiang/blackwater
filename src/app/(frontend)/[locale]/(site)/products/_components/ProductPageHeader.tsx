@@ -7,8 +7,6 @@ import { pickPlural, interpolate } from '@/lib/dictionary';
 type CountForms = { one: string; other: string };
 
 type Props = {
-	/** Wayfinding label shown only where it carries real context (single pages). */
-	kicker?: string | null;
 	title?: string | null;
 	/** Count segments shown in the header, e.g.
 	   [{count: 48, forms: t.productCount}]. `forms` is a localized {one, other}
@@ -23,12 +21,7 @@ type Props = {
 	lede?: string | null;
 };
 
-export default function ProductPageHeader({
-	kicker,
-	title,
-	counts,
-	lede,
-}: Props) {
+export default function ProductPageHeader({ title, counts, lede }: Props) {
 	const segments = (counts ?? [])
 		.filter(
 			(c): c is { count: number; forms: CountForms; href?: string | null } =>
@@ -44,10 +37,6 @@ export default function ProductPageHeader({
 			className="m-x-max reveal mb-12 lg:mb-20"
 			style={{ '--reveal-duration': '0.8s' } as CSSProperties}
 		>
-			{kicker && (
-				<p className="t-l-2 mb-4 uppercase text-foreground/65">{kicker}</p>
-			)}
-
 			<div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
 				{title && (
 					<h1 className="max-w-[18ch] text-balance t-h-1 uppercase">{title}</h1>

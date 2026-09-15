@@ -51,7 +51,6 @@ export default function PageProductCategory({ data }: Props) {
 			</nav>
 
 			<ProductPageHeader
-				kicker={t.kickerCategory}
 				title={title}
 				counts={[{ count: products?.length, forms: t.productCount }]}
 			/>
