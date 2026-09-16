@@ -1,21 +1,22 @@
 import { apiVersion } from '@/sanity/env';
 import { BookIcon, TagsIcon, UserIcon } from '@sanity/icons';
+import type { StructureBuilder } from 'sanity/structure';
 
-export const pageBlogCategory = (S) => {
+export const pageBlogCategory = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Categories')
 		.child(S.documentTypeList('pBlogCategory').title('Categories'))
 		.icon(TagsIcon);
 };
 
-export const pageBlogAuthor = (S) => {
+export const pageBlogAuthor = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Authors')
 		.child(S.documentTypeList('gAuthor').title('Authors'))
 		.icon(UserIcon);
 };
 
-export const pageBlog = (S, context) => {
+export const pageBlog = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Blog')
 		.child(
@@ -76,7 +77,7 @@ export const pageBlog = (S, context) => {
 						),
 					S.divider(),
 					pageBlogAuthor(S),
-					pageBlogCategory(S, context),
+					pageBlogCategory(S),
 				])
 		)
 		.icon(BookIcon);

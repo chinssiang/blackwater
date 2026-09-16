@@ -152,10 +152,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
 	// this the shopper lands on the product page with the drawer still covering
 	// it and the page still scroll-locked. Keyed on the pathname rather than on
 	// link clicks so it holds however the navigation was triggered.
+	// Adjusted during render rather than in an effect. React's documented shape
+	// for "reset state when a value changes" (an effect would paint the drawer
+	// open over the new page for one frame first, and react-hooks v7 flags the
+	// synchronous setState). The usual alternative — a `key` on the subtree —
+	// is not available: this provider lives in Layout precisely so the cart
+	// survives navigation.
 	const pathname = usePathname();
-	useEffect(() => {
+	const [lastPathname, setLastPathname] = useState(pathname);
+	if (pathname !== lastPathname) {
+		setLastPathname(pathname);
 		setOpen(false);
-	}, [pathname]);
+	}
 
 	// Every cart request — mutations *and* plain reads — runs strictly one at a
 	// time, chained onto this tail. Each response replaces the whole snapshot, so

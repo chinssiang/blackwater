@@ -7,33 +7,45 @@ import {
 	UserIcon,
 } from '@sanity/icons';
 import { client } from '@/sanity/lib/client';
+import type { StructureBuilder } from 'sanity/structure';
 
-export const pageEventCategory = (S) => {
+export const pageEventCategory = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Events Categories')
 		.child(S.documentTypeList('pEventCategory').title('Categories'))
 		.icon(TagsIcon);
 };
 
-export const pageEventStatus = (S) => {
+export const pageEventStatus = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Events Status')
 		.child(S.documentTypeList('pEventStatus').title('Status'))
 		.icon(UserIcon);
 };
 
-export const pageEventGroupByDate = (S) => {
+export const pageEventGroupByDate = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Events by Month/Year')
 		.child(async () => {
-			const events = await client.fetch(`
+			type MonthYearEntry = {
+				key: string;
+				label: string;
+				year: number;
+				month: number;
+			};
+
+			// Typed at the fetch, not at the callback: `client.fetch` is otherwise
+			// `any`, which left the array, the Map and the sort comparator below
+			// unchecked. The query filters `defined(eventDatetime.utc)`, so the
+			// field is non-optional here.
+			const events = await client.fetch<{ eventDatetime: string }[]>(`
 				*[_type == "pEvent" && defined(eventDatetime.utc)] {
 					"eventDatetime": eventDatetime.utc
 				} | order(eventDatetime.utc desc)
 			`);
 
 			// Create unique month/year combinations
-			const monthYearMap = new Map();
+			const monthYearMap = new Map<string, MonthYearEntry>();
 
 			events.forEach((event) => {
 				const date = new Date(event.eventDatetime);
@@ -93,7 +105,7 @@ export const pageEventGroupByDate = (S) => {
 		.icon(CalendarIcon);
 };
 
-export const pageEventItems = (S) => {
+export const pageEventItems = (S: StructureBuilder) => {
 	return [
 		S.listItem()
 			.title('Event Index Page')
@@ -178,7 +190,7 @@ export const pageEventItems = (S) => {
 	];
 };
 
-export const pageEvent = (S) => {
+export const pageEvent = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Event')
 		.child(S.list().title('Event').items(pageEventItems(S)))

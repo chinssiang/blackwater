@@ -55,12 +55,24 @@ const nextConfig = {
 	// because nothing in that subtree reads a Dynamic API — the consent decision
 	// comes from the browser (src/hooks/useConsent.ts). Keep it that way: a
 	// server-side cookie read cannot be rescued by wrapping it in <Suspense>,
-	// which was tried. Making a boundary enough would need
-	// `cacheComponents: true`, tried and reverted: it requires every uncached
-	// read to be inside <Suspense> (it failed at the root of the tree), and the
-	// alternative — moving Sanity reads into `'use cache'` — is blocked because
-	// next-sanity's `sanityFetch` (defineLive) calls `draftMode()` internally,
-	// and Dynamic APIs are illegal inside `use cache`.
+	// which was tried.
+	//
+	// `cacheComponents: true` is still OFF, but the reason has changed. The old
+	// blocker — next-sanity 12's `sanityFetch` calling `draftMode()` internally,
+	// which is illegal inside `use cache` — is GONE: on v13, src/sanity/lib/live.ts
+	// resolves draftMode()/cookies() in `getDynamicFetchOptions()` and passes an
+	// explicit perspective down, so a `'use cache'` boundary can wrap the fetch.
+	//
+	// What still blocks it is the wall clock. Next's own guide is explicit
+	// (node_modules/next/dist/docs/01-app/02-guides/migrating-to-cache-components.md):
+	// `new Date()` / `Date.now()` during prerender throw a build error that
+	// `instant = false` does NOT clear, and `cacheLife` does not help — it governs
+	// how long an entry lives, not whether the call is legal. Four Server
+	// Components on the events surface read it: EventsBlock.tsx, events/page.tsx,
+	// PageEventSingle.tsx and EventRelated.tsx. Each needs <Suspense> + connection()
+	// or to move client-side. The four `export const revalidate = 3600` routes
+	// (also illegal under the flag) exist because of those same reads, so fixing
+	// the clock is the prerequisite, not a separate step.
 	experimental: {
 		// NOTE: `viewTransition` + `taint` were removed deliberately. `viewTransition`
 		// makes React emit `<link rel="expect" href="#_R_" blocking="render">`, which

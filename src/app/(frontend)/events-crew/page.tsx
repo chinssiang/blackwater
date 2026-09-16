@@ -15,6 +15,7 @@ import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { getRichDateYearMonth } from '@/lib/event-date';
 import { PageEventCrew } from './_components/PageEventsCrew';
 import { FALLBACK_TIMEZONE } from '@/lib/event-date';
+import type { SanityRevalidateTag } from '@/types/sanity';
 
 // Crew months are bucketed by their Asia/Taipei local month, so the GROQ range
 // boundaries must be expressed as Taipei wall-clock midnights converted to UTC.
@@ -108,7 +109,7 @@ export default async function Page({
 		const { startDate, endDate } = getMonthDateRange(year, month);
 		// The month query derefs locationRef-> (gLocation) and categories[]->
 		// with categoryColor-> (pEventCategory, settingsBrandColors).
-		const tags = [
+		const tags: SanityRevalidateTag[] = [
 			'pEvent',
 			'gTeamMember',
 			'pEventRole',

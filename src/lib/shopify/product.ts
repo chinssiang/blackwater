@@ -25,7 +25,7 @@ import {
 // any number here would also drop the whole page from tag-only invalidation
 // (sanityFetch uses `false`) to that interval, expiring hundreds of
 // prerendered product pages on a clock instead of on an actual store change.
-const REVALIDATE: false = false;
+const REVALIDATE = false as const;
 
 // Aliased product(handle:) lookups per request — one round trip per chunk
 // while keeping well under Next's 128-tags-per-fetch cache limit. Also the knob

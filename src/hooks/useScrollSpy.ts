@@ -43,17 +43,27 @@ export function useScrollSpy<Container extends HTMLElement>(
 	// call site doesn't churn the observer.
 	const idKey = ids.join('|');
 
+	// Reconcile on id changes (live CMS edits can remove or re-key the active
+	// element; ids may also arrive after mount): a dangling activeId would
+	// otherwise leave no item highlighted until the next scroll.
+	//
+	// Adjusted during render, not in the effect below — React's documented shape
+	// for deriving state from a changed input. In the effect it ran one paint
+	// late, so a re-keyed list highlighted nothing for a frame, and react-hooks
+	// v7 flags the synchronous setState.
+	const [lastIdKey, setLastIdKey] = useState(idKey);
+	if (idKey !== lastIdKey) {
+		setLastIdKey(idKey);
+		// `ids` directly, not a split of `idKey`. The join/split round-trip exists
+		// in the effect below only to keep its dependency stable; here there is no
+		// dependency to keep and the array is already in scope.
+		setActiveId((current) =>
+			current && ids.includes(current) ? current : (ids[0] ?? null)
+		);
+	}
+
 	useEffect(() => {
 		const currentIds = idKey ? idKey.split('|') : [];
-
-		// Reconcile on id changes (live CMS edits can remove or re-key the
-		// active element; ids may also arrive after mount): a dangling activeId
-		// would otherwise leave no item highlighted until the next scroll.
-		setActiveId((current) =>
-			current && currentIds.includes(current)
-				? current
-				: (currentIds[0] ?? null)
-		);
 
 		const elements = currentIds
 			.map((id) => document.getElementById(id))

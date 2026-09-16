@@ -17,12 +17,7 @@ import { cn } from '@/lib/utils';
  */
 interface CustomLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
 	link?: {
-		// `unknown`, not `string`: typegen cannot infer the type of
-		// resolvedHrefGroq's select() with `+` concatenation, so every projected
-		// link arrives carrying `href: unknown`. Narrowed in the body below --
-		// the same `typeof === 'string'` check EventStatusPill, EventsBlock and
-		// HeroBlock each already do at their own call sites.
-		href?: unknown;
+		href?: string | null;
 		// Nullable, not just optional: a GROQ projection yields `null` for an
 		// absent field, never `undefined`, so every link projected from Sanity
 		// carries nulls here.
@@ -48,7 +43,7 @@ export default function CustomLink({
 	const { href } = link;
 	const isOpenNewTab = isNewTab ?? link.isNewTab;
 
-	if (typeof href !== 'string' || !href) return children;
+	if (!href) return children;
 
 	const isMailTo = href.match('^mailto:');
 

@@ -7,8 +7,9 @@ import {
 	ThLargeIcon,
 } from '@sanity/icons';
 import { apiVersion } from '@/sanity/env';
+import type { StructureBuilder } from 'sanity/structure';
 
-const pageHome = (S) => {
+const pageHome = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Homepage')
 		.child(
@@ -21,7 +22,7 @@ const pageHome = (S) => {
 		.icon(HomeIcon);
 };
 
-const pageError = (S) => {
+const pageError = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('404 Page')
 		.child(
@@ -34,7 +35,7 @@ const pageError = (S) => {
 		.icon(UnknownIcon);
 };
 
-const pageContact = (S) => {
+const pageContact = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Contact Page')
 		.child(
@@ -47,7 +48,7 @@ const pageContact = (S) => {
 		.icon(EnvelopeIcon);
 };
 
-const pageFaq = (S) => {
+const pageFaq = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('FAQ Page')
 		.child(
@@ -60,7 +61,7 @@ const pageFaq = (S) => {
 		.icon(HelpCircleIcon);
 };
 
-const pageSizeGuide = (S) => {
+const pageSizeGuide = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Size Guide Page')
 		.child(
@@ -73,7 +74,7 @@ const pageSizeGuide = (S) => {
 		.icon(ThLargeIcon);
 };
 
-const pageNewsletter = (S) => {
+const pageNewsletter = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Newsletter Page')
 		.child(
@@ -86,7 +87,7 @@ const pageNewsletter = (S) => {
 		.icon(EnvelopeIcon);
 };
 
-export const pagesMenu = (S) => {
+export const pagesMenu = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Primary Pages')
 		.id('pages')
@@ -105,7 +106,7 @@ export const pagesMenu = (S) => {
 		);
 };
 
-export const otherPagesMenu = (S) => {
+export const otherPagesMenu = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Other Pages')
 		.schemaType('pGeneral')

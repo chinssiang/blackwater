@@ -4,7 +4,10 @@ import { resolveHref } from '@/lib/routes';
 import { defineField, defineType } from 'sanity';
 import { pickLocalizedValue } from '@/lib/i18n';
 
-type LinkFactoryArgs = {
+// Exported: `call-to-action.ts` builds a factory with the identical option bag
+// and the two are coupled by design (a callToAction emits a `type: 'link'`
+// field), so an option added here has to reach there too.
+export type LinkFactoryArgs = {
 	title?: string;
 	name?: string;
 	showLabel?: boolean;

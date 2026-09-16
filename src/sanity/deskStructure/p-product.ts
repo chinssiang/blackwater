@@ -1,4 +1,6 @@
 import { StarIcon, TagsIcon, StackIcon, BasketIcon } from '@sanity/icons';
+import type { SortOrderingItem } from 'sanity';
+import type { StructureBuilder } from 'sanity/structure';
 
 // Products and collections are field-level localized (one document carries all
 // languages), so both lists are plain documentTypeLists — no language filter,
@@ -8,9 +10,11 @@ import { StarIcon, TagsIcon, StackIcon, BasketIcon } from '@sanity/icons';
 // NAME, so the path fails to resolve and the ordering is silently dropped. The
 // bracket form is a real index segment. Index 0 is the first authored language
 // — English for everything except the handful of zh-only products.
-const orderByTitle = [{ field: 'title[0].value', direction: 'asc' }];
+const orderByTitle: SortOrderingItem[] = [
+	{ field: 'title[0].value', direction: 'asc' },
+];
 
-const pageProductCollection = (S) => [
+const pageProductCollection = (S: StructureBuilder) => [
 	S.listItem()
 		.title('Collections')
 		.icon(StackIcon)
@@ -21,28 +25,28 @@ const pageProductCollection = (S) => [
 		),
 ];
 
-const pageProductCategory = (S) => {
+const pageProductCategory = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Categories')
 		.child(S.documentTypeList('pProductCategory').title('Categories'))
 		.icon(TagsIcon);
 };
 
-const pageBrand = (S) => {
+const pageBrand = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Brands')
 		.child(S.documentTypeList('pBrand').title('Brands'))
 		.icon(TagsIcon);
 };
 
-const pageTag = (S) => {
+const pageTag = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Tags')
 		.child(S.documentTypeList('gTag').title('Tags'))
 		.icon(TagsIcon);
 };
 
-export const pageProductItems = (S) => {
+export const pageProductItems = (S: StructureBuilder) => {
 	return [
 		S.listItem()
 			.title('Products Index Page')

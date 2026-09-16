@@ -221,7 +221,7 @@ export default function BuyColumn({
 									content: slug ?? undefined,
 								})}
 								target="_blank"
-								rel="noopener"
+								rel="noopener noreferrer"
 								aria-label={interpolate(productText.buyAriaLabel, {
 									product: title ?? productText.thisProduct,
 								})}

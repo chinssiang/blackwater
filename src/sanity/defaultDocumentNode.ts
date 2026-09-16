@@ -1,6 +1,10 @@
 import DocumentsPane from 'sanity-plugin-documents-pane';
+import type { DefaultDocumentNodeResolver } from 'sanity/structure';
 
-export const defaultDocumentNode = (S, { schemaType }) => {
+export const defaultDocumentNode: DefaultDocumentNodeResolver = (
+	S,
+	{ schemaType }
+) => {
 	switch (schemaType) {
 		case `pBlog`:
 			return S.document().views([

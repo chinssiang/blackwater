@@ -14,6 +14,9 @@ import {
 // type-scale.test.ts, which also guards it against globals.css drifting.
 describe('cn', () => {
 	it('merges classes and drops falsy values', () => {
+		// The constant `false &&` is the point — this asserts cn drops a falsy
+		// operand, which is how every conditional class at a call site is written.
+		// eslint-disable-next-line no-constant-binary-expression
 		expect(cn('a', false && 'b', 'c')).toBe('a c');
 	});
 

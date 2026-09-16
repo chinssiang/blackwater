@@ -1,4 +1,4 @@
-import { at, defineMigration, setIfMissing, unset } from 'sanity/migrate';
+import { at, defineMigration, insert, setIfMissing, unset } from 'sanity/migrate';
 
 /*
 	Run the npx sanity@latest documents validate -y to check if the dataset validate
@@ -16,7 +16,10 @@ export default defineMigration({
 	filter: '_type == "pBlog" && defined(excerpt) && !defined(description)',
 	migrate: {
 		document(doc, context) {
-			if ((doc?._migrations || []).includes(idempotenceKey)) {
+			const migrations = Array.isArray(doc?._migrations)
+				? (doc._migrations as string[])
+				: [];
+			if (migrations.includes(idempotenceKey)) {
 				// Document already migrated, so we can skip
 				return;
 			}

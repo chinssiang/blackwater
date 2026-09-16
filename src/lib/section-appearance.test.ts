@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { resolveSectionAppearance } from './section-appearance';
+import { vercelStegaCombine } from '@vercel/stega';
 
 const color = (r: number, g: number, b: number, a = 1) => ({
 	hex: '#000000',
@@ -9,8 +10,11 @@ const WHITE = color(255, 255, 255);
 const BLACK = color(0, 0, 0);
 
 // Draft mode appends invisible stega characters to string values; this is what
-// reaches the component in the Presentation preview.
-const stega = (value: string) => `${value}​​‌​`;
+// reaches the component in the Presentation preview. Built with the real encoder
+// rather than pasted zero-width characters — the same shape event-date,
+// buildEventName, event-status and product-badges use.
+const stega = (value: string) =>
+	vercelStegaCombine(value, { origin: 'sanity.io', href: '#' });
 
 describe('resolveSectionAppearance', () => {
 	it('falls back to the defaults when there is no appearance object', () => {

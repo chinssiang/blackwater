@@ -7,7 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { cn, isValidUrl } from '@/lib/utils';
-import useWindowDimensions from '@/hooks/useWindowDimensions';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Spinner } from '@/components/ui/Spinner';
@@ -167,15 +167,17 @@ export function ProductSubmission() {
 	const [formState, setFormState] = useState<FormState>('idle');
 	const showSuccess = formState === 'success';
 
-	// `useWindowDimensions` returns the real width on the client's first render
-	// but 0 on the server, so gate the container choice behind a mount flag:
-	// server + first client render use the Popover branch (matching markup, no
-	// hydration mismatch), then we switch to the mobile Dialog after mount. The
-	// closed trigger is identical in both, so the swap is invisible.
-	const [mounted, setMounted] = useState(false);
-	useEffect(() => setMounted(true), []);
-	const { isDesktop } = useWindowDimensions();
-	const useMobileDialog = mounted && !isDesktop;
+	// One subscription instead of a mount flag plus a width. `useMediaQuery`'s
+	// server snapshot is `false`, so the prerender and the first client render
+	// both take the Popover branch (matching markup, no hydration mismatch) and
+	// the mobile Dialog swaps in after hydration. The closed trigger is identical
+	// in both, so the swap is invisible.
+	//
+	// The query is phrased as max-width deliberately: the false-on-server branch
+	// has to be the one that is correct with no JS, so it must be the Popover.
+	// Written in rem because Tailwind v4's breakpoints are rem-based — `64rem` is
+	// `lg`, so this and any `lg:` rule agree at a non-16px root font size.
+	const useMobileDialog = useMediaQuery('(max-width: 63.999rem)');
 
 	const resolver = useMemo(
 		() =>

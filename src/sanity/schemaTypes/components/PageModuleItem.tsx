@@ -213,7 +213,6 @@ export const PageModuleItem = (props: ObjectItemProps) => {
 		const menuButton = rowRef.current?.querySelector(MENU_BUTTON);
 		const cluster = menuButton?.closest<HTMLElement>(CLUSTER);
 		if (!cluster || !menuButton) {
-			// eslint-disable-next-line react-hooks/set-state-in-effect -- see above
 			setSlot(null);
 			return;
 		}

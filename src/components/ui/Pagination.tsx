@@ -42,9 +42,13 @@ function PaginationLink({
 	className,
 	isActive,
 	size = 'icon',
+	children,
 	...props
 }: PaginationLinkProps) {
 	return (
+		// `children` is rendered explicitly rather than passed through {...props}:
+		// spreading it hid the anchor's content from jsx-a11y, and every other
+		// component in ui/ reads this way.
 		<a
 			aria-current={isActive ? 'page' : undefined}
 			data-slot="pagination-link"
@@ -54,7 +58,9 @@ function PaginationLink({
 				className
 			)}
 			{...props}
-		/>
+		>
+			{children}
+		</a>
 	);
 }
 

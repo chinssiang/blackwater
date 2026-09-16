@@ -193,16 +193,16 @@ export const CONSENT_CHANGED_EVENT = 'bw-consent-changed';
 // recognized as a command and would be silently ignored — which for a consent
 // signal means every category behaves as granted.
 function gtagCommand(...args: unknown[]): void {
-	const w = window as unknown as {
-		dataLayer?: unknown[];
-		gtag?: (...args: unknown[]) => void;
-	};
-	const queue = (w.dataLayer = w.dataLayer || []);
-	if (w.gtag) {
-		w.gtag(...args);
+	// `window.gtag` / `window.dataLayer` are declared in src/types/global.d.ts;
+	// the local structural cast this replaces was a second declaration of the
+	// same two properties that could drift from it.
+	const queue = (window.dataLayer = window.dataLayer || []);
+	if (window.gtag) {
+		window.gtag(...args);
 		return;
 	}
 	const push = function () {
+		// eslint-disable-next-line prefer-rest-params -- see the note above
 		queue.push(arguments);
 	} as (...a: unknown[]) => void;
 	push(...args);

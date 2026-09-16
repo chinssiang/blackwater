@@ -6,8 +6,9 @@ import {
 	ThLargeIcon,
 } from '@sanity/icons';
 import { apiVersion } from '@/sanity/env';
+import type { StructureBuilder } from 'sanity/structure';
 
-export const globalMenu = (S) => {
+export const globalMenu = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Global Modules')
 		.child(

@@ -1,4 +1,4 @@
-import sanitizeHtml from 'sanitize-html';
+import { sanitizeEmbedSnippet } from '@/lib/sanitize-embed';
 import { PortableText, PortableTextReactComponents } from '@portabletext/react';
 import type {
 	ArbitraryTypedObject,
@@ -41,22 +41,9 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 			if (!embedSnippet) {
 				return null;
 			}
-			const sanitized = sanitizeHtml(embedSnippet, {
-				allowedTags: ['iframe'],
-				allowedAttributes: {
-					iframe: [
-						'src',
-						'width',
-						'height',
-						'frameborder',
-						'allow',
-						'allowfullscreen',
-						'title',
-						'loading',
-						'referrerpolicy',
-					],
-				},
-			});
+			// Shared with the Studio preview (schemaTypes/objects/custom-iframe.tsx),
+			// so the two renderers of this field cannot drift apart.
+			const sanitized = sanitizeEmbedSnippet(embedSnippet);
 			if (!sanitized) {
 				return null;
 			}

@@ -5,46 +5,26 @@
  */
 
 import {
+	DOCUMENT_ROUTES,
+	buildResolvedHrefGroq as buildGroq,
+	type RouteDefinition,
+} from '@/lib/document-routes';
+import {
 	DEFAULT_LOCALE,
+	LOCALES,
 	localizePath,
 	stripLocaleFromHref,
 	stripLocaleFromPathname,
 	type Locale,
 } from '@/lib/i18n';
 
-export const DOCUMENT_ROUTES = [
-	{ type: 'pHome', path: '/', slug: false },
-	{ type: 'pGeneral', path: '/', slug: true },
-	{ type: 'pProductIndex', path: '/products', slug: false },
-	// Synthetic route (no backing document) — lets the paginated all-products
-	// listing reuse resolveHref/defineMetadata for canonical + hreflang.
-	{ type: 'pProductsAllIndex', path: '/products/all', slug: false },
-	{ type: 'pProduct', path: '/products/', slug: true },
-	// Synthetic route (no backing document) — lets the categories index page
-	// reuse resolveHref/defineMetadata for canonical + hreflang.
-	{
-		type: 'pProductCategoriesIndex',
-		path: '/products/categories',
-		slug: false,
-	},
-	{ type: 'pProductCategory', path: '/products/categories/', slug: true },
-	// Synthetic route (no backing document) — lets the collections index page
-	// reuse resolveHref/defineMetadata for canonical + hreflang.
-	{
-		type: 'pProductCollectionsIndex',
-		path: '/products/collections',
-		slug: false,
-	},
-	{ type: 'pProductCollection', path: '/products/collections/', slug: true },
-	{ type: 'pEvents', path: '/events', slug: false },
-	{ type: 'pEvent', path: '/events/', slug: true },
-	{ type: 'pContact', path: '/contact', slug: false },
-	{ type: 'pFaq', path: '/faq', slug: false },
-	{ type: 'pSizeGuide', path: '/size-guide', slug: false },
-	{ type: 'pNewsletter', path: '/newsletter', slug: false },
-	// { type: 'pBlogIndex', path: '/blog', slug: false },
-	// { type: 'pBlog', path: '/blog/', slug: true },
-];
+// Re-exported so callers keep one import site. The table and the GROQ builder
+// live in the import-free leaf beside this file; see the note there.
+export { DOCUMENT_ROUTES, type RouteDefinition };
+
+/** The GROQ href expression, with this app's default locale bound in. */
+export const buildResolvedHrefGroq = () => buildGroq(LOCALES, DEFAULT_LOCALE);
+
 
 // Reduces a locale-stripped path to the form route comparisons use: no query,
 // no fragment, no trailing slash. An authored href may carry "?"/"#" that a
@@ -126,40 +106,8 @@ export function resolveHref({
 	return localizePath(path, locale ?? DEFAULT_LOCALE);
 }
 
-// NOTE: This GROQ fragment must be kept in sync with DOCUMENT_ROUTES above.
-//
-// Why it is hand-written: Sanity's query extractor *substitutes syntax* rather
-// than executing JS. Calls to arrow functions with a concise body do resolve
-// (that is how locString/byLocale/i18nSharingFields in queries.ts work, and
-// their expansions are visible in sanity.types.ts) — but `.map()`/`.join()`,
-// block bodies, `+` concatenation and ternaries do not. Deriving this select()
-// needs iteration, so it cannot be generated inside the literal.
-//
-// Uses $locale param (passed by every query that includes this via linkFields).
-// For the default locale (en) the prefix is empty; for others it is "/<locale>".
-export const resolvedHrefGroq = `select(
-		linkType == "internal" => internalLink-> {
-			"url": select(
-				_type == "pHome" => select($locale == "en" => "/", "/" + $locale),
-				select($locale == "en" => "", "/" + $locale) + select(
-					_type == "pGeneral" => "/" + slug.current,
-					_type == "pProductIndex" => "/products",
-					_type == "pProduct" => "/products/" + slug.current,
-					_type == "pProductCategory" => "/products/categories/" + slug.current,
-					_type == "pProductCollection" => "/products/collections/" + slug.current,
-					_type == "pEvents" => "/events",
-					_type == "pEvent" => "/events/" + slug.current,
-					_type == "pContact" => "/contact",
-					_type == "pFaq" => "/faq",
-					_type == "pSizeGuide" => "/size-guide",
-					_type == "pNewsletter" => "/newsletter",
-					defined(slug.current) => "/" + slug.current,
-					null
-				)
-			)
-		}.url,
-		href
-	)`;
+
+
 
 /**
  * Checks if a link should be considered active based on the current path and target URL.

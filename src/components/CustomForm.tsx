@@ -150,7 +150,9 @@ export function createDynamicResolver(fieldsArray: FormField[]) {
 		const { fieldName, required, inputType, minLength } = field;
 		if (!fieldName) return;
 
-		let schema: z.ZodTypeAny = z.string();
+		// No initializer: the if/else below assigns on every path, so a starting
+		// value is dead and hides which branch actually set the schema.
+		let schema: z.ZodTypeAny;
 
 		if (required) {
 			schema = z.string().min(1, { message: 'This field is required' });

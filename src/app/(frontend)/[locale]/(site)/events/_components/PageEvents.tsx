@@ -313,6 +313,13 @@ export function PageEvents({ data }: PageEventsProps) {
 	// aria-label and the visible label are three readings of one fact.
 	const nextView: EventsView = view === 'list' ? 'calendar' : 'list';
 
+	// Deliberate ref read during render, and useState is not the fix. The flag
+	// must flip WITHOUT re-rendering: it only picks an animation duration, and a
+	// state flip after mount would hand the rows a new duration mid-flight and
+	// restart the entrance it is trying to measure. A render React discards
+	// leaves the ref false, which is the right answer for a paint that never
+	// happened. See the note on `hasPainted` where it is declared.
+	// eslint-disable-next-line react-hooks/refs
 	const rowDuration = hasPainted.current
 		? EVENT_ROW_SWAP_DURATION
 		: EVENT_ROW_DURATION;

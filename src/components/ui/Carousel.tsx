@@ -38,6 +38,8 @@ const CarouselContext = React.createContext<CarouselContextProps | null>(null);
 
 // embla's own default. Named here because the reduced-motion branch below has to
 // fall back to something when a consumer passes no duration of its own.
+const getFalse = () => false;
+
 const DEFAULT_DURATION = 25;
 
 function useCarousel() {
@@ -73,14 +75,55 @@ function Carousel({
 		},
 		plugins
 	);
-	const [canScrollPrev, setCanScrollPrev] = React.useState(false);
-	const [canScrollNext, setCanScrollNext] = React.useState(false);
+	// Read straight off embla through useSyncExternalStore rather than mirrored
+	// into useState from an effect. The old shape called `onSelect(api)`
+	// synchronously in the effect body to seed the two booleans, which is the
+	// cascading-render pattern react-hooks v7 flags — and it also meant the
+	// arrows rendered enabled-by-default for one paint before the seed landed.
+	// Subscribing here makes embla the single source of truth: `getSnapshot`
+	// asks it directly, so there is no initial sync to get wrong.
+	//
+	// Two stores rather than one, because a combined `{prev, next}` snapshot
+	// would allocate a fresh object on every read and loop.
+	const subscribe = React.useCallback(
+		(onStoreChange: () => void) => {
+			if (!api) return () => {};
+			api.on('reInit', onStoreChange);
+			api.on('select', onStoreChange);
+			return () => {
+				api.off('reInit', onStoreChange);
+				api.off('select', onStoreChange);
+			};
+		},
+		[api]
+	);
 
-	const onSelect = React.useCallback((api: CarouselApi) => {
-		if (!api) return;
-		setCanScrollPrev(api.canScrollPrev());
-		setCanScrollNext(api.canScrollNext());
-	}, []);
+	// Memoised, not inline. React compares `getSnapshot` by identity: a fresh
+	// arrow each render makes `hook.getSnapshot !== getSnapshot` unconditionally
+	// true, which schedules a passive effect and a store-consistency re-read on
+	// every render, per store. The old effect cost nothing per render.
+	const getCanScrollPrev = React.useCallback(
+		() => api?.canScrollPrev() ?? false,
+		[api]
+	);
+	const getCanScrollNext = React.useCallback(
+		() => api?.canScrollNext() ?? false,
+		[api]
+	);
+
+	// Server snapshot is `false` for both: with no JS the arrows are inert, so
+	// rendering them disabled is the honest prerender. Hoisted to module scope
+	// for the same identity reason.
+	const canScrollPrev = React.useSyncExternalStore(
+		subscribe,
+		getCanScrollPrev,
+		getFalse
+	);
+	const canScrollNext = React.useSyncExternalStore(
+		subscribe,
+		getCanScrollNext,
+		getFalse
+	);
 
 	const scrollPrev = React.useCallback(() => {
 		api?.scrollPrev();
@@ -122,18 +165,6 @@ function Carousel({
 		if (!api || !setApi) return;
 		setApi(api);
 	}, [api, setApi]);
-
-	React.useEffect(() => {
-		if (!api) return;
-		onSelect(api);
-		api.on('reInit', onSelect);
-		api.on('select', onSelect);
-
-		return () => {
-			api?.off('reInit', onSelect);
-			api?.off('select', onSelect);
-		};
-	}, [api, onSelect]);
 
 	return (
 		<CarouselContext.Provider

@@ -1,6 +1,7 @@
 import type { Viewport } from 'next';
 import ProductSubmissionLazy from '@/components/ProductSubmissionLazy';
 import { getCachedSiteData } from '@/sanity/lib/siteData';
+import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
 
 // Let the soft keyboard resize the layout viewport (not just the visual one) so
 // the mobile product-submission dialog's svh-based sizing recomputes against
@@ -21,7 +22,12 @@ export default async function ProductsLayout({
 	params: Promise<{ locale: string }>;
 }) {
 	const { locale } = await params;
-	const { data } = await getCachedSiteData(locale);
+	// Narrowed rather than cast: the segment is a URL string, and the tag
+	// `locale:<locale>` it keys is now type-checked, so an unrecognised value
+	// must resolve to a real locale instead of minting a bogus cache tag.
+	const { data } = await getCachedSiteData(
+		isLocale(locale) ? locale : DEFAULT_LOCALE
+	);
 
 	return (
 		// No gutter here: each child section carries its own `m-x-max` instead, so a

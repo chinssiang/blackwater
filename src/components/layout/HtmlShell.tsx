@@ -104,30 +104,25 @@ export default function HtmlShell({
 						{children}
 						<Toaster />
 						{/* Server-only by construction — src/sanity/lib/live.ts has the why.
-						    The gate buys REQUESTS, not bytes: next-sanity's live.js
-						    top-level-imports its own client half and every route already
-						    imports sanityFetch from live.ts, so that chunk reaches published
-						    traffic either way (measured: identical script set with and without
-						    this element). What it prevents is the subscription — <SanityLive>
-						    for anonymous visitors on Next 16 + next-sanity 12 causes a
-						    prefetch/revalidate cascade, 4–10x request overage.
+						    Rendered for EVERY visitor, not just draft sessions: this is what
+						    delivers published live updates, so an anonymous tab picks up a
+						    publish without a refresh. It used to be gated behind
+						    `isDraftModeEnabled` to dodge a prefetch/revalidate cascade (4–10x
+						    request overage) that next-sanity 12 caused on Next 16 — fixed in
+						    v13, which this project is now on.
 						    See https://www.sanity.io/docs/help/nextjs-16-sanitylive-status
-						    Deliberately sitewide, /events-crew and /email-signature included,
-						    though Presentation cannot target those: an editor who arrives
-						    holding the draft cookie still needs the toast's way back out.
-						    While mounted it is not side-effect-free for published traffic —
-						    next-sanity's revalidateSyncTags Server Action expires shared
-						    `sanity:*` tags on every live event, so an open Presentation session
-						    also invalidates prerendered pages. <Suspense> is error and
-						    suspension containment only (there is no error.tsx under src/app);
-						    it neither rescues nor threatens static generation. `refreshOnFocus`
-						    is NOT passed — the client half gates every refresh helper on
-						    `!draftModeEnabled`, so the prop is inert behind this gate. */}
-						{isDraftModeEnabled && (
-							<Suspense fallback={null}>
-								<SanityLive />
-							</Suspense>
-						)}
+						    `includeDrafts` is required under `strict: true` and is the draft
+						    half of the old gate: the subscription runs for everyone, but only
+						    a draft session receives unpublished content.
+						    Not side-effect-free for published traffic — next-sanity's
+						    revalidateSyncTags Server Action expires shared `sanity:*` tags on
+						    every live event, so an open Presentation session also invalidates
+						    prerendered pages. <Suspense> is error and suspension containment
+						    only (there is no error.tsx under src/app); it neither rescues nor
+						    threatens static generation. */}
+						<Suspense fallback={null}>
+							<SanityLive includeDrafts={isDraftModeEnabled} />
+						</Suspense>
 						<DraftModeTools enabled={isDraftModeEnabled} />
 						{/* Deliberately NOT consent-gated, unlike GA/GTM. Neither package
 						    touches document.cookie, localStorage, sessionStorage or

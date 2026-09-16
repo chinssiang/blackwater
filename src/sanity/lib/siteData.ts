@@ -2,6 +2,7 @@ import { cache } from 'react';
 import { sanityFetch } from '@/sanity/lib/live';
 import { siteDataQuery } from '@/sanity/lib/queries';
 import type { SiteDataQueryResult } from 'sanity.types';
+import type { Locale } from '@/lib/i18n';
 
 export const SITE_DATA_TAGS = [
 	'gAnnouncement',
@@ -32,7 +33,7 @@ export const SITE_DATA_TAGS = [
 // 404 — so nothing here may depend on Shopify: `revalidateTag('shopify')` fires
 // on every product and inventory webhook, and a Storefront lookup in this path
 // would make the next render of an unrelated page block on it.
-export const getCachedSiteData = cache((locale: string) =>
+export const getCachedSiteData = cache((locale: Locale) =>
 	sanityFetch({
 		query: siteDataQuery,
 		params: { locale },

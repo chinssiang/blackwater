@@ -1,5 +1,5 @@
 import { defineQuery } from 'next-sanity';
-import { resolvedHrefGroq } from '@/lib/routes';
+import { RESOLVED_HREF_GROQ } from './groq-constants.generated';
 import { LOCALES } from '@/lib/i18n';
 
 // Every locale, as a GROQ array literal. Spelled out rather than derived from
@@ -185,7 +185,7 @@ const baseFields = `
 const linkFields = `
 	_type,
 	linkType,
-	"href": ${resolvedHrefGroq},
+	"href": ${RESOLVED_HREF_GROQ},
 	"label": coalesce(label[language == $locale][0].value, label[language == "en"][0].value),
 	isNewTab
 ` as const;
@@ -562,7 +562,13 @@ const shopifyHandleField = `
 // "Could not find binding for node"). Types with no image or description
 // fallback pass the literal 'noFallback' — an attribute no document has, so
 // GROQ resolves that coalesce arm to null and skips it.
-const i18nSharingFields = (imageFallback: string, descFallback: string) => `
+const i18nSharingFields = <
+	const I extends string,
+	const D extends string,
+>(
+	imageFallback: I,
+	descFallback: D
+) => `
 	"sharing": {
 		"disableIndex": disableIndex,
 		"metaTitle": coalesce(seoTitle[language == $locale][0].value, seoTitle[language == "en"][0].value),
@@ -582,7 +588,7 @@ const i18nSharingFields = (imageFallback: string, descFallback: string) => `
 			*[_type == "settingsGeneral"][0].siteTitle[language == "en"][0].value
 		),
 	}
-`;
+` as const;
 
 // Sort key for product-family lists: English title (stable across locales,
 // matching the Studio ordering), falling back to the old-shape plain title.

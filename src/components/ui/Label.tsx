@@ -7,6 +7,9 @@ import { cn } from '@/lib/utils';
 // against double-click text selection.
 function Label({ className, ...props }: React.ComponentProps<'label'>) {
 	return (
+		// This is the generic primitive; callers pass htmlFor (or nest a control),
+		// which the rule cannot see through a wrapper component.
+		// eslint-disable-next-line jsx-a11y/label-has-associated-control
 		<label
 			data-slot="label"
 			className={cn(

@@ -1,7 +1,22 @@
 import { Flex, Stack, Text } from '@sanity/ui';
-import { useFormValue } from 'sanity';
+import { useFormValue, type FieldProps } from 'sanity';
 
-function buildDefaultUrl({ docType, docId, slug, lang }) {
+// useFormValue is typed `unknown` by design — the form's shape is only known at
+// runtime — so narrow once here rather than casting at each use.
+const asString = (value: unknown) =>
+	typeof value === 'string' ? value : undefined;
+
+function buildDefaultUrl({
+	docType,
+	docId,
+	slug,
+	lang,
+}: {
+	docType?: string;
+	docId?: string;
+	slug?: string;
+	lang?: string;
+}) {
 	const host = window.location.host;
 	const baseUrl = host.includes('localhost:') ? `http://${host}` : `https://${host}`;
 	const params = new URLSearchParams({ documentType: docType ?? '', docId: docId ?? '' });
@@ -10,14 +25,14 @@ function buildDefaultUrl({ docType, docId, slug, lang }) {
 	return `${baseUrl}/api/view-page?${params.toString()}`;
 }
 
-export const ViewPageField = (props) => {
+export const ViewPageField = (props: FieldProps) => {
 	const { children, title, description, schemaType } = props;
 	const customUrl = schemaType?.options?.viewPageUrl;
 
-	const docType = useFormValue(['_type']);
-	const docId = useFormValue(['_id']);
-	const slugCurrent = useFormValue(['slug', 'current']);
-	const language = useFormValue(['language']);
+	const docType = asString(useFormValue(['_type']));
+	const docId = asString(useFormValue(['_id']));
+	const slugCurrent = asString(useFormValue(['slug', 'current']));
+	const language = asString(useFormValue(['language']));
 
 	const pageUrl = customUrl || buildDefaultUrl({ docType, docId, slug: slugCurrent, lang: language });
 
