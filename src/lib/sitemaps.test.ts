@@ -348,3 +348,33 @@ describe.each(SYNTHETIC_ROUTES)(
 		});
 	}
 );
+
+// /sitemap.xml is served by a beforeFiles REWRITE, so it answers 200
+// application/xml instead of redirecting. Next's order is
+// headers -> redirects -> middleware -> beforeFiles, so a redirect on the same
+// source wins and makes the rewrite dead code — with no type error, no build
+// error, and no other failing test. That is the same "these two files are wired
+// to each other" shape src/lib/weather-widget-mounts.test.ts guards, and it is
+// asserted here as both halves: the rewrite present, the redirect absent.
+//
+// The extensionless spellings are deliberately the other way round and stay
+// redirects: middleware runs before beforeFiles, so src/proxy.ts has already
+// prefixed them with the default locale by the time a rewrite source would
+// match, and moving them into beforeFiles makes each answer 200 text/html.
+describe('next.config.mjs sitemap routing', () => {
+	it('rewrites /sitemap.xml and does not also redirect it', async () => {
+		const { default: config } = await import('../../next.config.mjs');
+
+		const rewrites = await config.rewrites();
+		expect(rewrites.beforeFiles).toContainEqual({
+			source: '/sitemap.xml',
+			destination: '/sitemap_index.xml',
+		});
+
+		const redirects = await config.redirects();
+		expect(
+			redirects.map((r: { source: string }) => r.source),
+			'/sitemap.xml in redirects() would silently shadow the rewrite'
+		).not.toContain('/sitemap.xml');
+	});
+});

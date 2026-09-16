@@ -150,29 +150,56 @@ const nextConfig = {
 	// 		}))
 	// 	),
 	async redirects() {
-		// Nothing answers /sitemap.xml — the location crawlers try first and the
-		// one most people submit to Search Console. app/sitemap.ts uses
-		// generateSitemaps(), so its output lives at /sitemap/<id>.xml while the
-		// bare path stays unrouted, and unrouted paths fall through to the
-		// [locale] catch-all, which renders the 404 page. Search Console read that
-		// as "your sitemap appears to be an HTML page".
+		// The extensionless sitemap spellings, which are worse than a 404: neither
+		// contains a dot, so src/proxy.ts prefixes the default locale and they
+		// land on [...rest]'s deliberate soft-200 HTML — the condition Search
+		// Console reports as "your sitemap appears to be an HTML page". (The
+		// dotted /sitemap.xml behaves differently: the proxy matcher skips it, so
+		// it reaches /[locale] and hard-404s on the invalid locale.)
 		//
-		// A route handler at app/sitemap.xml/route.ts cannot fix it: Next still
-		// reserves /sitemap.xml for app/sitemap.ts and fails the build with
-		// "Conflicting route and metadata". Redirect instead — crawlers follow
-		// redirects on sitemap URLs.
-		//
-		// The extensionless spellings are here because they are worse than a 404:
-		// the catch-all answers them 200 with HTML, which is exactly the condition
-		// that produces the Search Console error, so a mistyped submission stays
-		// broken silently. This covers the sitemap paths only; the catch-all's
-		// soft-200 on every other unmatched path is a separate, deliberate
-		// trade-off documented in CLAUDE.md.
-		return ['/sitemap.xml', '/sitemap', '/sitemap_index'].map((source) => ({
+		// Redirects rather than rewrites, and that is load-bearing, not taste:
+		// middleware runs BEFORE beforeFiles rewrites, so by the time a rewrite
+		// source is matched the proxy has already rewritten these to /en/…, and a
+		// `/sitemap` source no longer matches. Verified by moving both into
+		// beforeFiles — each then answered 200 text/html, the exact bug above. So
+		// /sitemap.xml is the only spelling a rewrite can serve; it lives in
+		// rewrites() below and must not also appear here.
+		return ['/sitemap', '/sitemap_index'].map((source) => ({
 			source,
 			destination: '/sitemap_index.xml',
 			permanent: true,
 		}));
+	},
+	// The ONLY rewrites() in this config — same duplicate-key hazard as
+	// redirects() above.
+	async rewrites() {
+		// /sitemap.xml is the path crawlers probe first and the one people submit
+		// to Search Console, and nothing SERVES it: generateSitemaps() puts
+		// app/sitemap.ts's output at /sitemap/<id>.xml, and a route handler cannot
+		// claim the path either, because Next reserves it for app/sitemap.ts and
+		// fails the build with "Conflicting route and metadata". It is not
+		// unrouted, though — /[locale] (^/([^/]+?)(?:/)?$) matches it and 404s on
+		// the invalid locale — so a rewrite is the only way to answer it 200
+		// application/xml. It is an alias: robots.ts still advertises
+		// /sitemap_index.xml, which stays the canonical sitemap URL.
+		//
+		// It was a 308 here until 2026-09-15. Search Console reported "General
+		// HTTP error, 302" against it — a status nothing in this repo can emit
+		// (the entry was permanent: true, i.e. 308), so an apex→www or http→https
+		// hop at the domain layer is the likelier cause, and that would recur
+		// against /sitemap_index.xml. This rewrite is not a diagnosis; it removes
+		// the redirect from the question so only the domain cause can remain.
+		//
+		// beforeFiles, because vercel.json declares its own rewrites and Vercel
+		// emits those into the filesystem phase, which beforeFiles precedes —
+		// afterFiles would lose to it. And /sitemap.xml must NOT also appear in
+		// redirects(), which run first and would make this dead code with no build
+		// error; src/lib/sitemaps.test.ts guards both halves.
+		return {
+			beforeFiles: [
+				{ source: '/sitemap.xml', destination: '/sitemap_index.xml' },
+			],
+		};
 	},
 	async headers() {
 		return [
