@@ -44,6 +44,23 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+	// Top-level, not under `experimental` — promoted to stable in Next 16.
+	//
+	// Safe to enable wholesale here because eslint-plugin-react-hooks v7 IS the
+	// compiler's own static analysis surfaced as lint, and this repo already runs
+	// its full rule set at `error` (refs, purity, immutability, set-state-in-render,
+	// preserve-manual-memoization, …) with a green board. The analysis the compiler
+	// performs has been passing on every file since that config landed.
+	//
+	// One function opts out: PageEvents reads `hasPainted.current` during render
+	// and carries `'use no memo'`. See the note there.
+	//
+	// It runs as a Babel plugin (Next pre-filters with SWC so only files with JSX
+	// or hooks round-trip). If build time ever becomes the problem,
+	// `experimental.turbopackRustReactCompiler` runs it natively inside Turbopack
+	// and drops the babel-plugin-react-compiler dependency — it is experimental,
+	// and its diagnostic parity on the bail-out above is the thing to re-verify.
+	reactCompiler: true,
 	// Pin the workspace root to this checkout. Without it, Next infers the root
 	// from the outermost lockfile, and builds inside a git worktree resolve
 	// modules (e.g. sanity.types) against the parent checkout's stale files.

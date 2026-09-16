@@ -79,6 +79,18 @@ interface PageEventsProps {
 }
 
 export function PageEvents({ data }: PageEventsProps) {
+	// Opted out of the React Compiler, explicitly rather than by inference. This
+	// function reads `hasPainted.current` during render (see below), which the
+	// compiler treats as a bail-out condition — so it would skip this function
+	// anyway. Saying so here means the behaviour does not depend on the default
+	// `panicThreshold`, and survives a switch to the Rust port.
+	//
+	// The bail-out is load-bearing, not incidental: compiled, `rowDuration` would
+	// be memoized on reactive inputs, a ref mutation is not one, the flag would
+	// freeze at `false`, and every view toggle would replay the long entrance
+	// cascade — the regression the note below records removing.
+	'use no memo';
+
 	const { title, eventList } = data || {};
 	const locale = useLocale();
 	const t = useTranslations('events');
