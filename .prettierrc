@@ -11,6 +11,7 @@
 	],
 	"tailwindFunctions": ["cn", "cva"],
 	"importOrderSortSpecifiers": true,
+	"importOrderSideEffects": false,
 	"importOrder": [
 		"^react$",
 		"^next",

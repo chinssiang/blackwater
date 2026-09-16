@@ -453,14 +453,6 @@ export function EventsCalendar({
 					// cells says nothing at all.
 					<p className="mt-8 py-8 text-center lg:mt-12">{t.emptyMonth}</p>
 				) : (
-					// `reveal` lives here rather than on the rows: the popover branch
-					// runs its own fade and zoom, so a per-row entrance would either
-					// double up inside it or need a flag threaded down to say which
-					// branch it is in. Keyed by the day so a new selection re-enters
-					// `@starting-style`, and with no delay, so nothing the visitor just
-					// tapped is held at opacity 0. Carries no `transition-*` utility —
-					// that would rewrite `reveal`'s own transition-property and kill
-					// the entrance silently.
 					<div
 						key={activeDay ?? 'prompt'}
 						className="reveal mt-8 lg:hidden"
@@ -484,21 +476,6 @@ export function EventsCalendar({
 	);
 }
 
-/**
- * The day heading, the count and the day's events — one block, rendered by both
- * branches, so the panel and the popover cannot drift apart.
- *
- * `heading` is the element the date renders as: a plain `<h2>` in the panel, and
- * `<PopoverTitle>` in the popover, which is what wires the popup's own
- * `aria-labelledby`. An element prop rather than an `isPopover` boolean, because
- * who owns the accessible name is the only thing that differs — and it costs
- * nothing visually: `PopoverTitle` also renders an `<h2>`, and the `font-medium`
- * it adds is the `font-weight: 500` `.t-h-3` already sets.
- *
- * `action` is the same idea for the header's trailing edge: the popover puts its
- * close control there, and the panel — which is dismissed by picking another day
- * — passes nothing and lays out exactly as it did before the slot existed.
- */
 function DayDetail({
 	dayKey,
 	events,
@@ -520,14 +497,8 @@ function DayDetail({
 
 	return (
 		<>
-			{/* Only the `action` is pushed to the trailing edge. The date and its
-			    count stay in one left-aligned group, because at 1440px a justified
-			    count sits a screen-width away from the date it counts — and with no
-			    action this row still lays out from the start edge, so the panel is
-			    unchanged. `items-start` on the outer row rather than `items-baseline`:
-			    a square icon button has no text baseline to share with the heading. */}
 			<div className="flex shrink-0 items-start justify-between gap-4">
-				<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+				<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 p-2">
 					<Heading className="t-h-3 uppercase">
 						{formatDayKey(dayKey, t.calendar.dayHeadingFormat, dateFnsLocale)}
 						{isToday && (
@@ -544,13 +515,6 @@ function DayDetail({
 				</div>
 				{action}
 			</div>
-			{/* `min-h-0 overflow-y-auto` costs nothing in the panel and is what makes
-			    the popover's header stay put. In the panel this <ul> sits in a block
-			    parent with no height constraint, so there is nothing to overflow and
-			    both classes are inert. In the popover it is a flex child of a popup
-			    with a `max-h`, so `min-h-0` lets it shrink below its content and the
-			    scrollbar lands HERE rather than on the popup — which is the whole
-			    reason the close button and the date do not scroll away. */}
 			<ul className="border-foreground/80 mt-4 min-h-0 overflow-y-auto border-t">
 				{events.map((event) => (
 					<DayEventRow
@@ -732,37 +696,10 @@ function DayCell({
 			<PopoverContent
 				ref={popupRef}
 				initialFocus={popupRef}
-				// `start` rather than the shared `center` default: a centred 22rem
-				// popup on an edge column just gets shifted anyway, and anchoring it
-				// to the cell's own edge reads as belonging to that day. `side` keeps
-				// its `bottom` default — Floating UI flips it above for the last rows.
 				align="start"
 				sideOffset={6}
 				collisionPadding={16}
-				// The shared defaults are a form's (`w-72 gap-2.5 p-2.5 text-sm`), not
-				// a list of full event rows'. `t-b-1` rather than `text-base` because
-				// `cn()` registers the rungs as a one-way conflict against the
-				// font-size group, which is what actually deletes that `text-sm`;
-				// `gap-0` because `DayDetail`'s <ul> brings its own `mt-4`.
-				//
-				// The max-height is `min()`'d against a STATIC 26rem, not left as a
-				// bare `max-h-(--available-height)`. Floating UI measures the popup's
-				// natural height to choose a side, and that measurement happens
-				// before the var for the chosen placement exists — so a six-event day
-				// measured taller than the viewport, `flip` found neither bottom nor
-				// top, and it fell to the perpendicular axis and opened to the RIGHT
-				// of the cell, covering the neighbouring days and jumping sides from
-				// one day to the next. A static clamp is already in force when the
-				// measurement is taken, so `bottom` fits for every row and only the
-				// last rows flip above. The var stays in the `min()` for a short
-				// window, with a fallback so an unset var cannot invalidate it.
-				//
-				// `overflow-hidden`, NOT `overflow-y-auto`: the scroll belongs to
-				// `DayDetail`'s list (see the note there), so the day heading and the
-				// close button stay put while the events move under them. This clips
-				// the list to the popup's own `rounded-lg` as a side effect, which is
-				// what stops a row's hover tint painting over the corner.
-				className="t-b-1 max-h-[min(26rem,var(--available-height,26rem))] w-88 gap-0 overflow-hidden p-4"
+				className="t-b-1 max-h-[min(26rem,var(--available-height,26rem))] w-88 gap-0 overflow-hidden"
 			>
 				<DayDetail
 					dayKey={day.key}
@@ -773,21 +710,10 @@ function DayCell({
 					currentDate={currentDate}
 					heading={PopoverTitle}
 					action={
-						// Escape and an outside click already close this, and
-						// `finalFocus` already returns focus to the cell — so this is
-						// the discoverable, pointer-reachable third way, not the only
-						// one. Deliberately NOT `ChromeButton`: that component owns
-						// `h-header` for controls sitting in a chrome row, and its own
-						// note says every call site is such a row. This one is a square
-						// in a popup header.
-						//
-						// `-m-2 p-2` so the 32px touch box hangs into the popup's own
-						// `p-4` and the glyph lines up with the padding edge, the same
-						// trade the cart drawer's close makes with `-mr-2 px-2`.
 						<PopoverClose
 							aria-label={t.calendar.close}
 							className={cn(
-								'text-muted-foreground hover:text-foreground -m-2 shrink-0 cursor-pointer rounded-full p-2 transition-colors',
+								'text-muted-foreground hover:text-foreground shrink-0 cursor-pointer rounded-full p-1 transition-colors',
 								OVERLAY_LINK_FOCUS
 							)}
 						>
@@ -837,14 +763,6 @@ function EventChip({
 	);
 }
 
-/**
- * One event in the day panel — the calendar's equivalent of a list row, and the
- * only place in this view an event is opened from.
- *
- * Mirrors the list's semantics rather than inventing its own: an ended event is
- * dimmed and inert, a date that is not `confirmed` shows its status instead of a
- * time, and the venue keeps its own map link above the row's stretched link.
- */
 function DayEventRow({
 	event,
 	currentDate,
@@ -881,39 +799,7 @@ function DayEventRow({
 	return (
 		<li
 			className={cn(
-				// `isolate` is load-bearing IN THE PANEL. The venue link and the status
-				// pills below carry `z-10` to sit above this row's own stretched link —
-				// but a `relative` element with `z-index: auto` creates NO stacking
-				// context, so without this they compete in the ROOT context with the
-				// page's `sticky … z-10` header and win on DOM order: scroll the panel
-				// up and the pills paint over the month name and the view toggle.
-				// Isolating scopes that `z-10` to the row, which is all it ever meant.
-				// Inside the desktop popover it is redundant rather than wrong —
-				// `PopoverContent`'s Positioner already carries `isolate z-popover`, so
-				// the same `z-10` is scoped by that ancestor either way.
-				//
-				// No `reveal` here: the entrance belongs to the branch that wants one.
-				// The popover animates itself (`data-open:animate-in fade-in zoom-in`),
-				// so the panel carries a single `reveal` wrapper keyed by the day, and
-				// this row stays permanently clear of the `transition-*`-beside-`reveal`
-				// trap — which is also what makes the hover transition below safe to
-				// add at all: the two would have fought over `transition-property`.
-				'border-foreground/25 relative isolate flex flex-col gap-2 border-b py-4',
-				// A background tint rather than the `hover:opacity-60` default, and
-				// `bg-foreground/5` specifically: that is what a day CELL already uses
-				// (see `cellClass`), so a row and the cell that opens it answer the
-				// pointer the same way. Dimming a whole row would fade the status pills
-				// with it, which reads as the row going inactive.
-				//
-				// Gated on `href`: a row with no slug has nothing to open, and a state
-				// change with nothing behind it is a false affordance. An ENDED row is
-				// covered by the `pointer-events-none` below, which stops the hover
-				// firing without a second condition here.
-				//
-				// No negative inset to bleed the tint into the popup's `p-4`: this row
-				// also renders in the mobile panel, where an `-mx-2` would push its
-				// `border-b` 8px wider than the <ul>'s own `border-t` at ALL times,
-				// hover or not. The tint sits on the row's own box in both.
+				'border-foreground/25 relative isolate flex flex-col gap-2 border-b px-2 py-4',
 				href ? 'hover:bg-foreground/5 transition-colors' : null,
 				hasEnded && 'pointer-events-none'
 			)}

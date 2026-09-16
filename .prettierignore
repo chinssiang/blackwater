@@ -1,5 +1,27 @@
-# Written by `sanity schema extract` with 2-space indent, while .prettierrc sets
-# useTabs. Without this, Prettier and `npm run typegen` rewrite its 11k lines
-# against each other forever and CI's `git diff --exit-code -- schema.json`
-# fails on every run.
+# Generated output — written by a tool, so Prettier must not own its formatting.
+# Otherwise `npm run format` and the generator rewrite the file against each
+# other and CI's `git diff --exit-code` fails every run.
+#
+# They reach conformance by three different routes, which is why all three are
+# listed rather than trusting the two that pass today:
+#   schema.json      `sanity schema extract` writes it space-indented while
+#                    .prettierrc sets useTabs. This is the one that already bites.
+#   sanity.types.ts  formatted by @sanity/codegen's own bundled Prettier — a
+#                    version alignment that a codegen bump can break.
+#   groq-constants   emitted by scripts/generate-groq-constants.mjs as a plain
+#     .generated.ts  template literal, never touched by Prettier. It conforms
+#                    only because the template was hand-written that way, so
+#                    editing that template is what would drift it.
+# Keep in step with the generated set in .github/workflows/checks.yml.
 schema.json
+sanity.types.ts
+src/sanity/lib/groq-constants.generated.ts
+
+# Each worktree is a second full checkout with its OWN .prettierrc, so without
+# this `prettier .` descends into them: +1.8s, thousands of "[warn] Ignored
+# unknown option" lines, and `npm run format` rewriting another branch's working
+# tree under that branch's config. Scoped to worktrees/ deliberately — `.claude/`
+# would also exempt the tracked .claude/launch.json and .claude/rules/*.md, which
+# should stay formatted. Prettier needs its own entry because it reads
+# .gitignore, and .claude/worktrees/ is excluded via .git/info/exclude.
+.claude/worktrees/

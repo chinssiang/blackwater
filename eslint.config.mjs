@@ -80,6 +80,17 @@ const eslintConfig = defineConfig([
 			// `unknown` is the correct type for Sanity's useFormValue() and for
 			// catch bindings; casting at the boundary is the intended pattern.
 			'@typescript-eslint/no-explicit-any': 'warn',
+			// These three ship as `warn` in react-hooks' recommended set, and
+			// `lint` has no --max-warnings, so they gated nothing — while
+			// next.config.mjs leans on this rule set as the argument that
+			// `reactCompiler: true` is safe. The last two are exactly the
+			// "the compiler cannot safely handle this construct" signals, so a
+			// real bail-out would have scrolled past as warning #106.
+			// --max-warnings=0 is not reachable: 82 of the existing warnings are
+			// the deliberate no-explicit-any above.
+			'react-hooks/exhaustive-deps': 'error',
+			'react-hooks/incompatible-library': 'error',
+			'react-hooks/unsupported-syntax': 'error',
 			// Declaration merging into `sanity`'s option interfaces needs an empty
 			// interface that extends — that IS the mechanism. The rule ships this
 			// option for exactly the case, so it belongs here rather than as a

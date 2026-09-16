@@ -44,22 +44,28 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
-	// Top-level, not under `experimental` — promoted to stable in Next 16.
+	// Safe to enable, but the argument is narrower than it looks. The
+	// eslint-plugin-react-hooks rule set IS the compiler's own analysis, and
+	// eslint.config.mjs now runs the compiler-relevant rules at `error` — but lint
+	// being green is NOT proof the compiler is happy: ThemeProvider trips an
+	// internal compiler invariant that no lint rule reports.
 	//
-	// Safe to enable wholesale here because eslint-plugin-react-hooks v7 IS the
-	// compiler's own static analysis surfaced as lint, and this repo already runs
-	// its full rule set at `error` (refs, purity, immutability, set-state-in-render,
-	// preserve-manual-memoization, …) with a green board. The analysis the compiler
-	// performs has been passing on every file since that config landed.
+	// TEN functions currently bail out of compilation and only TWO say so with
+	// `'use no memo'` (PageEvents, ThemeProvider). Three bail because they carry an
+	// eslint-disable (useScrollSpy, LinkObject, PortableTextNormalizer) — remove a
+	// now-unneeded suppression and that function silently starts compiling. Six bail
+	// on try/catch syntax the compiler does not support (CartProvider,
+	// CartDrawerPanel, WeatherWidget, CustomForm, ProductSubmission, Newsletter).
+	// Grepping for the directive finds 2 of 10, so do NOT use it to enumerate them:
+	// run babel-plugin-react-compiler over src/**/*.tsx with a logger instead.
 	//
-	// One function opts out: PageEvents reads `hasPainted.current` during render
-	// and carries `'use no memo'`. See the note there.
+	// That list is also why smoke-testing the cart drawer or the newsletter proves
+	// nothing about compiler behaviour — neither is compiled.
 	//
-	// It runs as a Babel plugin (Next pre-filters with SWC so only files with JSX
-	// or hooks round-trip). If build time ever becomes the problem,
-	// `experimental.turbopackRustReactCompiler` runs it natively inside Turbopack
-	// and drops the babel-plugin-react-compiler dependency — it is experimental,
-	// and its diagnostic parity on the bail-out above is the thing to re-verify.
+	// If build time regresses, `experimental.turbopackRustReactCompiler` runs the
+	// compiler natively in Turbopack and drops the babel-plugin-react-compiler
+	// dependency. It is experimental: re-enumerate the bail-outs above under the
+	// Rust port before switching, since its diagnostic parity is unproven.
 	reactCompiler: true,
 	// Pin the workspace root to this checkout. Without it, Next infers the root
 	// from the outermost lockfile, and builds inside a git worktree resolve

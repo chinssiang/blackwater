@@ -7,6 +7,7 @@
 //
 // So `<SanityLive />` is an async Server Component and can never sit in a lazy
 // client chunk. It is rendered by `layout/HtmlShell.tsx`.
+import 'server-only';
 import type { ClientReturn, ContentSourceMap, QueryParams } from 'next-sanity';
 import {
 	type LivePerspective,
@@ -18,7 +19,6 @@ import {
 import { cookies, draftMode } from 'next/headers';
 import { token } from '@/sanity/env';
 import { client } from '@/sanity/lib/client';
-import 'server-only';
 import type { SanityRevalidateTag } from '@/types/sanity';
 
 if (!token) {

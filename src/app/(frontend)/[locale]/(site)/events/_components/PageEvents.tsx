@@ -79,16 +79,18 @@ interface PageEventsProps {
 }
 
 export function PageEvents({ data }: PageEventsProps) {
-	// Opted out of the React Compiler, explicitly rather than by inference. This
-	// function reads `hasPainted.current` during render (see below), which the
-	// compiler treats as a bail-out condition — so it would skip this function
-	// anyway. Saying so here means the behaviour does not depend on the default
-	// `panicThreshold`, and survives a switch to the Rust port.
+	// LOAD-BEARING, not redundant. This function reads `hasPainted.current` during
+	// render (see `rowDuration` below). Compiled, that read would be memoized on
+	// reactive inputs — and a ref mutation is not one, so the flag would freeze at
+	// `false` and every list/calendar toggle would replay the full 1.2s entrance
+	// cascade instead of the 0.35s swap. That is the ~2.1s regression
+	// EVENT_ROW_SWAP_DURATION exists to remove, and no test covers it.
 	//
-	// The bail-out is load-bearing, not incidental: compiled, `rowDuration` would
-	// be memoized on reactive inputs, a ref mutation is not one, the flag would
-	// freeze at `false`, and every view toggle would replay the long entrance
-	// cascade — the regression the note below records removing.
+	// Verified: with `panicThreshold: 'all_errors'` this file compiles clean as
+	// written and throws "Found 1 error" with the directive deleted. Today the
+	// function also bails on its eslint-disable below, so the directive looks
+	// redundant — it is not: remove that suppression, or raise panicThreshold, or
+	// move to the Rust port, and this line is the only thing still holding.
 	'use no memo';
 
 	const { title, eventList } = data || {};
@@ -96,33 +98,10 @@ export function PageEvents({ data }: PageEventsProps) {
 	const t = useTranslations('events');
 	const common = useTranslations('common');
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
-	// Motion's own hook, NOT `usePrefersReducedMotion`, and the exception to what
-	// CLAUDE.md says — because this value only ever feeds `initial`, which Motion
-	// captures once at mount, and the list is the DEFAULT view, so it mounts
-	// during hydration. The store hook is a `useSyncExternalStore` whose
-	// `getServerSnapshot` is `false`, and React uses that snapshot for the
-	// hydration render, so it answers `false` on exactly the render that matters
-	// and correcting a tick later cannot un-capture an `initial`: a visitor with
-	// Reduce Motion on got the full cascade anyway. Motion's hook reads
-	// `matchMedia` DURING render and seeds its state from it, so it is right on
-	// that first client render, and the staleness it is criticised for — never
-	// updating on an OS toggle mid-session — cannot matter to a prop read once.
-	// Prefer the store hook anywhere the answer is read continuously, which is
-	// why `EventsCalendar` (mounted only by a toggle, long after hydration)
-	// correctly uses it.
 	const prefersReducedMotion = useReducedMotion();
 
 	const [currentDate, setCurrentDate] = useState(() => new Date());
 	const [view, setView] = useState<EventsView>('list');
-	// Whether anything has been on screen yet. Read during render to tell the
-	// list's FIRST paint from every arrival after it — see the row duration
-	// below. Deliberately derived from the page's own lifecycle rather than
-	// written by the view toggle's onClick: the button is not the only thing
-	// that can remount these rows (a month step remounts every one of them, and
-	// any future writer of `view` — a deep link, a shortcut — would too), and a
-	// flag owned by one control is wrong for all of them. The same reason
-	// `slideDirection` reads the month delta instead of taking a prop from the
-	// arrows, and `hasPrevious`/`hasNext` derive from `stepMonth`.
 	const hasPainted = useRef(false);
 	useEffect(() => {
 		hasPainted.current = true;
@@ -143,16 +122,6 @@ export function PageEvents({ data }: PageEventsProps) {
 		return () => clearTimeout(timer);
 	}, [eventList, currentDate]);
 
-	// Grouped here rather than on the server: the page already serializes
-	// `eventList` into this component's props, so a second pre-grouped copy of
-	// every event was travelling in the same payload to say the same thing.
-	//
-	// The only timezone-aware pass over the list in THIS file (the clock schedule
-	// above makes its own, inside `event-date.ts`). Everything below is derived
-	// from these day keys with string and integer maths, because a key's
-	// `yyyy-MM` prefix is by construction the month the event falls in, in the
-	// timezone it was authored in — reading each event again to ask for its month
-	// would be the same Intl work a second time for the same answer.
 	const eventsByDay = useMemo(() => groupEventsByDay(eventList), [eventList]);
 
 	const eventsByMonth = useMemo(() => {
@@ -326,12 +295,17 @@ export function PageEvents({ data }: PageEventsProps) {
 	// aria-label and the visible label are three readings of one fact.
 	const nextView: EventsView = view === 'list' ? 'calendar' : 'list';
 
-	// Deliberate ref read during render, and useState is not the fix. The flag
-	// must flip WITHOUT re-rendering: it only picks an animation duration, and a
-	// state flip after mount would hand the rows a new duration mid-flight and
-	// restart the entrance it is trying to measure. A render React discards
-	// leaves the ref false, which is the right answer for a paint that never
+	// Deliberate ref read during render. The flag must flip WITHOUT re-rendering:
+	// it only picks an animation duration, and an EFFECT-driven `useState` flip
+	// lands after first paint, mid-cascade (rows stagger 0.05s apart), handing
+	// the rows a new duration for the entrance it is measuring. A render React
+	// discards leaves the ref false, which is right for a paint that never
 	// happened. See the note on `hasPainted` where it is declared.
+	//
+	// "Effect-driven" is the narrow claim on purpose. A render-phase latch keyed
+	// on (view, month) — the recipe `slideDirection` uses in EventsCalendar —
+	// would also work, and would retire this ref, its suppression and the
+	// `'use no memo'` above. Left alone: that is an animation change, not cleanup.
 	// eslint-disable-next-line react-hooks/refs
 	const rowDuration = hasPainted.current
 		? EVENT_ROW_SWAP_DURATION

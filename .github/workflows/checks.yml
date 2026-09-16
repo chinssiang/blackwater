@@ -1,10 +1,12 @@
 name: Checks
 
-on:
-  pull_request:
-    branches: [main, dev]
-  push:
-    branches: [main]
+# No branch filters. `dev` is the working branch and several long-lived
+# integration branches (feat/*, improve/*) receive PRs; filtering to [main, dev]
+# meant a push to dev and every feature-branch PR ran nothing. Since the
+# pre-commit hook now lints only STAGED files, this workflow is the only
+# whole-repo gate — a conflict resolved into an unstaged file passes the hook and
+# must not also slip past CI.
+on: [push, pull_request]
 
 # A second push to a PR made the first run's ~12 minutes pure waste.
 concurrency:
