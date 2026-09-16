@@ -373,7 +373,7 @@ describe('next.config.mjs sitemap routing', () => {
 
 		const redirects = await config.redirects();
 		expect(
-			redirects.map((r: { source: string }) => r.source),
+			redirects.map((r) => r.source),
 			'/sitemap.xml in redirects() would silently shadow the rewrite'
 		).not.toContain('/sitemap.xml');
 	});
