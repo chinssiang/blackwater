@@ -34,6 +34,7 @@ jobs:
       - run: npm ci
 
       - run: npm run lint
+      - run: npm run format:check
 
       # PageProps/LayoutProps/RouteContext live in .next/types, which only
       # exists once route types have been generated — must precede typecheck.
