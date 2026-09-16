@@ -1,5 +1,5 @@
-import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 import { cn } from '@/lib/utils';
+import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 
 /**
  * The weather widget's mount for a page that owns its own content region --
@@ -50,7 +50,7 @@ export function WeatherWidgetRail({ className }: { className?: string }) {
 	return (
 		<div
 			className={cn(
-				'pointer-events-none sticky bottom-[calc(var(--height-g-toolbar)+1rem)] lg:bottom-6 z-g-toolbar flex h-11 items-end justify-end',
+				'z-g-toolbar pointer-events-none sticky bottom-[calc(var(--height-g-toolbar)+1rem)] flex h-11 items-end justify-end lg:bottom-6',
 				className
 			)}
 		>

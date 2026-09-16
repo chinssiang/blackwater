@@ -25,7 +25,10 @@ export const seoFieldset = {
 	options: { collapsible: true, collapsed: true },
 };
 
-export function seoFields({ descFallback, imageFallback }: SeoFieldsOptions = {}) {
+export function seoFields({
+	descFallback,
+	imageFallback,
+}: SeoFieldsOptions = {}) {
 	return [
 		defineField({
 			name: 'disableIndex',
@@ -39,7 +42,8 @@ export function seoFields({ descFallback, imageFallback }: SeoFieldsOptions = {}
 			name: 'seoTitle',
 			title: 'SEO Title',
 			type: 'internationalizedArrayString',
-			description: 'Overrides the meta title per language. Falls back to Title.',
+			description:
+				'Overrides the meta title per language. Falls back to Title.',
 			fieldset: 'seo',
 		}),
 		defineField({

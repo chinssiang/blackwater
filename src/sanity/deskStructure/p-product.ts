@@ -1,4 +1,4 @@
-import { StarIcon, TagsIcon, StackIcon, BasketIcon } from '@sanity/icons';
+import { BasketIcon, StackIcon, StarIcon, TagsIcon } from '@sanity/icons';
 import type { SortOrderingItem } from 'sanity';
 import type { StructureBuilder } from 'sanity/structure';
 
@@ -74,11 +74,7 @@ export const pageProductItems = (S: StructureBuilder) => {
 			.child(
 				S.list()
 					.title('Taxonomy')
-					.items([
-						pageProductCategory(S),
-						pageBrand(S),
-						pageTag(S),
-					])
+					.items([pageProductCategory(S), pageBrand(S), pageTag(S)])
 			),
 		// Cart configuration lives with Products rather than under Settings —
 		// it's part of the commerce surface an editor is already working in.

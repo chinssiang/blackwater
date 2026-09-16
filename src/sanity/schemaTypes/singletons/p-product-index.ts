@@ -1,6 +1,6 @@
+import { language } from '@/sanity/schemaTypes/objects/language';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
 import { StarIcon } from '@sanity/icons';
 import { defineArrayMember, defineField, defineType } from 'sanity';
 

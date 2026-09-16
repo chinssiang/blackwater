@@ -1,7 +1,7 @@
 import { language } from '@/sanity/schemaTypes/objects/language';
-import { LOCALE_SHORT_LABELS, isLocale } from '@/lib/i18n';
 import { BasketIcon } from '@sanity/icons';
-import { defineType, defineField, defineArrayMember } from 'sanity';
+import { LOCALE_SHORT_LABELS, isLocale } from '@/lib/i18n';
+import { defineArrayMember, defineField, defineType } from 'sanity';
 
 // Localized at the document level (listed in i18n-types.ts), so there is one
 // Cart document per language — kept that way deliberately so each market can

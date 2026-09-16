@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
 	CONSENT_COOKIE,
 	CONSENT_VERSION,
-	consentCookieDomain,
 	DENY_ALL,
 	GRANT_ALL,
+	consentCookieDomain,
 	parseConsentCookie,
 	readConsentRawClient,
 	toConsentModeSignals,

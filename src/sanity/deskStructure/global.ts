@@ -1,3 +1,4 @@
+import { apiVersion } from '@/sanity/env';
 import {
 	ComponentIcon,
 	EnvelopeIcon,
@@ -5,7 +6,6 @@ import {
 	MenuIcon,
 	ThLargeIcon,
 } from '@sanity/icons';
-import { apiVersion } from '@/sanity/env';
 import type { StructureBuilder } from 'sanity/structure';
 
 export const globalMenu = (S: StructureBuilder) => {

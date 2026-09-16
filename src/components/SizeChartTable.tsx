@@ -1,6 +1,14 @@
 'use client';
 
 import { useMemo } from 'react';
+import { stegaClean } from '@sanity/client/stega';
+import {
+	type SizeUnit,
+	formatRange,
+	resolveUnit,
+} from '@/lib/size-measurements';
+import { cn, hasArrayValue } from '@/lib/utils';
+import { useTranslations } from '@/components/LocaleProvider';
 import {
 	Table,
 	TableBody,
@@ -9,14 +17,6 @@ import {
 	TableHeader,
 	TableRow,
 } from '@/components/ui/Table';
-import { stegaClean } from '@sanity/client/stega';
-import { useTranslations } from '@/components/LocaleProvider';
-import {
-	formatRange,
-	resolveUnit,
-	type SizeUnit,
-} from '@/lib/size-measurements';
-import { cn, hasArrayValue } from '@/lib/utils';
 
 export type SizeChartValue = {
 	_key?: string | null;

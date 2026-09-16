@@ -1,14 +1,13 @@
 'use client';
 
 import * as React from 'react';
+import { cn } from '@/lib/utils';
+import { ChevronLeftIcon, ChevronRightIcon } from '@/components/SvgIcons';
+import { Button } from '@/components/ui/Button';
 import useEmblaCarousel, {
 	type UseEmblaCarouselType,
 } from 'embla-carousel-react';
 import { useReducedMotion } from 'motion/react';
-import { ChevronLeftIcon, ChevronRightIcon } from '@/components/SvgIcons';
-
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
 
 type CarouselApi = UseEmblaCarouselType[1];
 type UseCarouselParameters = Parameters<typeof useEmblaCarousel>;

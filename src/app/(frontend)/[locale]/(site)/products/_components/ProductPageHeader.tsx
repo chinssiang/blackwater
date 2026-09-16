@@ -1,8 +1,8 @@
 'use client';
 
-import { Fragment, type CSSProperties } from 'react';
+import { type CSSProperties, Fragment } from 'react';
 import Link from 'next/link';
-import { pickPlural, interpolate } from '@/lib/dictionary';
+import { interpolate, pickPlural } from '@/lib/dictionary';
 
 type CountForms = { one: string; other: string };
 
@@ -39,10 +39,10 @@ export default function ProductPageHeader({ title, counts, lede }: Props) {
 		>
 			<div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
 				{title && (
-					<h1 className="max-w-[18ch] text-balance t-h-1 uppercase">{title}</h1>
+					<h1 className="t-h-1 max-w-[18ch] text-balance uppercase">{title}</h1>
 				)}
 				{segments.length > 0 && (
-					<p className="t-spec whitespace-nowrap text-foreground/65">
+					<p className="t-spec text-foreground/65 whitespace-nowrap">
 						{segments.map((seg, i) => (
 							<Fragment key={i}>
 								{i > 0 && (
@@ -53,7 +53,7 @@ export default function ProductPageHeader({ title, counts, lede }: Props) {
 								{seg.href ? (
 									<Link
 										href={seg.href}
-										className="transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
+										className="hover:text-accent-foreground transition-colors pointer-coarse:min-h-11"
 									>
 										{seg.label}
 									</Link>
@@ -67,7 +67,7 @@ export default function ProductPageHeader({ title, counts, lede }: Props) {
 			</div>
 
 			{lede && (
-				<p className="t-b-1 mt-6 max-w-[62ch] text-foreground/70">{lede}</p>
+				<p className="t-b-1 text-foreground/70 mt-6 max-w-[62ch]">{lede}</p>
 			)}
 		</header>
 	);

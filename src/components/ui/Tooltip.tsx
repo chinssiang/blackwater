@@ -1,7 +1,6 @@
 'use client';
 
 import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
-
 import { cn } from '@/lib/utils';
 
 function TooltipProvider({
@@ -55,12 +54,12 @@ function TooltipContent({
 				alignOffset={alignOffset}
 				side={side}
 				sideOffset={sideOffset}
-				className="isolate z-tooltip"
+				className="z-tooltip isolate"
 			>
 				<TooltipPrimitive.Popup
 					data-slot="tooltip-content"
 					className={cn(
-						'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 rounded-md px-3 py-1.5 text-xs bg-foreground text-background w-fit max-w-xs origin-(--transform-origin) motion-reduce:animate-none',
+						'data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 bg-foreground text-background w-fit max-w-xs origin-(--transform-origin) rounded-md px-3 py-1.5 text-xs motion-reduce:animate-none',
 						className
 					)}
 					{...props}
@@ -69,7 +68,7 @@ function TooltipContent({
 					{/* Base UI places the arrow along the popup's edge (inline left/top);
 					    the offset across that edge is ours, per side, so the rotated
 					    square's tip clears the popup by ~5px like the old arrow did. */}
-					<TooltipPrimitive.Arrow className="size-2.5 rotate-45 rounded-[2px] bg-foreground data-[side=top]:-bottom-[3px] data-[side=bottom]:-top-[3px] data-[side=left]:-right-[3px] data-[side=right]:-left-[3px]" />
+					<TooltipPrimitive.Arrow className="bg-foreground size-2.5 rotate-45 rounded-[2px] data-[side=bottom]:-top-[3px] data-[side=left]:-right-[3px] data-[side=right]:-left-[3px] data-[side=top]:-bottom-[3px]" />
 				</TooltipPrimitive.Popup>
 			</TooltipPrimitive.Positioner>
 		</TooltipPrimitive.Portal>

@@ -1,10 +1,10 @@
 'use client';
 
+import { cn } from '@/lib/utils';
+import CustomPortableText from '@/components/CustomPortableText';
 import SectionShell, {
 	type SectionAppearance,
 } from '@/components/SectionShell';
-import CustomPortableText from '@/components/CustomPortableText';
-import { cn } from '@/lib/utils';
 
 type FreeformProps = {
 	data: any;

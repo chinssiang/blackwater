@@ -1,7 +1,10 @@
-import { pickLocalizedValue, requireSomeValue } from '@/lib/i18n';
-import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
-import { seoFieldset, seoFields } from '@/sanity/schemaTypes/objects/seo-fields';
+import {
+	seoFields,
+	seoFieldset,
+} from '@/sanity/schemaTypes/objects/seo-fields';
+import { isUniqueAcrossType, slug } from '@/sanity/schemaTypes/objects/slug';
 import { BookIcon } from '@sanity/icons';
+import { pickLocalizedValue, requireSomeValue } from '@/lib/i18n';
 import { defineField, defineType } from 'sanity';
 
 export const pEvents = defineType({
@@ -9,9 +12,7 @@ export const pEvents = defineType({
 	name: 'pEvents',
 	type: 'document',
 	icon: BookIcon,
-	fieldsets: [
-		seoFieldset,
-	],
+	fieldsets: [seoFieldset],
 	fields: [
 		defineField({
 			name: 'title',

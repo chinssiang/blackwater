@@ -1,9 +1,9 @@
-import type { NextRequest } from 'next/server';
 import { redirect } from 'next/navigation';
+import type { NextRequest } from 'next/server';
 import { client } from '@/sanity/lib/client';
 import * as queries from '@/sanity/lib/queries';
-import { resolveHref } from '@/lib/routes';
 import { type Locale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
 
 export async function GET(request: NextRequest) {
 	const { searchParams } = new URL(request.url);

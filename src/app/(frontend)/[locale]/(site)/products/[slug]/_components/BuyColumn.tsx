@@ -1,20 +1,20 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { interpolate } from '@/lib/dictionary';
 import {
+	type ProductCommerce,
 	findVariantForSelection,
 	formatShopifyPrice,
 	hasOnlyDefaultVariant,
 	pickInitialVariant,
-	type ProductCommerce,
 } from '@/lib/shopify/types';
-import { useCartActions } from '@/components/cart/CartProvider';
+import { REFERRAL_SOURCE, appendReferralParams, cn } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { interpolate } from '@/lib/dictionary';
-import { appendReferralParams, cn, REFERRAL_SOURCE } from '@/lib/utils';
+import { useCartActions } from '@/components/cart/CartProvider';
 import { Button, buttonVariants } from '@/components/ui/Button';
-import VariantPicker from './VariantPicker';
 import BackInStockForm from './BackInStockForm';
+import VariantPicker from './VariantPicker';
 
 // Everything on the product page that depends on live Shopify data: price,
 // variant selection, and the buy button. Split out from PageProductSingle so
@@ -149,10 +149,10 @@ export default function BuyColumn({
 	return (
 		<>
 			{displayPrice && (
-				<p className="reveal t-spec font-semibold mt-5 text-foreground/75">
+				<p className="reveal t-spec text-foreground/75 mt-5 font-semibold">
 					{displayPrice}
 					{displayCompareAt && (
-						<s className="ml-2 font-normal text-foreground/45">
+						<s className="text-foreground/45 ml-2 font-normal">
 							{displayCompareAt}
 						</s>
 					)}
@@ -185,7 +185,7 @@ export default function BuyColumn({
 						aria-disabled="true"
 						tabIndex={-1}
 						variant="outline"
-						className="w-full uppercase lg:w-112 h-14"
+						className="h-14 w-full uppercase lg:w-112"
 					>
 						{productText.soldOut}
 					</Button>
@@ -208,7 +208,7 @@ export default function BuyColumn({
 							<Button
 								onClick={handleAddToCart}
 								disabled={isAdding || !activeVariant}
-								className="w-full uppercase lg:w-112 h-14"
+								className="h-14 w-full uppercase lg:w-112"
 							>
 								{isAdding ? cartText.adding : cartText.addToCart}
 							</Button>
@@ -227,7 +227,7 @@ export default function BuyColumn({
 								})}
 								className={cn(
 									buttonVariants(),
-									'group sm:max-w-112 uppercase w-full h-14'
+									'group h-14 w-full uppercase sm:max-w-112'
 								)}
 							>
 								{productText.buyIt}
@@ -263,13 +263,13 @@ export function BuyColumnSkeleton() {
 	return (
 		<div aria-hidden className="animate-pulse">
 			<p className="t-spec mt-5">
-				<span className="inline-block w-24 rounded bg-foreground/10">
+				<span className="bg-foreground/10 inline-block w-24 rounded">
 					&nbsp;
 				</span>
 			</p>
 			<div className="mt-6">
 				<p className="t-l-2 uppercase">
-					<span className="inline-block w-8 rounded bg-foreground/10">
+					<span className="bg-foreground/10 inline-block w-8 rounded">
 						&nbsp;
 					</span>
 				</p>
@@ -277,13 +277,13 @@ export function BuyColumnSkeleton() {
 					{Array.from({ length: 5 }, (_, i) => (
 						<span
 							key={i}
-							className="min-h-11 min-w-11 rounded-md bg-foreground/10"
+							className="bg-foreground/10 min-h-11 min-w-11 rounded-md"
 						/>
 					))}
 				</div>
 			</div>
 			<div className="mt-6">
-				<span className="block h-9 w-full rounded-md bg-foreground/10 lg:w-60" />
+				<span className="bg-foreground/10 block h-9 w-full rounded-md lg:w-60" />
 			</div>
 		</div>
 	);

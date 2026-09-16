@@ -1,24 +1,27 @@
+import { Suspense, cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache, Suspense } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
-import type { PageEventSingleQueryResult } from 'sanity.types';
 import {
 	pageEventSingleQuery,
 	pageEventSlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales, notFoundMetadata } from '@/lib/defineMetadata';
-import defineEventJsonLd from '@/lib/defineEventJsonLd';
+import { stegaClean } from '@sanity/client/stega';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
-import { resolveHref } from '@/lib/routes';
+import defineEventJsonLd from '@/lib/defineEventJsonLd';
+import defineMetadata, {
+	normalizeLocales,
+	notFoundMetadata,
+} from '@/lib/defineMetadata';
 import { getDictionary } from '@/lib/dictionary.server';
-import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
-import PageEventSingle from '../_components/PageEventSingle';
+import { resolveHref } from '@/lib/routes';
+import JsonLd from '@/components/JsonLd';
 import EventRelated, {
 	getCachedRelatedEvents,
 } from '../_components/EventRelated';
+import PageEventSingle from '../_components/PageEventSingle';
+import type { PageEventSingleQueryResult } from 'sanity.types';
 
 // Matches /events. Whether an event has ended, how many days until it starts,
 // and the upcoming/past split of the related strip are all read off the wall
@@ -85,7 +88,9 @@ const getCachedEventData = cache(
 		})
 );
 
-export async function generateMetadata(props: MetadataProps): Promise<Metadata> {
+export async function generateMetadata(
+	props: MetadataProps
+): Promise<Metadata> {
 	const { slug, locale } = await props.params;
 	const { data } = await getCachedEventData(slug, locale);
 	const cleanData = stegaClean(data);
@@ -130,9 +135,22 @@ export default async function PageEventSlugRoute(props: MetadataProps) {
 
 	const cleanData = stegaClean(data);
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
-		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: locale as Locale }) },
-		{ name: dict.breadcrumb.events, path: resolveHref({ documentType: 'pEvents', locale: locale as Locale }) },
-		{ name: cleanData?.title, path: resolveHref({ documentType: 'pEvent', slug, locale: locale as Locale }) },
+		{
+			name: dict.breadcrumb.home,
+			path: resolveHref({ documentType: 'pHome', locale: locale as Locale }),
+		},
+		{
+			name: dict.breadcrumb.events,
+			path: resolveHref({ documentType: 'pEvents', locale: locale as Locale }),
+		},
+		{
+			name: cleanData?.title,
+			path: resolveHref({
+				documentType: 'pEvent',
+				slug,
+				locale: locale as Locale,
+			}),
+		},
 	]);
 
 	const relatedSlot = (
@@ -148,7 +166,9 @@ export default async function PageEventSlugRoute(props: MetadataProps) {
 
 	return (
 		<>
-			<JsonLd data={defineEventJsonLd({ data: cleanData, locale: locale as Locale })} />
+			<JsonLd
+				data={defineEventJsonLd({ data: cleanData, locale: locale as Locale })}
+			/>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
 			<PageEventSingle
 				data={data}

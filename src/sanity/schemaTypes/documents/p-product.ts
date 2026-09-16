@@ -1,21 +1,21 @@
+import { ShopifyProductInput } from '@/sanity/schemaTypes/components/ShopifyProductInput';
+import customImage from '@/sanity/schemaTypes/objects/custom-image';
+import { isUniqueAcrossType, slug } from '@/sanity/schemaTypes/objects/slug';
+import { ImageIcon, StarIcon } from '@sanity/icons';
 import {
-	pickLocalizedValue,
 	DEFAULT_LOCALE,
-	requireSomeValue,
 	maxLengthPerLanguage,
+	pickLocalizedValue,
+	requireSomeValue,
 } from '@/lib/i18n';
 import { PRODUCT_BADGE_OPTIONS } from '@/lib/product-badges';
 import { resolveHref } from '@/lib/routes';
-import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
-import { StarIcon, ImageIcon } from '@sanity/icons';
 import {
+	type ValidationContext,
 	defineArrayMember,
 	defineField,
 	defineType,
-	type ValidationContext,
 } from 'sanity';
-import customImage from '@/sanity/schemaTypes/objects/custom-image';
-import { ShopifyProductInput } from '@/sanity/schemaTypes/components/ShopifyProductInput';
 
 /**
  * One document per product: the handle on this document is the whole truth

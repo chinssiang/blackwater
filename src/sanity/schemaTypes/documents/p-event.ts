@@ -1,16 +1,19 @@
-import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
-import { seoFieldset, seoFields } from '@/sanity/schemaTypes/objects/seo-fields';
+import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import {
-	pickLocalizedValue,
-	requireSomeValue,
+	seoFields,
+	seoFieldset,
+} from '@/sanity/schemaTypes/objects/seo-fields';
+import { isUniqueAcrossType, slug } from '@/sanity/schemaTypes/objects/slug';
+import '@/sanity/schemaTypes/view-page-field-types';
+import { BookIcon } from '@sanity/icons';
+import {
 	isEmptyI18nValue,
 	maxLengthPerLanguage,
+	pickLocalizedValue,
+	requireSomeValue,
 } from '@/lib/i18n';
-import { BookIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
-import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
-import '@/sanity/schemaTypes/view-page-field-types';
 
 export const pEvent = defineType({
 	title: 'Event',
@@ -373,16 +376,12 @@ export const pEvent = defineType({
 			eventDatetime: 'eventDatetime.utc',
 			categories: 'categories.0.title',
 		},
-		prepare({
-			title,
-			location,
-			locationRefName,
-			eventDatetime,
-			categories,
-		}) {
+		prepare({ title, location, locationRefName, eventDatetime, categories }) {
 			const categoryTitle = pickLocalizedValue(categories) ?? '';
 			const locationName =
-				pickLocalizedValue(locationRefName) || pickLocalizedValue(location) || '';
+				pickLocalizedValue(locationRefName) ||
+				pickLocalizedValue(location) ||
+				'';
 			const subtitle = `${locationName} - ${categoryTitle ? `[${categoryTitle}]` : ''}`;
 
 			return {

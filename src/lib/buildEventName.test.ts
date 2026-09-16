@@ -1,5 +1,5 @@
-import { describe, it, expect } from 'vitest';
 import { vercelStegaCombine } from '@vercel/stega';
+import { describe, expect, it } from 'vitest';
 import { buildEventName } from './buildEventName';
 
 // 07:00 on the 5th in Taipei, which is still the 4th in UTC and in the suite's

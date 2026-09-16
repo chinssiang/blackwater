@@ -1,6 +1,6 @@
 import { ChevronDownIcon } from '@sanity/icons';
-import { defineType } from 'sanity';
 import { pickLocalizedValue } from '@/lib/i18n';
+import { defineType } from 'sanity';
 
 export const navDropdown = defineType({
 	title: 'Dropdown',

@@ -1,9 +1,9 @@
 'use client';
 
-import { Component, useState, type ReactNode } from 'react';
+import { Component, type ReactNode, useState } from 'react';
 import dynamic from 'next/dynamic';
-import { useCart } from './CartProvider';
 import type { CartSettings } from './CartDrawerPanel';
+import { useCart } from './CartProvider';
 
 // The drawer mounts in the site Layout, so whatever it imports is in the shared
 // bundle on every route — including pages with no commerce on them at all. Its
@@ -27,7 +27,7 @@ const CartDrawerPanel = dynamic(() => import('./CartDrawerPanel'), {
 	loading: () => (
 		<div
 			aria-hidden
-			className="fixed inset-0 z-popover bg-black/50 pointer-events-none"
+			className="z-popover pointer-events-none fixed inset-0 bg-black/50"
 		/>
 	),
 });

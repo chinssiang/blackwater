@@ -1,14 +1,13 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
-
+import { SECTION_INSET, SECTION_INSET_START, cn } from '@/lib/utils';
 import {
 	Carousel,
 	CarouselContent,
 	CarouselNext,
 	CarouselPrevious,
 } from '@/components/ui/Carousel';
-import { cn, SECTION_INSET, SECTION_INSET_START } from '@/lib/utils';
 
 // The client half of the upcoming-events strip. <EventsBlock> stays a Server
 // Component and passes the rendered tickets in as `children`, so no ticket

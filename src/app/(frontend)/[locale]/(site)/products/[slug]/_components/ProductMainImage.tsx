@@ -34,7 +34,7 @@ export default function ProductMainImage({ imageObj, alt, priority }: Props) {
 	// around that nothing, so anything short of this check leaves an empty frame
 	// with no placeholder at all.
 	if (!imageObj?.image?.asset) {
-		return <div className="absolute inset-0 bg-foreground/10" />;
+		return <div className="bg-foreground/10 absolute inset-0" />;
 	}
 
 	return (

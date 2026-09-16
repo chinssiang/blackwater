@@ -1,6 +1,6 @@
-import { pickLocalizedValue } from '@/lib/i18n';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { TagIcon } from '@sanity/icons';
+import { pickLocalizedValue } from '@/lib/i18n';
 import { defineField, defineType } from 'sanity';
 
 export const gTag = defineType({
@@ -19,6 +19,8 @@ export const gTag = defineType({
 	],
 	preview: {
 		select: { title: 'title' },
-		prepare: ({ title }) => ({ title: pickLocalizedValue(title) || 'Untitled' }),
+		prepare: ({ title }) => ({
+			title: pickLocalizedValue(title) || 'Untitled',
+		}),
 	},
 });

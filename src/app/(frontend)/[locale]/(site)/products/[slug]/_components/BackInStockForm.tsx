@@ -1,13 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { toast } from 'sonner';
-import { cn, validateEmail } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate } from '@/lib/dictionary';
+import { cn, validateEmail } from '@/lib/utils';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { Button } from '@/components/ui/Button';
+import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
+import { Input } from '@/components/ui/Input';
+import { toast } from 'sonner';
 
 type FormState = 'idle' | 'submitting';
 
@@ -84,7 +84,7 @@ export default function BackInStockForm({
 
 	return (
 		<div className="mt-6 max-w-sm">
-			<p className="t-l-1 mb-3 uppercase text-foreground/65">{notify.title}</p>
+			<p className="t-l-1 text-foreground/65 mb-3 uppercase">{notify.title}</p>
 			<form onSubmit={handleSubmit} noValidate>
 				<Field data-invalid={!!validationError || undefined}>
 					<FieldLabel htmlFor="back-in-stock-email" className="sr-only">

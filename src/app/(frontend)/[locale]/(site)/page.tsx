@@ -1,13 +1,13 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
-import { pageHomeQuery, PAGE_MODULE_TAGS } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import { PAGE_MODULE_TAGS, pageHomeQuery } from '@/sanity/lib/queries';
+import { stegaClean } from '@sanity/client/stega';
 import defineFaqJsonLd, { collectFaqItems } from '@/lib/defineFaqJsonLd';
-import JsonLd from '@/components/JsonLd';
+import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { type Locale } from '@/lib/i18n';
+import JsonLd from '@/components/JsonLd';
 import PageHome from '../_components/PageHome';
 
 // pageModules can carry an eventsBlock, whose rows are decided from the wall

@@ -1,21 +1,21 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { EVENT_CARD_TAGS, pEventsQuery } from '@/sanity/lib/queries';
+import { stegaClean } from '@sanity/client/stega';
+import { buildEventName } from '@/lib/buildEventName';
 import defineMetadata, {
 	normalizeLocales,
 	omitPageMetadata,
 } from '@/lib/defineMetadata';
+import { resolveEventLocation } from '@/lib/event-location';
+import { type Locale, htmlLangFor } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
-import { buildEventName } from '@/lib/buildEventName';
-import { resolveEventLocation } from '@/lib/event-location';
 import JsonLd from '@/components/JsonLd';
-import { type Locale, htmlLangFor } from '@/lib/i18n';
-import type { PEventsQueryResult } from 'sanity.types';
 import { PageEvents } from './_components/PageEvents';
+import type { PEventsQueryResult } from 'sanity.types';
 
 const siteUrl = process.env.SITE_URL || 'https://blackwaterrc.com';
 

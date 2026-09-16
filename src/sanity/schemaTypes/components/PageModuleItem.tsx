@@ -1,6 +1,8 @@
 'use client';
 
 import {
+	type KeyboardEvent,
+	type MouseEvent,
 	createContext,
 	useCallback,
 	useContext,
@@ -8,18 +10,16 @@ import {
 	useMemo,
 	useRef,
 	useState,
-	type KeyboardEvent,
-	type MouseEvent,
 } from 'react';
-import { createPortal } from 'react-dom';
 import { EyeClosedIcon, EyeOpenIcon } from '@sanity/icons';
 import { Button, Text, Tooltip } from '@sanity/ui';
+import { createPortal } from 'react-dom';
 import {
-	set,
-	unset,
 	type ObjectItem,
 	type ObjectItemProps,
 	type PreviewProps,
+	set,
+	unset,
 } from 'sanity';
 
 // The eye button on a `pageModules` array row. It toggles the module's `hidden`

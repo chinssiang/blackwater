@@ -1,4 +1,4 @@
-import { clsx, ClassValue } from 'clsx';
+import { ClassValue, clsx } from 'clsx';
 import { extendTailwindMerge } from 'tailwind-merge';
 
 /**

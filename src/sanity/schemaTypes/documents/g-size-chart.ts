@@ -1,7 +1,7 @@
-import { pickLocalizedValue } from '@/lib/i18n';
-import { SIZE_UNIT_OPTIONS, formatRange } from '@/lib/size-measurements';
 import { isUniqueAcrossType, slug } from '@/sanity/schemaTypes/objects/slug';
 import { ThLargeIcon } from '@sanity/icons';
+import { pickLocalizedValue } from '@/lib/i18n';
+import { SIZE_UNIT_OPTIONS, formatRange } from '@/lib/size-measurements';
 import { defineArrayMember, defineField, defineType } from 'sanity';
 
 // A single, globally reusable garment size chart. Deliberately NOT localized at
@@ -88,7 +88,8 @@ export const gSizeChart = defineType({
 										defineField({
 											name: 'size',
 											title: 'Size',
-											description: 'Must match one of the chart’s Sizes exactly.',
+											description:
+												'Must match one of the chart’s Sizes exactly.',
 											type: 'string',
 											validation: (Rule) => Rule.required(),
 										}),
@@ -101,7 +102,8 @@ export const gSizeChart = defineType({
 										defineField({
 											name: 'max',
 											title: 'Max',
-											description: 'Optional. Set to render a range, e.g. 34–36.',
+											description:
+												'Optional. Set to render a range, e.g. 34–36.',
 											type: 'number',
 											// A transposed pair would otherwise publish and render
 											// backwards ("36–34") on the public size guide. Equality is
@@ -112,7 +114,10 @@ export const gSizeChart = defineType({
 													const min = (
 														context.parent as { min?: number } | undefined
 													)?.min;
-													if (typeof max !== 'number' || typeof min !== 'number')
+													if (
+														typeof max !== 'number' ||
+														typeof min !== 'number'
+													)
 														return true;
 													return max >= min || 'Max cannot be less than Min.';
 												}),
@@ -216,7 +221,9 @@ export const gSizeChart = defineType({
 	preview: {
 		select: { title: 'title', sizes: 'sizes', rows: 'rows', unit: 'unit' },
 		prepare({ title, sizes, rows, unit }: Record<string, any>) {
-			const sizeList = Array.isArray(sizes) ? sizes.filter(Boolean).join(' / ') : '';
+			const sizeList = Array.isArray(sizes)
+				? sizes.filter(Boolean).join(' / ')
+				: '';
 			const count = Array.isArray(rows) ? rows.length : 0;
 			return {
 				title: title || 'Untitled size chart',

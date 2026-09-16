@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import ImageBlock from '@/components/ImageBlock';
-import { cn } from '@/lib/utils';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { interpolate, pickPlural } from '@/lib/dictionary';
 import { resolveHref } from '@/lib/routes';
-import { pickPlural, interpolate } from '@/lib/dictionary';
+import { cn } from '@/lib/utils';
+import ImageBlock from '@/components/ImageBlock';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { ArrowRight } from '@/components/SvgIcons';
 
 type Category = {
@@ -52,17 +52,15 @@ function CategoryTile({
 
 	return (
 		<Link
-			href={
-				resolveHref({
-					documentType: 'pProductCategory',
-					slug: category.slug,
-					locale,
-				})!
-			}
-			className="group block focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+			href={resolveHref({
+				documentType: 'pProductCategory',
+				slug: category.slug,
+				locale,
+			})!}
+			className="group focus-visible:ring-accent-foreground focus-visible:ring-offset-background block focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
 		>
 			{hasImage && (
-				<div className="relative mb-3 aspect-4/5 overflow-hidden bg-foreground/6">
+				<div className="bg-foreground/6 relative mb-3 aspect-4/5 overflow-hidden">
 					<ImageBlock
 						className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
 						imageObj={category.coverImage}
@@ -72,12 +70,12 @@ function CategoryTile({
 					/>
 				</div>
 			)}
-			<div className="flex items-baseline justify-between gap-3 border-t border-foreground/15 pt-3">
+			<div className="border-foreground/15 flex items-baseline justify-between gap-3 border-t pt-3">
 				<span className="t-h-3 uppercase transition-opacity duration-200 group-hover:opacity-60">
 					{category.title}
 				</span>
 				{label && (
-					<span className="t-l-2 whitespace-nowrap uppercase text-foreground/65">
+					<span className="t-l-2 text-foreground/65 whitespace-nowrap uppercase">
 						{label}
 					</span>
 				)}
@@ -107,7 +105,7 @@ export default function ProductCategoriesGrid({
 			{showHeader && (
 				<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
 					{resolvedHeading != null ? (
-						<h2 className="t-l-2 uppercase text-foreground/70">
+						<h2 className="t-l-2 text-foreground/70 uppercase">
 							{resolvedHeading}
 						</h2>
 					) : (
@@ -115,13 +113,11 @@ export default function ProductCategoriesGrid({
 					)}
 					{showViewAll && (
 						<Link
-							href={
-								resolveHref({
-									documentType: 'pProductCategoriesIndex',
-									locale,
-								})!
-							}
-							className="t-l-2 inline-flex items-center gap-1 uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
+							href={resolveHref({
+								documentType: 'pProductCategoriesIndex',
+								locale,
+							})!}
+							className="t-l-2 text-foreground/70 hover:text-accent-foreground inline-flex items-center gap-1 uppercase transition-colors pointer-coarse:min-h-11"
 						>
 							{t.allCategories}
 							<ArrowRight className="size-2.5" />

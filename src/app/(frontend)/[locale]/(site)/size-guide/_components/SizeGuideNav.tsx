@@ -1,9 +1,9 @@
 'use client';
 
 import type { MouseEvent } from 'react';
-import { useTranslations } from '@/components/LocaleProvider';
-import { readRootPxVar, useScrollSpy } from '@/hooks/useScrollSpy';
 import { cn } from '@/lib/utils';
+import { readRootPxVar, useScrollSpy } from '@/hooks/useScrollSpy';
+import { useTranslations } from '@/components/LocaleProvider';
 import type { SizeGuideSectionData } from './SizeGuideSection';
 
 const ITEM_CLASS =
@@ -73,14 +73,14 @@ export default function SizeGuideNav({
 		<nav
 			aria-label={t.navAria}
 			className={cn(
-				'sticky top-header z-20 bg-background/95 backdrop-blur-xs',
+				'top-header bg-background/95 sticky z-20 backdrop-blur-xs',
 				'lg:z-auto lg:bg-transparent lg:backdrop-blur-none',
 				className
 			)}
 		>
 			<ul
 				ref={containerRef}
-				className="scrollbar-none flex gap-1 overflow-x-auto py-3 lg:flex-col lg:overflow-x-visible lg:py-0"
+				className="flex scrollbar-none gap-1 overflow-x-auto py-3 lg:flex-col lg:overflow-x-visible lg:py-0"
 			>
 				{sections.map((section) => {
 					const isActive = section.id === activeId;

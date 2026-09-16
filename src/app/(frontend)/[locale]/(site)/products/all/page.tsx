@@ -1,15 +1,15 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { type Locale, LOCALES, localizePath } from '@/lib/i18n';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductsAllQuery } from '@/sanity/lib/queries';
-import defineMetadata, { notFoundMetadata } from '@/lib/defineMetadata';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
-import { resolveHref } from '@/lib/routes';
+import defineMetadata, { notFoundMetadata } from '@/lib/defineMetadata';
 import { getDictionary } from '@/lib/dictionary.server';
-import JsonLd from '@/components/JsonLd';
+import { LOCALES, type Locale, localizePath } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
 import { withLiveCardPrices } from '@/lib/shopify/product';
+import JsonLd from '@/components/JsonLd';
 import { PageProductsAll } from './_components/PageProductsAll';
 
 const PAGE_SIZE = 24;
@@ -47,7 +47,11 @@ export async function generateMetadata({
 	// unbounded ?page= space. Same cache() call and arguments as the component,
 	// so this costs no extra fetch.
 	const start = (page - 1) * PAGE_SIZE;
-	const { data: pageData } = await getCachedData(locale, start, start + PAGE_SIZE);
+	const { data: pageData } = await getCachedData(
+		locale,
+		start,
+		start + PAGE_SIZE
+	);
 	const totalPages = Math.max(1, Math.ceil((pageData?.total ?? 0) / PAGE_SIZE));
 	if (!pageData || page > totalPages) return notFoundMetadata();
 
@@ -107,9 +111,18 @@ export default async function Page({
 	]);
 
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
-		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale }) },
-		{ name: dict.breadcrumb.products, path: resolveHref({ documentType: 'pProductIndex', locale }) },
-		{ name: dict.products.allProducts, path: localizePath('/products/all', locale) },
+		{
+			name: dict.breadcrumb.home,
+			path: resolveHref({ documentType: 'pHome', locale }),
+		},
+		{
+			name: dict.breadcrumb.products,
+			path: resolveHref({ documentType: 'pProductIndex', locale }),
+		},
+		{
+			name: dict.products.allProducts,
+			path: localizePath('/products/all', locale),
+		},
 	]);
 
 	return (

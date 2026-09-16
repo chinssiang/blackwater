@@ -1,15 +1,15 @@
 // https://nextjs.org/docs/app/api-reference/functions/generate-metadata#metadata-fields
 import type { Metadata } from 'next';
 import { imageBuilder } from '@/sanity/lib/image';
+import {
+	DEFAULT_LOCALE,
+	type Locale,
+	htmlLangFor,
+	isLocale,
+	ogLocaleFor,
+} from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 import { formatUrl } from '@/lib/utils';
-import {
-	type Locale,
-	DEFAULT_LOCALE,
-	htmlLangFor,
-	ogLocaleFor,
-	isLocale,
-} from '@/lib/i18n';
 
 // `null` as well as `undefined` throughout: GROQ projects a missing field as
 // null, so a page that passes a properly typed query result — rather than the
@@ -136,14 +136,28 @@ export default function defineMetadata({
 	if (availableLocales.length > 1) {
 		const entries: [string, string][] = [];
 		for (const l of availableLocales) {
-			const href = resolveHref({ documentType: _type ?? null, slug: slug ?? null, locale: l });
+			const href = resolveHref({
+				documentType: _type ?? null,
+				slug: slug ?? null,
+				locale: l,
+			});
 			if (href) {
-				entries.push([htmlLangFor(l), formatUrl(`${process.env.SITE_URL}${href}`)]);
+				entries.push([
+					htmlLangFor(l),
+					formatUrl(`${process.env.SITE_URL}${href}`),
+				]);
 			}
 		}
-		const defaultHref = resolveHref({ documentType: _type ?? null, slug: slug ?? null, locale: DEFAULT_LOCALE });
+		const defaultHref = resolveHref({
+			documentType: _type ?? null,
+			slug: slug ?? null,
+			locale: DEFAULT_LOCALE,
+		});
 		if (defaultHref) {
-			entries.push(['x-default', formatUrl(`${process.env.SITE_URL}${defaultHref}`)]);
+			entries.push([
+				'x-default',
+				formatUrl(`${process.env.SITE_URL}${defaultHref}`),
+			]);
 		}
 		if (entries.length > 0) languagesMap = Object.fromEntries(entries);
 	}

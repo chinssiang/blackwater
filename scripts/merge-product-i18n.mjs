@@ -86,7 +86,17 @@ function wrap(kind, byLanguage) {
 }
 
 const isWrapped = (v) =>
-	Array.isArray(v) && v.length > 0 && v.every((x) => x && typeof x === 'object' && '_key' in x && 'language' in x && '_type' in x && String(x._type).startsWith('internationalizedArray'));
+	Array.isArray(v) &&
+	v.length > 0 &&
+	v.every(
+		(x) =>
+			x &&
+			typeof x === 'object' &&
+			'_key' in x &&
+			'language' in x &&
+			'_type' in x &&
+			String(x._type).startsWith('internationalizedArray')
+	);
 
 /**
  * Content the merge carried across from the zh sibling that a naive
@@ -247,15 +257,21 @@ function unionInvariant(canonical, zh, field, docId, idMap) {
 		v && typeof v === 'object' && v._ref
 			? { ...v, _ref: idMap?.get(v._ref) ?? v._ref }
 			: v;
-	const keyOf = (v) => (v && typeof v === 'object' ? (v._ref ?? JSON.stringify(v)) : v);
-	const base = (Array.isArray(canonical[field]) ? canonical[field] : []).map(map);
+	const keyOf = (v) =>
+		v && typeof v === 'object' ? (v._ref ?? JSON.stringify(v)) : v;
+	const base = (Array.isArray(canonical[field]) ? canonical[field] : []).map(
+		map
+	);
 	const zhArr = (Array.isArray(zh?.[field]) ? zh[field] : []).map(map);
 	if (zhArr.length === 0) return undefined;
 
 	const seen = new Set(base.map(keyOf));
 	const added = zhArr.filter((v) => !seen.has(keyOf(v)));
 	if (added.length === 0) return undefined;
-	note(docId, `${field}: carried ${added.length} zh-only value(s) — ${added.map((v) => keyOf(v)).join(', ')}`);
+	note(
+		docId,
+		`${field}: carried ${added.length} zh-only value(s) — ${added.map((v) => keyOf(v)).join(', ')}`
+	);
 	return [...base, ...added];
 }
 
@@ -380,10 +396,7 @@ function mergeCollection(canonical, zh, productIdMap) {
 	// first. _keys regenerate deterministically from the target id.
 	const seen = new Set();
 	const products = [];
-	for (const ref of [
-		...(canonical.products ?? []),
-		...(zh?.products ?? []),
-	]) {
+	for (const ref of [...(canonical.products ?? []), ...(zh?.products ?? [])]) {
 		const target = productIdMap.get(ref?._ref) ?? ref?._ref;
 		if (!target || seen.has(target)) continue;
 		seen.add(target);
@@ -524,7 +537,9 @@ async function main() {
 		}[bad]
 	`);
 	if (conflicts.length) {
-		console.error('Sibling pairs disagree on locale-invariant fields — fix in Studio first:');
+		console.error(
+			'Sibling pairs disagree on locale-invariant fields — fix in Studio first:'
+		);
 		conflicts.forEach((c) => console.error('  ' + c.slug));
 		process.exit(1);
 	}
@@ -578,12 +593,19 @@ async function main() {
 	// for the global repoint sweep.
 	const idMap = new Map();
 	for (const group of groups.values()) {
-		if (group.zh && group.canonical) idMap.set(group.zh._id, group.canonical._id);
+		if (group.zh && group.canonical)
+			idMap.set(group.zh._id, group.canonical._id);
 	}
 
-	const products = [...groups.values()].filter((g) => g.canonical?._type === 'pProduct');
-	const collections = [...groups.values()].filter((g) => g.canonical?._type === 'pProductCollection');
-	const already = [...groups.values()].filter((g) => g.done && !g.canonical).length;
+	const products = [...groups.values()].filter(
+		(g) => g.canonical?._type === 'pProduct'
+	);
+	const collections = [...groups.values()].filter(
+		(g) => g.canonical?._type === 'pProductCollection'
+	);
+	const already = [...groups.values()].filter(
+		(g) => g.done && !g.canonical
+	).length;
 	console.log(
 		`groups: ${products.length} products, ${collections.length} collections, ${already} already merged, ${idMap.size} zh docs to fold in`
 	);
@@ -646,7 +668,10 @@ async function main() {
 
 	if (!EXECUTE) {
 		for (const d of mergedDocs.slice(0, 2))
-			console.log('\nsample merged doc:', JSON.stringify(d, null, 1).slice(0, 1200));
+			console.log(
+				'\nsample merged doc:',
+				JSON.stringify(d, null, 1).slice(0, 1200)
+			);
 		console.log('\nDry run only — re-run with --execute to write.');
 		return;
 	}
@@ -663,10 +688,16 @@ async function main() {
 
 	// ---- Post-checks ----------------------------------------------------------
 	const [remaining, unwrapped] = await Promise.all([
-		client.fetch(`count(*[_type in ["pProduct","pProductCollection"] && defined(language)])`),
-		client.fetch(`count(*[_type in ["pProduct","pProductCollection"] && !(_id in path("drafts.**")) && !defined(title[0]._key)])`),
+		client.fetch(
+			`count(*[_type in ["pProduct","pProductCollection"] && defined(language)])`
+		),
+		client.fetch(
+			`count(*[_type in ["pProduct","pProductCollection"] && !(_id in path("drafts.**")) && !defined(title[0]._key)])`
+		),
 	]);
-	console.log(`post-check: docs still carrying language: ${remaining}; docs with unwrapped title: ${unwrapped}`);
+	console.log(
+		`post-check: docs still carrying language: ${remaining}; docs with unwrapped title: ${unwrapped}`
+	);
 	if (remaining > 0 || unwrapped > 0) process.exitCode = 1;
 }
 

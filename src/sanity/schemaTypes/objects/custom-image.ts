@@ -1,8 +1,8 @@
 import { ImageIcon } from '@sanity/icons';
 import {
-	defineField,
 	type FieldDefinitionBase,
 	type ObjectDefinition,
+	defineField,
 } from 'sanity';
 
 // Explicit rather than inferred from the defaults: the rest is spread onto the

@@ -1,18 +1,18 @@
 import { MetadataRoute } from 'next';
 import { client } from '@/sanity/lib/client';
+import { LOCALES, type Locale } from '@/lib/i18n';
 import {
 	QUERIES,
 	SITEMAP_IDS,
 	SITEMAP_TAGS,
 	SYNTHETIC_ROUTES,
+	type SitemapDoc,
 	docLocales,
 	isSitemapId,
 	lastModifiedFor,
 	localizedEntries,
 	newestOf,
-	type SitemapDoc,
 } from '@/lib/sitemaps';
-import { type Locale, LOCALES } from '@/lib/i18n';
 
 export async function generateSitemaps() {
 	return SITEMAP_IDS.map((id) => ({ id }));
@@ -94,8 +94,7 @@ export default async function sitemap({
 					// pages hand to defineMetadata — the sitemap and the page's own
 					// hreflang must not disagree about where it exists.
 					locales: [...LOCALES],
-					lastModified: (locale) =>
-						newestOf(docs, route.lists, locale, dateOf),
+					lastModified: (locale) => newestOf(docs, route.lists, locale, dateOf),
 				})
 			);
 		}

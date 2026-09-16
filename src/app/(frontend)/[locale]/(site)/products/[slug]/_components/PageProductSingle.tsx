@@ -1,23 +1,23 @@
 'use client';
 
+import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
-import type { ReactNode, CSSProperties } from 'react';
-import CustomPortableText from '@/components/CustomPortableText';
-import type { PageProductSingleQueryResult } from 'sanity.types';
-import { hasArrayValue } from '@/lib/utils';
 import { REVEAL_SOFT } from '@/lib/animate';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { resolveHref } from '@/lib/routes';
-import SizeChartDialog, { SIZE_GUIDE_LINK_CLASS } from './SizeChartDialog';
-import { isRenderable } from '@/components/SizeChartTable';
-import { Badge } from '@/components/ui/Badge';
 import { badgeLabel, sortBadges } from '@/lib/product-badges';
+import { resolveHref } from '@/lib/routes';
+import { hasArrayValue } from '@/lib/utils';
+import CustomPortableText from '@/components/CustomPortableText';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { isRenderable } from '@/components/SizeChartTable';
 import {
 	Accordion,
+	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
-	AccordionContent,
 } from '@/components/ui/Accordion';
+import { Badge } from '@/components/ui/Badge';
+import SizeChartDialog, { SIZE_GUIDE_LINK_CLASS } from './SizeChartDialog';
+import type { PageProductSingleQueryResult } from 'sanity.types';
 
 // Renders only what Sanity already has: title, copy, size guide. All three
 // Shopify-dependent regions — gallery, buy column, related grid — arrive as
@@ -150,11 +150,11 @@ export default function PageProductSingle({
 		<>
 			<nav
 				aria-label="Breadcrumb"
-				className="p-x-max t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+				className="p-x-max t-l-2 text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 uppercase lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
-					className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
+					className="hover:text-foreground inline-flex items-center transition-colors pointer-coarse:min-h-11"
 				>
 					{breadcrumb.products}
 				</Link>
@@ -166,12 +166,12 @@ export default function PageProductSingle({
 				</span>
 			</nav>
 
-			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
+			<div className="mb-16 grid grid-cols-1 gap-8 lg:mb-24 lg:grid-cols-12 lg:gap-12">
 				<div className="bg-background relative overflow-hidden lg:col-span-7">
 					{gallerySlot}
 				</div>
 
-				<div className="p-x-max flex flex-col lg:col-span-5 lg:pl-0 lg:pt-2">
+				<div className="p-x-max flex flex-col lg:col-span-5 lg:pt-2 lg:pl-0">
 					{sortedBadges.length > 0 && (
 						<div
 							className="reveal mb-4 flex flex-wrap gap-1.5"
@@ -185,7 +185,7 @@ export default function PageProductSingle({
 
 					{eyebrow && <p className="t-l-1 text-foreground">{eyebrow}</p>}
 
-					<h1 className="mt-3 text-balance t-h-1 uppercase">{title}</h1>
+					<h1 className="t-h-1 mt-3 text-balance uppercase">{title}</h1>
 
 					{/* Price, variants and the buy button — everything that waits on
 					    Shopify — arrive here as a streamed server component. */}
@@ -202,15 +202,15 @@ export default function PageProductSingle({
 
 					{content && content.length > 0 && (
 						<div
-							className="reveal mt-10 lg:max-w-[60ch] border-t border-foreground/10 pt-8"
+							className="reveal border-foreground/10 mt-10 border-t pt-8 lg:max-w-[60ch]"
 							style={
 								{ ...REVEAL_SOFT, '--reveal-delay': '0.3s' } as CSSProperties
 							}
 						>
-							<p className="t-l-1 mb-5 uppercase text-foreground/65">
+							<p className="t-l-1 text-foreground/65 mb-5 uppercase">
 								{productText.whyWeChoseIt}
 							</p>
-							<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 text-pretty">
+							<div className="t-b-1 text-foreground/80 text-pretty [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
 								<CustomPortableText blocks={content as any} />
 							</div>
 						</div>
@@ -218,7 +218,7 @@ export default function PageProductSingle({
 
 					{staticSections.length > 0 && (
 						<div
-							className="reveal mt-8 lg:max-w-[60ch] border-t border-foreground/10"
+							className="reveal border-foreground/10 mt-8 border-t lg:max-w-[60ch]"
 							style={
 								{ ...REVEAL_SOFT, '--reveal-delay': '0.35s' } as CSSProperties
 							}
@@ -226,13 +226,13 @@ export default function PageProductSingle({
 							{staticSections.map((item: any) => (
 								<div
 									key={item.value}
-									className="border-b border-foreground/10 py-4"
+									className="border-foreground/10 border-b py-4"
 								>
-									<p className="t-l-1 uppercase text-foreground/65">
+									<p className="t-l-1 text-foreground/65 uppercase">
 										{item.title}
 									</p>
 									{item.contentType === 'richText' && item.richText && (
-										<div className="t-b-1 mt-3 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
+										<div className="t-b-1 text-foreground/80 mt-3 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
 											<CustomPortableText blocks={item.richText} />
 										</div>
 									)}
@@ -252,7 +252,7 @@ export default function PageProductSingle({
 
 					{metadata && metadata.length > 0 && (
 						<div
-							className="reveal mt-8 max-w-[60ch] border-t border-foreground/10 pt-4"
+							className="reveal border-foreground/10 mt-8 max-w-[60ch] border-t pt-4"
 							style={
 								{ ...REVEAL_SOFT, '--reveal-delay': '0.4s' } as CSSProperties
 							}
@@ -264,9 +264,9 @@ export default function PageProductSingle({
 										<AccordionItem
 											key={value}
 											value={value}
-											className="border-foreground/10 "
+											className="border-foreground/10"
 										>
-											<AccordionTrigger className="t-l-1 uppercase text-foreground/65">
+											<AccordionTrigger className="t-l-1 text-foreground/65 uppercase">
 												{item.title}
 											</AccordionTrigger>
 											<AccordionContent>

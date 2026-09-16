@@ -1,4 +1,4 @@
-import { defineType, defineField } from 'sanity';
+import { defineField, defineType } from 'sanity';
 
 export const settingsConsent = defineType({
 	title: 'Consent',
@@ -29,7 +29,8 @@ export const settingsConsent = defineType({
 			name: 'bannerBody',
 			type: 'internationalizedArrayText',
 			title: 'Banner Body',
-			description: 'Short explanation shown in the banner and preferences dialog.',
+			description:
+				'Short explanation shown in the banner and preferences dialog.',
 			group: 'banner',
 		}),
 		defineField({

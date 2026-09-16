@@ -1,7 +1,7 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { Component, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 
 // The lazy boundary for the wave canvas -- and it has to be a CLIENT file to be
 // one. HeroBlock is a Server Component, and `next/dynamic` called from a Server

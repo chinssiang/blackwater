@@ -319,7 +319,10 @@ function unionByRef(canonicalList, zhList, refOf, field, docId) {
 	// clean merge. Compared on the link's resolvable targets only; `label` is
 	// prose and already an internationalizedArray on both sides.
 	const linkTarget = (e) =>
-		JSON.stringify([e?.link?.href ?? null, e?.link?.internalLink?._ref ?? null]);
+		JSON.stringify([
+			e?.link?.href ?? null,
+			e?.link?.internalLink?._ref ?? null,
+		]);
 	const byRef = new Map(base.filter((e) => refOf(e)).map((e) => [refOf(e), e]));
 	for (const zhEntry of zhArr) {
 		const ref = refOf(zhEntry);
@@ -357,7 +360,9 @@ function unionInvariant(canonical, zh, field, docId, idMap) {
 			: v;
 	const keyOf = (v) =>
 		v && typeof v === 'object' ? (v._ref ?? JSON.stringify(v)) : v;
-	const base = (Array.isArray(canonical[field]) ? canonical[field] : []).map(map);
+	const base = (Array.isArray(canonical[field]) ? canonical[field] : []).map(
+		map
+	);
 	const zhArr = (Array.isArray(zh?.[field]) ? zh[field] : []).map(map);
 	if (zhArr.length === 0) return undefined;
 
@@ -681,7 +686,8 @@ async function main() {
 	);
 	const groups = new Map();
 	for (const doc of docs) {
-		const key = setOf.get(doc._id) ?? `${doc._type}:${doc.slug?.current ?? doc._id}`;
+		const key =
+			setOf.get(doc._id) ?? `${doc._type}:${doc.slug?.current ?? doc._id}`;
 		const group = groups.get(key) ?? {};
 		if (isWrapped(doc.title)) group.done = doc;
 		else if (doc.language === 'zh_tw') group.zh = doc;
@@ -721,12 +727,15 @@ async function main() {
 
 	const idMap = new Map();
 	for (const group of groups.values()) {
-		if (group.zh && group.canonical) idMap.set(group.zh._id, group.canonical._id);
+		if (group.zh && group.canonical)
+			idMap.set(group.zh._id, group.canonical._id);
 	}
 
 	const pending = [...groups.values()].filter((g) => g.canonical);
 	const byType = (type) => pending.filter((g) => g.canonical._type === type);
-	const already = [...groups.values()].filter((g) => g.done && !g.canonical).length;
+	const already = [...groups.values()].filter(
+		(g) => g.done && !g.canonical
+	).length;
 	console.log(
 		`groups: ${byType('pEvent').length} events, ${byType('pEvents').length} index, ${byType('pEventCategory').length} categories, ${already} already merged, ${idMap.size} zh docs to fold in`
 	);

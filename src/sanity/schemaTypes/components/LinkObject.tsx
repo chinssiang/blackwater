@@ -10,10 +10,10 @@ import {
 	SearchIcon,
 } from '@sanity/icons';
 import { Autocomplete, Card, Flex, Stack, Switch, Text } from '@sanity/ui';
-import { isValidUrl, validateEmail } from '@/lib/utils';
+import { LOCALE_SHORT_LABELS, type Locale, isLocale } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
-import { LOCALE_SHORT_LABELS, isLocale, type Locale } from '@/lib/i18n';
-import { set, unset, type ObjectInputProps } from 'sanity';
+import { isValidUrl, validateEmail } from '@/lib/utils';
+import { type ObjectInputProps, set, unset } from 'sanity';
 
 type LinkType = 'internal' | 'external';
 

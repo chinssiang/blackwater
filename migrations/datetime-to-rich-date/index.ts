@@ -1,6 +1,6 @@
+import { formatInTimeZone, getTimezoneOffset } from 'date-fns-tz';
 import { at, defineMigration, set } from 'sanity/migrate';
 import type { NodePatch } from 'sanity/migrate';
-import { formatInTimeZone, getTimezoneOffset } from 'date-fns-tz';
 
 /*
 	Converts the legacy `datetime` string values on pEvent.eventDatetime /

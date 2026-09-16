@@ -1,9 +1,9 @@
 import { getPortableTextPreview } from '@/sanity/lib/utils';
+import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
+import { pageModuleHidden } from '@/sanity/schemaTypes/objects/page-module';
 import type { PortableTextBlock } from '@portabletext/types';
 import { EditIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
-import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
-import { pageModuleHidden } from '@/sanity/schemaTypes/objects/page-module';
 
 export const freeform = defineType({
 	name: 'freeform',

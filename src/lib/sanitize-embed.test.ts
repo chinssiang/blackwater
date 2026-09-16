@@ -43,8 +43,9 @@ describe('sanitizeEmbedSnippet', () => {
 
 	it('drops a non-https src rather than the whole element', () => {
 		// sanitize-html removes the offending attribute, not the tag.
-		expect(sanitizeEmbedSnippet('<iframe src="http://example.com"></iframe>'))
-			.not.toContain('http://example.com');
+		expect(
+			sanitizeEmbedSnippet('<iframe src="http://example.com"></iframe>')
+		).not.toContain('http://example.com');
 		expect(
 			sanitizeEmbedSnippet('<iframe src="javascript:alert(1)"></iframe>')
 		).not.toContain('javascript:');

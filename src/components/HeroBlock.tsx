@@ -1,19 +1,19 @@
 import { stegaClean } from '@sanity/client/stega';
-import { WeatherWidget } from '@/components/WeatherWidgetLazy';
-import CustomPortableText from '@/components/CustomPortableText';
-import CustomLink from '@/components/CustomLink';
-import ImageBlock from '@/components/ImageBlock';
-// The lazy boundary for the canvas; the note in that file says why it exists.
-import { HeroWave } from '@/components/HeroWaveLazy';
-import { HeroUnderlay } from '@/components/HeroUnderlay';
-import SectionShell, {
-	type SectionAppearance,
-} from '@/components/SectionShell';
-import { buttonVariants } from '@/components/ui/Button';
 import { revealStagger } from '@/lib/animate';
 import type { SanityColor } from '@/lib/image-utils';
 import { resolveSectionAppearance } from '@/lib/section-appearance';
 import { cn, hasArrayValue } from '@/lib/utils';
+import CustomLink from '@/components/CustomLink';
+import CustomPortableText from '@/components/CustomPortableText';
+import { HeroUnderlay } from '@/components/HeroUnderlay';
+// The lazy boundary for the canvas; the note in that file says why it exists.
+import { HeroWave } from '@/components/HeroWaveLazy';
+import ImageBlock from '@/components/ImageBlock';
+import SectionShell, {
+	type SectionAppearance,
+} from '@/components/SectionShell';
+import { WeatherWidget } from '@/components/WeatherWidgetLazy';
+import { buttonVariants } from '@/components/ui/Button';
 
 const WAVE_PAPER: SanityColor = {
 	hex: '#0a0a0a',
@@ -183,7 +183,7 @@ export default function HeroBlock({
 
 			<div
 				className={cn(
-					'max-w-2xl mx-auto',
+					'mx-auto max-w-2xl',
 					underlapsHeader && 'mt-header-space-0'
 				)}
 			>

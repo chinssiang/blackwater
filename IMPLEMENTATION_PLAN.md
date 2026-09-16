@@ -25,18 +25,18 @@ product handle.**
 
 ### Data ownership matrix
 
-| Data | Source of truth | How it reaches the page |
-| --- | --- | --- |
-| Price, compare-at price, currency | Shopify | Storefront API at render, tag-cached |
-| Availability / sold out | Shopify (`availableForSale`) | Storefront API; replaces manual `soldOut` |
-| Variants / options (if shown) | Shopify | Storefront API |
-| Purchase URL | Derived from handle (`https://<store>/products/<handle>`), `purchaseLink` as manual override | Computed server-side |
-| Title, slug, routing | Sanity | Unchanged (site URLs stay `/products/<sanity-slug>`) |
-| Images / art direction | Sanity (`mainImage`, LQIP pipeline) | Unchanged |
-| Editorial (content, whyUseIt, whoIsItFor, whenReachForIt, metadata) | Sanity | Unchanged |
-| Taxonomy (categories, brands, collections), size chart, related products | Sanity | Unchanged |
-| Localization (en / zh_tw) | Sanity document i18n | Unchanged; both locale docs point at the same handle |
-| SEO / sharing | Sanity | Unchanged |
+| Data                                                                     | Source of truth                                                                              | How it reaches the page                              |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------- | ---------------------------------------------------- |
+| Price, compare-at price, currency                                        | Shopify                                                                                      | Storefront API at render, tag-cached                 |
+| Availability / sold out                                                  | Shopify (`availableForSale`)                                                                 | Storefront API; replaces manual `soldOut`            |
+| Variants / options (if shown)                                            | Shopify                                                                                      | Storefront API                                       |
+| Purchase URL                                                             | Derived from handle (`https://<store>/products/<handle>`), `purchaseLink` as manual override | Computed server-side                                 |
+| Title, slug, routing                                                     | Sanity                                                                                       | Unchanged (site URLs stay `/products/<sanity-slug>`) |
+| Images / art direction                                                   | Sanity (`mainImage`, LQIP pipeline)                                                          | Unchanged                                            |
+| Editorial (content, whyUseIt, whoIsItFor, whenReachForIt, metadata)      | Sanity                                                                                       | Unchanged                                            |
+| Taxonomy (categories, brands, collections), size chart, related products | Sanity                                                                                       | Unchanged                                            |
+| Localization (en / zh_tw)                                                | Sanity document i18n                                                                         | Unchanged; both locale docs point at the same handle |
+| SEO / sharing                                                            | Sanity                                                                                       | Unchanged                                            |
 
 ### Why runtime fetch instead of syncing into Sanity
 
@@ -79,6 +79,7 @@ calls are server-side; public tokens are throttled per buyer IP). Full walkthrou
 
 **Goal**: Typed Storefront API client and the `shopify` link field on `pProduct`.
 **Success Criteria**:
+
 - `src/lib/shopify/client.ts` — plain `fetch` GraphQL wrapper (no new deps): takes a
   query + variables, injects domain/token/version from env, throws descriptive errors
   on GraphQL/userErrors, supports `next: { revalidate, tags }` passthrough.
@@ -91,14 +92,15 @@ calls are server-side; public tokens are throttled per buyer IP). Full walkthrou
   optional `variantGid`. Manual `price` / `soldOut` / `purchaseLink` stay and become
   labeled as fallbacks ("used when no Shopify product is linked").
 - `npm run typegen` clean; existing pages unaffected.
-**Tests**: client unit tests (env missing → throws; GraphQL errors surfaced); price
-formatting cases (TWD/USD, no trailing `.00` for zero-decimal display choice).
-**Status**: Complete
+  **Tests**: client unit tests (env missing → throws; GraphQL errors surfaced); price
+  formatting cases (TWD/USD, no trailing `.00` for zero-decimal display choice).
+  **Status**: Complete
 
 ## Stage 2: Live data on the product detail page
 
 **Goal**: `/[locale]/products/[slug]` renders Shopify-truth price/availability.
 **Success Criteria**:
+
 - `getProductCommerce(handle)` server helper: fetches with
   `tags: ['shopify', 'shopify:product:<handle>']`, `revalidate: 3600` as backstop.
 - Precedence in `PageProductSingle`: linked handle → Shopify data; no handle → existing
@@ -114,14 +116,15 @@ formatting cases (TWD/USD, no trailing `.00` for zero-decimal display choice).
   one `productsByHandles` call per render — no per-card fetches.
 - Shopify fetch failure degrades gracefully (falls back to manual fields, logs; page
   never 500s because commerce data was unreachable).
-**Tests**: precedence unit tests (linked/unlinked/fetch-failed); manual verify one
-linked product page shows Shopify price and flips to sold-out when stock zeroed.
-**Status**: Complete
+  **Tests**: precedence unit tests (linked/unlinked/fetch-failed); manual verify one
+  linked product page shows Shopify price and flips to sold-out when stock zeroed.
+  **Status**: Complete
 
 ## Stage 3: Webhook-driven freshness
 
 **Goal**: Admin edits in Shopify appear on the site within seconds, not on TTL.
 **Success Criteria**:
+
 - `src/app/api/shopify/revalidate/route.ts`: verifies `X-Shopify-Hmac-Sha256` (raw
   body + `SHOPIFY_WEBHOOK_SECRET`, timing-safe compare), maps
   `products/update|delete` payload handle → `revalidateTag('shopify:product:<handle>')`,
@@ -129,14 +132,15 @@ linked product page shows Shopify price and flips to sold-out when stock zeroed.
 - Webhooks registered in Shopify admin (documented in the route file header, mirroring
   the Sanity revalidate route's setup comments).
 - Invalid HMAC → 401, logged; replay of same event is harmless (idempotent).
-**Tests**: HMAC verification unit tests (valid/invalid/missing); manual end-to-end:
-change a price in Shopify admin → page updates without redeploy.
-**Status**: Complete
+  **Tests**: HMAC verification unit tests (valid/invalid/missing); manual end-to-end:
+  change a price in Shopify admin → page updates without redeploy.
+  **Status**: Complete
 
 ## Stage 4: Studio product picker (editor UX)
 
 **Goal**: Editors link a Shopify product by searching, not pasting handles.
 **Success Criteria**:
+
 - `src/app/api/shopify/search/route.ts` (server-only Admin API `products` search,
   returns id/handle/title/status/thumbnail only — published catalog data).
 - Custom Sanity input component on `shopify.handle`: search-as-you-type, stores
@@ -144,23 +148,24 @@ change a price in Shopify admin → page updates without redeploy.
   card with status (active/draft) and an "open in Shopify admin" link.
 - `pProduct` preview subtitle shows 🔗 when linked.
 - Validation: warning when both a handle and a manual `price` are set.
-**Tests**: manual — search, link, preview renders; unlinked flow unchanged.
-**Status**: Complete
+  **Tests**: manual — search, link, preview renders; unlinked flow unchanged.
+  **Status**: Complete
 
 ## Stage 5: Handle inheritance across translations
 
 **Goal**: A translated product never silently loses live commerce because an editor
 forgot to mirror the handle onto that language version.
 **Success Criteria**:
+
 - `shopifyHandleField` in `queries.ts` coalesces `shopify.handle` to a slug-matched
   sibling document's handle, preferring `en`. Projected once, in `productCardFields`,
   so every product query inherits it.
 - `p-product.ts` handle description tells editors to set it once.
 - `/zh_tw/products/communion-t-new-balance-redux` renders `NT$1,480` and a variant
   picker where it previously rendered the bare manual string `1,480`.
-**Tests**: manual — both locales of a product with the handle set on `en` only;
-`npm run typegen` shows `shopifyHandle` still typed `string | null`.
-**Status**: Complete
+  **Tests**: manual — both locales of a product with the handle set on `en` only;
+  `npm run typegen` shows `shopifyHandle` still typed `string | null`.
+  **Status**: Complete
 
 ## Stage 6: On-site cart & Shopify checkout
 
@@ -169,6 +174,7 @@ domain; the shopper leaves only for Shopify's hosted checkout. Replaces the outb
 Online Store link, which was also broken — products aren't published to that channel
 and the storefront is password-gated, so it 302'd to `/password`.
 **Success Criteria**:
+
 - `src/lib/shopify/cart.ts` — `getCart` / `createCart` / `addCartLines` /
   `updateCartLine` / `removeCartLine`. Uncached (`no-store`, no tags); market pinned
   once via `buyerIdentity.countryCode`, no `@inContext` on cart calls; errors
@@ -179,12 +185,12 @@ and the storefront is password-gated, so it 302'd to `/password`.
 - Product page: "Add to cart" opens the drawer. `purchaseLink` and the sold-out
   branch are unchanged.
 - Orphans removed: `shopifyVariantUrl`, `ProductCommerce.url`, `onlineStoreUrl`.
-**Tests**: manual — curl the route (add/accumulate/update/remove/persist, 400 on a
-bad merchandise id, 409 on update with no cart); browser in both locales (add →
-drawer, stepper → subtotal, decrement to 0 → empty state, reload → cart persists,
-Shopify thumbnails load without CSP violations); `purchaseLink` product still shows
-an outbound "Buy it ↗" with UTM params.
-**Status**: Complete
+  **Tests**: manual — curl the route (add/accumulate/update/remove/persist, 400 on a
+  bad merchandise id, 409 on update with no cart); browser in both locales (add →
+  drawer, stepper → subtotal, decrement to 0 → empty state, reload → cart persists,
+  Shopify thumbnails load without CSP violations); `purchaseLink` product still shows
+  an outbound "Buy it ↗" with UTM params.
+  **Status**: Complete
 
 ## Later / optional — explicitly out of scope
 
@@ -265,6 +271,7 @@ document-level model whose duplicated invariant fields caused real bugs (the
 currencyless `1,480` price; Component SS T's zh doc carrying Communion T's handle).
 
 ## Stage A: Schema + Studio (field-level product family)
+
 **Status**: Complete — `fieldTypes` gains `portableTextSimple` + built-in
 `languageFilter`; `pProduct`/`pProductCollection` drop `language()`+`sharing()`
 for i18n arrays + a category-style seo fieldset; slugs use `isUniqueAcrossType`;
@@ -272,6 +279,7 @@ picker filters deleted (they matched a product `language` field that no longer
 exists); desk lists are plain documentTypeLists.
 
 ## Stage B: Transition-tolerant queries + frontend
+
 **Status**: Complete — projections carry `select(defined(language) => …)` tails
 so un-merged data still renders (proven: full build + browse against old-shape
 dev data before migrating). Visibility/hreflang/sitemap now key off
@@ -279,21 +287,24 @@ dev data before migrating). Visibility/hreflang/sitemap now key off
 `/zh_tw/products/categories/*` URLs (pre-existing bug).
 
 ## Stage C: Merge migration (dev)
+
 **Status**: Complete — `scripts/merge-product-i18n.mjs` (dry-run by default,
 `--execute` to write): merged 78 canonicals, repointed 2 referencing docs,
 deleted 74 zh docs + 76 `translation.metadata`, in one transaction. Re-run is a
 no-op. Dev dataset backed up first (`../../backups/dev-*.ndjson.gz`).
 
 ## Stage D: Prod choreography
+
 **Status**: Complete — both datasets migrated (verified 2026-08-22: zero
-*published* documents in prod or dev carry `language` for the product or event
+_published_ documents in prod or dev carry `language` for the product or event
 families). Four un-migrated **drafts** remain in dev only (`pEvent` 144-rr,
 148-rr, 140-rr and `pEventCategory` tr) — stale leftovers from before the event
 merge; publish or discard them. Original runbook, kept for reference:
+
 1. **Announce a content freeze on products/collections** and confirm no drafts
    exist. This is not optional politeness: between deploy and migration the
    schema uses `isUniqueAcrossType`, so every existing en/zh sibling pair
-   (~68 on prod) shares a slug and *fails* slug validation. An editor who edits
+   (~68 on prod) shares a slug and _fails_ slug validation. An editor who edits
    a product in that window cannot publish it, the edit persists as a draft,
    and the migration's draft guard then refuses to run — the only way out is
    discarding their work. The window also has the Studio listing each product
@@ -308,6 +319,7 @@ merge; publish or discard them. Original runbook, kept for reference:
 5. Spot-check both locales + `/sitemap/products.xml`.
 
 ## Stage E: Post-prod cleanup
+
 **Status**: Complete — tails stripped in `2288ab7` and merged 2026-08-22. The
 `defined(language)` occurrences that remain in `queries.ts` are all
 document-level types (`byLocale`, `availableLocalesField`, `pGeneral`, `pBlog`,
@@ -329,8 +341,10 @@ tags `pProductCategory` + `gSizeChart`), keeps the dependency declared beside th
 query that creates it, and needs zero webhook changes.
 
 ## Stage 1: Revalidation tag coverage
+
 **Goal**: Every Sanity edit that can change a prerendered page invalidates it.
 **Changes**:
+
 - Home + `[slug]` general: add `gFaq`, `settingsBrandColors` (faqList derefs
   `questions[]->`; sectionAppearance derefs `backgroundColor->`/`textColor->`).
 - `/events`: add `gLocation`, `pEventStatus`, `pEventCategory`, `settingsBrandColors`.
@@ -340,77 +354,91 @@ query that creates it, and needs zero webhook changes.
 - `/products/[slug]`: add `gTag`, `pBrand`.
 - `SITE_DATA_TAGS`: add `pGeneral`, `pProduct`, `pEvent` (nav labels fall back to
   `internalLink->title`; cart recommendations deref `pProduct`).
-**Success criteria / verify**: `npm run lint` + `npm run build` pass; grep confirms each
-page's tags are a superset of its query's dereferenced types.
-**Status**: Complete
+  **Success criteria / verify**: `npm run lint` + `npm run build` pass; grep confirms each
+  page's tags are a superset of its query's dereferenced types.
+  **Status**: Complete
 
 ## Stage 2: Klaviyo newsletter hardening
+
 **Goal**: `/api/newsletter/subscribe` can no longer write to arbitrary lists, can't be
 scripted freely, and stops rejecting valid emails.
 **Changes**:
+
 - Resolve the list ID server-side from `gNewsletter.klaviyoListID` (`stega: false`),
   mirroring `back-in-stock`; stop accepting `listId` from the client (client stops
   sending it).
 - Add the same in-memory per-IP throttle the other write routes use.
 - Guard `req.json()` (400 on malformed body).
 - Fix `validateEmail` regex: allow `+` etc. in the local part and TLDs > 3 chars.
-**Success criteria / verify**: build passes; regex unit-checked against
-`user+tag@gmail.com`, `you@example.info`, and rejects `foo@bar`, `foo`.
-**Status**: Complete
+  **Success criteria / verify**: build passes; regex unit-checked against
+  `user+tag@gmail.com`, `you@example.info`, and rejects `foo@bar`, `foo`.
+  **Status**: Complete
 
 ## Stage 3: Consent invariant + CSP
+
 **Goal**: One gtag talker, gated by consent; GA4 works for EEA visitors.
 **Changes**:
+
 - Move the SPA `gtag.pageview` effect from `Layout` into `HeadTrackingCode`, gated on
   `IS_PROD && consent.analytics`, iterating every `gaID` (fixes withdrawal leak and the
   `[0]`-only pageviews).
 - Add `https://region1.google-analytics.com` to CSP `connect-src`.
-**Success criteria / verify**: grep shows no `gtag` usage outside `HeadTrackingCode`/
-`lib/gtag`; build passes.
-**Status**: Complete
+  **Success criteria / verify**: grep shows no `gtag` usage outside `HeadTrackingCode`/
+  `lib/gtag`; build passes.
+  **Status**: Complete
 
 ## Stage 4: Route + schema one-liners
+
 **Goal**: `/events` stops redirecting; category slugs are actually unique.
 **Changes**:
+
 - `routes.ts`: `pEvents` path `/events/` → `/events` in both `DOCUMENT_ROUTES` and the
   `resolvedHrefGroq` literal.
 - `p-product-category.ts`: `slug()` → `slug({ isUnique: isUniqueAcrossType })`.
 - `npm run typegen` (schema + query literals changed).
-**Success criteria / verify**: grep shows no `'/events/'` left in routes.ts; typegen +
-build pass.
-**Status**: Complete
+  **Success criteria / verify**: grep shows no `'/events/'` left in routes.ts; typegen +
+  build pass.
+  **Status**: Complete
 
 ## Stage 5: Should-fix — revalidation & caching
+
 **Goal**: Publishes take effect on the first request; no unbounded cache growth.
+
 - `revalidateTag(tag, 'max')` → `{ expire: 0 }` in both webhook routes (was
   stale-while-revalidate, so every publish was one request behind).
 - `[...rest]` soft-404: `robots: noindex` so 200-response not-founds stop being indexed.
 - `generateStaticParams` slug fetches: pass real tags (were defaulting to `sanity`,
   which nothing invalidates — a stale slug list can skip prerendering new docs).
 - `sitemap.ts`: route the raw client fetch through tags instead of no-cache.
-**Status**: Not Started
+  **Status**: Not Started
 
 ## Stage 6: Should-fix — Klaviyo UX & payloads
+
 **Goal**: Errors are distinguishable; success always renders; variant identity survives.
+
 - Both clients read the response body and surface 429 / config errors distinctly.
 - Newsletter success panel falls back to dictionary copy when Sanity fields are blank.
 - Back-in-stock sends the variant GID + the requested option values (so a
   never-stocked combination is still segmentable).
 - `custom_source` reflects the actual form placement.
-**Status**: Complete
+  **Status**: Complete
 
 ## Stage 7: Should-fix — consent completeness
+
 **Goal**: The banner's promises match what the page does.
+
 - Expire `_ga*`/`_gid`/`_gcl_au` on withdrawal.
 - stegaClean the GA/GTM ids; render only the first id per vendor (extra ids were
   silently dropped by next/script's id-keyed dedupe) and warn in dev.
 - Gate GTM on analytics OR marketing; gate Vercel Analytics on a decision.
 - Share the consent cookie across apex/www.
 - Fix the stale "gates Klaviyo onsite tracking" editor description.
-**Status**: Complete
+  **Status**: Complete
 
 ## Stage 8: Should-fix — routing, metadata, dead code
+
 **Goal**: No indexable duplicates, no link-picker dead ends, no stale copies.
+
 - Localized metadata + canonical for `/products/all` and `/products/collections`.
 - Sitemap `x-default` only when the default locale actually renders.
 - Fallback-locale pages canonical to the locale that owns the content.
@@ -420,10 +448,12 @@ build pass.
 - Delete the stale duplicate `defineEventJsonLd`; drop the `as any` cast in
   PageEvents; fix the stale i18n comment in buildEventName.
 - Shopify webhook: topic allowlist (done in Stage 5).
-**Status**: Complete
+  **Status**: Complete
 
 ## Stage 9: Fallback-locale canonicals + ungate Vercel Analytics
+
 **Goal**: A page rendering another locale's content must not compete with it.
+
 - `defineMetadata` canonicals to the locale that owns the content whenever the
   requested locale has no translation. Composes with the hreflang map, which
   already omits the fallback locale — declaring hreflang="zh-TW" for a page
@@ -432,8 +462,8 @@ build pass.
   neither touches cookie/localStorage/sessionStorage/indexedDB, so there is no
   ePrivacy 5(3) storage trigger; and gating Speed Insights would bias Core Web
   Vitals to a consenting-only subset.
-**Verified in a production build**: en-only product canonicals /zh_tw/... → the
-en URL and still renders; fully translated product keeps per-locale
-self-canonical + full hreflang; dataLayer order is consent/default (exactly
-once, first) → js → config → consent/update → pageview.
-**Status**: Complete
+  **Verified in a production build**: en-only product canonicals /zh_tw/... → the
+  en URL and still renders; fully translated product keeps per-locale
+  self-canonical + full hreflang; dataLayer order is consent/default (exactly
+  once, first) → js → config → consent/update → pageview.
+  **Status**: Complete

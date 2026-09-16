@@ -1,20 +1,20 @@
-import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { sanityFetch } from '@/sanity/lib/live';
 import {
-	eventCrewMonthsQuery,
 	eventCrewByMonthQuery,
 	eventCrewMembersQuery,
+	eventCrewMonthsQuery,
 } from '@/sanity/lib/queries';
-import type {
-	EventCrewByMonthQueryResult,
-	EventCrewMonthsQueryResult,
-	EventCrewMembersQueryResult,
-} from 'sanity.types';
 import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { getRichDateYearMonth } from '@/lib/event-date';
-import { PageEventCrew } from './_components/PageEventsCrew';
 import { FALLBACK_TIMEZONE } from '@/lib/event-date';
+import { PageEventCrew } from './_components/PageEventsCrew';
+import type {
+	EventCrewByMonthQueryResult,
+	EventCrewMembersQueryResult,
+	EventCrewMonthsQueryResult,
+} from 'sanity.types';
 import type { SanityRevalidateTag } from '@/types/sanity';
 
 // Crew months are bucketed by their Asia/Taipei local month, so the GROQ range

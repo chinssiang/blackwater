@@ -16,11 +16,11 @@
  */
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { DEFAULT_LOCALE, isLocale, type Locale } from '@/lib/i18n';
+import { DEFAULT_LOCALE, type Locale, isLocale } from '@/lib/i18n';
 import {
 	isShopifyConfigured,
-	shopifyStorefrontFetch,
 	shopifyStoreDomain,
+	shopifyStorefrontFetch,
 } from '@/lib/shopify/client';
 import { LOCALE_SHOPIFY_CONTEXT, shopifyGidToId } from '@/lib/shopify/types';
 

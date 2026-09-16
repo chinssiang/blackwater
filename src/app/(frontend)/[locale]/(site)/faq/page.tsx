@@ -1,18 +1,18 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageFaqQuery } from '@/sanity/lib/queries';
-import type { PageFaqQueryResult } from 'sanity.types';
+import { stegaClean } from '@sanity/client/stega';
+import defineFaqJsonLd from '@/lib/defineFaqJsonLd';
 import defineMetadata, {
 	normalizeLocales,
 	omitPageMetadata,
 } from '@/lib/defineMetadata';
-import defineFaqJsonLd from '@/lib/defineFaqJsonLd';
-import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
+import JsonLd from '@/components/JsonLd';
 import { PageFaq } from './_components/PageFaq';
+import type { PageFaqQueryResult } from 'sanity.types';
 
 // The return annotation is load-bearing, not decoration. `sanityFetch` types
 // `data` as `ClientReturn<typeof query>`, which looks the query string up in the
@@ -56,8 +56,11 @@ export default async function Page(props: Props) {
 	// no `disableIndex` key. Runtime behaviour is unchanged — absent still reads
 	// as "indexable" — but the check now type-checks instead of relying on `any`.
 	const disableIndex =
-		data && 'disableIndex' in data.sharing ? data.sharing.disableIndex : undefined;
-	if (!data || disableIndex === true) return <NotFoundContent locale={locale} />;
+		data && 'disableIndex' in data.sharing
+			? data.sharing.disableIndex
+			: undefined;
+	if (!data || disableIndex === true)
+		return <NotFoundContent locale={locale} />;
 
 	const cleanData = stegaClean(data);
 	const faqJsonLd = defineFaqJsonLd(cleanData?.items);

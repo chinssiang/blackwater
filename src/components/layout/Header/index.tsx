@@ -1,15 +1,15 @@
 'use client';
 
-import { GHeader, SettingsMenu, SiteDataQueryResult } from 'sanity.types';
 import Link from 'next/link';
-import { WordmarkSvg } from '@/components/WordmarkSvg';
+import { resolveHref } from '@/lib/routes';
+import { cn } from '@/lib/utils';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useLocale } from '@/components/LocaleProvider';
 import Menu from '@/components/Menu';
 import MobileMenu from '@/components/MobileMenu';
+import { WordmarkSvg } from '@/components/WordmarkSvg';
 import CartButton from '@/components/cart/CartButton';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { cn } from '@/lib/utils';
-import { useLocale } from '@/components/LocaleProvider';
-import { resolveHref } from '@/lib/routes';
+import { GHeader, SettingsMenu, SiteDataQueryResult } from 'sanity.types';
 
 type HeaderProps = GHeader & {
 	siteTitle?: string;
@@ -34,25 +34,25 @@ export function Header({ data }: { data: HeaderProps }) {
 				// `fixed`, not `sticky`: out of flow, so a full-bleed hero can start at
 				// the top of the viewport and this floats over it. `inset-x-0` rather
 				// than `w-full` — out of flow there is no parent to be 100% of.
-				'p-x-max h-header fixed inset-x-0 top-0 z-header grid grid-cols-2 lg:grid-cols-3 items-center leading-none'
+				'p-x-max h-header z-header fixed inset-x-0 top-0 grid grid-cols-2 items-center leading-none lg:grid-cols-3'
 			)}
 		>
 			{menu && (
 				<Menu
 					data={menu}
-					className="lg:flex item-center gap-2.5 t-b-2 uppercase hidden select-none [&_a]:leading-header [&_a]:h-header"
+					className="item-center t-b-2 [&_a]:leading-header [&_a]:h-header hidden gap-2.5 uppercase select-none lg:flex"
 				/>
 			)}
 
 			<Link
 				href={resolveHref({ documentType: 'pHome', locale })!}
 				aria-label={siteTitle}
-				className="w-24 text-foreground mr-auto lg:mx-auto h-full flex items-center hover:opacity-90 transition-opacity"
+				className="text-foreground mr-auto flex h-full w-24 items-center transition-opacity hover:opacity-90 lg:mx-auto"
 			>
 				<WordmarkSvg className="h-full" />
 				<span className="sr-only">{siteTitle}</span>
 			</Link>
-			<div className="ml-auto flex text-foreground gap-3">
+			<div className="text-foreground ml-auto flex gap-3">
 				<LanguageSwitcher className="max-lg:hidden" />
 
 				<CartButton />

@@ -1,8 +1,8 @@
 import { cache } from 'react';
 import { sanityFetch } from '@/sanity/lib/live';
 import { siteDataQuery } from '@/sanity/lib/queries';
-import type { SiteDataQueryResult } from 'sanity.types';
 import type { Locale } from '@/lib/i18n';
+import type { SiteDataQueryResult } from 'sanity.types';
 
 export const SITE_DATA_TAGS = [
 	'gAnnouncement',

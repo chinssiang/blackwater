@@ -1,21 +1,21 @@
 'use client';
 
 import { useEffect, useId, useState } from 'react';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { interpolate } from '@/lib/dictionary';
 import { htmlLangFor } from '@/lib/i18n';
-import { cn, OVERLAY_LINK_FOCUS } from '@/lib/utils';
-import { Plus } from '@/components/SvgIcons';
+import { OVERLAY_LINK_FOCUS, cn } from '@/lib/utils';
 import {
+	MAX_SNAPSHOT_AGE_MS,
+	TAIPEI_TIMEZONE,
+	type WeatherSnapshot,
 	aqiBandKey,
 	clampRefreshDelay,
 	isSnapshotStale,
-	MAX_SNAPSHOT_AGE_MS,
 	msUntilStale,
-	TAIPEI_TIMEZONE,
 	weatherConditionKey,
-	type WeatherSnapshot,
 } from '@/lib/weather';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { Plus } from '@/components/SvgIcons';
 
 /**
  * Current Taipei conditions, pinned bottom-right. THREE mount sites, and the
@@ -301,7 +301,7 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
 		// duration -- cf. the header holding `backdrop-filter: none` over a wave.
 		<div
 			className={cn(
-				'text-foreground bg-background/85 backdrop-blur-xs border-foreground/36 right-contain animate-in fade-in slide-in-from-bottom-2 animation-duration-500 ease-out motion-reduce:animate-none absolute bottom-[calc(var(--height-g-toolbar)+1rem)] lg:bottom-2.5 z-g-toolbar w-(--width-max) sm:max-w-64 border max-sm:left-contain',
+				'text-foreground bg-background/85 border-foreground/36 right-contain animate-in fade-in slide-in-from-bottom-2 animation-duration-500 z-g-toolbar max-sm:left-contain absolute bottom-[calc(var(--height-g-toolbar)+1rem)] w-(--width-max) border backdrop-blur-xs ease-out motion-reduce:animate-none sm:max-w-64 lg:bottom-2.5',
 				className
 			)}
 		>
@@ -311,7 +311,7 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
 				aria-expanded={isOpen}
 				aria-controls={panelId}
 				className={cn(
-					'flex w-full items-center gap-2 p-2.5 text-left transition-[opacity,box-shadow] hover:opacity-60 cursor-pointer',
+					'flex w-full cursor-pointer items-center gap-2 p-2.5 text-left transition-[opacity,box-shadow] hover:opacity-60',
 					OVERLAY_LINK_FOCUS
 				)}
 			>
@@ -342,7 +342,7 @@ export function WeatherWidget({ className }: WeatherWidgetProps) {
 				)}
 			>
 				<div className="min-h-0">
-					<dl className="px-2.5 border-foreground/36 border-t pt-2.5 pb-1">
+					<dl className="border-foreground/36 border-t px-2.5 pt-2.5 pb-1">
 						{rows.map(({ label, value }) => (
 							<div
 								key={label}

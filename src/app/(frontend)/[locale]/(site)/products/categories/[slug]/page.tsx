@@ -1,19 +1,22 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import {
 	pageProductCategorySingleQuery,
 	pageProductCategorySlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { omitPageMetadata, notFoundMetadata } from '@/lib/defineMetadata';
+import { stegaClean } from '@sanity/client/stega';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
-import { resolveHref } from '@/lib/routes';
+import defineMetadata, {
+	notFoundMetadata,
+	omitPageMetadata,
+} from '@/lib/defineMetadata';
 import { getDictionary } from '@/lib/dictionary.server';
-import JsonLd from '@/components/JsonLd';
+import { LOCALES, type Locale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
 import { withLiveCardPrices } from '@/lib/shopify/product';
-import { type Locale, LOCALES } from '@/lib/i18n';
+import JsonLd from '@/components/JsonLd';
 import PageProductCategory from './_components/PageProductCategory';
 
 type Props = {
@@ -72,10 +75,32 @@ export default async function Page({ params }: Props) {
 	]);
 
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
-		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: locale as Locale }) },
-		{ name: dict.breadcrumb.products, path: resolveHref({ documentType: 'pProductIndex', locale: locale as Locale }) },
-		{ name: dict.products.categoriesTitle, path: resolveHref({ documentType: 'pProductCategoriesIndex', locale: locale as Locale }) },
-		{ name: cleanData?.title, path: resolveHref({ documentType: 'pProductCategory', slug, locale: locale as Locale }) },
+		{
+			name: dict.breadcrumb.home,
+			path: resolveHref({ documentType: 'pHome', locale: locale as Locale }),
+		},
+		{
+			name: dict.breadcrumb.products,
+			path: resolveHref({
+				documentType: 'pProductIndex',
+				locale: locale as Locale,
+			}),
+		},
+		{
+			name: dict.products.categoriesTitle,
+			path: resolveHref({
+				documentType: 'pProductCategoriesIndex',
+				locale: locale as Locale,
+			}),
+		},
+		{
+			name: cleanData?.title,
+			path: resolveHref({
+				documentType: 'pProductCategory',
+				slug,
+				locale: locale as Locale,
+			}),
+		},
 	]);
 
 	return (

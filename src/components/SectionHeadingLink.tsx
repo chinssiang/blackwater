@@ -1,5 +1,5 @@
+import { INLINE_LINK_FOCUS, cn } from '@/lib/utils';
 import CustomLink from '@/components/CustomLink';
-import { cn, INLINE_LINK_FOCUS } from '@/lib/utils';
 
 // The "see all" link that sits on a SectionShell heading's baseline.
 //

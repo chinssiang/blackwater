@@ -1,9 +1,9 @@
 import Link from 'next/link';
-import { type Locale, localizePath } from '@/lib/i18n';
 import { interpolate } from '@/lib/dictionary';
 import { getDictionary } from '@/lib/dictionary.server';
-import { applyCardPrices, getCardCommerce } from '@/lib/shopify/product';
+import { type Locale, localizePath } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
+import { applyCardPrices, getCardCommerce } from '@/lib/shopify/product';
 import ProductCard from '@/components/ProductCard';
 
 // Async boundary around the related grid's Storefront lookup. It sits below the
@@ -58,9 +58,9 @@ export default async function ProductRelatedGrid({
 	);
 
 	return (
-		<section className="m-x-max border-t border-foreground/10 pt-12 lg:pt-16">
+		<section className="m-x-max border-foreground/10 border-t pt-12 lg:pt-16">
 			<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
-				<h2 className="t-l-2 uppercase text-foreground/70">
+				<h2 className="t-l-2 text-foreground/70 uppercase">
 					{categoryTitle
 						? interpolate(dict.products.moreCategory, {
 								category: categoryTitle,
@@ -77,7 +77,7 @@ export default async function ProductRelatedGrid({
 								})!
 							: localizePath('/products/all', locale)
 					}
-					className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
+					className="t-l-2 text-foreground/70 hover:text-accent-foreground inline-flex items-center uppercase transition-colors pointer-coarse:min-h-11"
 				>
 					{categoryTitle ?? dict.products.allProducts}
 				</Link>

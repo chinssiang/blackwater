@@ -43,7 +43,7 @@ export default function LanguageSwitcher({
 							<Link
 								href={localizePath(strippedPath, locale)}
 								onClick={onSelect}
-								className="text-muted-foreground transition-colors hover:text-foreground"
+								className="text-muted-foreground hover:text-foreground transition-colors"
 							>
 								{LOCALE_SHORT_LABELS[locale]}
 							</Link>

@@ -1,6 +1,6 @@
-import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { cn, TYPE_SCALE_CLASSES } from '@/lib/utils';
+import { TYPE_SCALE_CLASSES, cn } from '@/lib/utils';
+import { readFileSync, readdirSync } from 'node:fs';
 
 // The type tokens set a font-size from `@layer components`, so every Tailwind
 // font-size utility beats them in the cascade. `cn()` therefore registers them

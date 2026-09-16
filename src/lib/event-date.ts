@@ -1,12 +1,12 @@
-import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 import { stegaClean } from '@sanity/client/stega';
-import { resolveEventDateStatus } from './event-status';
 import type { Locale } from 'date-fns';
-import type { Dictionary } from './dictionary';
-import type { RichDate } from 'sanity.types';
+import { formatInTimeZone, fromZonedTime } from 'date-fns-tz';
 // Type-only, so this stays a leaf at runtime: `calendar.ts` owns the shape of a
 // civil date, this file owns which timezone a stored value is read in.
 import type { DayKey } from '@/lib/calendar';
+import type { Dictionary } from './dictionary';
+import { resolveEventDateStatus } from './event-status';
+import type { RichDate } from 'sanity.types';
 
 /**
  * The timezone an event is read in when its stored `richDate` carries none —

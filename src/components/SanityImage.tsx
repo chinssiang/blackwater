@@ -2,8 +2,8 @@
 
 import { JSX, useState } from 'react';
 import Image from 'next/image';
-import { cn } from '@/lib/utils';
 import { buildImageSrc } from '@/lib/image-utils';
+import { cn } from '@/lib/utils';
 import type {
 	SanityImageAssetReference,
 	SanityImageCrop,

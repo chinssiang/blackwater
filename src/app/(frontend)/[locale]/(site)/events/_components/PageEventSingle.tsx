@@ -1,26 +1,26 @@
+import { REVEAL_SOFT } from '@/lib/animate';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
+import {
+	type Dictionary,
+	formatDaysUntilLabel,
+	interpolate,
+} from '@/lib/dictionary';
 import {
 	formatRichDate,
 	getDaysUntilEvent,
 	isEventEnded,
 } from '@/lib/event-date';
-import { resolveEventDateStatus } from '@/lib/event-status';
-import { WeatherWidgetRail } from '@/components/WeatherWidgetRail';
-import CustomPortableText from '@/components/CustomPortableText';
-import ImageBlock from '@/components/ImageBlock';
-import EventStatusPill from '@/components/EventStatusPill';
-import { cn, hasArrayValue } from '@/lib/utils';
-import {
-	formatDaysUntilLabel,
-	interpolate,
-	type Dictionary,
-} from '@/lib/dictionary';
-import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
-import { REVEAL_SOFT } from '@/lib/animate';
-import type { Locale } from '@/lib/i18n';
 import { resolveEventLocation } from '@/lib/event-location';
-import type { PageEventSingleQueryResult } from 'sanity.types';
+import { resolveEventDateStatus } from '@/lib/event-status';
+import type { Locale } from '@/lib/i18n';
+import { cn, hasArrayValue } from '@/lib/utils';
+import CustomPortableText from '@/components/CustomPortableText';
+import EventStatusPill from '@/components/EventStatusPill';
+import ImageBlock from '@/components/ImageBlock';
+import { WeatherWidgetRail } from '@/components/WeatherWidgetRail';
 import EventStations, { type EventStationsData } from './EventStations';
 import ExternalTextLink from './ExternalTextLink';
+import type { PageEventSingleQueryResult } from 'sanity.types';
 
 // Sliced off the generated query result rather than hand-written, so a field
 // dropped from pageEventSingleQuery's projection is a compile error here

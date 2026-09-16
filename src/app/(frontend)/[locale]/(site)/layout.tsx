@@ -1,6 +1,6 @@
-import { Layout } from '@/components/layout';
 import { getCachedSiteData, pickLayoutData } from '@/sanity/lib/siteData';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
+import { Layout } from '@/components/layout';
 
 // The site chrome (Header, Newsletter, Footer, ToolBar). Lives in a route group
 // so that [locale]/not-found.tsx — which sits outside (site) — renders without

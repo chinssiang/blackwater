@@ -1,12 +1,12 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
 	PAGE_MODULES_FIELD,
 	hostModuleHidden,
 	moduleRule,
 } from './page-module';
+import { existsSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import type { ValidationContext } from 'sanity';
 
 const OBJECTS_DIR = dirname(fileURLToPath(import.meta.url));

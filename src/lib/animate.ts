@@ -65,9 +65,7 @@ export const mobileMenuPanel: Variants = {
 // Stagger orchestrator for the menu item list (no visual style of its own).
 export const mobileMenuList: Variants = {
 	hide: (reduce = false) => ({
-		transition: reduce
-			? {}
-			: { staggerChildren: 0.05, staggerDirection: -1 },
+		transition: reduce ? {} : { staggerChildren: 0.05, staggerDirection: -1 },
 	}),
 	show: (reduce = false) => ({
 		transition: reduce ? {} : { delayChildren: 0.12, staggerChildren: 0.06 },

@@ -1,7 +1,7 @@
-import { pickLocalizedValue, requireSomeValue } from '@/lib/i18n';
-import { slug, isUniqueAcrossType } from '@/sanity/schemaTypes/objects/slug';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
+import { isUniqueAcrossType, slug } from '@/sanity/schemaTypes/objects/slug';
 import { StackIcon } from '@sanity/icons';
+import { pickLocalizedValue, requireSomeValue } from '@/lib/i18n';
 import { defineArrayMember, defineField, defineType } from 'sanity';
 
 // Field-level localized like pProduct: one collection document carries every
@@ -61,7 +61,8 @@ export const pProductCollection = defineType({
 			name: 'seoTitle',
 			title: 'SEO Title',
 			type: 'internationalizedArrayString',
-			description: 'Overrides the meta title per language. Falls back to Title.',
+			description:
+				'Overrides the meta title per language. Falls back to Title.',
 			fieldset: 'seo',
 		}),
 		defineField({

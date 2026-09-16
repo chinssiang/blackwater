@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
-import { toast } from 'sonner';
 import { fadeAnim } from '@/lib/animate';
 import { cn, validateEmail } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import CustomPortableText from '@/components/CustomPortableText';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { Button } from '@/components/ui/Button';
+import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
+import { Input } from '@/components/ui/Input';
+import { motion } from 'motion/react';
 import type { SiteDataQueryResult } from 'sanity.types';
+import { toast } from 'sonner';
 
 type FormState = 'idle' | 'submitting' | 'success';
 
@@ -143,7 +143,7 @@ export function Newsletter({
 	return (
 		<div ref={sectionRef} className={cn('text-foreground', className)}>
 			{heading && (
-				<p className="t-h-1 text-balance font-medium mb-3">{heading}</p>
+				<p className="t-h-1 mb-3 font-medium text-balance">{heading}</p>
 			)}
 
 			{formState === 'success' ? (
@@ -157,7 +157,7 @@ export function Newsletter({
 						delay: 0.1,
 						ease: [0, 0.71, 0.2, 1.01],
 					}}
-					className="max-w-sm flex flex-col justify-center"
+					className="flex max-w-sm flex-col justify-center"
 					style={formHeight ? { minHeight: formHeight } : undefined}
 					role="status"
 					aria-live="polite"
@@ -173,7 +173,7 @@ export function Newsletter({
 					</p>
 				</motion.div>
 			) : (
-				<div className="space-y-4 w-full md:flex-1 md:max-w-[500px]">
+				<div className="w-full space-y-4 md:max-w-[500px] md:flex-1">
 					{subheading && <p className="t-b-1 text-balance">{subheading}</p>}
 					<form
 						ref={formRef}
@@ -218,7 +218,7 @@ export function Newsletter({
 									disabled={formState === 'submitting'}
 									variant="outline"
 									size="lg"
-									className="bg-black text-white min-w-22"
+									className="min-w-22 bg-black text-white"
 								>
 									{formState === 'submitting'
 										? t.submitting

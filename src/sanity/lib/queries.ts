@@ -1,6 +1,6 @@
 import { defineQuery } from 'next-sanity';
-import { RESOLVED_HREF_GROQ } from './groq-constants.generated';
 import { LOCALES } from '@/lib/i18n';
+import { RESOLVED_HREF_GROQ } from './groq-constants.generated';
 
 // Every locale, as a GROQ array literal. Spelled out rather than derived from
 // LOCALES because the extractor substitutes syntax instead of executing JS:
@@ -504,7 +504,8 @@ const newsletterFormFields = `
 // exactly — a zh-only doc never leaks onto English pages (it used to have no
 // `en` document; now it has no `en` title), while an en-only doc renders its
 // English fallback everywhere. Shared by the product and event queries.
-const titleVisible = `(defined(title[language == $locale][0].value) || defined(title[language == "en"][0].value))` as const;
+const titleVisible =
+	`(defined(title[language == $locale][0].value) || defined(title[language == "en"][0].value))` as const;
 
 // The same guard applied AFTER a dereference, for editor-curated reference
 // arrays (relatedProducts, collection products, cart recommendations). Those
@@ -562,13 +563,11 @@ const shopifyHandleField = `
 // "Could not find binding for node"). Types with no image or description
 // fallback pass the literal 'noFallback' — an attribute no document has, so
 // GROQ resolves that coalesce arm to null and skips it.
-const i18nSharingFields = <
-	const I extends string,
-	const D extends string,
->(
+const i18nSharingFields = <const I extends string, const D extends string>(
 	imageFallback: I,
 	descFallback: D
-) => `
+) =>
+	`
 	"sharing": {
 		"disableIndex": disableIndex,
 		"metaTitle": coalesce(seoTitle[language == $locale][0].value, seoTitle[language == "en"][0].value),

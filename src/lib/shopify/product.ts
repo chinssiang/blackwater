@@ -1,18 +1,18 @@
 import { cache } from 'react';
 import { stegaClean } from '@sanity/client/stega';
-import { type Locale } from '@/lib/i18n';
 import { interpolate } from '@/lib/dictionary';
 import { getDictionary } from '@/lib/dictionary.server';
+import { type Locale } from '@/lib/i18n';
 import { isShopifyConfigured, shopifyStorefrontFetch } from './client';
 import {
+	type CardAddToCart,
+	type CardCommerce,
 	LOCALE_SHOPIFY_CONTEXT,
+	type ProductCommerce,
+	type ShopifyMoney,
 	deriveCardAddToCart,
 	formatShopifyPrice,
 	shopifyGidToId,
-	type CardAddToCart,
-	type CardCommerce,
-	type ProductCommerce,
-	type ShopifyMoney,
 } from './types';
 
 // Server-side product fetchers. Every helper here soft-fails: a missing
@@ -164,11 +164,13 @@ export const getProductCommerce = cache(
 		const handle = rawHandle ? stegaClean(rawHandle) : null;
 		if (!handle || !isShopifyConfigured()) return null;
 		try {
-			const data = await shopifyStorefrontFetch<{ product: GqlProduct | null }>({
-				query: PRODUCT_COMMERCE_QUERY,
-				variables: { handle, ...contextVariables(locale) },
-				next: { revalidate: REVALIDATE, tags: shopifyProductTags(handle) },
-			});
+			const data = await shopifyStorefrontFetch<{ product: GqlProduct | null }>(
+				{
+					query: PRODUCT_COMMERCE_QUERY,
+					variables: { handle, ...contextVariables(locale) },
+					next: { revalidate: REVALIDATE, tags: shopifyProductTags(handle) },
+				}
+			);
 			if (!data.product) {
 				console.warn(`[shopify] no product for handle "${handle}"`);
 				return null;

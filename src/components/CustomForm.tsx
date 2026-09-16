@@ -1,22 +1,20 @@
 'use client';
-import { motion } from 'motion/react';
-import { fadeAnim } from '@/lib/animate';
-import CustomPortableText from '@/components/CustomPortableText';
+
 import React, { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-	Controller,
-	useForm,
-	FieldValues,
 	Control,
+	Controller,
 	ControllerFieldState,
+	FieldValues,
+	useForm,
 } from 'react-hook-form';
 import * as z from 'zod';
+import { fadeAnim } from '@/lib/animate';
 import { cn, hasArrayValue } from '@/lib/utils';
+import CustomPortableText from '@/components/CustomPortableText';
 import { useLocale } from '@/components/LocaleProvider';
-
 import { Button } from '@/components/ui/Button';
-import { Spinner } from '@/components/ui/Spinner';
 import {
 	Field,
 	FieldContent,
@@ -29,12 +27,14 @@ import { Input } from '@/components/ui/Input';
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	SelectGroup,
 } from '@/components/ui/Select';
+import { Spinner } from '@/components/ui/Spinner';
 import { Textarea } from '@/components/ui/Textarea';
+import { motion } from 'motion/react';
 
 // Type definitions
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
@@ -230,7 +230,7 @@ const FieldComponentType: React.FC<FieldComponentTypeProps> = ({
 				>
 					<SelectTrigger
 						id={id}
-						className={cn('w-full', { ' pr-8': fieldState.invalid })}
+						className={cn('w-full', { 'pr-8': fieldState.invalid })}
 					>
 						<SelectValue placeholder={placeholder ?? undefined} />
 					</SelectTrigger>
@@ -389,7 +389,7 @@ export function CustomForm({
 			onSubmit={form.handleSubmit(onHandleSubmit)}
 			className={cn(className)}
 		>
-			<div className="t-b-2 mb-15 wysiwyg">
+			<div className="t-b-2 wysiwyg mb-15">
 				{formTitle && <CustomPortableText blocks={formTitle as any} />}
 				{formState === FORM_STATES.SUCCESS && (
 					<motion.p
@@ -440,7 +440,7 @@ export function CustomForm({
 				size="xl"
 			>
 				{formState === FORM_STATES.SUBMITTING ? (
-					<Spinner className="mr-3 -ml-1 text-accent" />
+					<Spinner className="text-accent mr-3 -ml-1" />
 				) : (
 					'Submit'
 				)}

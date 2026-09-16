@@ -1,7 +1,7 @@
 import type { Viewport } from 'next';
-import ProductSubmissionLazy from '@/components/ProductSubmissionLazy';
 import { getCachedSiteData } from '@/sanity/lib/siteData';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
+import ProductSubmissionLazy from '@/components/ProductSubmissionLazy';
 
 // Let the soft keyboard resize the layout viewport (not just the visual one) so
 // the mobile product-submission dialog's svh-based sizing recomputes against
@@ -36,10 +36,10 @@ export default async function ProductsLayout({
 		// it and is genuinely full-width, rather than cancelling an inherited
 		// padding with a negative margin that has to stay exactly in step with it.
 		// The cost is that a new top-level section is full-bleed until it opts in.
-		<div className="min-h-main py-10 lg:py-17.5 flex-col flex">
+		<div className="min-h-main flex flex-col py-10 lg:py-17.5">
 			{children}
 			{data?.productSubmissionEmail && (
-				<div className="m-x-max pointer-events-none sticky bottom-[calc(var(--height-g-toolbar)+1rem)] mt-auto flex justify-end lg:bottom-6 z-11 pt-section">
+				<div className="m-x-max pt-section pointer-events-none sticky bottom-[calc(var(--height-g-toolbar)+1rem)] z-11 mt-auto flex justify-end lg:bottom-6">
 					<ProductSubmissionLazy />
 				</div>
 			)}

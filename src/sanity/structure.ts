@@ -1,12 +1,12 @@
 import { TagIcon, UsersIcon } from '@sanity/icons';
-import type { StructureResolver } from 'sanity/structure';
 import { globalMenu } from './deskStructure/global';
 import { menusMenu } from './deskStructure/menus';
 import { pageBlog } from './deskStructure/p-blog';
-import { pageProductItems } from './deskStructure/p-product';
 import { pageEventItems } from './deskStructure/p-event';
+import { pageProductItems } from './deskStructure/p-product';
 import { otherPagesMenu, pagesMenu } from './deskStructure/pages';
 import { settingsMenu } from './deskStructure/settings';
+import type { StructureResolver } from 'sanity/structure';
 
 export const structure: StructureResolver = (S) =>
 	S.list()

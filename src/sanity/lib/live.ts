@@ -7,18 +7,18 @@
 //
 // So `<SanityLive />` is an async Server Component and can never sit in a lazy
 // client chunk. It is rendered by `layout/HtmlShell.tsx`.
-import 'server-only';
-import { cookies, draftMode } from 'next/headers';
 import type { ClientReturn, ContentSourceMap, QueryParams } from 'next-sanity';
 import {
+	type LivePerspective,
+	type StrictDefinedFetchType,
 	defineLive,
 	resolvePerspectiveFromCookies,
 	resolveVariantFromCookies,
-	type LivePerspective,
-	type StrictDefinedFetchType,
 } from 'next-sanity/live';
-import { client } from '@/sanity/lib/client';
+import { cookies, draftMode } from 'next/headers';
 import { token } from '@/sanity/env';
+import { client } from '@/sanity/lib/client';
+import 'server-only';
 import type { SanityRevalidateTag } from '@/types/sanity';
 
 if (!token) {
@@ -76,13 +76,14 @@ type SanityFetchOptions<QueryString extends string> = {
 	query: QueryString;
 	params?: QueryParams | Promise<QueryParams>;
 	tags?: SanityRevalidateTag[];
-} & (
+} &
 	// The discriminant: a caller that names a perspective is on the static path.
 	// `variant` is deliberately absent — it is produced inside
 	// getDynamicFetchOptions and no caller supplies one.
-	| { perspective: LivePerspective; stega: boolean }
-	| { perspective?: never; stega?: boolean }
-);
+	(
+		| { perspective: LivePerspective; stega: boolean }
+		| { perspective?: never; stega?: boolean }
+	);
 
 type SanityFetchResult<Data> = Promise<{
 	data: Data;

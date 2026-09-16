@@ -1,12 +1,12 @@
-import {
-	HomeIcon,
-	EnvelopeIcon,
-	UnknownIcon,
-	DocumentsIcon,
-	HelpCircleIcon,
-	ThLargeIcon,
-} from '@sanity/icons';
 import { apiVersion } from '@/sanity/env';
+import {
+	DocumentsIcon,
+	EnvelopeIcon,
+	HelpCircleIcon,
+	HomeIcon,
+	ThLargeIcon,
+	UnknownIcon,
+} from '@sanity/icons';
 import type { StructureBuilder } from 'sanity/structure';
 
 const pageHome = (S: StructureBuilder) => {

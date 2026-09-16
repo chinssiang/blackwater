@@ -1,7 +1,8 @@
 'use client';
+
 import { cn } from '@/lib/utils';
-import { OPEN_CONSENT_EVENT } from '@/components/consent/ConsentBanner';
 import { useTranslations } from '@/components/LocaleProvider';
+import { OPEN_CONSENT_EVENT } from '@/components/consent/ConsentBanner';
 
 export default function ManageCookiesButton({
 	className,
@@ -16,7 +17,7 @@ export default function ManageCookiesButton({
 			type="button"
 			onClick={() => window.dispatchEvent(new Event(OPEN_CONSENT_EVENT))}
 			className={cn(
-				'cursor-pointer t-l-1 uppercase transition-colors',
+				't-l-1 cursor-pointer uppercase transition-colors',
 				className
 			)}
 		>

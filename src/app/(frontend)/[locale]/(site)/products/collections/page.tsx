@@ -1,12 +1,12 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
-import { type Locale, LOCALES } from '@/lib/i18n';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductCollectionsIndexQuery } from '@/sanity/lib/queries';
+import { stegaClean } from '@sanity/client/stega';
 import defineMetadata from '@/lib/defineMetadata';
 import { getDictionary } from '@/lib/dictionary.server';
+import { LOCALES, type Locale } from '@/lib/i18n';
 import { PageProductCollectionsIndex } from './_components/PageProductCollectionsIndex';
 
 const getCachedData = cache((locale: Locale) =>
@@ -47,7 +47,11 @@ export async function generateMetadata({
 	});
 }
 
-export default async function Page({ params }: { params: Promise<{ locale: Locale }> }) {
+export default async function Page({
+	params,
+}: {
+	params: Promise<{ locale: Locale }>;
+}) {
 	const { locale } = await params;
 	const { data } = await getCachedData(locale);
 

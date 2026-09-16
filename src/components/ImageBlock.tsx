@@ -1,10 +1,10 @@
 'use client';
 
 import { JSX } from 'react';
-import { cn } from '@/lib/utils';
 import { buildImageSrc } from '@/lib/image-utils';
-import SanityImage from '@/components/SanityImage';
+import { cn } from '@/lib/utils';
 import Caption from '@/components/Caption';
+import SanityImage from '@/components/SanityImage';
 import type { SanityImageData } from '@/components/SanityImage';
 
 export interface ImageBlockObj {

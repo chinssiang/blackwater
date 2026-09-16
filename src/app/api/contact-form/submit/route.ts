@@ -1,10 +1,10 @@
-import { NextResponse, NextRequest } from 'next/server';
-import nodemailer from 'nodemailer';
-import * as z from 'zod';
+import { NextRequest, NextResponse } from 'next/server';
 import { client } from '@/sanity/lib/client';
 import { contactFormConfigQuery } from '@/sanity/lib/queries';
+import * as z from 'zod';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
 import { formatObjectToHtml } from '@/lib/utils';
+import nodemailer from 'nodemailer';
 
 // The recipient and subject are resolved server-side (from pContact) so this
 // endpoint can't be used to relay arbitrary mail — the client only supplies the

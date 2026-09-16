@@ -1,7 +1,7 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { Component, type ComponentProps, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 // Type-only, so it is erased at compile time and the widget stays behind the
 // dynamic() boundary below. A VALUE import here would defeat the whole file.
 import type { WeatherWidget as Widget } from './WeatherWidget';

@@ -1,6 +1,6 @@
 import { PinIcon } from '@sanity/icons';
-import { defineField, defineType } from 'sanity';
 import { pickLocalizedValue, pickValueForLocale } from '@/lib/i18n';
+import { defineField, defineType } from 'sanity';
 
 export const gLocation = defineType({
 	title: 'Location',

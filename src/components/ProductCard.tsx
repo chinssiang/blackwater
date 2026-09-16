@@ -1,15 +1,15 @@
 'use client';
 
 import Link from 'next/link';
-import ImageBlock from '@/components/ImageBlock';
 import { revealStagger } from '@/lib/animate';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { resolveHref } from '@/lib/routes';
-import { Badge } from '@/components/ui/Badge';
 import { badgeLabel, sortBadges } from '@/lib/product-badges';
-import { ArrowRight } from '@/components/SvgIcons';
-import ProductCardAddToCart from '@/components/ProductCardAddToCart';
+import { resolveHref } from '@/lib/routes';
 import type { CardAddToCart } from '@/lib/shopify/types';
+import ImageBlock from '@/components/ImageBlock';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import ProductCardAddToCart from '@/components/ProductCardAddToCart';
+import { ArrowRight } from '@/components/SvgIcons';
+import { Badge } from '@/components/ui/Badge';
 
 type ProductCardProps = {
 	product: {
@@ -59,7 +59,7 @@ export default function ProductCard({
 			className="reveal group relative flex h-full flex-col"
 			style={revealStagger(index)}
 		>
-			<div className="relative aspect-square overflow-hidden bg-background rounded">
+			<div className="bg-background relative aspect-square overflow-hidden rounded">
 				{badges.length > 0 && (
 					// `pointer-events-none` because the rail sits at `z-10` over the
 					// stretched overlay link at `z-0`: without it every chip, gap and
@@ -92,7 +92,7 @@ export default function ProductCard({
 			</div>
 
 			<div className="mt-4 flex flex-1 flex-col">
-				<p className="t-b-1 line-clamp-1 min-h-lh text-foreground">
+				<p className="t-b-1 text-foreground line-clamp-1 min-h-lh">
 					{brandLabel}
 				</p>
 				{product.title ? (
@@ -102,7 +102,7 @@ export default function ProductCard({
 				) : (
 					// Holds the title's two lines open. An empty <h3> would be a
 					// heading with no text, so the reserve moves to a plain box.
-					<div aria-hidden className="mt-1 t-l-0 min-h-[2lh]" />
+					<div aria-hidden className="t-l-0 mt-1 min-h-[2lh]" />
 				)}
 
 				<div className="mt-auto flex items-baseline justify-between gap-3 pt-3">
@@ -115,13 +115,13 @@ export default function ProductCard({
 							productTitle={product.title ?? ''}
 						/>
 					) : product.outOfStock ? (
-						<span className="t-l-2 uppercase text-foreground/45">
+						<span className="t-l-2 text-foreground/45 uppercase">
 							{t.soldOut}
 						</span>
 					) : (
 						<span
 							aria-hidden
-							className="t-l-2 inline-flex items-center gap-1 uppercase text-foreground/65 transition-colors duration-200 group-hover:text-accent-foreground"
+							className="t-l-2 text-foreground/65 group-hover:text-accent-foreground inline-flex items-center gap-1 uppercase transition-colors duration-200"
 						>
 							{t.view}
 							<span className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0">
@@ -140,7 +140,7 @@ export default function ProductCard({
 			{href && (
 				<Link
 					href={href}
-					className="absolute inset-0 z-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+					className="focus-visible:ring-accent-foreground focus-visible:ring-offset-background absolute inset-0 z-0 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
 				>
 					<span className="sr-only">{linkLabel}</span>
 				</Link>

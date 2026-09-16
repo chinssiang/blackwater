@@ -1,9 +1,9 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageSizeGuideQuery } from '@/sanity/lib/queries';
+import { stegaClean } from '@sanity/client/stega';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { type Locale } from '@/lib/i18n';
 import { PageSizeGuide } from './_components/PageSizeGuide';

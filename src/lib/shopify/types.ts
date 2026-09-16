@@ -1,4 +1,4 @@
-import { htmlLangFor, type Locale } from '@/lib/i18n';
+import { type Locale, htmlLangFor } from '@/lib/i18n';
 
 // Client-safe surface of the Shopify integration: types and pure helpers only.
 // Server code (env access, fetching) lives in client.ts / product.ts — client
@@ -135,7 +135,10 @@ export const MAX_LINE_QUANTITY = 99;
  * Shopify falls back to the market's default when the language isn't published,
  * so an unpublished locale degrades rather than erroring.
  */
-export function shopifyCheckoutUrl(checkoutUrl: string, locale: Locale): string {
+export function shopifyCheckoutUrl(
+	checkoutUrl: string,
+	locale: Locale
+): string {
 	try {
 		const url = new URL(checkoutUrl);
 		url.searchParams.set('locale', htmlLangFor(locale));

@@ -45,7 +45,9 @@ export function pickValueForLocale(
 ): string | undefined {
 	if (!Array.isArray(value)) return undefined;
 	const entry = value.find((item) => item?.language === language);
-	return typeof entry?.value === 'string' ? entry.value || undefined : undefined;
+	return typeof entry?.value === 'string'
+		? entry.value || undefined
+		: undefined;
 }
 
 /**

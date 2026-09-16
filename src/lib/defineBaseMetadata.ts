@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { imageBuilder } from '@/sanity/lib/image';
-import { ogLocaleFor, LOCALES, type Locale } from '@/lib/i18n';
+import { LOCALES, type Locale, ogLocaleFor } from '@/lib/i18n';
 
 type Sharing =
 	| {
@@ -36,9 +36,7 @@ export function buildBaseMetadata(locale: Locale, sharing: Sharing): Metadata {
 	const siteTitle = sharing?.siteTitle || '';
 
 	const siteFavicon = sharing?.favicon || false;
-	const siteFaviconUrl = siteFavicon
-		? sameOrigin(siteFavicon)
-		: '/favicon.ico';
+	const siteFaviconUrl = siteFavicon ? sameOrigin(siteFavicon) : '/favicon.ico';
 
 	const siteFaviconLight = sharing?.faviconLight || false;
 	const siteFaviconLightUrl = siteFaviconLight
@@ -47,7 +45,11 @@ export function buildBaseMetadata(locale: Locale, sharing: Sharing): Metadata {
 
 	const shareGraphic = sharing?.shareGraphic?.asset;
 	const shareGraphicUrl = shareGraphic
-		? imageBuilder.image(shareGraphic as never).format('webp').width(1200).url()
+		? imageBuilder
+				.image(shareGraphic as never)
+				.format('webp')
+				.width(1200)
+				.url()
 		: null;
 
 	const shareVideoUrl = sharing?.shareVideo || null;

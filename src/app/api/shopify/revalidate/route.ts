@@ -27,10 +27,10 @@
  * changes nothing here until an editor links it in Sanity — but it is handled
  * below so that registering it anyway is harmless.
  */
-import { createHmac, timingSafeEqual } from 'node:crypto';
 import { revalidateTag } from 'next/cache';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
 // Topics this route knows how to act on. Anything else is acknowledged and
 // ignored rather than triggering a broad invalidation.
@@ -65,11 +65,7 @@ export async function POST(req: NextRequest) {
 	// Signature covers the raw bytes — read text first, parse after verifying.
 	const rawBody = await req.text();
 	if (
-		!isValidSignature(
-			rawBody,
-			req.headers.get('x-shopify-hmac-sha256'),
-			secret
-		)
+		!isValidSignature(rawBody, req.headers.get('x-shopify-hmac-sha256'), secret)
 	) {
 		console.error('[shopify-revalidate] invalid HMAC signature');
 		return new Response('Invalid signature', { status: 401 });

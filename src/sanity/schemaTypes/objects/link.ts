@@ -1,8 +1,8 @@
 import { LinkObject } from '@/sanity/schemaTypes/components/LinkObject';
 import { LinkIcon, MasterDetailIcon, WarningOutlineIcon } from '@sanity/icons';
+import { pickLocalizedValue } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 import { defineField, defineType } from 'sanity';
-import { pickLocalizedValue } from '@/lib/i18n';
 
 // Exported: `call-to-action.ts` builds a factory with the identical option bag
 // and the two are coupled by design (a callToAction emits a `type: 'link'`

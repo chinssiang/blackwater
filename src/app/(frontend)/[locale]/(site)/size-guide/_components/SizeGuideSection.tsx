@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useId, useRef, useState } from 'react';
-import SizeChartTable, { type SizeChart } from '@/components/SizeChartTable';
-import { useTranslations } from '@/components/LocaleProvider';
-import { Label } from '@/components/ui/Label';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/RadioGroup';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 import { interpolate } from '@/lib/dictionary';
 import { SIZE_UNITS, type SizeUnit } from '@/lib/size-measurements';
 import { cn } from '@/lib/utils';
+import { useTranslations } from '@/components/LocaleProvider';
+import SizeChartTable, { type SizeChart } from '@/components/SizeChartTable';
+import { Label } from '@/components/ui/Label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/RadioGroup';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/Tabs';
 
 /** One tab. `value` doubles as the DOM id a product page deep-links to. */
 export type SizeGuideTabData = {
@@ -123,7 +123,7 @@ export function SizeGuideSection({
 			</div>
 
 			<Tabs value={active} onValueChange={setActive} className="mt-5">
-				<TabsList className="scrollbar-none -mx-1 gap-1 overflow-x-auto px-1">
+				<TabsList className="-mx-1 scrollbar-none gap-1 overflow-x-auto px-1">
 					{tabs.map((tab) => (
 						<TabsTrigger
 							key={tab.value}

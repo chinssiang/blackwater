@@ -1,24 +1,24 @@
 import { Suspense } from 'react';
-import DraftModeTools from '@/components/DraftModeTools';
+import localFont from 'next/font/local';
+import '@/globals.css';
 import { SanityLive } from '@/sanity/lib/live';
+import { stegaClean } from '@sanity/client/stega';
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { stegaClean } from '@sanity/client/stega';
-import localFont from 'next/font/local';
-import { Toaster } from 'sonner';
-import { ThemeProvider } from '@/components/ThemeProvider';
-import { htmlLangFor, type Locale } from '@/lib/i18n';
+import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
+import type { Dictionary } from '@/lib/dictionary';
+import { type Locale, htmlLangFor } from '@/lib/i18n';
 import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
-import HeadTrackingCode, {
-	type TrackingIntegrations,
-} from '@/components/layout/HeadTrackingCode';
+import DraftModeTools from '@/components/DraftModeTools';
+import JsonLd from '@/components/JsonLd';
+import { ThemeProvider } from '@/components/ThemeProvider';
 import ConsentBanner, {
 	type ConsentSettings,
 } from '@/components/consent/ConsentBanner';
-import JsonLd from '@/components/JsonLd';
-import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
-import type { Dictionary } from '@/lib/dictionary';
-import '@/globals.css';
+import HeadTrackingCode, {
+	type TrackingIntegrations,
+} from '@/components/layout/HeadTrackingCode';
+import { Toaster } from 'sonner';
 
 const fontABCDisplay = localFont({
 	src: [

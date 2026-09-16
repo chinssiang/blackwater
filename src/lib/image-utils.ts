@@ -35,9 +35,7 @@ export interface SanityColor {
  * white instead of failing the build.
  */
 export type MaybeSanityColor =
-	| { hex?: string | null; rgb?: Partial<SanityRgb> | null }
-	| null
-	| undefined;
+	{ hex?: string | null; rgb?: Partial<SanityRgb> | null } | null | undefined;
 
 /**
  * Narrows a projected colour to the shape the maths needs.
@@ -97,9 +95,7 @@ export function buildImageSrc(
 	}
 }
 
-export function buildRgbaCssString(
-	color: MaybeSanityColor
-): string | false {
+export function buildRgbaCssString(color: MaybeSanityColor): string | false {
 	const resolved = asSanityColor(color);
 	if (!resolved) {
 		return false;

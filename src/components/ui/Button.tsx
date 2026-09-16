@@ -1,7 +1,6 @@
 import { Button as ButtonPrimitive } from '@base-ui/react/button';
-import { cva, type VariantProps } from 'class-variance-authority';
-
 import { cn } from '@/lib/utils';
+import { type VariantProps, cva } from 'class-variance-authority';
 
 // Every variant's hover is a colour change, so the transition lives once in the
 // base rather than per variant. easeOutQuint over 300ms rather than Tailwind's
@@ -9,7 +8,7 @@ import { cn } from '@/lib/utils';
 // state still arrives quickly but settles instead of snapping — and the same
 // duration covers the focus ring growing in.
 const buttonVariants = cva(
-	"group/button cursor-pointer inline-flex shrink-0 items-center justify-center rounded border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
+	"group/button focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40 inline-flex shrink-0 cursor-pointer items-center justify-center rounded border border-transparent bg-clip-padding text-sm font-medium whitespace-nowrap transition-all duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] outline-none select-none focus-visible:ring-3 disabled:pointer-events-none disabled:opacity-50 aria-invalid:ring-3 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
 	{
 		variants: {
 			variant: {
@@ -27,7 +26,7 @@ const buttonVariants = cva(
 				// on hover -- deliberate, not a stray. `hover:underline` (upstream
 				// shadcn's version) can never transition: text-decoration-line is not
 				// animatable, so it snaps whatever transition sits beside it.
-				link: 'text-primary underline decoration-primary/30 underline-offset-4 hover:decoration-primary',
+				link: 'text-primary decoration-primary/30 hover:decoration-primary underline underline-offset-4',
 			},
 			size: {
 				default:
@@ -35,7 +34,7 @@ const buttonVariants = cva(
 				xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
 				sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
 				lg: 'h-10 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2',
-				xl: 'h-12 gap-2 px-2.5 has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4 t-b-1',
+				xl: 't-b-1 h-12 gap-2 px-2.5 has-data-[icon=inline-end]:pr-4 has-data-[icon=inline-start]:pl-4',
 				icon: 'size-8',
 				'icon-xs':
 					"size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",

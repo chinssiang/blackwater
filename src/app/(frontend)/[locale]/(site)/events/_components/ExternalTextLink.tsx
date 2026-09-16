@@ -1,6 +1,6 @@
 import Link from 'next/link';
-import { ArrowUpRight } from '@/components/SvgIcons';
 import { cn } from '@/lib/utils';
+import { ArrowUpRight } from '@/components/SvgIcons';
 
 // A venue/location name that links out to a map when there is a URL, and is
 // plain text when there is not. Three copies of this existed across the event

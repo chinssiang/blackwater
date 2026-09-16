@@ -3,9 +3,9 @@
 import { useSyncExternalStore } from 'react';
 import {
 	CONSENT_CHANGED_EVENT,
+	type ConsentState,
 	parseConsentCookie,
 	readConsentRawClient,
-	type ConsentState,
 } from '@/lib/consent';
 
 /**

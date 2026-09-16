@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NextRequest } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The route resolves the Klaviyo list server-side so a caller cannot choose it;
 // that read is the thing to stub, not the list id.

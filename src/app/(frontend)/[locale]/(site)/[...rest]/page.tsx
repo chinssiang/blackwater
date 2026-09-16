@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { type Locale } from '@/lib/i18n';
-import { notFoundMetadata } from '@/lib/defineMetadata';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
+import { notFoundMetadata } from '@/lib/defineMetadata';
+import { type Locale } from '@/lib/i18n';
 
 // Every path reaching this catch-all is a not-found, and the response is a soft
 // 404 (HTTP 200), so it must be explicitly de-indexed — otherwise crawlers index

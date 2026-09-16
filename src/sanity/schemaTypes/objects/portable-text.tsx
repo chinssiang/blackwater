@@ -1,10 +1,10 @@
+import type { ReactNode } from 'react';
+import { PortableTextNormalizer } from '@/sanity/schemaTypes/components/PortableTextNormalizer';
 import customIframe from '@/sanity/schemaTypes/objects/custom-iframe';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { link } from '@/sanity/schemaTypes/objects/link';
-import { PortableTextNormalizer } from '@/sanity/schemaTypes/components/PortableTextNormalizer';
 import { BlockquoteIcon, InfoOutlineIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
-import type { ReactNode } from 'react';
 
 type StyleProps = { children?: ReactNode };
 type BlockquoteProps = StyleProps & {

@@ -1,20 +1,20 @@
 'use client';
 
 import { useState } from 'react';
+import { interpolate } from '@/lib/dictionary';
+import type { CardAddToCart } from '@/lib/shopify/types';
+import { cn } from '@/lib/utils';
+import { useTranslations } from '@/components/LocaleProvider';
 import {
 	Popover,
 	PopoverContent,
 	PopoverTitle,
 	PopoverTrigger,
 } from '@/components/Popover';
-import { Button } from '@/components/ui/Button';
-import { Spinner } from '@/components/ui/Spinner';
 import { Plus } from '@/components/SvgIcons';
 import { useCartActions } from '@/components/cart/CartProvider';
-import { useTranslations } from '@/components/LocaleProvider';
-import { interpolate } from '@/lib/dictionary';
-import { cn } from '@/lib/utils';
-import type { CardAddToCart } from '@/lib/shopify/types';
+import { Button } from '@/components/ui/Button';
+import { Spinner } from '@/components/ui/Spinner';
 
 // Quick add from a listing card. Only ever rendered when the server resolved a
 // `CardAddToCart` for the product, so there is nothing to decide here about
@@ -61,7 +61,7 @@ function AddTrigger({
 			type="button"
 			aria-label={ariaLabel}
 			disabled={pending}
-			className="t-l-2 relative z-10 -my-2 inline-flex cursor-pointer items-center gap-1 py-2 uppercase text-foreground/65 transition-colors duration-200 hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:opacity-60"
+			className="t-l-2 text-foreground/65 hover:text-accent-foreground focus-visible:ring-accent-foreground focus-visible:ring-offset-background relative z-10 -my-2 inline-flex cursor-pointer items-center gap-1 py-2 uppercase transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-60"
 		>
 			{label}
 			{pending ? (
@@ -126,9 +126,9 @@ export default function ProductCardAddToCart({
 			<PopoverContent
 				side="top"
 				align="end"
-				className="w-auto min-w-40 max-w-56 gap-2"
+				className="w-auto max-w-56 min-w-40 gap-2"
 			>
-				<PopoverTitle className="t-l-2 uppercase text-foreground/65">
+				<PopoverTitle className="t-l-2 text-foreground/65 uppercase">
 					{addToCart.optionName}
 				</PopoverTitle>
 				<div className="flex flex-wrap gap-2">

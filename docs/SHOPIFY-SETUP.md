@@ -29,7 +29,7 @@ anywhere, delete it.
 > ⚠️ **The most common mistake.** A **38-character `shpss_`-prefixed** value is an
 > **app client secret**, not an access token. Shopify's changelog ("App secret key
 > length has increased") added that prefix precisely to make secrets identifiable.
-> It is the `client_secret` you would exchange *for* a token — it will never work
+> It is the `client_secret` you would exchange _for_ a token — it will never work
 > in an `X-Shopify-Access-Token` or `X-Shopify-Storefront-Access-Token` header.
 > Nothing in this project consumes it.
 
@@ -37,13 +37,13 @@ anywhere, delete it.
 
 ## Environment variables
 
-| Variable | Where it comes from | Required for |
-| --- | --- | --- |
-| `SHOPIFY_STORE_DOMAIN` | `your-store.myshopify.com` — no `https://`, no trailing slash | everything |
-| `SHOPIFY_STOREFRONT_PRIVATE_TOKEN` | Headless channel → your storefront → **private** access token | live prices, availability, variants, and the Studio picker |
-| `SHOPIFY_STOREFRONT_API_TOKEN` | Headless channel → your storefront → **public** access token | fallback if you have no private token — see the throttling note below |
-| `SHOPIFY_WEBHOOK_SECRET` | Admin → Settings → Notifications → Webhooks → signing secret at the bottom of the page | store edits reaching the site without a redeploy |
-| `SHOPIFY_API_VERSION` | optional override; defaults to the version pinned in `src/lib/shopify/client.ts` | pinning/bumping deliberately |
+| Variable                           | Where it comes from                                                                    | Required for                                                          |
+| ---------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `SHOPIFY_STORE_DOMAIN`             | `your-store.myshopify.com` — no `https://`, no trailing slash                          | everything                                                            |
+| `SHOPIFY_STOREFRONT_PRIVATE_TOKEN` | Headless channel → your storefront → **private** access token                          | live prices, availability, variants, and the Studio picker            |
+| `SHOPIFY_STOREFRONT_API_TOKEN`     | Headless channel → your storefront → **public** access token                           | fallback if you have no private token — see the throttling note below |
+| `SHOPIFY_WEBHOOK_SECRET`           | Admin → Settings → Notifications → Webhooks → signing secret at the bottom of the page | store edits reaching the site without a redeploy                      |
+| `SHOPIFY_API_VERSION`              | optional override; defaults to the version pinned in `src/lib/shopify/client.ts`       | pinning/bumping deliberately                                          |
 
 `SHOPIFY_STORE_DOMAIN` plus **one** of the two tokens must be present or the
 integration stays off — `isShopifyConfigured()` checks for both. When both
@@ -96,7 +96,7 @@ added to the cart even if a handle is set by hand.
 
 You only set the handle **once**, on any one language version. Translations
 inherit it (see `shopifyHandleField` in `src/sanity/lib/queries.ts`); fill it in
-on a translated document only to point that language at a *different* Shopify
+on a translated document only to point that language at a _different_ Shopify
 product.
 
 ### Verify

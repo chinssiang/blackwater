@@ -1,11 +1,11 @@
-import { sanitizeEmbedSnippet } from '@/lib/sanitize-embed';
 import { PortableText, PortableTextReactComponents } from '@portabletext/react';
 import type {
 	ArbitraryTypedObject,
 	PortableTextBlock,
-	PortableTextSpan,
 	PortableTextLink,
+	PortableTextSpan,
 } from '@portabletext/types';
+import { sanitizeEmbedSnippet } from '@/lib/sanitize-embed';
 import { cn } from '@/lib/utils';
 import CustomLink from '@/components/CustomLink';
 import ImageBlock from '@/components/ImageBlock';

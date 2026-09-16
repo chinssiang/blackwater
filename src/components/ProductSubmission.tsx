@@ -1,23 +1,21 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Controller, useForm, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { type Control, Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { cn, isValidUrl } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Spinner } from '@/components/ui/Spinner';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import {
-	Field,
-	FieldContent,
-	FieldGroup,
-	FieldLabel,
-	FieldStatus,
-} from '@/components/ui/Field';
+	Popover,
+	PopoverContent,
+	PopoverDescription,
+	PopoverHeader,
+	PopoverTitle,
+	PopoverTrigger,
+} from '@/components/Popover';
+import { Button } from '@/components/ui/Button';
 import {
 	Dialog,
 	DialogContent,
@@ -27,13 +25,15 @@ import {
 	DialogTrigger,
 } from '@/components/ui/Dialog';
 import {
-	Popover,
-	PopoverContent,
-	PopoverDescription,
-	PopoverHeader,
-	PopoverTitle,
-	PopoverTrigger,
-} from '@/components/Popover';
+	Field,
+	FieldContent,
+	FieldGroup,
+	FieldLabel,
+	FieldStatus,
+} from '@/components/ui/Field';
+import { Input } from '@/components/ui/Input';
+import { Spinner } from '@/components/ui/Spinner';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -57,7 +57,7 @@ const FIELDS = [
 // the submission was sent. Falls back to a static icon when motion is reduced.
 function SuccessSend({ reduce }: { reduce: boolean }) {
 	return (
-		<span className="grid size-12 place-items-center overflow-hidden rounded-full text-foreground">
+		<span className="text-foreground grid size-12 place-items-center overflow-hidden rounded-full">
 			<motion.svg
 				viewBox="0 0 24 24"
 				fill="none"
@@ -459,7 +459,7 @@ export function ProductSubmission() {
 				align="end"
 				sideOffset={8}
 				collisionPadding={12}
-				className="w-80 max-h-(--available-height) gap-3 overflow-y-auto p-4"
+				className="max-h-(--available-height) w-80 gap-3 overflow-y-auto p-4"
 			>
 				<PopoverHeader>
 					<PopoverTitle>{t.title}</PopoverTitle>

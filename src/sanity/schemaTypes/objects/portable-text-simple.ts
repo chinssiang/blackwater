@@ -1,6 +1,6 @@
-import { defineField } from 'sanity';
-import { link } from '@/sanity/schemaTypes/objects/link';
 import { PortableTextNormalizer } from '@/sanity/schemaTypes/components/PortableTextNormalizer';
+import { link } from '@/sanity/schemaTypes/objects/link';
+import { defineField } from 'sanity';
 
 export const portableTextSimple = defineField({
 	name: 'portableTextSimple',

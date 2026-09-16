@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest';
 import {
 	SITEMAP_PAGES_QUERY,
 	pageGeneralQuery,
 	pageHomeQuery,
 } from '@/sanity/lib/queries';
+import { describe, expect, it } from 'vitest';
 
 // The visibility predicate is invisible to every other check in the repo.
 // Dropping it from a query changes no generated type, breaks no build and

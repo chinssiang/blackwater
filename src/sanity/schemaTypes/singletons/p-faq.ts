@@ -1,6 +1,6 @@
+import { language } from '@/sanity/schemaTypes/objects/language';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
 import { HelpCircleIcon } from '@sanity/icons';
 import { defineField, defineType } from 'sanity';
 

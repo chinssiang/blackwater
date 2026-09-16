@@ -1,4 +1,4 @@
-import { htmlLangFor, localePrefix, type Locale } from '@/lib/i18n';
+import { type Locale, htmlLangFor, localePrefix } from '@/lib/i18n';
 import { escapeHtml } from '@/lib/utils';
 
 // Confirmation email sent to the visitor after a product submission.

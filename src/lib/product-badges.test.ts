@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest';
 import { vercelStegaCombine } from '@vercel/stega';
+import { describe, expect, it } from 'vitest';
 import { badgeLabel, sortBadges } from './product-badges';
 
 const LABELS = {

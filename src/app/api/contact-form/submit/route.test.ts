@@ -1,5 +1,5 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NextRequest } from 'next/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Capture the options passed to sendMail so we can assert on the built subject.
 const sendMail = vi.fn(async (opts: Record<string, unknown>) => opts);

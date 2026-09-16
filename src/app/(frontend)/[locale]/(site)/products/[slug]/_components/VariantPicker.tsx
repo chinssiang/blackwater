@@ -1,10 +1,10 @@
 'use client';
 
+import { interpolate } from '@/lib/dictionary';
+import type { ShopifyProductOption, ShopifyVariant } from '@/lib/shopify/types';
+import { cn } from '@/lib/utils';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui/Button';
-import { interpolate } from '@/lib/dictionary';
-import { cn } from '@/lib/utils';
-import type { ShopifyProductOption, ShopifyVariant } from '@/lib/shopify/types';
 
 type Props = {
 	options: ShopifyProductOption[];
@@ -52,7 +52,7 @@ export default function VariantPicker({
 		<div className="flex flex-col gap-5">
 			{realOptions.map((option) => (
 				<div key={option.name} role="group" aria-label={option.name}>
-					<p className="t-l-2 uppercase text-foreground/65">{option.name}</p>
+					<p className="t-l-2 text-foreground/65 uppercase">{option.name}</p>
 					<div className="mt-2.5 flex flex-wrap gap-2">
 						{option.values.map((value) => {
 							const selected = selection[option.name] === value;

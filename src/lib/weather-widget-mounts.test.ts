@@ -1,5 +1,5 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 
 /**
  * The weather widget has three mount sites and no route predicate: whoever owns

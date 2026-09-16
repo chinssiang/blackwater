@@ -1,6 +1,6 @@
-import { defineField, defineType } from 'sanity';
 import { pickLocalizedValue, requireSomeValue } from '@/lib/i18n';
 import customImage from './custom-image';
+import { defineField, defineType } from 'sanity';
 
 export const eventStation = defineType({
 	name: 'eventStation',

@@ -1,4 +1,10 @@
-import { at, defineMigration, insert, setIfMissing, unset } from 'sanity/migrate';
+import {
+	at,
+	defineMigration,
+	insert,
+	setIfMissing,
+	unset,
+} from 'sanity/migrate';
 
 /*
 	Run the npx sanity@latest documents validate -y to check if the dataset validate

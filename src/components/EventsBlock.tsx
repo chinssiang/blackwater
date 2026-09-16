@@ -1,21 +1,22 @@
 import { cache } from 'react';
 import dynamic from 'next/dynamic';
-import type { UpcomingEventsQueryResult } from 'sanity.types';
+import { sanityFetch } from '@/sanity/lib/live';
+import {
+	UPCOMING_EVENTS_TAGS,
+	upcomingEventsQuery,
+} from '@/sanity/lib/queries';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
+import { getDictionary } from '@/lib/dictionary.server';
+import { getUpcomingFrom, selectUpcomingEvents } from '@/lib/event-date';
+import type { Locale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
+import { EventTicketSlide } from '@/components/EventTicket';
+import SectionHeadingLink from '@/components/SectionHeadingLink';
 import SectionShell, {
 	type SectionAppearance,
 } from '@/components/SectionShell';
-import { EventTicketSlide } from '@/components/EventTicket';
-import SectionHeadingLink from '@/components/SectionHeadingLink';
-import { sanityFetch } from '@/sanity/lib/live';
-import {
-	upcomingEventsQuery,
-	UPCOMING_EVENTS_TAGS,
-} from '@/sanity/lib/queries';
-import { getDictionary } from '@/lib/dictionary.server';
-import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
-import { getUpcomingFrom, selectUpcomingEvents } from '@/lib/event-date';
-import { resolveHref } from '@/lib/routes';
-import type { Locale } from '@/lib/i18n';
+import type { UpcomingEventsQueryResult } from 'sanity.types';
+
 const EventsCarousel = dynamic(() => import('@/components/EventsCarousel'));
 
 const getCachedUpcomingEvents = cache(

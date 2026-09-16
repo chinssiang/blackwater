@@ -1,11 +1,11 @@
-import CustomLink from '@/components/CustomLink';
-import { ArrowRight } from '@/components/SvgIcons';
 import {
+	type MaybeSanityColor,
 	buildRgbaCssString,
 	ensureAccessibleTextColor,
-	type MaybeSanityColor,
 } from '@/lib/image-utils';
-import { cn, OVERLAY_LINK_FOCUS } from '@/lib/utils';
+import { OVERLAY_LINK_FOCUS, cn } from '@/lib/utils';
+import CustomLink from '@/components/CustomLink';
+import { ArrowRight } from '@/components/SvgIcons';
 
 // Typed structurally rather than off the query result, because the surfaces that
 // render a status read different projections of the same fields -- and because

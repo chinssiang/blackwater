@@ -1,7 +1,6 @@
 'use client';
 
 import * as React from 'react';
-
 import { cn } from '@/lib/utils';
 
 function Table({
@@ -98,7 +97,7 @@ function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
 		<td
 			data-slot="table-cell"
 			className={cn(
-				'py-4 lg:py-6 px-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] group-hover:text-background transition-colors empty:p-0',
+				'group-hover:text-background px-2 py-4 align-middle whitespace-nowrap transition-colors empty:p-0 lg:py-6 [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
 				className
 			)}
 			{...props}

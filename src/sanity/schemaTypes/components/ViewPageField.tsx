@@ -1,5 +1,5 @@
 import { Flex, Stack, Text } from '@sanity/ui';
-import { useFormValue, type FieldProps } from 'sanity';
+import { type FieldProps, useFormValue } from 'sanity';
 
 // useFormValue is typed `unknown` by design — the form's shape is only known at
 // runtime — so narrow once here rather than casting at each use.
@@ -18,8 +18,13 @@ function buildDefaultUrl({
 	lang?: string;
 }) {
 	const host = window.location.host;
-	const baseUrl = host.includes('localhost:') ? `http://${host}` : `https://${host}`;
-	const params = new URLSearchParams({ documentType: docType ?? '', docId: docId ?? '' });
+	const baseUrl = host.includes('localhost:')
+		? `http://${host}`
+		: `https://${host}`;
+	const params = new URLSearchParams({
+		documentType: docType ?? '',
+		docId: docId ?? '',
+	});
 	if (slug) params.set('slug', slug);
 	if (lang) params.set('lang', lang);
 	return `${baseUrl}/api/view-page?${params.toString()}`;
@@ -34,7 +39,9 @@ export const ViewPageField = (props: FieldProps) => {
 	const slugCurrent = asString(useFormValue(['slug', 'current']));
 	const language = asString(useFormValue(['language']));
 
-	const pageUrl = customUrl || buildDefaultUrl({ docType, docId, slug: slugCurrent, lang: language });
+	const pageUrl =
+		customUrl ||
+		buildDefaultUrl({ docType, docId, slug: slugCurrent, lang: language });
 
 	return (
 		<Stack space={3}>

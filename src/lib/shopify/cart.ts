@@ -151,7 +151,10 @@ function cartFetch<T>(query: string, variables: Record<string, unknown>) {
 	return shopifyStorefrontFetch<T>({ query, variables, cache: 'no-store' });
 }
 
-function unwrap(payload: GqlCartPayload | null, operation: string): ShopifyCart {
+function unwrap(
+	payload: GqlCartPayload | null,
+	operation: string
+): ShopifyCart {
 	if (payload?.userErrors.length) {
 		// An unknown or expired cart comes back as a userError against `cartId`
 		// ("The specified cart does not exist"). Match on the field rather than

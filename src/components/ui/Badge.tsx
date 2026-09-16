@@ -1,5 +1,4 @@
 import * as React from 'react';
-
 import { cn } from '@/lib/utils';
 
 // A plain <span>, not Base UI's `useRender`: nothing composes a Badge with
@@ -11,7 +10,7 @@ function Badge({ className, ...props }: React.ComponentProps<'span'>) {
 		<span
 			data-slot="badge"
 			className={cn(
-				't-l-2 inline-flex w-fit items-center py-1.5 px-2.5 uppercase bg-primary/25 text-primary rounded',
+				't-l-2 bg-primary/25 text-primary inline-flex w-fit items-center rounded px-2.5 py-1.5 uppercase',
 				className
 			)}
 			{...props}

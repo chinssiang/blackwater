@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
+import type { WithoutPageMetadata } from '@/lib/defineMetadata';
+import { localizePath } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import ProductCategoriesGrid from '../../_components/ProductCategoriesGrid';
 import ProductPageHeader from '../../_components/ProductPageHeader';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { resolveHref } from '@/lib/routes';
-import { localizePath } from '@/lib/i18n';
 import type { PageProductCategoriesIndexQueryResult } from 'sanity.types';
-import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 
 type Props = {
 	data: WithoutPageMetadata<NonNullable<PageProductCategoriesIndexQueryResult>>;
@@ -24,11 +24,11 @@ export function PageProductCategoriesIndex({ data }: Props) {
 			{/* Breadcrumb */}
 			<nav
 				aria-label="Breadcrumb"
-				className="m-x-max reveal t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
+				className="m-x-max reveal t-l-2 text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 uppercase lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
-					className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
+					className="hover:text-foreground inline-flex items-center transition-colors pointer-coarse:min-h-11"
 				>
 					{breadcrumb.products}
 				</Link>

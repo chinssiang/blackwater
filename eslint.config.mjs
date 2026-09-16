@@ -1,12 +1,12 @@
 import js from '@eslint/js';
 import nextPlugin from '@next/eslint-plugin-next';
+import globals from 'globals';
+import eslintConfigPrettier from 'eslint-config-prettier';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import react from 'eslint-plugin-react';
 import reactHooks from 'eslint-plugin-react-hooks';
-import eslintConfigPrettier from 'eslint-config-prettier';
-import globals from 'globals';
-import tseslint from 'typescript-eslint';
 import { defineConfig, globalIgnores } from 'eslint/config';
+import tseslint from 'typescript-eslint';
 
 // Composes the plugins eslint-config-next bundles, plus typescript-eslint,
 // rather than extending the preset wholesale — so each rule set is visible and

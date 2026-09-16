@@ -3,19 +3,19 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Dialog } from '@base-ui/react/dialog';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import type { SiteDataQueryResult } from 'sanity.types';
-import ChromeButton from '@/components/ChromeButton';
-import CustomLink from '@/components/CustomLink';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { WordmarkSvg } from '@/components/WordmarkSvg';
-import { CloseIcon, MenuIcon } from '@/components/SvgIcons';
-import { buttonVariants } from '@/components/ui/Button';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { mobileMenuItem, mobileMenuList, mobileMenuPanel } from '@/lib/animate';
 import { resolveHref } from '@/lib/routes';
 import { cn } from '@/lib/utils';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import ChromeButton from '@/components/ChromeButton';
+import CustomLink from '@/components/CustomLink';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { CloseIcon, MenuIcon } from '@/components/SvgIcons';
+import { WordmarkSvg } from '@/components/WordmarkSvg';
+import { buttonVariants } from '@/components/ui/Button';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import type { SiteDataQueryResult } from 'sanity.types';
 
 type MobileMenuProps = {
 	data?: SiteDataQueryResult['mobileMenu'];
@@ -148,7 +148,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 						<Dialog.Popup
 							render={
 								<motion.div
-									className="text-foreground bg-background fixed inset-0 z-popover flex flex-col"
+									className="text-foreground bg-background z-popover fixed inset-0 flex flex-col"
 									variants={mobileMenuPanel}
 									initial="hide"
 									animate="show"
@@ -188,7 +188,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 
 							<div className="px-contain flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain">
 								<motion.ul
-									className="t-h-2 flex text-foreground flex-col gap-4 pt-6 my-auto uppercase"
+									className="t-h-2 text-foreground my-auto flex flex-col gap-4 pt-6 uppercase"
 									variants={mobileMenuList}
 									initial="hide"
 									animate="show"
@@ -199,7 +199,7 @@ export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
 								</motion.ul>
 								{secondary.length > 0 && (
 									<motion.ul
-										className="t-b-1 text-foreground flex flex-col gap-2 pt-5 my-auto uppercase"
+										className="t-b-1 text-foreground my-auto flex flex-col gap-2 pt-5 uppercase"
 										variants={mobileMenuList}
 										initial="hide"
 										animate="show"

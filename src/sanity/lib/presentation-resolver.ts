@@ -2,9 +2,9 @@
  * Sets up the Presentation Resolver API,
  * see https://www.sanity.io/docs/presentation-resolver-api for more information.
  */
-import { resolveHref } from '@/lib/routes';
-import { LOCALES, type Locale, pickLocalizedValue } from '@/lib/i18n';
 import { FIELD_LEVEL_I18N_TYPES } from '@/sanity/i18n-types';
+import { LOCALES, type Locale, pickLocalizedValue } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
 import { defineDocuments, defineLocations } from 'sanity/presentation';
 
 type RouteEntry = { route: string; filter: string };
@@ -23,14 +23,17 @@ function withLocales(
 	documentType: string,
 	extraFilter?: string
 ): RouteEntry[] {
-	const fieldLevel = (FIELD_LEVEL_I18N_TYPES as readonly string[]).includes(documentType);
+	const fieldLevel = (FIELD_LEVEL_I18N_TYPES as readonly string[]).includes(
+		documentType
+	);
 	const typeFilter = extraFilter
 		? `_type == "${documentType}" && ${extraFilter}`
 		: `_type == "${documentType}"`;
 	return LOCALES.map((locale) => {
-		const langFilter = locale === 'en'
-			? `(language == "en" || !defined(language))`
-			: `language == "${locale}"`;
+		const langFilter =
+			locale === 'en'
+				? `(language == "en" || !defined(language))`
+				: `language == "${locale}"`;
 		const prefix = locale === 'en' ? '' : `/${locale}`;
 		return {
 			route: `${prefix}${routeSuffix}`,
@@ -57,7 +60,11 @@ export const mainDocuments = defineDocuments([
 	...withLocales('/events/:slug', 'pEvent', BY_SLUG),
 ]);
 
-function locationsForAll(documentType: string, title: string, slug?: string | null) {
+function locationsForAll(
+	documentType: string,
+	title: string,
+	slug?: string | null
+) {
 	return LOCALES.map((locale) => ({
 		title: locale === 'en' ? title : `${title} (${locale})`,
 		href: resolveHref({ documentType, slug, locale: locale as Locale }) || '',
@@ -107,11 +114,12 @@ export const locations = {
 			locations: [
 				{
 					title: doc?.name || 'Untitled',
-					href: resolveHref({
-						documentType: 'pGeneral',
-						slug: doc?.slug,
-						locale: (doc?.language as Locale) ?? undefined,
-					}) || '',
+					href:
+						resolveHref({
+							documentType: 'pGeneral',
+							slug: doc?.slug,
+							locale: (doc?.language as Locale) ?? undefined,
+						}) || '',
 				},
 			],
 		}),
@@ -122,11 +130,12 @@ export const locations = {
 			locations: [
 				{
 					title: doc?.title || 'Untitled',
-					href: resolveHref({
-						documentType: 'pBlog',
-						slug: doc?.slug,
-						locale: (doc?.language as Locale) ?? undefined,
-					}) || '',
+					href:
+						resolveHref({
+							documentType: 'pBlog',
+							slug: doc?.slug,
+							locale: (doc?.language as Locale) ?? undefined,
+						}) || '',
 				},
 			],
 		}),

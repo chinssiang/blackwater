@@ -1,6 +1,7 @@
 'use client';
 
 import {
+	type ReactNode,
 	createContext,
 	useCallback,
 	useContext,
@@ -8,12 +9,11 @@ import {
 	useMemo,
 	useRef,
 	useState,
-	type ReactNode,
 } from 'react';
 import { usePathname } from 'next/navigation';
-import { toast } from 'sonner';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import type { ShopifyCartResponse } from '@/lib/shopify/types';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { toast } from 'sonner';
 
 // Single source of cart state for the whole site. The cart itself lives in
 // Shopify and is addressed by an httpOnly cookie, so this holds only the last

@@ -23,12 +23,9 @@ import dynamic from 'next/dynamic';
 // so the swap is width-stable — see the note on the element in
 // LocationCurrentTime.tsx for how that width was chosen.
 export const LocationCurrentTime = dynamic(
-	() =>
-		import('./LocationCurrentTime').then((m) => m.LocationCurrentTime),
+	() => import('./LocationCurrentTime').then((m) => m.LocationCurrentTime),
 	{
 		ssr: false,
-		loading: () => (
-			<span aria-hidden className="inline-block min-w-[15ch]" />
-		),
+		loading: () => <span aria-hidden className="inline-block min-w-[15ch]" />,
 	}
 );

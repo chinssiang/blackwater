@@ -230,7 +230,9 @@ async function main() {
 	const byId = new Map(faqs.map((d) => [d._id, d]));
 	const alreadyMerged = faqs.filter((d) => isWrapped(d.question));
 	if (alreadyMerged.length === faqs.length && faqs.length > 0) {
-		console.log(`Nothing to do — all ${faqs.length} gFaq documents are merged.`);
+		console.log(
+			`Nothing to do — all ${faqs.length} gFaq documents are merged.`
+		);
 		return;
 	}
 	if (alreadyMerged.length) {
@@ -290,7 +292,7 @@ async function main() {
 				console.warn(
 					`  WARNING ${doc._id}: a second "${lang}" document in the same ` +
 						`translation set as ${canonical._id}. Keeping the later one; ` +
-						'its sibling\'s question and answer will be DELETED. Resolve ' +
+						"its sibling's question and answer will be DELETED. Resolve " +
 						'this by hand before running with --execute.'
 				);
 			}
@@ -362,7 +364,9 @@ async function main() {
 			sequence.push({ doc, canonicalId });
 		}
 		if (!sequence.length) {
-			console.log(`  note ${page._id}: no gFaq entries for "${locale}" — leaving questions unset.`);
+			console.log(
+				`  note ${page._id}: no gFaq entries for "${locale}" — leaving questions unset.`
+			);
 			continue;
 		}
 		const refs = sequence.map(({ canonicalId }) => ({
@@ -371,7 +375,9 @@ async function main() {
 			_ref: canonicalId,
 		}));
 		pFaqPatches.push({ id: page._id, locale, refs });
-		console.log(`\n  pFaq "${page._id}" (${locale}) — ${refs.length} question(s), in this order:`);
+		console.log(
+			`\n  pFaq "${page._id}" (${locale}) — ${refs.length} question(s), in this order:`
+		);
 		sequence.forEach(({ doc }, i) => {
 			console.log(
 				`    ${String(i + 1).padStart(2)}. [order ${doc.order ?? '—'}] ${faqPreview(doc.question, locale)}`
@@ -381,9 +387,12 @@ async function main() {
 
 	// ---- Repoint inbound references ----------------------------------------
 	const inbound = idMap.size
-		? await client.fetch(`*[references($ids) && !(_id in $ids) && _type != "translation.metadata"]`, {
-				ids: [...idMap.keys()],
-			})
+		? await client.fetch(
+				`*[references($ids) && !(_id in $ids) && _type != "translation.metadata"]`,
+				{
+					ids: [...idMap.keys()],
+				}
+			)
 		: [];
 	const repointed = [];
 	for (const doc of inbound) {
@@ -430,12 +439,15 @@ async function main() {
 	// Post-check, as both sibling scripts do: the transaction reporting success
 	// is not the same as the dataset being in the shape the app's queries expect,
 	// and this is the last moment anyone is looking.
-	const leftovers = await client.fetch(`{
+	const leftovers = await client.fetch(
+		`{
 		"unmerged": count(*[_type == "gFaq" && defined(question) && !defined(question[0].language)]),
 		"questionMissingEverywhere": count(*[_type == "gFaq" && !defined(question)]),
 		"staleFields": count(*[_type == "gFaq" && (defined(order) || defined(language))]),
 		"orphanMetadata": count(*[_type == "translation.metadata" && references($faqIds)])
-	}`, { faqIds: merged.map((d) => d._id) });
+	}`,
+		{ faqIds: merged.map((d) => d._id) }
+	);
 	const problems = Object.entries(leftovers).filter(([, n]) => n > 0);
 	if (problems.length) {
 		console.error('\nPost-check FAILED:');

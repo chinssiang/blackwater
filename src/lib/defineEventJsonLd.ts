@@ -1,9 +1,9 @@
 import { imageBuilder } from '@/sanity/lib/image';
-import { resolveHref } from '@/lib/routes';
-import { formatUrl } from '@/lib/utils';
 import { buildEventName } from '@/lib/buildEventName';
 import { resolveEventLocation } from '@/lib/event-location';
-import { type Locale, htmlLangFor, DEFAULT_LOCALE } from '@/lib/i18n';
+import { DEFAULT_LOCALE, type Locale, htmlLangFor } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
+import { formatUrl } from '@/lib/utils';
 
 const EVENT_STATUS_MAP: Record<string, string> = {
 	confirmed: 'https://schema.org/EventScheduled',

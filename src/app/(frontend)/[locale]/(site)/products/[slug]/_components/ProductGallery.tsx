@@ -1,11 +1,10 @@
 'use client';
 
-import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
-import { useReducedMotion } from 'motion/react';
+import Image from 'next/image';
+import { interpolate } from '@/lib/dictionary';
 import type { ShopifyImage } from '@/lib/shopify/types';
 import { cn } from '@/lib/utils';
-import { interpolate } from '@/lib/dictionary';
 import { useTranslations } from '@/components/LocaleProvider';
 import {
 	Carousel,
@@ -15,6 +14,7 @@ import {
 	CarouselPrevious,
 	useCarousel,
 } from '@/components/ui/Carousel';
+import { useReducedMotion } from 'motion/react';
 
 // Shopify's product images, browsable inside the product page's image frame.
 // Rendered only when Shopify actually returned images — every other case
@@ -113,7 +113,7 @@ function CarouselDots({
 		return (
 			<div
 				aria-hidden
-				className="t-l-2 absolute right-3 bottom-2 z-10 rounded-full bg-background/80 px-2 py-0.5 tabular-nums text-foreground/70"
+				className="t-l-2 bg-background/80 text-foreground/70 absolute right-3 bottom-2 z-10 rounded-full px-2 py-0.5 tabular-nums"
 			>
 				{selected + 1} / {snaps.length}
 			</div>
@@ -121,7 +121,7 @@ function CarouselDots({
 	}
 
 	return (
-		<div className="absolute inset-x-0 bottom-1 z-10 flex items-center justify-center ">
+		<div className="absolute inset-x-0 bottom-1 z-10 flex items-center justify-center">
 			{snaps.map((_, i) => (
 				<button
 					key={i}
@@ -132,7 +132,7 @@ function CarouselDots({
 					onClick={() => api?.scrollTo(i)}
 					aria-label={i === selected ? slide(i) : goTo(i)}
 					aria-current={i === selected ? 'true' : undefined}
-					className="flex size-6 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-3 focus-visible:ring-ring/50 pointer-coarse:size-11"
+					className="focus-visible:ring-ring/50 flex size-6 cursor-pointer items-center justify-center rounded-full outline-none focus-visible:ring-3 pointer-coarse:size-11"
 				>
 					{/* The dot is decoration; the button around it is the hit target —
 					    44px on touch, and 24px on a mouse, which is the floor WCAG 2.2
@@ -142,8 +142,8 @@ function CarouselDots({
 					<span
 						aria-hidden
 						className={cn(
-							'size-1.5 rounded-full bg-foreground/25 transition-all',
-							i === selected && 'w-4 bg-foreground'
+							'bg-foreground/25 size-1.5 rounded-full transition-all',
+							i === selected && 'bg-foreground w-4'
 						)}
 					/>
 				</button>

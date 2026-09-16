@@ -23,7 +23,12 @@ const siteUrl = 'https://blackwaterrc.com';
 describe('buildConfirmationEmail', () => {
 	it('falls back to locale defaults when template fields are blank', () => {
 		const { subject, text } = buildConfirmationEmail({
-			template: { subject: '  ', heading: null, message: '', footer: undefined },
+			template: {
+				subject: '  ',
+				heading: null,
+				message: '',
+				footer: undefined,
+			},
 			locale: 'en',
 			submission,
 			siteUrl,

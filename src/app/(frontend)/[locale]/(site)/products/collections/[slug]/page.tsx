@@ -1,19 +1,23 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import {
 	pageProductCollectionSingleQuery,
 	pageProductCollectionSlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales, omitPageMetadata, notFoundMetadata } from '@/lib/defineMetadata';
+import { stegaClean } from '@sanity/client/stega';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
-import { resolveHref } from '@/lib/routes';
+import defineMetadata, {
+	normalizeLocales,
+	notFoundMetadata,
+	omitPageMetadata,
+} from '@/lib/defineMetadata';
 import { getDictionary } from '@/lib/dictionary.server';
-import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
 import { withLiveCardPrices } from '@/lib/shopify/product';
+import JsonLd from '@/components/JsonLd';
 import PageProductCollection from './_components/PageProductCollection';
 
 type Props = {
@@ -71,9 +75,25 @@ export default async function Page({ params }: Props) {
 	]);
 
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
-		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: locale as Locale }) },
-		{ name: dict.breadcrumb.products, path: resolveHref({ documentType: 'pProductIndex', locale: locale as Locale }) },
-		{ name: cleanData?.title, path: resolveHref({ documentType: 'pProductCollection', slug, locale: locale as Locale }) },
+		{
+			name: dict.breadcrumb.home,
+			path: resolveHref({ documentType: 'pHome', locale: locale as Locale }),
+		},
+		{
+			name: dict.breadcrumb.products,
+			path: resolveHref({
+				documentType: 'pProductIndex',
+				locale: locale as Locale,
+			}),
+		},
+		{
+			name: cleanData?.title,
+			path: resolveHref({
+				documentType: 'pProductCollection',
+				slug,
+				locale: locale as Locale,
+			}),
+		},
 	]);
 
 	return (

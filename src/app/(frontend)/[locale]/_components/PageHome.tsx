@@ -1,8 +1,8 @@
-import PageModules from '@/components/PageModules';
-import { heroBlockIsRenderable } from '@/components/HeroBlock';
-import { WeatherWidget } from '@/components/WeatherWidgetLazy';
-import type { Locale } from '@/lib/i18n';
 import type { PageHomeQueryResult } from '@/../sanity.types';
+import type { Locale } from '@/lib/i18n';
+import { heroBlockIsRenderable } from '@/components/HeroBlock';
+import PageModules from '@/components/PageModules';
+import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 
 // Picked from the generated query result rather than restated, so a projection
 // change fails `tsc` here instead of silently drifting. `landingTitle` is read

@@ -1,7 +1,6 @@
-import { describe, it, expect } from 'vitest';
-import type { RichDate } from 'sanity.types';
 import { vercelStegaCombine } from '@vercel/stega';
 import { formatInTimeZone } from 'date-fns-tz';
+import { describe, expect, it } from 'vitest';
 import {
 	FALLBACK_TIMEZONE,
 	formatRichDate,
@@ -11,12 +10,13 @@ import {
 	getRichDateDayKey,
 	getRichDateInstant,
 	getRichDateYearMonth,
-	resolveEventTimezone,
 	getTodayKey,
 	groupEventsByDay,
 	isEventEnded,
+	resolveEventTimezone,
 	selectUpcomingEvents,
 } from './event-date';
+import type { RichDate } from 'sanity.types';
 
 // Everything is anchored in Asia/Taipei (UTC+8), the timezone the events are
 // authored in, and `now` is fixed so the suite does not drift with the clock.

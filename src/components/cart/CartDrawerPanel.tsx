@@ -1,29 +1,28 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-
 import Image from 'next/image';
 import Link from 'next/link';
 import { Dialog } from '@base-ui/react/dialog';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import ChromeButton from '@/components/ChromeButton';
-import { CloseIcon } from '@/components/SvgIcons';
-import { Button, buttonVariants } from '@/components/ui/Button';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { interpolate, pickPlural } from '@/lib/dictionary';
 import { cartOverlay, cartPanel } from '@/lib/animate';
+import { interpolate, pickPlural } from '@/lib/dictionary';
 import { resolveHref } from '@/lib/routes';
-import { cn } from '@/lib/utils';
 import {
-	formatShopifyPrice,
-	shopifyCheckoutUrl,
 	MAX_LINE_QUANTITY,
 	type ShopifyCartResponseLine,
+	formatShopifyPrice,
+	shopifyCheckoutUrl,
 } from '@/lib/shopify/types';
+import { cn } from '@/lib/utils';
 import { useScrollLock } from '@/hooks/useScrollLock';
+import ChromeButton from '@/components/ChromeButton';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import ProductCard from '@/components/ProductCard';
+import { CloseIcon } from '@/components/SvgIcons';
+import { Button, buttonVariants } from '@/components/ui/Button';
 import CartCountBadge from './CartCountBadge';
 import { useCart } from './CartProvider';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
 // Right-side cart panel. Built on raw Base UI Dialog + Motion to match
 // MobileMenu — the app's established overlay idiom. (An unused shadcn-style
@@ -143,7 +142,7 @@ function LineItem({ line }: { line: ShopifyCartResponseLine }) {
 					<Link
 						href={productHref}
 						prefetch={false}
-						className="shrink-0 rounded focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+						className="focus-visible:ring-accent-foreground focus-visible:ring-offset-background shrink-0 rounded focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
 					>
 						{thumbnail}
 					</Link>
@@ -151,7 +150,7 @@ function LineItem({ line }: { line: ShopifyCartResponseLine }) {
 					thumbnail
 				))}
 			<div className="flex min-w-0 flex-1 flex-col gap-1">
-				<p className="t-b-2 uppercase font-medium text-balance">
+				<p className="t-b-2 font-medium text-balance uppercase">
 					{merchandise.productTitle}
 				</p>
 				{variantLabel && (
@@ -212,7 +211,7 @@ function LineItem({ line }: { line: ShopifyCartResponseLine }) {
 						aria-label={ariaLabelFor(t.removeAriaLabel)}
 						// `min-h-6` matches the stepper buttons beside it, so the row is
 						// unchanged while the target clears the 24px minimum.
-						className="t-b-2 inline-flex min-h-6 cursor-pointer items-center uppercase underline underline-offset-4 disabled:opacity-50 text-muted-foreground"
+						className="t-b-2 text-muted-foreground inline-flex min-h-6 cursor-pointer items-center uppercase underline underline-offset-4 disabled:opacity-50"
 					>
 						{t.remove}
 					</button>
@@ -245,26 +244,26 @@ function LineItemsSkeleton() {
 	return (
 		<ul
 			aria-hidden
-			className="px-4 min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain animate-pulse"
+			className="divide-border min-h-0 flex-1 animate-pulse divide-y overflow-y-auto overscroll-contain px-4"
 		>
 			{Array.from({ length: 2 }, (_, i) => (
 				<li key={i} className="flex gap-3 py-4">
-					<span className="size-[90px] shrink-0 rounded bg-foreground/10" />
+					<span className="bg-foreground/10 size-[90px] shrink-0 rounded" />
 					<div className="flex min-w-0 flex-1 flex-col gap-1">
 						<p className="t-b-2">
-							<span className="inline-block w-28 rounded bg-foreground/10">
+							<span className="bg-foreground/10 inline-block w-28 rounded">
 								&nbsp;
 							</span>
 						</p>
 						<p className="t-b-2">
-							<span className="inline-block w-14 rounded bg-foreground/10">
+							<span className="bg-foreground/10 inline-block w-14 rounded">
 								&nbsp;
 							</span>
 						</p>
-						<span className="mt-auto h-6 w-24 rounded bg-foreground/10" />
+						<span className="bg-foreground/10 mt-auto h-6 w-24 rounded" />
 					</div>
 					<p className="t-b-2 shrink-0">
-						<span className="inline-block w-12 rounded bg-foreground/10">
+						<span className="bg-foreground/10 inline-block w-12 rounded">
 							&nbsp;
 						</span>
 					</p>
@@ -290,7 +289,7 @@ function LoadError({
 }) {
 	const t = useTranslations('cart');
 	return (
-		<div className="px-4 min-h-0 flex-1 overflow-y-auto overscroll-contain">
+		<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
 			<div className="flex flex-col items-center gap-5 py-12">
 				<p className="t-b-2 text-center uppercase">{t.loadError}</p>
 				<Button onClick={onRetry} disabled={pending} className="uppercase">
@@ -359,7 +358,7 @@ export default function CartDrawerPanel({
 						<Dialog.Backdrop
 							render={
 								<motion.div
-									className="fixed inset-0 z-popover bg-black/50"
+									className="z-popover fixed inset-0 bg-black/50"
 									variants={cartOverlay}
 									initial="hide"
 									animate="show"
@@ -388,7 +387,7 @@ export default function CartDrawerPanel({
 									// panel — the recommendation cards below use `bg-background` for
 									// their image frames and `text-foreground` for their copy, and the
 									// count badge inks with `bg-foreground`.
-									className="cart-surface text-foreground bg-background fixed inset-y-0 right-0 z-popover flex w-full max-w-104 flex-col border-l border-border"
+									className="cart-surface text-foreground bg-background z-popover border-border fixed inset-y-0 right-0 flex w-full max-w-104 flex-col border-l"
 									variants={cartPanel}
 									initial="hide"
 									animate="show"
@@ -407,7 +406,7 @@ export default function CartDrawerPanel({
 									: t.title}
 							</Dialog.Description>
 
-							<div className="flex shrink-0 items-center justify-between px-4 h-header">
+							<div className="h-header flex shrink-0 items-center justify-between px-4">
 								{/* `relative inline-flex` shrinks the title to its text so
 								    the badge hangs off the word, not off the header row. */}
 								<Dialog.Title className="t-b-2 relative inline-flex uppercase">
@@ -443,7 +442,7 @@ export default function CartDrawerPanel({
 							) : status === 'error' ? (
 								<LoadError onRetry={refresh} pending={isPending} />
 							) : lines.length === 0 ? (
-								<div className="px-4 min-h-0 flex-1 overflow-y-auto overscroll-contain">
+								<div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4">
 									{/* The way out of an empty cart, and the ONLY one when no
 									    recommendations are configured: that list comes from settingsCart,
 									    which an editor can leave unset, and this branch used to render the
@@ -466,7 +465,7 @@ export default function CartDrawerPanel({
 										</Link>
 									</div>
 									{recommendations.length > 0 && (
-										<div className="border-t border-border pt-6 pb-8">
+										<div className="border-border border-t pt-6 pb-8">
 											{settings?.emptyHeading && (
 												<p className="t-b-2 mb-4 uppercase">
 													{settings.emptyHeading}
@@ -492,7 +491,7 @@ export default function CartDrawerPanel({
 									)}
 								</div>
 							) : (
-								<ul className="px-4 min-h-0 flex-1 divide-y divide-border overflow-y-auto overscroll-contain">
+								<ul className="divide-border min-h-0 flex-1 divide-y overflow-y-auto overscroll-contain px-4">
 									{lines.map((line) => (
 										<LineItem key={line.id} line={line} />
 									))}
@@ -500,7 +499,7 @@ export default function CartDrawerPanel({
 							)}
 
 							{cart && lines.length > 0 && (
-								<div className="px-4 flex shrink-0 flex-col gap-3 border-t border-border py-5">
+								<div className="border-border flex shrink-0 flex-col gap-3 border-t px-4 py-5">
 									<div className="t-b-2 flex items-center justify-between uppercase">
 										<span>{t.subtotal}</span>
 										<span>{formatShopifyPrice(cart.subtotal, locale)}</span>

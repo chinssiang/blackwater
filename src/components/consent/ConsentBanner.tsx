@@ -1,6 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import {
+	CONSENT_CHANGED_EVENT,
+	type ConsentCategories,
+	DENY_ALL,
+	GRANT_ALL,
+	writeConsentClient,
+} from '@/lib/consent';
+import type { Dictionary } from '@/lib/dictionary';
+import { useConsent } from '@/hooks/useConsent';
 import CustomLink from '@/components/CustomLink';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -13,15 +22,6 @@ import {
 	DialogTitle,
 } from '@/components/ui/Dialog';
 import { Separator } from '@/components/ui/Separator';
-import {
-	CONSENT_CHANGED_EVENT,
-	writeConsentClient,
-	DENY_ALL,
-	GRANT_ALL,
-	type ConsentCategories,
-} from '@/lib/consent';
-import { useConsent } from '@/hooks/useConsent';
-import type { Dictionary } from '@/lib/dictionary';
 
 // Window event other parts of the UI (e.g. a footer "Cookie settings" link)
 // dispatch to re-open the preferences dialog.
@@ -95,7 +95,10 @@ export default function ConsentBanner({
 	useEffect(() => {
 		const openPrefs = () => {
 			if (consent)
-				setDraft({ analytics: consent.analytics, marketing: consent.marketing });
+				setDraft({
+					analytics: consent.analytics,
+					marketing: consent.marketing,
+				});
 			setPrefsOpen(true);
 		};
 		window.addEventListener(OPEN_CONSENT_EVENT, openPrefs);
@@ -125,17 +128,17 @@ export default function ConsentBanner({
 					role="dialog"
 					aria-label={t('bannerTitle')}
 					aria-live="polite"
-					className="fixed inset-x-0 bottom-0 z-dialog border-t border-foreground/15 bg-background p-x-max py-5 shadow-lg"
+					className="z-dialog border-foreground/15 bg-background p-x-max fixed inset-x-0 bottom-0 border-t py-5 shadow-lg"
 				>
 					<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 						<div className="max-w-2xl">
-							<p className="t-b-1 mb-1 font-medium text-foreground">
+							<p className="t-b-1 text-foreground mb-1 font-medium">
 								{t('bannerTitle')}
 							</p>
 							<p className="t-l-2 text-foreground/70">{t('bannerBody')}</p>
 							<PolicyLinks settings={settings} className="mt-2" />
 						</div>
-						<div className="flex flex-wrap gap-2 justify-end">
+						<div className="flex flex-wrap justify-end gap-2">
 							<Button variant="outline" onClick={() => setPrefsOpen(true)}>
 								{t('preferencesLabel')}
 							</Button>
@@ -212,7 +215,7 @@ function CategoryRow({
 	return (
 		<div className="flex items-start justify-between gap-4">
 			<div className="space-y-1">
-				<p className="t-b-2 font-medium text-foreground">{title}</p>
+				<p className="t-b-2 text-foreground font-medium">{title}</p>
 				<p className="t-l-2 text-foreground/60">{description}</p>
 			</div>
 			<Checkbox
@@ -243,7 +246,7 @@ function PolicyLinks({
 				<CustomLink
 					key={i}
 					link={link}
-					className="t-l-2 mr-4 inline-block text-foreground underline underline-offset-2 transition-colors hover:text-foreground/70"
+					className="t-l-2 text-foreground hover:text-foreground/70 mr-4 inline-block underline underline-offset-2 transition-colors"
 				>
 					{link.label || link.href}
 				</CustomLink>

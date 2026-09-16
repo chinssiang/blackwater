@@ -1,10 +1,10 @@
-import { HelpCircleIcon } from '@sanity/icons';
-import { defineArrayMember, defineType, defineField } from 'sanity';
 import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
 import {
 	moduleRule,
 	pageModuleHidden,
 } from '@/sanity/schemaTypes/objects/page-module';
+import { HelpCircleIcon } from '@sanity/icons';
+import { defineArrayMember, defineField, defineType } from 'sanity';
 
 // FAQ page module: one rendered block of questions, with a heading and section
 // appearance of its own. Question content lives in gFaq (authored once, both

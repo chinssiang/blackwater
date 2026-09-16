@@ -1,21 +1,21 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-import { resolveEventLocation } from '@/lib/event-location';
-import { hasArrayValue } from '@/lib/utils';
-import { buildRgbaCssString } from '@/lib/image-utils';
-import { buttonVariants } from '@/components/ui/Button';
-import { ArrowLeft, ArrowRight, X } from 'lucide-react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { ArrowLeft, ArrowRight, X } from 'lucide-react';
+import { formatRichDate, isEventEnded } from '@/lib/event-date';
+import { resolveEventLocation } from '@/lib/event-location';
+import { buildRgbaCssString } from '@/lib/image-utils';
+import { cn } from '@/lib/utils';
+import { hasArrayValue } from '@/lib/utils';
+import SanityImage from '@/components/SanityImage';
+import { buttonVariants } from '@/components/ui/Button';
 import type {
 	EventCrewByMonthQueryResult,
 	EventCrewMembersQueryResult,
 	RichDate,
 } from 'sanity.types';
-import { formatRichDate, isEventEnded } from '@/lib/event-date';
-import SanityImage from '@/components/SanityImage';
-import { useState, useEffect, useCallback, type ReactNode } from 'react';
 
 type EventItem = NonNullable<EventCrewByMonthQueryResult>[number];
 
@@ -79,7 +79,7 @@ function MonthNavLink({
 }) {
 	const className = cn(
 		buttonVariants({ variant: 'ghost', size: 'sm' }),
-		'uppercase t-l-2'
+		't-l-2 uppercase'
 	);
 
 	if (!href) return <span className={className}>{children}</span>;
@@ -168,15 +168,15 @@ export function PageEventCrew({
 		<>
 			<div
 				className={cn(
-					'sticky top-header bg-background/95 backdrop-blur-sm z-10 border-b border-white/6 transition-all duration-300',
+					'top-header bg-background/95 sticky z-10 border-b border-white/6 backdrop-blur-sm transition-all duration-300',
 					scrolled ? 'py-2' : 'py-4'
 				)}
 			>
-				<div className="flex items-end justify-between gap-4 p-x-max">
+				<div className="p-x-max flex items-end justify-between gap-4">
 					<div className="space-y-2">
 						<span
 							className={cn(
-								'uppercase text-muted-foreground block animate-fade-in transition-all duration-300 overflow-hidden',
+								'text-muted-foreground animate-fade-in block overflow-hidden uppercase transition-all duration-300',
 								scrolled ? 't-b-1' : 't-l-0'
 							)}
 						>
@@ -184,19 +184,19 @@ export function PageEventCrew({
 						</span>
 						{/* Size is deliberately scroll-invariant; only the kicker responds. */}
 						<h1
-							className="t-l-0 font-bold animate-fade-in"
+							className="t-l-0 animate-fade-in font-bold"
 							style={{ animationDelay: '0.15s' }}
 						>
 							{monthDisplay}
 						</h1>
 					</div>
 					{availableMonthKeys.length > 0 && (
-						<nav className="flex items-center gap-1 shrink-0">
+						<nav className="flex shrink-0 items-center gap-1">
 							<MonthNavLink href={prevHref}>
 								<ArrowLeft className="size-3.5" />
 								Prev
 							</MonthNavLink>
-							<span className="text-white/20 text-xs select-none">/</span>
+							<span className="text-xs text-white/20 select-none">/</span>
 							<MonthNavLink href={nextHref}>
 								Next
 								<ArrowRight className="size-3.5" />
@@ -206,14 +206,14 @@ export function PageEventCrew({
 				</div>
 				{/* Crew Filter */}
 				{uniqueMembers.length > 0 && (
-					<div className="flex items-center gap-1.5 lg:gap-2 mt-3 pt-3 border-t border-white/4 p-x-max mx-auto">
-						<span className="t-l-2 text-muted-foreground uppercase shrink-0">
+					<div className="p-x-max mx-auto mt-3 flex items-center gap-1.5 border-t border-white/4 pt-3 lg:gap-2">
+						<span className="t-l-2 text-muted-foreground shrink-0 uppercase">
 							Filter
 						</span>
 						<div className="relative min-w-0 flex-1">
-							<div className="pointer-events-none absolute inset-y-0 -left-px w-6 bg-linear-to-r from-background to-transparent z-10 lg:hidden" />
-							<div className="pointer-events-none absolute inset-y-0 -right-px w-6 bg-linear-to-l from-background to-transparent z-10 lg:hidden" />
-							<div className="flex items-center gap-1 lg:gap-1.5 overflow-x-auto lg:flex-wrap scrollbar-none px-2 lg:px-0">
+							<div className="from-background pointer-events-none absolute inset-y-0 -left-px z-10 w-6 bg-linear-to-r to-transparent lg:hidden" />
+							<div className="from-background pointer-events-none absolute inset-y-0 -right-px z-10 w-6 bg-linear-to-l to-transparent lg:hidden" />
+							<div className="flex scrollbar-none items-center gap-1 overflow-x-auto px-2 lg:flex-wrap lg:gap-1.5 lg:px-0">
 								{uniqueMembers.map((member) => {
 									const displayName =
 										member.nickname || member.name || 'Unknown';
@@ -226,14 +226,14 @@ export function PageEventCrew({
 												setSelectedMemberSlug(isActive ? null : member.slug)
 											}
 											className={cn(
-												'flex items-center gap-1 px-2 lg:px-2.5 py-1 rounded-full t-b-2 whitespace-nowrap shrink-0 transition-all cursor-pointer',
+												't-b-2 flex shrink-0 cursor-pointer items-center gap-1 rounded-full px-2 py-1 whitespace-nowrap transition-all lg:px-2.5',
 												isActive
-													? 'bg-white/30 text-foreground ring-1 ring-white/20'
-													: 'bg-white/4 text-muted-foreground hover:bg-white/25 hover:text-foreground'
+													? 'text-foreground bg-white/30 ring-1 ring-white/20'
+													: 'text-muted-foreground hover:text-foreground bg-white/4 hover:bg-white/25'
 											)}
 										>
 											{member.avatar ? (
-												<div className="size-4 aspect-square rounded-full overflow-hidden shrink-0 relative">
+												<div className="relative aspect-square size-4 shrink-0 overflow-hidden rounded-full">
 													<SanityImage
 														image={member.avatar}
 														className="object-cover"
@@ -243,7 +243,7 @@ export function PageEventCrew({
 													/>
 												</div>
 											) : (
-												<span className="size-4 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-[10px] font-semibold">
+												<span className="flex size-4 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold">
 													{displayName.charAt(0)}
 												</span>
 											)}
@@ -257,7 +257,7 @@ export function PageEventCrew({
 							<button
 								type="button"
 								onClick={() => setSelectedMemberSlug(null)}
-								className="shrink-0 p-1 rounded-full hover:bg-white/8 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+								className="text-muted-foreground hover:text-foreground shrink-0 cursor-pointer rounded-full p-1 transition-colors hover:bg-white/8"
 							>
 								<X className="size-3.5" />
 							</button>
@@ -266,14 +266,14 @@ export function PageEventCrew({
 				)}
 			</div>
 			{hasArrayValue(events) ? (
-				<div className="p-x-max py-8 space-y-6">
+				<div className="p-x-max space-y-6 py-8">
 					{selectedMember && (
 						<p className="t-b-1 text-muted-foreground">
-							<span className="font-bold text-foreground">
+							<span className="text-foreground font-bold">
 								{selectedMember.nickname || selectedMember.name}
 							</span>{' '}
 							is assigned to{' '}
-							<span className="font-bold text-foreground">{events.length}</span>{' '}
+							<span className="text-foreground font-bold">{events.length}</span>{' '}
 							event
 							{events.length !== 1 ? 's' : ''} this month
 						</p>
@@ -330,8 +330,7 @@ function EventCard({
 
 	const categoryTitle = categories?.[0]?.title;
 	const categoryColor = categories?.[0]?.categoryColor as
-		| Parameters<typeof buildRgbaCssString>[0]
-		| undefined;
+		Parameters<typeof buildRgbaCssString>[0] | undefined;
 	const categoryBg = categoryColor
 		? buildRgbaCssString(categoryColor)
 		: undefined;
@@ -350,7 +349,7 @@ function EventCard({
 	return (
 		<div
 			className={cn(
-				'border border-white/8 rounded-lg overflow-hidden animate-fade-in',
+				'animate-fade-in overflow-hidden rounded-lg border border-white/8',
 				'transition-opacity duration-500'
 			)}
 			style={{
@@ -360,14 +359,14 @@ function EventCard({
 				containIntrinsicSize: '0 200px',
 			}}
 		>
-			<div className="px-5 py-4 lg:px-6 lg:py-5 border-b border-white/6 bg-white/2">
+			<div className="border-b border-white/6 bg-white/2 px-5 py-4 lg:px-6 lg:py-5">
 				<div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
 					<div className="flex flex-col gap-1.5 lg:gap-2">
 						<div className="flex flex-wrap items-center gap-x-3 gap-y-2">
 							<h2 className="t-b-1 font-bold">{title}</h2>
 							{categoryTitle && (
 								<span
-									className="t-l-2 px-2 py-1 rounded uppercase shrink-0"
+									className="t-l-2 shrink-0 rounded px-2 py-1 uppercase"
 									style={{
 										backgroundColor: categoryBg || 'var(--muted)',
 										color: categoryBg ? '#fff' : 'var(--foreground)',
@@ -377,16 +376,16 @@ function EventCard({
 								</span>
 							)}
 							{ended && (
-								<span className="t-l-2 px-2 py-1 rounded uppercase shrink-0 bg-amber-700 text-foreground">
+								<span className="t-l-2 text-foreground shrink-0 rounded bg-amber-700 px-2 py-1 uppercase">
 									結束
 								</span>
 							)}
 						</div>
 						{subtitle && <p className="t-b-1">{subtitle}</p>}
 					</div>
-					<div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 shrink-0">
+					<div className="flex shrink-0 flex-wrap items-baseline gap-x-4 gap-y-1">
 						{dateInfo && (
-							<span className="t-b-1 text-foreground tabular-nums font-medium">
+							<span className="t-b-1 text-foreground font-medium tabular-nums">
 								{dateInfo.display}
 							</span>
 						)}
@@ -396,7 +395,7 @@ function EventCard({
 									href={displayLocationLink}
 									target="_blank"
 									rel="noopener noreferrer"
-									className="t-b-1 text-muted-foreground underline underline-offset-2 decoration-white/20 hover:text-foreground hover:decoration-white/40 transition-colors"
+									className="t-b-1 text-muted-foreground hover:text-foreground underline decoration-white/20 underline-offset-2 transition-colors hover:decoration-white/40"
 								>
 									{displayLocation}
 								</a>
@@ -412,7 +411,7 @@ function EventCard({
 			{/* Assignments */}
 			{hasArrayValue(sortedAssignments) && (
 				<div className="p-4 lg:p-5">
-					<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2.5">
+					<div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{sortedAssignments.map((assignment) => (
 							<AssignmentCard
 								key={assignment._key}
@@ -426,8 +425,8 @@ function EventCard({
 
 			{/* Team Notes */}
 			{teamNotes && (
-				<div className="mx-4 mb-4 lg:mx-5 lg:mb-5 px-4 py-3 bg-white/2 border border-dashed border-white/8 rounded">
-					<span className="t-l-2 text-muted-foreground block mb-1">NOTE</span>
+				<div className="mx-4 mb-4 rounded border border-dashed border-white/8 bg-white/2 px-4 py-3 lg:mx-5 lg:mb-5">
+					<span className="t-l-2 text-muted-foreground mb-1 block">NOTE</span>
 					<p className="t-b-1 text-muted-foreground">{teamNotes}</p>
 				</div>
 			)}
@@ -450,8 +449,8 @@ function AssignmentCard({
 	const label = group ? `${roleTitle} ${group} 組` : roleTitle;
 
 	return (
-		<div className="bg-white/3 border border-white/6 rounded-md px-3.5 py-2.5">
-			<span className="t-b-2 font-semibold uppercase text-indigo-400/90 block mb-2.5">
+		<div className="rounded-md border border-white/6 bg-white/3 px-3.5 py-2.5">
+			<span className="t-b-2 mb-2.5 block font-semibold text-indigo-400/90 uppercase">
 				{label}
 			</span>
 			<div className="flex flex-wrap items-center gap-4">
@@ -466,16 +465,16 @@ function AssignmentCard({
 							tabIndex={isDimmed ? -1 : 0}
 							className={cn(
 								'group/person relative flex items-center gap-1.5 transition-opacity outline-none',
-								{ 'opacity-30 pointer-events-none': isDimmed }
+								{ 'pointer-events-none opacity-30': isDimmed }
 							)}
 						>
 							{member.avatar ? (
 								<>
 									<div
 										className={cn(
-											'size-6 aspect-square rounded-full overflow-hidden shrink-0 relative transition-all',
+											'relative aspect-square size-6 shrink-0 overflow-hidden rounded-full transition-all',
 											isHighlighted
-												? 'ring-2 ring-indigo-400 size-8'
+												? 'size-8 ring-2 ring-indigo-400'
 												: 'ring-1 ring-white/10'
 										)}
 									>
@@ -488,7 +487,7 @@ function AssignmentCard({
 										/>
 									</div>
 									{/* Hover enlarged avatar */}
-									<div className="size-20 pointer-events-none absolute bottom-full left-0 mb-2 z-20 opacity-0 scale-75 origin-bottom-left transition-all duration-200 ease-out group-hover/person:opacity-100 group-hover/person:scale-100 group-focus-within/person:opacity-100 group-focus-within/person:scale-100 rounded-full overflow-hidden">
+									<div className="pointer-events-none absolute bottom-full left-0 z-20 mb-2 size-20 origin-bottom-left scale-75 overflow-hidden rounded-full opacity-0 transition-all duration-200 ease-out group-focus-within/person:scale-100 group-focus-within/person:opacity-100 group-hover/person:scale-100 group-hover/person:opacity-100">
 										<SanityImage
 											image={member.avatar}
 											className="object-cover"
@@ -501,7 +500,7 @@ function AssignmentCard({
 							) : (
 								<span
 									className={cn(
-										'size-6 aspect-square rounded-full bg-white/8 shrink-0 flex items-center justify-center text-[10px] font-semibold text-muted-foreground',
+										'text-muted-foreground flex aspect-square size-6 shrink-0 items-center justify-center rounded-full bg-white/8 text-[10px] font-semibold',
 										isHighlighted
 											? 'ring-2 ring-indigo-400'
 											: 'ring-1 ring-white/10'

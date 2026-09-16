@@ -1,6 +1,6 @@
-import { describe, it, expect } from 'vitest';
 import en from '@/dictionaries/en.json';
 import zhTw from '@/dictionaries/zh_tw.json';
+import { describe, expect, it } from 'vitest';
 import { LOCALES } from '@/lib/i18n';
 
 // `Dictionary` is `typeof en`, so TypeScript only ever checks the English file.

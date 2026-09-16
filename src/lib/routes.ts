@@ -3,19 +3,18 @@
  * Drives both the JavaScript `resolveHref` helper and the GROQ query builder so
  * adding/changing a route only requires editing this file.
  */
-
 import {
 	DOCUMENT_ROUTES,
-	buildResolvedHrefGroq as buildGroq,
 	type RouteDefinition,
+	buildResolvedHrefGroq as buildGroq,
 } from '@/lib/document-routes';
 import {
 	DEFAULT_LOCALE,
 	LOCALES,
+	type Locale,
 	localizePath,
 	stripLocaleFromHref,
 	stripLocaleFromPathname,
-	type Locale,
 } from '@/lib/i18n';
 
 // Re-exported so callers keep one import site. The table and the GROQ builder
@@ -24,7 +23,6 @@ export { DOCUMENT_ROUTES, type RouteDefinition };
 
 /** The GROQ href expression, with this app's default locale bound in. */
 export const buildResolvedHrefGroq = () => buildGroq(LOCALES, DEFAULT_LOCALE);
-
 
 // Reduces a locale-stripped path to the form route comparisons use: no query,
 // no fragment, no trailing slash. An authored href may carry "?"/"#" that a
@@ -105,9 +103,6 @@ export function resolveHref({
 	if (!path) return undefined;
 	return localizePath(path, locale ?? DEFAULT_LOCALE);
 }
-
-
-
 
 /**
  * Checks if a link should be considered active based on the current path and target URL.

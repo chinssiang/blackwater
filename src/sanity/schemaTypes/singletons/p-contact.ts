@@ -1,7 +1,7 @@
 import formBuilder from '@/sanity/schemaTypes/objects/form-builder';
+import { language } from '@/sanity/schemaTypes/objects/language';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
 import { BookIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
 
@@ -45,7 +45,7 @@ export const pContact = defineType({
 					name: 'emailSubject',
 					type: 'string',
 				},
-				],
+			],
 		},
 		{
 			name: 'legalConsent',

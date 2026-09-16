@@ -1,10 +1,10 @@
-import { TagIcon } from '@sanity/icons';
-import { defineArrayMember, defineType, defineField } from 'sanity';
 import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
 import {
 	moduleRule,
 	pageModuleHidden,
 } from '@/sanity/schemaTypes/objects/page-module';
+import { TagIcon } from '@sanity/icons';
+import { defineArrayMember, defineField, defineType } from 'sanity';
 
 // Recommended-products page module: a small grid of product cards on pHome or
 // pGeneral. Cards render Sanity's editorial mainImage and get their price from

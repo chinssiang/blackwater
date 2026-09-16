@@ -1,16 +1,11 @@
 import type { MetadataRoute } from 'next';
 import {
-	SITEMAP_PAGES_QUERY,
 	SITEMAP_EVENTS_QUERY,
+	SITEMAP_PAGES_QUERY,
 	SITEMAP_PRODUCTS_QUERY,
 } from '@/sanity/lib/queries';
+import { DEFAULT_LOCALE, type Locale, htmlLangFor, isLocale } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
-import {
-	type Locale,
-	DEFAULT_LOCALE,
-	htmlLangFor,
-	isLocale,
-} from '@/lib/i18n';
 
 // Sitemap configuration, and the pure helpers that turn it into entries.
 //

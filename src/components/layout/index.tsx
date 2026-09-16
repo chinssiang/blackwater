@@ -2,16 +2,16 @@
 
 import React, { useLayoutEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
-import { shouldHideGlobalNewsletter } from '@/lib/routes';
 import type { LayoutData } from '@/sanity/lib/siteData';
-import { CartProvider } from '@/components/cart/CartProvider';
+import { shouldHideGlobalNewsletter } from '@/lib/routes';
 import CartDrawer from '@/components/cart/CartDrawer';
+import { CartProvider } from '@/components/cart/CartProvider';
 import AdaSkip from './AdaSkip';
 import { Footer } from './Footer';
 import { Header } from './Header';
+import { Main } from './Main';
 import { Newsletter } from './Newsletter';
 import { ToolBar } from './ToolBar';
-import { Main } from './Main';
 import { LazyMotion, domAnimation } from 'motion/react';
 
 type LayoutProps = {
@@ -64,11 +64,11 @@ export function Layout({ children, siteData }: LayoutProps) {
 				<Main key={pathname} className="animate-page-in">
 					{children}
 					{!hideNewsletter && (
-						<div data-hide-on-404 className="border-t border-foreground/36">
+						<div data-hide-on-404 className="border-foreground/36 border-t">
 							<Newsletter
 								data={newsletter}
 								setGlobalHeightVar={true}
-								className="p-x-max flex flex-wrap md:grid-cols-2 md:gap-6 py-6 w-full justify-between"
+								className="p-x-max flex w-full flex-wrap justify-between py-6 md:grid-cols-2 md:gap-6"
 							/>
 						</div>
 					)}

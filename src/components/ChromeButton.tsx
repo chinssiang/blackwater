@@ -1,5 +1,4 @@
 import * as React from 'react';
-
 import { cn } from '@/lib/utils';
 
 /**
@@ -55,7 +54,7 @@ export default function ChromeButton({
 				// `outline-current` rather than a fixed colour: this control renders
 				// on the dark header and on the light cart panel, and currentColor is
 				// the readable ink in both.
-				't-b-2 flex h-header cursor-pointer items-center gap-1 uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current',
+				't-b-2 h-header flex cursor-pointer items-center gap-1 uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current',
 				className
 			)}
 			{...props}

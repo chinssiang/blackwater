@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as z from 'zod';
 import { client } from '@/sanity/lib/client';
 import { backInStockConfigQuery } from '@/sanity/lib/queries';
-import { resolveHref } from '@/lib/routes';
+import * as z from 'zod';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
 
 // The Klaviyo list is resolved server-side (from settings) and the product is
 // only ever recorded as event properties — so this endpoint can't be used to

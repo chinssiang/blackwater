@@ -1,13 +1,13 @@
 import {
+	CheckmarkCircleIcon,
 	CogIcon,
 	EarthGlobeIcon,
+	EnterRightIcon,
 	EnvelopeIcon,
 	PackageIcon,
-	EnterRightIcon,
-	CheckmarkCircleIcon,
 } from '@sanity/icons';
-import type { StructureBuilder } from 'sanity/structure';
 import { colorsMenu } from './colors';
+import type { StructureBuilder } from 'sanity/structure';
 
 export const settingsMenu = (S: StructureBuilder) => {
 	return S.listItem()

@@ -3,8 +3,14 @@
 import { useId, useRef, useState } from 'react';
 import Link from 'next/link';
 import { stegaClean } from '@sanity/client/stega';
-import SizeChartTable, { type SizeChart } from '@/components/SizeChartTable';
+import { interpolate } from '@/lib/dictionary';
+import {
+	SIZE_UNITS,
+	type SizeUnit,
+	resolveUnit,
+} from '@/lib/size-measurements';
 import { useTranslations } from '@/components/LocaleProvider';
+import SizeChartTable, { type SizeChart } from '@/components/SizeChartTable';
 import {
 	Dialog,
 	DialogContent,
@@ -14,12 +20,6 @@ import {
 } from '@/components/ui/Dialog';
 import { Label } from '@/components/ui/Label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/RadioGroup';
-import { interpolate } from '@/lib/dictionary';
-import {
-	SIZE_UNITS,
-	resolveUnit,
-	type SizeUnit,
-} from '@/lib/size-measurements';
 
 /**
  * Shared with the fallback link the product page renders when a chart has no

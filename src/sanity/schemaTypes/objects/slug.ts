@@ -1,6 +1,6 @@
-import { pickLocalizedValue } from '@/lib/i18n';
 import { ViewPageField } from '@/sanity/schemaTypes/components/ViewPageField';
-import { defineField, SlugValidationContext } from 'sanity';
+import { pickLocalizedValue } from '@/lib/i18n';
+import { SlugValidationContext, defineField } from 'sanity';
 
 export async function isUniqueOtherThanLanguage(
 	slug: string,
@@ -50,7 +50,7 @@ export async function isUniqueAcrossType(
 }
 
 type SlugFieldOptions = {
-	initialValue?: {_type: 'slug'; current: string};
+	initialValue?: { _type: 'slug'; current: string };
 	readOnly?: boolean;
 	group?: string | string[];
 	// Hide the "View page" link (ViewPageField) for document types that have no
@@ -77,7 +77,8 @@ export function slug({
 			// Resolve the slug source through pickLocalizedValue so it works for
 			// both plain-string titles and internationalizedArray titles (returns
 			// plain strings unchanged).
-			source: (doc) => pickLocalizedValue((doc as { title?: unknown }).title) ?? '',
+			source: (doc) =>
+				pickLocalizedValue((doc as { title?: unknown }).title) ?? '',
 			maxLength: 200,
 			isUnique,
 			slugify: (input) => {

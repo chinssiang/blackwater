@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import { draftMode } from 'next/headers';
+import { notFound } from 'next/navigation';
+import { getCachedSiteData } from '@/sanity/lib/siteData';
 import { stegaClean } from '@sanity/client/stega';
+import { buildBaseMetadata } from '@/lib/defineBaseMetadata';
+import { getDictionary } from '@/lib/dictionary.server';
+import { LOCALES, type Locale, isLocale } from '@/lib/i18n';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import HtmlShell from '@/components/layout/HtmlShell';
-import { getCachedSiteData } from '@/sanity/lib/siteData';
-import { getDictionary } from '@/lib/dictionary.server';
-import { buildBaseMetadata } from '@/lib/defineBaseMetadata';
-import { LOCALES, type Locale, isLocale } from '@/lib/i18n';
 
 export function generateStaticParams() {
 	return LOCALES.map((locale) => ({ locale }));

@@ -1,12 +1,12 @@
 import { draftMode } from 'next/headers';
-import { LocaleProvider } from '@/components/LocaleProvider';
-import { Layout } from '@/components/layout';
-import HtmlShell from '@/components/layout/HtmlShell';
 import { sanityFetch } from '@/sanity/lib/live';
 import { page404Query } from '@/sanity/lib/queries';
 import { getCachedSiteData, pickLayoutData } from '@/sanity/lib/siteData';
 import { getDictionary } from '@/lib/dictionary.server';
 import { DEFAULT_LOCALE } from '@/lib/i18n';
+import { LocaleProvider } from '@/components/LocaleProvider';
+import { Layout } from '@/components/layout';
+import HtmlShell from '@/components/layout/HtmlShell';
 import { PageNotFound } from './(frontend)/[locale]/_components/PageNotFound';
 
 // App-root fallback for genuinely-unmatched URLs outside the [locale] subtree

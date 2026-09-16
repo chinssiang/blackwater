@@ -1,11 +1,20 @@
 'use client';
-import { useState, useMemo, useEffect, useRef } from 'react';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import CustomLink from '@/components/CustomLink';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import type { PEventsQueryResult } from 'sanity.types';
+import { EASE_OUT_EXPO, fadeAnim } from '@/lib/animate';
+import {
+	type DayKey,
+	formatDayKey,
+	fromMonthIndex,
+	getDayKeyYearMonth,
+	monthStartKey,
+	toMonthIndex,
+} from '@/lib/calendar';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 import type { WithoutPageMetadata } from '@/lib/defineMetadata';
+import { formatDaysUntilLabel, interpolate } from '@/lib/dictionary';
 import {
 	getDaysUntilEvent,
 	getNextEventClockTransition,
@@ -14,27 +23,19 @@ import {
 	isEventEnded,
 	resolveEventTimeLabel,
 } from '@/lib/event-date';
-import {
-	formatDayKey,
-	fromMonthIndex,
-	getDayKeyYearMonth,
-	monthStartKey,
-	toMonthIndex,
-	type DayKey,
-} from '@/lib/calendar';
-import { ArrowUpRight } from '@/components/SvgIcons';
-import { Button } from '@/components/ui/Button';
-import { tabsTriggerVariants } from '@/components/ui/tabsTriggerVariants';
-import { EASE_OUT_EXPO, fadeAnim } from '@/lib/animate';
-import { WeatherWidgetRail } from '@/components/WeatherWidgetRail';
-import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { formatDaysUntilLabel, interpolate } from '@/lib/dictionary';
 import { resolveEventLocation } from '@/lib/event-location';
 import { resolveHref } from '@/lib/routes';
-import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
+import { OVERLAY_LINK_FOCUS, cn, hasArrayValue } from '@/lib/utils';
+import CustomLink from '@/components/CustomLink';
 import EventStatusPill from '@/components/EventStatusPill';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { ArrowUpRight } from '@/components/SvgIcons';
+import { WeatherWidgetRail } from '@/components/WeatherWidgetRail';
+import { Button } from '@/components/ui/Button';
+import { tabsTriggerVariants } from '@/components/ui/tabsTriggerVariants';
 import { EventsCalendar } from './EventsCalendar';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import type { PEventsQueryResult } from 'sanity.types';
 
 const EASE_EVENT_ROW = [0, 0.5, 0.5, 1] as const;
 const EASE_HEADER = [0, 0.71, 0.2, 1.01] as const;
@@ -331,14 +332,14 @@ export function PageEvents({ data }: PageEventsProps) {
 	);
 
 	return (
-		<div className="min-h-screen p-x-max mx-auto pt-8.5 pb-22.5 lg:pt-16">
+		<div className="p-x-max mx-auto min-h-screen pt-8.5 pb-22.5 lg:pt-16">
 			<h1 id="events-heading" className="sr-only">
 				{title}
 			</h1>
 			{/* The month controls sit in the sticky bar beside the view toggle but
 			    outside either view: they steer whichever one is showing, and
 			    duplicating them per view would put two of every control in the DOM. */}
-			<div className="flex items-center justify-between gap-2 sm:gap-3 sticky top-header bg-background/95 z-10 font-bold">
+			<div className="top-header bg-background/95 sticky z-10 flex items-center justify-between gap-2 font-bold sm:gap-3">
 				<motion.p
 					key={monthYearDisplay}
 					initial={prefersReducedMotion ? false : 'hide'}
@@ -388,7 +389,7 @@ export function PageEvents({ data }: PageEventsProps) {
 								disabled={!hasPrevious}
 								aria-label={t.aria.previousMonth}
 								variant="ghost"
-								className="uppercase t-l-2 font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
+								className="t-l-2 cursor-pointer font-normal uppercase hover:opacity-60 max-sm:px-1.5"
 							>
 								<ArrowLeft />
 								{/* Label hidden, not dropped: the button keeps its
@@ -404,7 +405,7 @@ export function PageEvents({ data }: PageEventsProps) {
 								disabled={!hasNext}
 								aria-label={t.aria.nextMonth}
 								variant="ghost"
-								className="uppercase t-l-2 font-normal cursor-pointer hover:opacity-60 max-sm:px-1.5"
+								className="t-l-2 cursor-pointer font-normal uppercase hover:opacity-60 max-sm:px-1.5"
 							>
 								<span className="max-sm:hidden">{t.aria.nextMonth}</span>
 								<ArrowRight className="size-3.5" />
@@ -490,7 +491,7 @@ export function PageEvents({ data }: PageEventsProps) {
 									<div
 										role="row"
 										className={cn(
-											't-b-1 uppercase grid border-y border-b border-foreground/80 py-2 lg:py-6',
+											't-b-1 border-foreground/80 grid border-y border-b py-2 uppercase lg:py-6',
 											colStyle
 										)}
 									>
@@ -510,7 +511,7 @@ export function PageEvents({ data }: PageEventsProps) {
 										{!isHideStatusColumn && (
 											<Th
 												isHideStatusColumn={isHideStatusColumn}
-												className="hidden lg:block text-right"
+												className="hidden text-right lg:block"
 											>
 												{t.headers.status}
 											</Th>
@@ -541,7 +542,7 @@ export function PageEvents({ data }: PageEventsProps) {
 													key={_id}
 													role="row"
 													className={cn(
-														'relative t-b-1 transition-colors hover:bg-foreground/85 grid items-center border-b group py-4 border-foreground/80 lg:py-2 lg:min-h-15 group/row',
+														't-b-1 hover:bg-foreground/85 group border-foreground/80 group/row relative grid items-center border-b py-4 transition-colors lg:min-h-15 lg:py-2',
 														colStyle,
 														{
 															'pointer-events-none': hasEnded,
@@ -559,22 +560,22 @@ export function PageEvents({ data }: PageEventsProps) {
 												>
 													<Td
 														className={cn(
-															'font-bold uppercase lg:pl-0 t-b-1 lg:flex flex-wrap items-center gap-2.5 text-balance transition-transform duration-300 ease-out group-hover/row:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover/row:translate-x-0',
+															't-b-1 flex-wrap items-center gap-2.5 font-bold text-balance uppercase transition-transform duration-300 ease-out group-hover/row:translate-x-1 motion-reduce:transition-none motion-reduce:group-hover/row:translate-x-0 lg:flex lg:pl-0',
 															{
 																'opacity-30': hasEnded,
 															}
 														)}
 													>
-														<p className="text-balance mb-4 lg:mb-0">{title}</p>
+														<p className="mb-4 text-balance lg:mb-0">{title}</p>
 														{subtitle && (
-															<p className="text-muted-foreground text-balance transition-colors group-hover/row:text-muted">
+															<p className="text-muted-foreground group-hover/row:text-muted text-balance transition-colors">
 																{subtitle}
 															</p>
 														)}
 													</Td>
 													<Td
 														className={cn(
-															'static t-b-1 uppercase mb-auto text-right lg:text-left lg:mb-0',
+															't-b-1 static mb-auto text-right uppercase lg:mb-0 lg:text-left',
 															{
 																'opacity-30': hasEnded,
 															}
@@ -594,7 +595,7 @@ export function PageEvents({ data }: PageEventsProps) {
 													</Td>
 													<Td
 														className={cn(
-															't-b-1 uppercase text-balance mt-2 lg:mt-0 whitespace-pre-line wrap-break-word min-w-0 group/location',
+															't-b-1 group/location mt-2 min-w-0 text-balance wrap-break-word whitespace-pre-line uppercase lg:mt-0',
 															{
 																'opacity-30': hasEnded,
 															}
@@ -602,9 +603,9 @@ export function PageEvents({ data }: PageEventsProps) {
 													>
 														{displayLocation}
 														{displayLocationLink && (
-															<span className="whitespace-nowrap -translate-y-px ml-1 inline-block transition-transform duration-300 ease-out group-hover/location:translate-x-0.5 group-hover/location:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover/location:translate-x-0 motion-reduce:group-hover/location:translate-y-0">
+															<span className="ml-1 inline-block -translate-y-px whitespace-nowrap transition-transform duration-300 ease-out group-hover/location:translate-x-0.5 group-hover/location:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover/location:translate-x-0 motion-reduce:group-hover/location:translate-y-0">
 																&#8203;
-																<ArrowUpRight className="size-2 inline-block" />
+																<ArrowUpRight className="inline-block size-2" />
 															</span>
 														)}
 														{displayLocationLink && (
@@ -625,7 +626,7 @@ export function PageEvents({ data }: PageEventsProps) {
 													</Td>
 													<Td
 														className={
-															'lg:justify-end gap-1 flex flex-wrap min-w-0 col-start-1 lg:col-start-[unset] mt-6 lg:mt-0'
+															'col-start-1 mt-6 flex min-w-0 flex-wrap gap-1 lg:col-start-[unset] lg:mt-0 lg:justify-end'
 														}
 													>
 														{!hasEnded && daysUntil !== null && (
@@ -717,7 +718,7 @@ function Td({ className, ...props }: React.ComponentProps<'div'>) {
 	return (
 		<div
 			className={cn(
-				'lg:px-2 whitespace-nowrap text-foreground group-hover:text-background transition-colors empty:hidden relative',
+				'text-foreground group-hover:text-background relative whitespace-nowrap transition-colors empty:hidden lg:px-2',
 				className
 			)}
 			role="cell"

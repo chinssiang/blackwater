@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { type ReactNode, useEffect, useRef } from 'react';
 
 // Over a full-bleed hero the header is fully solid once this fraction of the
 // hero has scrolled out, not at the very last pixel: waiting for the end reads

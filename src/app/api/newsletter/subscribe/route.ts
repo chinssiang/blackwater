@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as z from 'zod';
 import { client } from '@/sanity/lib/client';
 import { newsletterConfigQuery } from '@/sanity/lib/queries';
+import * as z from 'zod';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
 
 // The Klaviyo list is resolved server-side (from the locale's gNewsletter doc)

@@ -1,6 +1,6 @@
+import { language } from '@/sanity/schemaTypes/objects/language';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
 import { BookIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
 

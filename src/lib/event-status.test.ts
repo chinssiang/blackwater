@@ -1,7 +1,7 @@
-import { describe, it, expect } from 'vitest';
-import { vercelStegaCombine } from '@vercel/stega';
 import en from '@/dictionaries/en.json';
 import zhTw from '@/dictionaries/zh_tw.json';
+import { vercelStegaCombine } from '@vercel/stega';
+import { describe, expect, it } from 'vitest';
 import { resolveEventDateStatus } from '@/lib/event-status';
 
 // The single gate every surface shares for "is this date real, and what do we

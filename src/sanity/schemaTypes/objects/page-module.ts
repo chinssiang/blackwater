@@ -1,4 +1,4 @@
-import { defineField, isKeySegment, type ValidationContext } from 'sanity';
+import { type ValidationContext, defineField, isKeySegment } from 'sanity';
 
 // The schema half of the page-module visibility toggle. The Studio control that
 // writes the flag is components/PageModuleItem.tsx; this file is everything the

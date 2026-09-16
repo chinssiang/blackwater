@@ -1,17 +1,17 @@
-import { describe, expect, it } from 'vitest';
 import en from '@/dictionaries/en.json';
+import { describe, expect, it } from 'vitest';
 import {
-	aqiBandKey,
 	CDN_CACHE_SECONDS,
 	CDN_STALE_WHILE_REVALIDATE_SECONDS,
-	clampRefreshDelay,
-	isSnapshotStale,
 	MAX_ORIGIN_SNAPSHOT_AGE_MS,
 	MAX_SNAPSHOT_AGE_MS,
-	msUntilStale,
 	WEATHER_CACHE_SECONDS,
-	weatherConditionKey,
 	type WeatherConditionKey,
+	aqiBandKey,
+	clampRefreshDelay,
+	isSnapshotStale,
+	msUntilStale,
+	weatherConditionKey,
 } from '@/lib/weather';
 
 // Every WMO code Open-Meteo documents for its `weather_code` field. Listed

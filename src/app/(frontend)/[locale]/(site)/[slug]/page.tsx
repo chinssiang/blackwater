@@ -1,23 +1,23 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import {
+	PAGE_MODULE_TAGS,
 	pageGeneralQuery,
 	pageGeneralSlugsQuery,
-	PAGE_MODULE_TAGS,
 } from '@/sanity/lib/queries';
+import { stegaClean } from '@sanity/client/stega';
+import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
+import defineFaqJsonLd, { collectFaqItems } from '@/lib/defineFaqJsonLd';
 import defineMetadata, {
 	normalizeLocales,
 	notFoundMetadata,
 } from '@/lib/defineMetadata';
-import defineFaqJsonLd, { collectFaqItems } from '@/lib/defineFaqJsonLd';
-import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
-import { resolveHref } from '@/lib/routes';
 import { getDictionary } from '@/lib/dictionary.server';
-import JsonLd from '@/components/JsonLd';
 import { type Locale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
+import JsonLd from '@/components/JsonLd';
 import PageGeneral from '../../_components/PageGeneral';
 
 export async function generateStaticParams() {
@@ -89,12 +89,28 @@ export default async function PageSlugRoute(props: MetadataProps) {
 	]);
 
 	const { sharing } = data || {};
-	if (!data || sharing?.disableIndex === true) return <NotFoundContent locale={params.locale} />;
+	if (!data || sharing?.disableIndex === true)
+		return <NotFoundContent locale={params.locale} />;
 
-	const faqJsonLd = defineFaqJsonLd(collectFaqItems(stegaClean(data.pageModules)));
+	const faqJsonLd = defineFaqJsonLd(
+		collectFaqItems(stegaClean(data.pageModules))
+	);
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
-		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale: params.locale as Locale }) },
-		{ name: data.title, path: resolveHref({ documentType: 'pGeneral', slug: params.slug, locale: params.locale as Locale }) },
+		{
+			name: dict.breadcrumb.home,
+			path: resolveHref({
+				documentType: 'pHome',
+				locale: params.locale as Locale,
+			}),
+		},
+		{
+			name: data.title,
+			path: resolveHref({
+				documentType: 'pGeneral',
+				slug: params.slug,
+				locale: params.locale as Locale,
+			}),
+		},
 	]);
 
 	return (

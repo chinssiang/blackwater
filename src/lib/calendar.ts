@@ -1,5 +1,5 @@
-import { formatInTimeZone } from 'date-fns-tz';
 import type { Locale as DateFnsLocale } from 'date-fns';
+import { formatInTimeZone } from 'date-fns-tz';
 
 /**
  * Month-grid geometry for the /events calendar view.

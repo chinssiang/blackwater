@@ -46,7 +46,9 @@ export default function MenuDropdown({ title, items }: MenuDropdownProps) {
 									className={cn({ 'is-active': isActive })}
 									role="none"
 								>
-									<CustomLink link={link} role="menuitem">{title}</CustomLink>
+									<CustomLink link={link} role="menuitem">
+										{title}
+									</CustomLink>
 								</li>
 							);
 						})}

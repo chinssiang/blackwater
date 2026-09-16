@@ -23,7 +23,9 @@ function isAlreadyWrapped(value: unknown): boolean {
 	);
 }
 
-function wrap(value: string): { _key: string; language: string; value: string }[] {
+function wrap(
+	value: string
+): { _key: string; language: string; value: string }[] {
 	return [{ _key: 'en', language: 'en', value }];
 }
 

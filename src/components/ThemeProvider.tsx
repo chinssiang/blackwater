@@ -1,8 +1,8 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname } from 'next/navigation';
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
+import { usePathname } from 'next/navigation';
 import { isLightThemePath } from '@/lib/routes';
 
 // next-themes (0.4.6, latest) injects its anti-flash theme <script> via

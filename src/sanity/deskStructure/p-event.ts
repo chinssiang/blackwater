@@ -1,4 +1,5 @@
 import { apiVersion } from '@/sanity/env';
+import { client } from '@/sanity/lib/client';
 import {
 	BookIcon,
 	CalendarIcon,
@@ -6,7 +7,6 @@ import {
 	TagsIcon,
 	UserIcon,
 } from '@sanity/icons';
-import { client } from '@/sanity/lib/client';
 import type { StructureBuilder } from 'sanity/structure';
 
 export const pageEventCategory = (S: StructureBuilder) => {
@@ -128,9 +128,7 @@ export const pageEventItems = (S: StructureBuilder) => {
 				S.documentTypeList('pEvent')
 					.title('Events')
 					.apiVersion(apiVersion)
-					.defaultOrdering([
-						{ field: 'eventDatetime.utc', direction: 'desc' },
-					])
+					.defaultOrdering([{ field: 'eventDatetime.utc', direction: 'desc' }])
 			),
 		pageEventGroupByDate(S),
 		S.listItem()
@@ -143,9 +141,7 @@ export const pageEventItems = (S: StructureBuilder) => {
 					.items([
 						S.listItem()
 							.title('Locations')
-							.child(
-								S.documentTypeList('gLocation').title('Locations')
-							)
+							.child(S.documentTypeList('gLocation').title('Locations'))
 							.icon(PinIcon),
 						S.listItem()
 							.title('Events by Category')
@@ -174,9 +170,7 @@ export const pageEventItems = (S: StructureBuilder) => {
 										S.documentList()
 											.title('Events')
 											.apiVersion(apiVersion)
-											.filter(
-												'_type == "pEvent" && $statusId in status[]._ref'
-											)
+											.filter('_type == "pEvent" && $statusId in status[]._ref')
 											.params({ statusId })
 											.defaultOrdering([
 												{ field: 'eventDatetime.utc', direction: 'desc' },

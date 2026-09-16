@@ -1,26 +1,26 @@
+import {
+	pageProductCategoriesIndexQuery,
+	pageProductCollectionsIndexQuery,
+	pageProductsAllQuery,
+} from '@/sanity/lib/queries';
 import { describe, expect, it } from 'vitest';
+import { LOCALES } from '@/lib/i18n';
+import { DOCUMENT_ROUTES } from '@/lib/routes';
 import {
 	QUERIES,
 	SITEMAP_IDS,
 	SITEMAP_TAGS,
 	SYNTHETIC_ROUTES,
+	type SitemapDoc,
+	type SitemapId,
 	lastModifiedFor,
 	localizedEntries,
 	newestOf,
-	type SitemapDoc,
-	type SitemapId,
 } from '@/lib/sitemaps';
-import { LOCALES } from '@/lib/i18n';
-import {
-	pageProductsAllQuery,
-	pageProductCategoriesIndexQuery,
-	pageProductCollectionsIndexQuery,
-} from '@/sanity/lib/queries';
 
 // localizedEntries builds absolute URLs from SITE_URL; without one `new URL`
 // throws. Set before the suites run so the value is present at call time.
 process.env.SITE_URL = 'https://example.test';
-import { DOCUMENT_ROUTES } from '@/lib/routes';
 
 // lastModifiedFor decides what crawlers see as lastmod, and every one of its
 // rules is invisible at the call site: the shape it unwraps comes from GROQ,
@@ -150,8 +150,13 @@ function derefFields(query: string): string[] {
 	// tabs meant a reformat of queries.ts emptied this list, and the suite then
 	// failed claiming the query had no derefs rather than that the test could
 	// not find them.
-	const projection = query.match(/"contentUpdatedAt":\s*\[([\s\S]*?)^\s*\]/m)?.[1];
-	expect(projection, 'contentUpdatedAt projection not found — regex stale?').toBeDefined();
+	const projection = query.match(
+		/"contentUpdatedAt":\s*\[([\s\S]*?)^\s*\]/m
+	)?.[1];
+	expect(
+		projection,
+		'contentUpdatedAt projection not found — regex stale?'
+	).toBeDefined();
 	if (!projection) return [];
 	return [
 		...new Set(
@@ -314,7 +319,10 @@ describe.each(SYNTHETIC_ROUTES)(
 	(route) => {
 		it('covers every tracked type the page selects', () => {
 			const query = PAGE_QUERY[route.documentType];
-			expect(query, `no page query mapped for ${route.documentType}`).toBeDefined();
+			expect(
+				query,
+				`no page query mapped for ${route.documentType}`
+			).toBeDefined();
 
 			// Only types this sitemap already tracks: a page query also reads
 			// settingsGeneral for share defaults, which is not listed content and
@@ -326,9 +334,7 @@ describe.each(SYNTHETIC_ROUTES)(
 			// nothing.
 			const selected = [
 				...new Set(
-					[...query.matchAll(/\*\[\s*_type\s*==\s*"([^"]+)"/g)].map(
-						(m) => m[1]
-					)
+					[...query.matchAll(/\*\[\s*_type\s*==\s*"([^"]+)"/g)].map((m) => m[1])
 				),
 			].filter((type) => tracked.has(type));
 

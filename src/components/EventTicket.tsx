@@ -1,24 +1,24 @@
 import Link from 'next/link';
-import type { RichDate } from 'sanity.types';
 import { MapPin } from 'lucide-react';
-import EventStatusPill, {
-	type EventStatusListItem,
-} from '@/components/EventStatusPill';
-import { formatDaysUntilLabel, type Dictionary } from '@/lib/dictionary';
-import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
-import { formatRichDate, getDaysUntilEvent } from '@/lib/event-date';
-import { resolveEventDateStatus } from '@/lib/event-status';
 import { revealStagger } from '@/lib/animate';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
+import { type Dictionary, formatDaysUntilLabel } from '@/lib/dictionary';
+import { formatRichDate, getDaysUntilEvent } from '@/lib/event-date';
+import { resolveEventLocation } from '@/lib/event-location';
+import { resolveEventDateStatus } from '@/lib/event-status';
+import type { Locale } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 import {
-	cn,
-	hasArrayValue,
 	INLINE_LINK_FOCUS,
 	OVERLAY_LINK_FOCUS,
 	SECTION_INSET_TRAILING_SLIDE,
+	cn,
+	hasArrayValue,
 } from '@/lib/utils';
-import type { Locale } from '@/lib/i18n';
-import { resolveEventLocation } from '@/lib/event-location';
+import EventStatusPill, {
+	type EventStatusListItem,
+} from '@/components/EventStatusPill';
+import type { RichDate } from 'sanity.types';
 
 // Typed structurally rather than off any one query result, because the two
 // surfaces that render a ticket -- the eventsBlock carousel and the event
@@ -113,7 +113,7 @@ export function EventTicket({
 			    decoder for the codex -- "161 RR" is a "Road Run (RR)" -- and it is
 			    the one line that tells a first-time visitor what this card is. */}
 			{(category || codex) && (
-				<p className="t-spec wrap-anywhere px-4 uppercase">
+				<p className="t-spec px-4 wrap-anywhere uppercase">
 					{category || codex}
 				</p>
 			)}

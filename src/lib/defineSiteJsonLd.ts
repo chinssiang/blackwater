@@ -11,18 +11,21 @@ type Address = {
 	addressCountry?: string | null;
 } | null;
 
-type SiteSharing = {
-	siteTitle?: string | null;
-	siteDescription?: string | null;
-	alternateName?: string | null;
-	areaServed?: string | null;
-	foundingDate?: string | null;
-	address?: Address;
-	siteLogo?: unknown;
-	shareGraphic?: unknown;
-	contactEmail?: string | null;
-	socialLinks?: SocialLink[] | null;
-} | null | undefined;
+type SiteSharing =
+	| {
+			siteTitle?: string | null;
+			siteDescription?: string | null;
+			alternateName?: string | null;
+			areaServed?: string | null;
+			foundingDate?: string | null;
+			address?: Address;
+			siteLogo?: unknown;
+			shareGraphic?: unknown;
+			contactEmail?: string | null;
+			socialLinks?: SocialLink[] | null;
+	  }
+	| null
+	| undefined;
 
 const LANGUAGE_TAGS = ['en', 'zh-TW'];
 
@@ -62,7 +65,11 @@ export default function defineSiteJsonLd({
 	const description = sharing?.siteDescription || undefined;
 
 	const logoUrl = sharing?.siteLogo
-		? imageBuilder.image(sharing.siteLogo as never).format('webp').width(512).url()
+		? imageBuilder
+				.image(sharing.siteLogo as never)
+				.format('webp')
+				.width(512)
+				.url()
 		: undefined;
 
 	const imageUrl = sharing?.shareGraphic

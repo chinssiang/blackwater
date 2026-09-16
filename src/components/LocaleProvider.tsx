@@ -1,8 +1,8 @@
 'use client';
 
-import { createContext, useContext, type ReactNode } from 'react';
-import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
+import { type ReactNode, createContext, useContext } from 'react';
 import type { Dictionary } from '@/lib/dictionary';
+import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 
 const LocaleContext = createContext<{
 	locale: Locale;
@@ -31,7 +31,8 @@ export function useLocale(): Locale {
 
 export function useDictionary(): Dictionary {
 	const { dictionary } = useContext(LocaleContext);
-	if (!dictionary) throw new Error('useDictionary must be used within LocaleProvider');
+	if (!dictionary)
+		throw new Error('useDictionary must be used within LocaleProvider');
 	return dictionary;
 }
 

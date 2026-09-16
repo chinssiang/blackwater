@@ -1,7 +1,7 @@
 import { formatInTimeZone } from 'date-fns-tz';
-import type { Locale } from '@/lib/i18n';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 import { resolveEventTimezone } from '@/lib/event-date';
+import type { Locale } from '@/lib/i18n';
 
 // Concise, locale-aware date used inside structured-data names (no time).
 const NAME_DATE_FORMAT: Record<Locale, string> = {

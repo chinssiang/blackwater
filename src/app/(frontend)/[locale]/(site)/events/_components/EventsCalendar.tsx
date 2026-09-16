@@ -1,36 +1,23 @@
 'use client';
 
 import {
+	type ElementType,
+	type ReactNode,
 	useId,
 	useMemo,
 	useRef,
 	useState,
-	type ElementType,
-	type ReactNode,
 } from 'react';
 import Link from 'next/link';
-import { motion } from 'motion/react';
-import CustomLink from '@/components/CustomLink';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import {
-	Popover,
-	PopoverClose,
-	PopoverContent,
-	PopoverTitle,
-	PopoverTrigger,
-} from '@/components/Popover';
-import { ArrowUpRight, CloseIcon } from '@/components/SvgIcons';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { EASE_OUT_EXPO, REVEAL_SOFT } from '@/lib/animate';
 import {
+	type CalendarDay,
+	type DayKey,
 	buildMonthGrid,
 	buildWeekdayHeadings,
 	formatDayKey,
 	fromMonthIndex,
 	monthStartKey,
-	type CalendarDay,
-	type DayKey,
 } from '@/lib/calendar';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 import {
@@ -42,15 +29,28 @@ import {
 	getDaysUntilEvent,
 	getEventEndInstant,
 	getTodayKey,
-	isEventEnded,
 	groupEventsByDay,
+	isEventEnded,
 	resolveEventTimeLabel,
 } from '@/lib/event-date';
 import { resolveEventLocation } from '@/lib/event-location';
 import { resolveHref } from '@/lib/routes';
-import { cn, hasArrayValue, OVERLAY_LINK_FOCUS } from '@/lib/utils';
-import type { PEventsQueryResult } from 'sanity.types';
+import { OVERLAY_LINK_FOCUS, cn, hasArrayValue } from '@/lib/utils';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import CustomLink from '@/components/CustomLink';
 import EventStatusPill from '@/components/EventStatusPill';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import {
+	Popover,
+	PopoverClose,
+	PopoverContent,
+	PopoverTitle,
+	PopoverTrigger,
+} from '@/components/Popover';
+import { ArrowUpRight, CloseIcon } from '@/components/SvgIcons';
+import { motion } from 'motion/react';
+import type { PEventsQueryResult } from 'sanity.types';
 
 type EventListItem = NonNullable<PEventsQueryResult>['eventList'][number];
 
@@ -762,7 +762,7 @@ function DayCell({
 				// close button stay put while the events move under them. This clips
 				// the list to the popup's own `rounded-lg` as a side effect, which is
 				// what stops a row's hover tint painting over the corner.
-				className="t-b-1 w-88 max-h-[min(26rem,var(--available-height,26rem))] gap-0 overflow-hidden p-4"
+				className="t-b-1 max-h-[min(26rem,var(--available-height,26rem))] w-88 gap-0 overflow-hidden p-4"
 			>
 				<DayDetail
 					dayKey={day.key}
@@ -914,7 +914,7 @@ function DayEventRow({
 				// also renders in the mobile panel, where an `-mx-2` would push its
 				// `border-b` 8px wider than the <ul>'s own `border-t` at ALL times,
 				// hover or not. The tint sits on the row's own box in both.
-				href ? 'transition-colors hover:bg-foreground/5' : null,
+				href ? 'hover:bg-foreground/5 transition-colors' : null,
 				hasEnded && 'pointer-events-none'
 			)}
 		>
@@ -924,7 +924,7 @@ function DayEventRow({
 					hasEnded && 'opacity-30'
 				)}
 			>
-				<p className="t-b-1 text-muted-foreground shrink-0 tabular-nums uppercase">
+				<p className="t-b-1 text-muted-foreground shrink-0 uppercase tabular-nums">
 					{timeLabel}
 				</p>
 				<p className="t-b-1 font-bold text-balance uppercase">{title}</p>
@@ -955,7 +955,7 @@ function DayEventRow({
 						>
 							{displayLocation}
 							<span className="inline-block transition-transform duration-300 ease-out group-hover/location:translate-x-0.5 group-hover/location:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover/location:translate-x-0 motion-reduce:group-hover/location:translate-y-0">
-								<ArrowUpRight className="size-2 inline-block" />
+								<ArrowUpRight className="inline-block size-2" />
 							</span>
 						</CustomLink>
 					) : (

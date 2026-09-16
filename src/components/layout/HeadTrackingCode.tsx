@@ -4,13 +4,13 @@ import { useEffect, useMemo } from 'react';
 import { usePathname } from 'next/navigation';
 import { GoogleAnalytics, GoogleTagManager } from '@next/third-parties/google';
 import { stegaClean } from '@sanity/client/stega';
-import { hasArrayValue } from '@/lib/utils';
-import * as gtag from '@/lib/gtag';
 import {
 	clearTrackingCookies,
 	pushConsentDefault,
 	pushConsentUpdate,
 } from '@/lib/consent';
+import * as gtag from '@/lib/gtag';
+import { hasArrayValue } from '@/lib/utils';
 import { useConsent } from '@/hooks/useConsent';
 
 const IS_PROD = process.env.NODE_ENV === 'production';

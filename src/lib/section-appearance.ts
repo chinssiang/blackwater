@@ -1,8 +1,8 @@
 import { stegaClean } from '@sanity/client/stega';
 import {
+	type MaybeSanityColor,
 	buildRgbaCssString,
 	ensureAccessibleTextColor,
-	type MaybeSanityColor,
 } from '@/lib/image-utils';
 
 // Turns a Sanity `sectionAppearance` object into the classes, CSS custom

@@ -1,9 +1,9 @@
 import type { CSSProperties } from 'react';
-import { cn, SECTION_INSET } from '@/lib/utils';
 import {
-	resolveSectionAppearance,
 	type SectionAppearance,
+	resolveSectionAppearance,
 } from '@/lib/section-appearance';
+import { SECTION_INSET, cn } from '@/lib/utils';
 
 // The <section> wrapper every page module renders, and the one place the
 // `sectionAppearance` object reaches the DOM.

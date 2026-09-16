@@ -15,8 +15,9 @@
 export function faqPreview(question, language, maxLength = 60) {
 	const raw = Array.isArray(question)
 		? (
-				question.find((entry) => entry?.language === language && entry?.value) ??
-				question.find((entry) => entry?.value)
+				question.find(
+					(entry) => entry?.language === language && entry?.value
+				) ?? question.find((entry) => entry?.value)
 			)?.value
 		: question;
 	return (

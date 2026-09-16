@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildResolvedHrefGroq, DOCUMENT_ROUTES } from '@/lib/routes';
+import { DOCUMENT_ROUTES, buildResolvedHrefGroq } from '@/lib/routes';
 import { RESOLVED_HREF_GROQ } from './groq-constants.generated';
 
 /**
@@ -21,9 +21,9 @@ describe('groq-constants.generated', () => {
 	// than the two membership tests this replaces — it also catches a duplicate
 	// arm — and it was previously spelled a third time in routes.test.ts.
 	it('arms exactly the routed types that back a real document', () => {
-		const armed = [
-			...RESOLVED_HREF_GROQ.matchAll(/_type == "([^"]+)"/g),
-		].map((m) => m[1]);
+		const armed = [...RESOLVED_HREF_GROQ.matchAll(/_type == "([^"]+)"/g)].map(
+			(m) => m[1]
+		);
 		const expected = DOCUMENT_ROUTES.filter((route) => !route.synthetic).map(
 			(route) => route.type
 		);

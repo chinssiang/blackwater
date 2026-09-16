@@ -1,11 +1,11 @@
-import { BlockElementIcon } from '@sanity/icons';
-import { defineType, defineField } from 'sanity';
-import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
+import customImage from '@/sanity/schemaTypes/objects/custom-image';
 import {
 	moduleRule,
 	pageModuleHidden,
 } from '@/sanity/schemaTypes/objects/page-module';
+import { BlockElementIcon } from '@sanity/icons';
+import { defineField, defineType } from 'sanity';
 
 // Hero page module: the opening statement of a page -- an eyebrow, a heading, a
 // short paragraph and an optional call to action, over an optional background

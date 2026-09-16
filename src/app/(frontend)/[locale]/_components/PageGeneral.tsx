@@ -1,11 +1,11 @@
-import CustomPortableText from '@/components/CustomPortableText';
-import PageModules from '@/components/PageModules';
-import { heroBlockIsRenderable } from '@/components/HeroBlock';
-import { getDictionary } from '@/lib/dictionary.server';
-import type { Locale } from '@/lib/i18n';
 import type { PageGeneralQueryResult } from '@/../sanity.types';
 import { format } from 'date-fns';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
+import { getDictionary } from '@/lib/dictionary.server';
+import type { Locale } from '@/lib/i18n';
+import CustomPortableText from '@/components/CustomPortableText';
+import { heroBlockIsRenderable } from '@/components/HeroBlock';
+import PageModules from '@/components/PageModules';
 
 // Picked from the generated query result rather than restated, so a projection
 // change fails `tsc` here instead of silently drifting.
@@ -35,11 +35,11 @@ export default async function PageGeneral({ data, locale }: PageGeneralProps) {
 
 	return (
 		<>
-			<section className="min-h-main flex flex-col lg:flex-row justify-center p-x-max mx-auto py-10 lg:py-17.5 gap-10">
-				<div className="flex-1 lg:sticky lg:top-header h-fit">
+			<section className="min-h-main p-x-max mx-auto flex flex-col justify-center gap-10 py-10 lg:flex-row lg:py-17.5">
+				<div className="lg:top-header h-fit flex-1 lg:sticky">
 					{title && <h1 className="t-b-1 uppercase">{title}</h1>}
 					{_updatedAt && (
-						<p className="t-b-1 uppercase mt-1">
+						<p className="t-b-1 mt-1 uppercase">
 							{dict.common.lastUpdated}:{' '}
 							{format(new Date(_updatedAt), 'PPP', { locale: dateFnsLocale })}
 						</p>

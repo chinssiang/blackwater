@@ -1,10 +1,10 @@
-import { CalendarIcon } from '@sanity/icons';
-import { defineType, defineField } from 'sanity';
 import { pageModuleComponents } from '@/sanity/schemaTypes/components/PageModuleItem';
 import {
 	moduleRule,
 	pageModuleHidden,
 } from '@/sanity/schemaTypes/objects/page-module';
+import { CalendarIcon } from '@sanity/icons';
+import { defineField, defineType } from 'sanity';
 
 // Upcoming-events page module: a compact strip of the events that have not yet
 // happened, pulled automatically rather than curated. Nothing here names an

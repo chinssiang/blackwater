@@ -1,9 +1,9 @@
 import dynamic from 'next/dynamic';
-import FaqBlock from './FaqBlock';
+import type { Locale } from '@/lib/i18n';
 import EventsBlock from './EventsBlock';
+import FaqBlock from './FaqBlock';
 import HeroBlock from './HeroBlock';
 import ProductsBlock from './ProductsBlock';
-import type { Locale } from '@/lib/i18n';
 
 // FaqBlock and ProductsBlock are Server Components with no client chunk to
 // split, so they are imported statically. The other three carry client code,

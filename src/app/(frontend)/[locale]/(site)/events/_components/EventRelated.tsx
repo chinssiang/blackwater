@@ -1,17 +1,17 @@
 import { cache } from 'react';
 import dynamic from 'next/dynamic';
-import type { RelatedEventsQueryResult } from 'sanity.types';
-import SectionShell from '@/components/SectionShell';
+import { sanityFetch } from '@/sanity/lib/live';
+import { RELATED_EVENTS_TAGS, relatedEventsQuery } from '@/sanity/lib/queries';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
+import { type Dictionary, interpolate } from '@/lib/dictionary';
+import { isEventEnded } from '@/lib/event-date';
+import type { Locale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
+import { OVERLAY_LINK_FOCUS, cn } from '@/lib/utils';
 import { EventTicketSlide } from '@/components/EventTicket';
 import SectionHeadingLink from '@/components/SectionHeadingLink';
-import { sanityFetch } from '@/sanity/lib/live';
-import { relatedEventsQuery, RELATED_EVENTS_TAGS } from '@/sanity/lib/queries';
-import { interpolate, type Dictionary } from '@/lib/dictionary';
-import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
-import { isEventEnded } from '@/lib/event-date';
-import { resolveHref } from '@/lib/routes';
-import { cn, OVERLAY_LINK_FOCUS } from '@/lib/utils';
-import type { Locale } from '@/lib/i18n';
+import SectionShell from '@/components/SectionShell';
+import type { RelatedEventsQueryResult } from 'sanity.types';
 
 type RelatedRow = NonNullable<RelatedEventsQueryResult>['series'][number];
 

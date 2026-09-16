@@ -1,21 +1,24 @@
+import { Suspense, cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache, Suspense } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import {
 	pageProductSingleQuery,
 	pageProductSlugsQuery,
 } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales, notFoundMetadata } from '@/lib/defineMetadata';
+import { stegaClean } from '@sanity/client/stega';
+import defineMetadata, {
+	normalizeLocales,
+	notFoundMetadata,
+} from '@/lib/defineMetadata';
 import { type Locale } from '@/lib/i18n';
 import { isShopifyConfigured } from '@/lib/shopify/client';
+import { BuyColumnSkeleton } from './_components/BuyColumn';
 import PageProductSingle from './_components/PageProductSingle';
 import ProductBuyColumn from './_components/ProductBuyColumn';
 import ProductGalleryColumn from './_components/ProductGalleryColumn';
 import ProductMainImage from './_components/ProductMainImage';
 import ProductRelatedGrid from './_components/ProductRelatedGrid';
-import { BuyColumnSkeleton } from './_components/BuyColumn';
 
 type Props = {
 	params: Promise<{ locale: string; slug: string }>;

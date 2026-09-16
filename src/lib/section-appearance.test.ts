@@ -1,6 +1,6 @@
+import { vercelStegaCombine } from '@vercel/stega';
 import { describe, expect, it } from 'vitest';
 import { resolveSectionAppearance } from './section-appearance';
-import { vercelStegaCombine } from '@vercel/stega';
 
 const color = (r: number, g: number, b: number, a = 1) => ({
 	hex: '#000000',

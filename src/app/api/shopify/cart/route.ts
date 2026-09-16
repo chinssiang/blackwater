@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import * as z from 'zod';
 import { client } from '@/sanity/lib/client';
 import { productSlugsByShopifyHandleQuery } from '@/sanity/lib/queries';
-import { DEFAULT_LOCALE, isLocale, type Locale } from '@/lib/i18n';
-import { isShopifyConfigured } from '@/lib/shopify/client';
+import * as z from 'zod';
+import { DEFAULT_LOCALE, type Locale, isLocale } from '@/lib/i18n';
 import {
-	addCartLines,
 	CartNotFoundError,
+	addCartLines,
 	createCart,
 	getCart,
 	removeCartLine,
 	updateCartLine,
 } from '@/lib/shopify/cart';
+import { isShopifyConfigured } from '@/lib/shopify/client';
 import {
 	MAX_LINE_QUANTITY,
 	type ShopifyCart,
@@ -208,7 +208,8 @@ async function cartResponse(cart: ShopifyCart | null, locale: Locale) {
 }
 
 export async function GET(req: NextRequest) {
-	if (!isShopifyConfigured()) return NextResponse.json({ ok: true, cart: null });
+	if (!isShopifyConfigured())
+		return NextResponse.json({ ok: true, cart: null });
 
 	const cartId = req.cookies.get(CART_COOKIE)?.value;
 	if (!cartId) return NextResponse.json({ ok: true, cart: null });
@@ -283,7 +284,8 @@ export async function POST(req: NextRequest) {
 			// expiry check is a real path, not a guard: carts routinely die before
 			// the cookie does.
 			const existing = cartId ? await getCart(cartId) : null;
-			if (!existing) return cartResponse(await createCart(lines, locale), locale);
+			if (!existing)
+				return cartResponse(await createCart(lines, locale), locale);
 
 			// cartLinesAdd accumulates onto a line that already holds this variant,
 			// so the per-line ceiling has to be applied to the *result*. Validating

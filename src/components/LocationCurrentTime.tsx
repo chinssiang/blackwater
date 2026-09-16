@@ -1,9 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useEffect, useState } from 'react';
 import { TZDate } from '@date-fns/tz';
 import { format } from 'date-fns';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 
 export function LocationCurrentTime() {
 	const [time, setTime] = useState<Date>(() => new Date());
@@ -30,7 +31,9 @@ export function LocationCurrentTime() {
 	}, []);
 
 	const tzDate = new TZDate(time, 'Asia/Singapore');
-	const formattedTime = format(tzDate, t.dateFormat, { locale: DATE_FNS_LOCALES[locale] });
+	const formattedTime = format(tzDate, t.dateFormat, {
+		locale: DATE_FNS_LOCALES[locale],
+	});
 	const colonIndex = formattedTime.indexOf(':');
 
 	return (
@@ -41,7 +44,7 @@ export function LocationCurrentTime() {
 		// uniform, so the box also survives the 9:59 → 10:00 rollover.
 		<time
 			suppressHydrationWarning
-			className="tabular-nums inline-block min-w-[15ch]"
+			className="inline-block min-w-[15ch] tabular-nums"
 		>
 			{formattedTime.slice(0, colonIndex)}
 			<span className="animate-blinker">:</span>

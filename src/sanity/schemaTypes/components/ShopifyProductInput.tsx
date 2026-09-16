@@ -12,7 +12,7 @@ import {
 	Text,
 	TextInput,
 } from '@sanity/ui';
-import { set, unset, useFormValue, type StringInputProps } from 'sanity';
+import { type StringInputProps, set, unset, useFormValue } from 'sanity';
 
 // Search-as-you-type picker for pProduct.shopify.handle. Talks to
 // /api/shopify/search (Storefront API proxy); when that isn't configured it

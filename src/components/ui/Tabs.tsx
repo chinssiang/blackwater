@@ -1,13 +1,12 @@
 'use client';
 
-import { type VariantProps } from 'class-variance-authority';
 import { Tabs as TabsPrimitive } from '@base-ui/react/tabs';
-
+import { cn } from '@/lib/utils';
 // A leaf module, deliberately: importing the variant from THIS file drags
 // `@base-ui/react/tabs` into the caller's bundle, which is dead weight for a
 // caller that renders no tabs. See the note in that file before moving it back.
 import { tabsTriggerVariants } from '@/components/ui/tabsTriggerVariants';
-import { cn } from '@/lib/utils';
+import { type VariantProps } from 'class-variance-authority';
 
 function Tabs({ ...props }: TabsPrimitive.Root.Props) {
 	return <TabsPrimitive.Root data-slot="tabs" {...props} />;

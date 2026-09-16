@@ -1,15 +1,15 @@
+import { type Dictionary, interpolate } from '@/lib/dictionary';
+import { cn, hasArrayValue } from '@/lib/utils';
 import ImageBlock from '@/components/ImageBlock';
 import {
 	Accordion,
+	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
-	AccordionContent,
 } from '@/components/ui/Accordion';
-import { cn, hasArrayValue } from '@/lib/utils';
-import { interpolate, type Dictionary } from '@/lib/dictionary';
-import type { PageEventSingleQueryResult } from 'sanity.types';
 import EventStationsNav from './EventStationsNav';
 import ExternalTextLink from './ExternalTextLink';
+import type { PageEventSingleQueryResult } from 'sanity.types';
 
 type EventQueryResult = NonNullable<PageEventSingleQueryResult>;
 
@@ -66,7 +66,7 @@ export default function EventStations({
 			{startName && (
 				<div
 					id="start"
-					className="border-foreground/20 px-contain scroll-mt-12 border-b py-8 lg:p-x-max"
+					className="border-foreground/20 px-contain lg:p-x-max scroll-mt-12 border-b py-8"
 				>
 					<p className="t-spec text-foreground/60 mb-1 uppercase">
 						{t.detail.startFinish}
@@ -114,7 +114,7 @@ function StationCard({
 	return (
 		<div
 			id={`station-${index}`}
-			className="border-foreground/20 px-contain scroll-mt-12 border-b py-8 lg:p-x-max"
+			className="border-foreground/20 px-contain lg:p-x-max scroll-mt-12 border-b py-8"
 		>
 			<div className="mb-6 min-w-0">
 				<p className="t-spec text-foreground/60 mb-3 uppercase">

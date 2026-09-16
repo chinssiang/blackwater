@@ -1,6 +1,6 @@
 import { HelpCircleIcon } from '@sanity/icons';
-import { defineField, defineType } from 'sanity';
 import { pickValueForLocale, requireSomeValue } from '@/lib/i18n';
+import { defineField, defineType } from 'sanity';
 
 // A single, globally reusable FAQ entry. Deliberately NOT localized at the
 // document level: a question is one piece of editorial content whose identity —

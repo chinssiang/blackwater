@@ -1,7 +1,8 @@
 'use client';
+
 import { LinkIcon } from '@sanity/icons';
-import type { PreviewProps } from 'sanity';
 import { sanitizeEmbedSnippet } from '@/lib/sanitize-embed';
+import type { PreviewProps } from 'sanity';
 
 type IframePreviewProps = PreviewProps & { embedSnippet?: string };
 

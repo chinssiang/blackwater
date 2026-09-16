@@ -108,7 +108,8 @@ async function main() {
 				console.log(`  skip ${fix.slug} [${language}] — no such document`);
 				continue;
 			}
-			const dateOk = doc.eventDatetime?.utc === fix.eventDatetime.utc &&
+			const dateOk =
+				doc.eventDatetime?.utc === fix.eventDatetime.utc &&
 				doc.eventDatetime?.timezone === fix.eventDatetime.timezone;
 			const endOk = !fix.clearEnd || !doc.endDatetime;
 			if (dateOk && endOk) {
@@ -118,7 +119,9 @@ async function main() {
 			console.log(
 				`  fix  ${fix.slug} [${language}] ${doc.eventDatetime?.local ?? '—'} → ${fix.eventDatetime.local}${fix.clearEnd && doc.endDatetime ? ' (clearing end)' : ''}  — ${fix.why}`
 			);
-			let patch = client.patch(doc._id).set({ eventDatetime: fix.eventDatetime });
+			let patch = client
+				.patch(doc._id)
+				.set({ eventDatetime: fix.eventDatetime });
 			if (fix.clearEnd) patch = patch.unset(['endDatetime']);
 			tx = tx.patch(patch);
 			pending++;
@@ -130,11 +133,15 @@ async function main() {
 		return;
 	}
 	if (!EXECUTE) {
-		console.log(`\n${pending} patch(es) planned. Re-run with --execute to write.`);
+		console.log(
+			`\n${pending} patch(es) planned. Re-run with --execute to write.`
+		);
 		return;
 	}
 	const result = await tx.commit();
-	console.log(`\ncommitted transaction ${result.transactionId} (${pending} patches)`);
+	console.log(
+		`\ncommitted transaction ${result.transactionId} (${pending} patches)`
+	);
 }
 
 main().catch((err) => {

@@ -93,12 +93,19 @@ async function main() {
 		`*[_type == "pFaq"]{_id, language, questions, faqSet}`
 	);
 
-	const pending = pages.filter((p) => Array.isArray(p.questions) && p.questions.length);
+	const pending = pages.filter(
+		(p) => Array.isArray(p.questions) && p.questions.length
+	);
 	if (!pending.length) {
 		console.log('Nothing to do — no pFaq document still holds an inline list.');
 		// Fetched only on this branch: on the migrating path it is always null.
-		const existingSet = await client.fetch(`*[_type == "gFaqList"][0]{_id, title}`);
-		if (existingSet) console.log(`  Existing set: ${existingSet._id} ("${existingSet.title}")`);
+		const existingSet = await client.fetch(
+			`*[_type == "gFaqList"][0]{_id, title}`
+		);
+		if (existingSet)
+			console.log(
+				`  Existing set: ${existingSet._id} ("${existingSet.title}")`
+			);
 		return;
 	}
 
@@ -106,9 +113,13 @@ async function main() {
 	// absent from `pending` and invisible to the conflict check below. Repointing
 	// it at the canonical set would discard a deliberate editorial choice with
 	// nothing in the output saying so.
-	const foreign = pages.filter((p) => p.faqSet?._ref && p.faqSet._ref !== SET_ID);
+	const foreign = pages.filter(
+		(p) => p.faqSet?._ref && p.faqSet._ref !== SET_ID
+	);
 	if (foreign.length) {
-		console.error('\nCONFLICT: pFaq document(s) already point at a different FAQ set:');
+		console.error(
+			'\nCONFLICT: pFaq document(s) already point at a different FAQ set:'
+		);
 		foreign.forEach((p) =>
 			console.error(`  ${p._id} (${p.language}) → ${p.faqSet._ref}`)
 		);
@@ -118,7 +129,8 @@ async function main() {
 		process.exit(1);
 	}
 
-	const refsOf = (page) => (page.questions ?? []).map((q) => q._ref).filter(Boolean);
+	const refsOf = (page) =>
+		(page.questions ?? []).map((q) => q._ref).filter(Boolean);
 	// From `pending`, not `pages`: a page with no inline list would yield an empty
 	// canonicalRefs and turn every other page's entries into a spurious "different
 	// SET" conflict, reported as a membership problem the operator does not have.
@@ -152,8 +164,10 @@ async function main() {
 				`\nCONFLICT: "${page._id}" (${page.language}) lists a different SET of ` +
 					`questions than the canonical "${canonical._id}".`
 			);
-			if (extra.length) console.error(`  only in ${page.language}: ${extra.join(', ')}`);
-			if (missing.length) console.error(`  missing from ${page.language}: ${missing.join(', ')}`);
+			if (extra.length)
+				console.error(`  only in ${page.language}: ${extra.join(', ')}`);
+			if (missing.length)
+				console.error(`  missing from ${page.language}: ${missing.join(', ')}`);
 			if (!missing.length && !extra.length && !sameLength)
 				console.error(
 					`  same questions, but ${page.language} lists ${theirRefs.length} entries to the canonical's ${canonicalRefs.length} — it repeats one.`
@@ -224,35 +238,48 @@ async function main() {
 	});
 	for (const page of toRepoint) {
 		tx.patch(page._id, (p) =>
-			p.set({ faqSet: { _type: 'reference', _ref: SET_ID } }).unset(['questions'])
+			p
+				.set({ faqSet: { _type: 'reference', _ref: SET_ID } })
+				.unset(['questions'])
 		);
 	}
 	await tx.commit();
 	console.log('Committed.');
 
 	// ---- Post-check ---------------------------------------------------------
-	const after = await client.fetch(`{
+	const after = await client.fetch(
+		`{
 		"setSize": count(*[_id == $setId][0].questions),
 		"pagesWithInlineList": count(*[_type == "pFaq" && defined(questions)]),
 		"pagesWithoutSet": count(*[_type == "pFaq" && !defined(faqSet)]),
 		"pagesOnOtherSets": count(*[_type == "pFaq" && faqSet._ref != $setId])
-	}`, { setId: SET_ID });
+	}`,
+		{ setId: SET_ID }
+	);
 	const problems = [];
 	if (after.setSize !== canonicalRefs.length)
-		problems.push(`set holds ${after.setSize} question(s), expected ${canonicalRefs.length}`);
+		problems.push(
+			`set holds ${after.setSize} question(s), expected ${canonicalRefs.length}`
+		);
 	if (after.pagesWithInlineList > 0)
-		problems.push(`${after.pagesWithInlineList} pFaq document(s) still hold an inline list`);
+		problems.push(
+			`${after.pagesWithInlineList} pFaq document(s) still hold an inline list`
+		);
 	if (after.pagesWithoutSet > 0)
 		problems.push(`${after.pagesWithoutSet} pFaq document(s) have no set`);
 	if (after.pagesOnOtherSets > 0)
-		problems.push(`${after.pagesOnOtherSets} pFaq document(s) point at a different set`);
+		problems.push(
+			`${after.pagesOnOtherSets} pFaq document(s) point at a different set`
+		);
 	if (problems.length) {
 		console.error('\nPost-check FAILED:');
 		problems.forEach((p) => console.error(`  ${p}`));
 		process.exitCode = 1;
 		return;
 	}
-	console.log(`Post-check clean — ${after.setSize} question(s) in one set, both pages on it.`);
+	console.log(
+		`Post-check clean — ${after.setSize} question(s) in one set, both pages on it.`
+	);
 }
 
 main().catch((err) => {

@@ -46,12 +46,12 @@ import { NextResponse } from 'next/server';
 import {
 	CDN_CACHE_SECONDS,
 	CDN_STALE_WHILE_REVALIDATE_SECONDS,
-	isSnapshotStale,
 	MAX_ORIGIN_SNAPSHOT_AGE_MS,
 	TAIPEI_COORDS,
 	TAIPEI_TIMEZONE,
 	WEATHER_CACHE_SECONDS,
 	type WeatherSnapshot,
+	isSnapshotStale,
 } from '@/lib/weather';
 
 // A hanging upstream would otherwise hold a function invocation open for the

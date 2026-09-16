@@ -1,6 +1,6 @@
+import type { LinkFactoryArgs } from '@/sanity/schemaTypes/objects/link';
 import { FiExternalLink } from 'react-icons/fi';
 import { defineField } from 'sanity';
-import type { LinkFactoryArgs } from '@/sanity/schemaTypes/objects/link';
 
 export default function callToAction({
 	title,

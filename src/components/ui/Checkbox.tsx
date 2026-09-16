@@ -2,7 +2,6 @@
 
 import { Checkbox as CheckboxPrimitive } from '@base-ui/react/checkbox';
 import { CheckIcon } from 'lucide-react';
-
 import { cn } from '@/lib/utils';
 
 // Base UI renders the box as a <span role="checkbox"> beside a hidden <input>,

@@ -1,5 +1,5 @@
-import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vitest/config';
+import { fileURLToPath } from 'node:url';
 
 // Unit tests only. There is no RTL setup here on purpose: the things worth
 // pinning are the locale/path/date helpers whose edge cases are invisible at the

@@ -1,22 +1,22 @@
 'use client';
+
 import { useState } from 'react';
+import { HiOutlineInformationCircle } from 'react-icons/hi2';
+import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/Label';
 import {
 	Tooltip,
 	TooltipContent,
 	TooltipTrigger,
 } from '@/components/ui/Tooltip';
-import { HiOutlineInformationCircle } from 'react-icons/hi2';
-import { cva, type VariantProps } from 'class-variance-authority';
-
-import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/Label';
+import { type VariantProps, cva } from 'class-variance-authority';
 
 function FieldGroup({ className, ...props }: React.ComponentProps<'div'>) {
 	return (
 		<div
 			data-slot="field-group"
 			className={cn(
-				'data-[slot=checkbox-group]:gap-3 [&>[data-slot=field-group]]:gap-4 group/field-group @container/field-group flex w-full flex-col',
+				'group/field-group @container/field-group flex w-full flex-col data-[slot=checkbox-group]:gap-3 [&>[data-slot=field-group]]:gap-4',
 				className
 			)}
 			{...props}
@@ -25,15 +25,15 @@ function FieldGroup({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 const fieldVariants = cva(
-	'data-[invalid=true]:text-destructive gap-2 group/field flex w-full',
+	'data-[invalid=true]:text-destructive group/field flex w-full gap-2',
 	{
 		variants: {
 			orientation: {
 				vertical: 'flex-col [&>*]:w-full [&>.sr-only]:w-auto',
 				horizontal:
-					'flex-row items-center [&>[data-slot=field-label]]:flex-auto has-[>[data-slot=field-content]]:items-start has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
+					'flex-row items-center has-[>[data-slot=field-content]]:items-start [&>[data-slot=field-label]]:flex-auto has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
 				responsive:
-					'flex-col [&>*]:w-full [&>.sr-only]:w-auto @md/field-group:flex-row @md/field-group:items-center @md/field-group:[&>*]:w-auto @md/field-group:[&>[data-slot=field-label]]:flex-auto @md/field-group:has-[>[data-slot=field-content]]:items-start @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
+					'flex-col @md/field-group:flex-row @md/field-group:items-center @md/field-group:has-[>[data-slot=field-content]]:items-start [&>*]:w-full @md/field-group:[&>*]:w-auto [&>.sr-only]:w-auto @md/field-group:[&>[data-slot=field-label]]:flex-auto @md/field-group:has-[>[data-slot=field-content]]:[&>[role=checkbox],[role=radio]]:mt-px',
 			},
 		},
 		defaultVariants: {
@@ -63,7 +63,7 @@ function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
 		<div
 			data-slot="field-content"
 			className={cn(
-				'gap-2 group/field-content flex flex-1 flex-col leading-snug',
+				'group/field-content flex flex-1 flex-col gap-2 leading-snug',
 				className
 			)}
 			{...props}
@@ -79,7 +79,7 @@ function FieldLabel({
 		<Label
 			data-slot="field-label"
 			className={cn(
-				'has-data-checked:bg-primary/5 has-data-checked:border-primary/30 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10 gap-1 group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border [&>*]:data-[slot=field]:p-2.5 group/field-label peer/field-label flex w-fit leading-snug text-xs',
+				'has-data-checked:bg-primary/5 has-data-checked:border-primary/30 dark:has-data-checked:border-primary/20 dark:has-data-checked:bg-primary/10 group/field-label peer/field-label flex w-fit gap-1 text-xs leading-snug group-data-[disabled=true]/field:opacity-50 has-[>[data-slot=field]]:rounded-lg has-[>[data-slot=field]]:border [&>*]:data-[slot=field]:p-2.5',
 				'has-[>[data-slot=field]]:w-full has-[>[data-slot=field]]:flex-col',
 				className
 			)}
@@ -93,7 +93,7 @@ function FieldDescription({ className, ...props }: React.ComponentProps<'p'>) {
 		<p
 			data-slot="field-description"
 			className={cn(
-				'text-muted-foreground text-left text-sm [[data-variant=legend]+&]:-mt-1.5 leading-normal font-normal group-has-[[data-orientation=horizontal]]/field:text-balance',
+				'text-muted-foreground text-left text-sm leading-normal font-normal group-has-[[data-orientation=horizontal]]/field:text-balance [[data-variant=legend]+&]:-mt-1.5',
 				'last:mt-0 nth-last-2:-mt-1',
 				'[&>a:hover]:text-primary [&>a]:underline [&>a]:underline-offset-4',
 				className

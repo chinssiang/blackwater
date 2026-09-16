@@ -1,8 +1,8 @@
 'use client';
 
+import { interpolate, pickPlural } from '@/lib/dictionary';
 import ChromeButton from '@/components/ChromeButton';
 import { useTranslations } from '@/components/LocaleProvider';
-import { interpolate, pickPlural } from '@/lib/dictionary';
 import CartCountBadge from './CartCountBadge';
 import { useCart } from './CartProvider';
 

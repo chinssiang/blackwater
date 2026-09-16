@@ -1,11 +1,11 @@
 import { stegaClean } from '@sanity/client/stega';
+import type { Locale } from '@/lib/i18n';
+import { MAX_WIDTH_PX } from '@/lib/section-appearance';
+import { withLiveCardPrices } from '@/lib/shopify/product';
 import ProductCard from '@/components/ProductCard';
 import SectionShell, {
 	type SectionAppearance,
 } from '@/components/SectionShell';
-import { MAX_WIDTH_PX } from '@/lib/section-appearance';
-import { withLiveCardPrices } from '@/lib/shopify/product';
-import type { Locale } from '@/lib/i18n';
 
 // Sanity's GROQ arm has already picked the products (hand-picked list or
 // collection, decided there so the discriminator never reaches the client); this
