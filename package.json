@@ -17,6 +17,8 @@
 		"lint": "eslint",
 		"lint:fix": "eslint --fix",
 		"typecheck": "tsc --noEmit",
+		"format": "prettier --write .",
+		"format:check": "prettier --check .",
 		"test": "vitest run",
 		"test:watch": "vitest",
 		"prepare": "git config core.hooksPath .githooks || exit 0"

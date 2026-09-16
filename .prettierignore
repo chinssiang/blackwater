@@ -1,0 +1,5 @@
+# Written by `sanity schema extract` with 2-space indent, while .prettierrc sets
+# useTabs. Without this, Prettier and `npm run typegen` rewrite its 11k lines
+# against each other forever and CI's `git diff --exit-code -- schema.json`
+# fails on every run.
+schema.json
