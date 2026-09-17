@@ -7,7 +7,7 @@ import {
 	type ProductFilterSelection,
 	countActiveFilters,
 } from '@/lib/productFilters';
-import { cn } from '@/lib/utils';
+import { CONTROL_FOCUS, cn } from '@/lib/utils';
 import { useProductFilterParams } from '@/hooks/useProductFilterParams';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui/Button';
@@ -160,16 +160,14 @@ export default function ProductBrowser({
 
 	return (
 		<>
-			<div className={className}>
-				<ProductFilters
-					categories={categories}
-					brands={brands}
-					badges={badges}
-					prices={prices}
-					selected={selected}
-					sort={sort}
-				/>
-			</div>
+			<ProductFilters
+				categories={categories}
+				brands={brands}
+				badges={badges}
+				prices={prices}
+				selected={selected}
+				sort={sort}
+			/>
 
 			{products.length > 0 ? (
 				<>
@@ -192,7 +190,17 @@ export default function ProductBrowser({
 						variant="outline"
 						onClick={clearAll}
 						disabled={isPending}
-						className="pointer-coarse:min-h-11"
+						// The same recipe as the toolbar's Filters trigger, so the
+						// recovery from an empty result reads as the same control the
+						// shopper just used. Restated rather than shared: the outline-pill
+						// treatment wants to be a Button variant (or a sibling cva beside
+						// `tabsTriggerVariants`, which already owns this vocabulary), and
+						// that is entangled with `--input`/`--ring`/`--primary` being wrong
+						// for the light routes' paper. Only the focus ring is shared today.
+						className={cn(
+							't-l-2 border-foreground/50 hover:bg-foreground/5 focus-visible:border-foreground px-3.5 uppercase pointer-coarse:min-h-11',
+							CONTROL_FOCUS
+						)}
 					>
 						{t.filters.clearFilters}
 					</Button>

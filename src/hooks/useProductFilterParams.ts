@@ -1,7 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useTransition } from 'react';
+import { useEffect, useRef } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+	useProgressActive,
+	useProgressStart,
+} from '@/components/progress/ProgressProvider';
 
 /**
  * The one writer of the product listing's URL.
@@ -33,7 +37,12 @@ export function useProductFilterParams() {
 	const router = useRouter();
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
-	const [isPending, startTransition] = useTransition();
+	// The shared transition, not a local `useTransition`: that state is local to
+	// each hook CALL, so `ProductFilters` and `ProductBrowser` each held their
+	// own flag and only the one that started the navigation ever saw it go
+	// true. It also drives the global progress bar.
+	const startProgress = useProgressStart();
+	const isPending = useProgressActive();
 
 	const currentParams = searchParams.toString();
 	// The query string of the last `commit`, held only while its navigation is in
@@ -96,7 +105,7 @@ export function useProductFilterParams() {
 		// Recorded before the push so the next commit in this window extends it
 		// rather than the params the browser is still showing.
 		pendingParams.current = params.toString();
-		startTransition(() => {
+		startProgress(() => {
 			router.push(hrefFrom(params), { scroll: false });
 		});
 	}

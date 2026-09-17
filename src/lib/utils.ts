@@ -250,6 +250,34 @@ export function isValidUrl(urlString: string): boolean {
 	return !!urlPattern.test(urlString);
 }
 
+// --- DOM EVENTS ---
+
+/**
+ * True when a click carries a modifier or came from a non-primary button --
+ * i.e. when the browser's own default action (new tab, new window, paste-and-go)
+ * is what the visitor asked for.
+ *
+ * Anything that calls `preventDefault()` on an anchor has to check this first,
+ * or cmd-click and middle-click silently stop opening a new tab. Two call sites
+ * had independently spelled the same five conditions out, with a third copy in
+ * `ThemeProvider` already missing two of them.
+ */
+export function isModifiedClick(event: {
+	metaKey: boolean;
+	ctrlKey: boolean;
+	shiftKey: boolean;
+	altKey: boolean;
+	button: number;
+}): boolean {
+	return (
+		event.metaKey ||
+		event.ctrlKey ||
+		event.shiftKey ||
+		event.altKey ||
+		event.button !== 0
+	);
+}
+
 // --- TAILWIND UTILITIES ---
 
 // Shared keyboard-focus treatment for absolutely-positioned overlay links (a
@@ -263,6 +291,19 @@ export const OVERLAY_LINK_FOCUS =
 // and fragments across line boxes once the link's text can wrap.
 export const INLINE_LINK_FOCUS =
 	'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-ring';
+
+// The keyboard-focus treatment for a CONTROL -- a button, a chip, a select
+// trigger, a checkbox. `--ring` at /50 is near-invisible on the light routes'
+// paper, so these use the accent ink and a 2px ring, and each has to restate
+// the width because the primitives ship `ring-3`/`ring-[3px]` and tailwind-merge
+// cannot reconcile the two within one scope. Ring utilities ONLY: the consumer
+// declares its own `transition-*`, which must cover the ring plus whatever else
+// it animates.
+//
+// Some call sites pair this with `focus-visible:border-foreground`; that is not
+// folded in because it is not wanted on a control with no border.
+export const CONTROL_FOCUS =
+	'focus-visible:ring-accent-foreground focus-visible:ring-2';
 
 export const SECTION_INSET = 'p-x-max';
 // A padding on the carousel TRACK, deliberately not on the viewport: the

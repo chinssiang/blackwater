@@ -10,7 +10,7 @@ import {
 	type ProductFilterSelection,
 	countActiveFilters,
 } from '@/lib/productFilters';
-import { cn } from '@/lib/utils';
+import { CONTROL_FOCUS, cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useProductFilterParams } from '@/hooks/useProductFilterParams';
@@ -22,6 +22,7 @@ import { Checkbox } from '@/components/ui/Checkbox';
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
@@ -225,10 +226,11 @@ export default function ProductFilters({
 	].filter((f) => f.options.length > 0);
 
 	return (
-		<div className="mb-10" aria-busy={isPending}>
-			{/* Controls bar — pinned under the header (matches the events pages) */}
-			<div className="top-header bg-background/95 sticky z-10 flex items-center justify-between gap-3 py-3 backdrop-blur-sm">
-				{/* Filters panel trigger */}
+		<div
+			className="p-x-max top-header bg-background/95 sticky z-50 mb-5 pb-2 backdrop-blur-sm lg:pb-5"
+			aria-busy={isPending}
+		>
+			<div className="flex items-center justify-between gap-3 py-3">
 				<Dialog.Root
 					open={open}
 					onOpenChange={handleOpenChange}
@@ -238,14 +240,17 @@ export default function ProductFilters({
 						render={
 							<Button
 								variant="outline"
-								className="gap-2 pointer-coarse:min-h-11"
+								className={cn(
+									't-l-2 border-foreground/50 hover:bg-foreground/5 aria-expanded:bg-foreground/5 focus-visible:border-foreground gap-2 px-3.5 uppercase',
+									CONTROL_FOCUS
+								)}
 							/>
 						}
 					>
 						<SlidersHorizontal />
 						{filters.title}
 						{activeCount > 0 && (
-							<span className="t-spec bg-primary/20 text-primary ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded px-1.5">
+							<span className="t-spec bg-foreground text-background ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded px-1.5">
 								{activeCount}
 							</span>
 						)}
@@ -274,7 +279,7 @@ export default function ProductFilters({
 											className={cn(
 												'bg-background text-foreground z-popover fixed flex flex-col',
 												isBottom
-													? 'inset-x-0 bottom-0 max-h-[85svh] rounded-t-2xl border-t'
+													? 'inset-x-0 bottom-0 max-h-[85svh] rounded-t-lg border-t'
 													: 'inset-y-0 right-0 w-full max-w-112 border-l'
 											)}
 											variants={panelVariants}
@@ -307,7 +312,10 @@ export default function ProductFilters({
 													variant="ghost"
 													size="sm"
 													aria-label={filters.close}
-													className="-mr-2 px-2"
+													className={cn(
+														'hover:bg-foreground/5 -mr-2 px-2',
+														CONTROL_FOCUS
+													)}
 												/>
 											}
 										>
@@ -321,7 +329,7 @@ export default function ProductFilters({
 												key={facet.dimension}
 												className="border-foreground/10 not-last:border-b"
 											>
-												<legend className="t-l-2 text-foreground/65 mb-3 uppercase">
+												<legend className="t-l-1 text-foreground/65 mb-3 uppercase">
 													{facet.label}
 												</legend>
 												<ul className="pb-6">
@@ -338,14 +346,30 @@ export default function ProductFilters({
 														return (
 															<li key={option.value}>
 																<label
+																	// A row is a clickable box, so it takes the box hover (a 5% ink
+																	// tint) rather than the default opacity dim, which would fade the
+																	// count along with the label. The negative margin lets the tint
+																	// span the full row without moving anything.
 																	className={cn(
-																		'flex items-center gap-3 py-1.5',
+																		'-mx-2 flex items-center gap-3 rounded px-2 py-1.5',
 																		disabled
 																			? 'cursor-not-allowed'
-																			: 'cursor-pointer'
+																			: 'hover:bg-foreground/5 cursor-pointer transition-colors'
 																	)}
 																>
+																	{/* `border-input` is oklch(0.922) on this route's oklch(0.9612)
+																	    paper -- roughly 1.1:1, so the unchecked box was effectively
+																	    invisible. The right depth for THAT is the `--input` token in
+																	    globals.css, which is the light theme's own value and leaves
+																	    every other `border-input` consumer on these routes equally
+																	    invisible; this is the local patch. The transition is no longer
+																	    restated here -- `ui/Checkbox` now names the properties it
+																	    actually animates instead of a bare `transition-shadow`. */}
 																	<Checkbox
+																		className={cn(
+																			'border-foreground/50 data-checked:bg-foreground data-checked:border-foreground data-checked:text-background focus-visible:border-foreground shadow-none',
+																			CONTROL_FOCUS
+																		)}
 																		checked={checked}
 																		disabled={disabled}
 																		onCheckedChange={() =>
@@ -366,8 +390,8 @@ export default function ProductFilters({
 																		className={cn(
 																			't-spec',
 																			disabled
-																				? 'text-foreground/25'
-																				: 'text-foreground/40'
+																				? 'text-foreground/30'
+																				: 'text-foreground/65'
 																		)}
 																	>
 																		{option.count}
@@ -385,13 +409,28 @@ export default function ProductFilters({
 										{draftCount > 0 && (
 											<Button
 												variant="ghost"
-												className="flex-1"
+												className={cn(
+													't-l-2 border-foreground hover:bg-foreground/5 h-auto flex-1 border py-3 uppercase',
+													CONTROL_FOCUS
+												)}
 												onClick={clearDraft}
 											>
 												{filters.clearAll}
 											</Button>
 										)}
-										<Button className="flex-1" onClick={applyDraft}>
+										{/* The inversion pair: solid ink commits, outline resets.
+										    `bg-foreground`/`text-background` rather than the variant's
+										    `bg-primary` pair, so this is the same token couple
+										    `tabsTriggerVariants` uses for an active control. The hover
+										    and active states must be restated or the variant's own
+										    `bg-primary/80` and `/70` survive in their own scopes. */}
+										<Button
+											className={cn(
+												't-l-2 bg-foreground text-background hover:bg-foreground/85 active:bg-foreground/75 h-auto flex-1 py-3 uppercase',
+												CONTROL_FOCUS
+											)}
+											onClick={applyDraft}
+										>
 											{filters.showResults}
 										</Button>
 									</div>
@@ -407,7 +446,7 @@ export default function ProductFilters({
 					</span>
 					<Select
 						// `items`, following CustomForm: without it Base UI can only echo
-						// the raw value, so the trigger read "az" instead of "Name (A–Z)"
+						// the raw value, so the trigger read "az" instead of "Name (A-Z)"
 						// until the popup had mounted once. Memoized because Base UI keys
 						// its store on `items` by identity.
 						items={sortItems}
@@ -418,38 +457,53 @@ export default function ProductFilters({
 							})
 						}
 					>
+						{/* ui/Select is shadcn's and is shared with CustomForm, so the brand
+						    treatment is passed in rather than baked into the primitive.
+						    `t-l-2` deletes its `text-sm` through cn()'s one-way font-size
+						    conflict. No height override: the primitive's default size is
+						    `h-9`, matching Button's, so a select and a button in this row
+						    are one height. (If you ever need to override it, the
+						    `data-[size=default]:` prefix is mandatory -- the primitive's own
+						    rule is specificity (0,2,0) and a bare `h-9` at (0,1,0) loses
+						    silently.) The chevron needs an arbitrary variant; it is a
+						    grandchild carrying its own `text-muted-foreground`. */}
 						<SelectTrigger
-							className="min-w-40 pointer-coarse:min-h-11"
+							className={cn(
+								't-l-2 border-foreground/50 bg-background hover:bg-foreground/5 focus-visible:border-foreground [&_svg]:text-foreground/60 min-w-40 rounded px-3.5 uppercase transition-[color,background-color,border-color,box-shadow]',
+								CONTROL_FOCUS
+							)}
 							aria-label={filters.sort}
 						>
 							<SelectValue />
 						</SelectTrigger>
-						<SelectContent side="bottom" alignItemWithTrigger={false}>
-							{sortItems.map((item) => (
-								<SelectItem key={item.value} value={item.value}>
-									{item.label}
-								</SelectItem>
-							))}
+						{/* `ring-0` as well as `shadow-none`: they are different
+						    tailwind-merge groups, and without it the popup keeps the
+						    primitive's `ring-1` and paints a doubled edge. The item
+						    highlight is overridden in `data-highlighted:`, the scope the
+						    primitive styles -- tailwind-merge only resolves within a
+						    scope, so overriding in `focus:` would leave the default's
+						    near-white row and BLUE text in place. The blue is
+						    `--accent-foreground`, the one chromatic value in an otherwise
+						    achromatic light palette; fixing it there would retire this
+						    override. */}
+						<SelectContent
+							side="bottom"
+							alignItemWithTrigger={false}
+							className="border-foreground/20 bg-background text-foreground rounded border shadow-none ring-0"
+						>
+							<SelectGroup>
+								{sortItems.map((item) => (
+									<SelectItem
+										key={item.value}
+										value={item.value}
+										className="t-l-2 data-highlighted:bg-foreground/5 data-highlighted:text-foreground cursor-pointer rounded-sm py-2 uppercase"
+									>
+										{item.label}
+									</SelectItem>
+								))}
+							</SelectGroup>
 						</SelectContent>
 					</Select>
-				</div>
-
-				{/* Indeterminate bar while the server re-fetches the filtered list. */}
-				<div
-					aria-hidden
-					className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden"
-				>
-					{isPending &&
-						(prefersReducedMotion ? (
-							<div className="bg-primary/50 h-full w-full" />
-						) : (
-							<motion.div
-								className="bg-primary h-full w-1/3"
-								initial={{ x: '-120%' }}
-								animate={{ x: '360%' }}
-								transition={{ repeat: Infinity, duration: 1.1, ease: 'linear' }}
-							/>
-						))}
 				</div>
 			</div>
 
@@ -458,7 +512,7 @@ export default function ProductFilters({
 			   second copy of the same number one row below it read as two
 			   different figures. */}
 			{activeChips.length > 0 && (
-				<div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+				<div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
 					<div className="flex flex-wrap items-center gap-2">
 						{activeChips.map((chip) => (
 							<Button
@@ -466,7 +520,15 @@ export default function ProductFilters({
 								onClick={() => toggle(chip.dimension, chip.value)}
 								variant="ghost"
 								size="sm"
-								className="border-foreground/15 hover:bg-foreground/5 gap-1.5 border uppercase"
+								// `rounded` is required: size="sm" sets its own 6px radius,
+								// which does not yield to the base's. The chip is a clickable
+								// box, so it takes the box hover (a bg tint) rather than the
+								// default opacity dim, which would fade the close glyph too.
+								// h-7 from the size variant stays, so the row keeps one height.
+								className={cn(
+									't-l-2 border-foreground/50 hover:bg-foreground/5 focus-visible:border-foreground gap-1.5 rounded border px-3 uppercase',
+									CONTROL_FOCUS
+								)}
 							>
 								{chip.label}
 								<X className="size-3.5" />
@@ -475,7 +537,15 @@ export default function ProductFilters({
 						<Button
 							type="button"
 							onClick={clearAll}
-							className="text-foreground/50 uppercase underline-offset-4 hover:underline"
+							// Underlined at rest with only the decoration colour moving:
+							// text-decoration-line is not animatable, so `hover:underline`
+							// snapped in beside the button's own eased transition.
+							// `hover:bg-transparent` cancels the ghost variant's tint --
+							// one hover treatment per element, not two.
+							className={cn(
+								't-l-2 text-foreground/65 decoration-foreground/30 hover:decoration-foreground hover:text-foreground rounded px-1 uppercase underline underline-offset-4 hover:bg-transparent',
+								CONTROL_FOCUS
+							)}
 							variant="ghost"
 							size="sm"
 						>

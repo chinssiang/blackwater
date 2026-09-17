@@ -1,9 +1,13 @@
 'use client';
 
+import type { MouseEvent } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { resolveHref } from '@/lib/routes';
+import { isModifiedClick } from '@/lib/utils';
 import { useProductFilterParams } from '@/hooks/useProductFilterParams';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { useProgressStart } from '@/components/progress/ProgressProvider';
 import {
 	Pagination,
 	PaginationContent,
@@ -73,6 +77,8 @@ export function PageProductsAll({
 	// `page`, through the same builder the filter controls write with, so paging
 	// never silently drops the filter the shopper is browsing.
 	const { buildHref } = useProductFilterParams();
+	const router = useRouter();
+	const startProgress = useProgressStart();
 	const breadcrumb = useTranslations('breadcrumb');
 	const t = useTranslations('products');
 	const common = useTranslations('common');
@@ -80,6 +86,26 @@ export function PageProductsAll({
 
 	// Page 1 carries no param, so its URL is the canonical unparameterized one.
 	const hrefFor = (p: number) => buildHref({ page: p > 1 ? String(p) : null });
+
+	// `ui/Pagination` renders a real `<a href>`, so paging was a FULL document
+	// reload -- nothing the global bar could ever report on. Taking the click
+	// over turns it into a client navigation inside the shared transition.
+	// The `href` stays on the anchor (crawlable, middle-clickable) and modified
+	// clicks fall through to the browser so cmd-click still opens a new tab.
+	//
+	// ONE handler for every link, with the target read back off the anchor: a
+	// `paginate(href)` factory allocated a closure per link per render and made
+	// each call site compute its href twice. The deeper fix is for
+	// `PaginationLink` to render through `next/link` -- it has one consumer --
+	// which would delete this whole function; it needs a way to feed the shared
+	// transition first (`useLinkStatus`).
+	const paginate = (event: MouseEvent<HTMLAnchorElement>) => {
+		if (isModifiedClick(event)) return;
+		const href = event.currentTarget.getAttribute('href');
+		if (!href) return;
+		event.preventDefault();
+		startProgress(() => router.push(href));
+	};
 
 	return (
 		<>
@@ -107,15 +133,6 @@ export function PageProductsAll({
 				counts={[{ count: total, forms: t.productCount }]}
 			/>
 
-			{/* The pagination below is the one top-level section here with no
-			    `m-x-max`, deliberately: Pagination is `mx-auto w-full` with centred
-			    content, so it spans the window but its links stay centred on the same
-			    axis the gutter would have centred them on. Adding the gutter means
-			    fighting both of those classes — `m-x-max` loses the cascade to
-			    `mx-auto` (a custom @utility sorts before Tailwind's own), and a margin
-			    plus `w-full` overflows the viewport by the gutter's width. So it is
-			    passed as ProductBrowser's `footer`, outside the gutter, while the
-			    toolbar and grid take `m-x-max` through `className`/`gridClassName`. */}
 			<ProductBrowser
 				categories={categories ?? []}
 				facetBrands={facetBrands ?? []}
@@ -124,7 +141,6 @@ export function PageProductsAll({
 				selected={selected}
 				sort={sort}
 				products={products}
-				className="m-x-max"
 				gridClassName="m-x-max mb-20"
 				footer={
 					totalPages > 1 && (
@@ -134,6 +150,7 @@ export function PageProductsAll({
 									<PaginationItem>
 										<PaginationPrevious
 											href={hrefFor(currentPage - 1)}
+											onClick={paginate}
 											text={common.previous}
 										/>
 									</PaginationItem>
@@ -148,6 +165,7 @@ export function PageProductsAll({
 										<PaginationItem key={p}>
 											<PaginationLink
 												href={hrefFor(p)}
+												onClick={paginate}
 												isActive={p === currentPage}
 											>
 												{p}
@@ -160,6 +178,7 @@ export function PageProductsAll({
 									<PaginationItem>
 										<PaginationNext
 											href={hrefFor(currentPage + 1)}
+											onClick={paginate}
 											text={common.next}
 										/>
 									</PaginationItem>

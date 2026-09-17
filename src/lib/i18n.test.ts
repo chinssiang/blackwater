@@ -6,6 +6,7 @@ import {
 	isLocaleExemptPath,
 	localePrefix,
 	localizePath,
+	localizePathWithSearch,
 	ogLocaleFor,
 	pickLocalizedValue,
 } from './i18n';
@@ -77,5 +78,51 @@ describe('isLocaleExemptPath', () => {
 	it('does not match non-exempt paths', () => {
 		expect(isLocaleExemptPath('/events')).toBe(false);
 		expect(isLocaleExemptPath('/')).toBe(false);
+	});
+});
+
+describe('localizePathWithSearch', () => {
+	it('carries the filter params across a locale switch', () => {
+		expect(
+			localizePathWithSearch(
+				'/products/all',
+				'zh_tw',
+				'category=jackets&sort=price-asc'
+			)
+		).toBe('/zh_tw/products/all?category=jackets&sort=price-asc');
+	});
+
+	it('drops page -- the target locale may have fewer pages', () => {
+		expect(
+			localizePathWithSearch(
+				'/products/all',
+				'zh_tw',
+				'category=jackets&page=4'
+			)
+		).toBe('/zh_tw/products/all?category=jackets');
+	});
+
+	it('emits no trailing "?" when nothing survives', () => {
+		expect(localizePathWithSearch('/products/all', 'zh_tw', 'page=4')).toBe(
+			'/zh_tw/products/all'
+		);
+		expect(localizePathWithSearch('/about', 'zh_tw', '')).toBe('/zh_tw/about');
+	});
+
+	it('drops anything not on the allowlist', () => {
+		expect(
+			localizePathWithSearch(
+				'/products/all',
+				'zh_tw',
+				'category=jackets&utm_source=ig&preview=tok'
+			)
+		).toBe('/zh_tw/products/all?category=jackets');
+	});
+
+	it('adds no prefix for the default locale', () => {
+		expect(localizePathWithSearch('/products/all', 'en', 'brand=acme')).toBe(
+			'/products/all?brand=acme'
+		);
+		expect(localizePathWithSearch('/', 'en', '')).toBe('/');
 	});
 });

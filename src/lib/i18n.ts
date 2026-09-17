@@ -119,6 +119,57 @@ export function localizePath(path: string, locale: Locale): string {
 	return `${prefix}${path.startsWith('/') ? path : `/${path}`}`;
 }
 
+/**
+ * Params that may cross a locale switch, and the ONLY ones that do.
+ *
+ * An allowlist rather than a denylist on purpose: each of these is safe for a
+ * specific reason, and a param added anywhere else in the app must not inherit
+ * that by default. `category` and `brand` are slugs on single non-localized
+ * documents (pProductCategory is field-level localized, pBrand is not localized
+ * at all), so one slug means the same product set under either prefix; `badge`,
+ * `price` and `sort` are schema/enum tokens, not content.
+ *
+ * Deliberately absent, and the reason the list exists: `page`. /products/all
+ * renders NotFoundContent past the last page, and a locale that hides some
+ * products has fewer pages -- so ?page=4 on zh_tw can land on a 404 in en.
+ * Dropping it lands the visitor on page 1 of the same filtered set, which is the
+ * rule `useProductFilterParams.commit` already applies whenever the selection
+ * changes. A tracking param, a preview token or a future per-locale `?q=` search
+ * term is absent for the same kind of reason: add one here only once you have
+ * decided it means the same thing in both languages.
+ */
+const LOCALE_SWITCH_SAFE_PARAMS = [
+	'category',
+	'brand',
+	'badge',
+	'price',
+	'sort',
+] as const;
+
+/**
+ * `localizePath` plus the parts of the query string that survive a locale
+ * switch.
+ *
+ * The product listing keeps its whole state in the query string, so a switcher
+ * that builds its href from the pathname alone silently drops the filters the
+ * shopper just set. Which params carry is LOCALE_SWITCH_SAFE_PARAMS above; every
+ * other param is dropped.
+ */
+export function localizePathWithSearch(
+	path: string,
+	locale: Locale,
+	search: string
+): string {
+	const current = new URLSearchParams(search);
+	const params = new URLSearchParams();
+	for (const key of LOCALE_SWITCH_SAFE_PARAMS) {
+		for (const value of current.getAll(key)) params.append(key, value);
+	}
+	const qs = params.toString();
+	const href = localizePath(path, locale);
+	return qs ? `${href}?${qs}` : href;
+}
+
 export function ogLocaleFor(locale: Locale): string {
 	return locale === 'zh_tw' ? 'zh_TW' : 'en_US';
 }

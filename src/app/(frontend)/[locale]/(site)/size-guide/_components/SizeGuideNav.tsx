@@ -1,7 +1,7 @@
 'use client';
 
 import type { MouseEvent } from 'react';
-import { cn } from '@/lib/utils';
+import { cn, isModifiedClick } from '@/lib/utils';
 import { readRootPxVar, useScrollSpy } from '@/hooks/useScrollSpy';
 import { useTranslations } from '@/components/LocaleProvider';
 import type { SizeGuideSectionData } from './SizeGuideSection';
@@ -33,15 +33,7 @@ const getStickyStackOffset = () =>
 // mechanism for first clicks and re-clicks alike. Modified clicks (new tab,
 // middle-click) keep the default so the href still works as a real link.
 const navigateToHash = (event: MouseEvent, value: string) => {
-	if (
-		event.metaKey ||
-		event.ctrlKey ||
-		event.shiftKey ||
-		event.altKey ||
-		event.button !== 0
-	) {
-		return;
-	}
+	if (isModifiedClick(event)) return;
 	event.preventDefault();
 	window.history.pushState(null, '', `#${value}`);
 	window.dispatchEvent(new HashChangeEvent('hashchange'));
