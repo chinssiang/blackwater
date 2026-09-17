@@ -1,63 +1,63 @@
 'use client';
 
-import { type ReactNode, useTransition } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { PRICE_BUCKETS } from '@/lib/productFilters';
+import { type ReactNode } from 'react';
+import { PRODUCT_BADGE_OPTIONS, badgeLabel } from '@/lib/product-badges';
+import {
+	PRICE_BUCKETS,
+	type ProductFilterSelection,
+	countActiveFilters,
+} from '@/lib/productFilters';
 import { cn } from '@/lib/utils';
+import { useProductFilterParams } from '@/hooks/useProductFilterParams';
 import { useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui/Button';
 import ProductFilters, { type FacetOption } from './ProductFilters';
 import ProductGrid, { type ProductCardData } from './ProductGrid';
+import type { ProductFilterFacetsQueryResult } from 'sanity.types';
 
-// Raw facet rows as returned by `productFilterFacets` in queries.ts. `count` is the
-// contextual count (products yielded given the other active dimensions).
-type RawFacet = { value: string | null; label: string | null; count: number };
+// The facet shapes come from the generated query result, not a hand-written
+// copy: adding a facet field or renaming a bucket then moves these with it
+// instead of leaving a parallel type that still compiles against the old shape.
+type Facets = ProductFilterFacetsQueryResult;
 
-// Each badge carries its catalogue-wide `baseCount` (does it exist at all) plus the
-// contextual `count` (matches under the other active filters).
-type BadgeCount = { baseCount: number; count: number };
+// `count` is the contextual count -- products this option would yield given the
+// OTHER active dimensions.
+type RawFacet = Facets['facetBrands'][number];
 
-export type BadgeCounts = {
-	'founders-pick': BadgeCount;
-	'most-popular': BadgeCount;
-	'editors-choice': BadgeCount;
-	new: BadgeCount;
-};
+// Categories arrive as the SAME rows the bottom category grid renders, carrying
+// both numbers: `count` is catalogue-wide (the grid's own label, and what
+// decides whether the category is offered as a filter at all) and
+// `contextualCount` is the facet count. They are not projected twice -- see the
+// note above productCategoriesFacetFields in queries.ts.
+type CategoryRow = Facets['categories'][number];
 
-const BADGE_VALUES = [
-	'founders-pick',
-	'most-popular',
-	'editors-choice',
-	'new',
-] as const;
-
-export type ProductSelection = {
-	categories: string[];
-	brands: string[];
-	badges: string[];
-	priceBuckets: string[];
-};
+// Each badge carries its catalogue-wide `baseCount` (does it exist at all) plus
+// the contextual `count` (matches under the other active filters).
+export type BadgeCounts = Facets['badgeCounts'];
 
 // Contextual product counts per price bucket (keys match PRICE_BUCKETS).
-export type PriceCounts = {
-	u1000: number;
-	'1000-3000': number;
-	'3000-7000': number;
-	o7000: number;
-};
+export type PriceCounts = Facets['facetPrice'];
+
+// PRODUCT_BADGE_OPTIONS, not a local list: that module is the one declaration of
+// the badge vocabulary (it also drives the Studio picker and the card ordering),
+// and its `satisfies` clause is what makes a badge without a dictionary label a
+// build error. A separate array here meant a fifth badge could be counted by the
+// query and never offered in the drawer, with nothing failing. Reading it also
+// puts the filter list in the documented priority order.
+const BADGE_VALUES = PRODUCT_BADGE_OPTIONS.map((option) => option.value);
+
+/** Re-exported so the page and PageProductsAll name it where they use it. */
+export type ProductSelection = ProductFilterSelection;
 
 type Props = {
-	facetCategories: RawFacet[];
+	categories: CategoryRow[];
 	facetBrands: RawFacet[];
-	badgeCounts: BadgeCounts;
-	facetPrice: PriceCounts;
+	// Optional: the facets are their own query, so a failed fetch degrades to a
+	// listing with no badge/price options rather than taking the page down.
+	badgeCounts?: BadgeCounts;
+	facetPrice?: PriceCounts;
 	selected: ProductSelection;
 	sort: string;
-	/** Total products matching the active filters (for the status line). */
-	total: number;
-	/** Forwarded to ProductFilters: hide the status-line count where a page
-	 * header already shows it (e.g. /products/all). */
-	showCount?: boolean;
 	products: ProductCardData[];
 	/** Rendered after the results grid — pagination or a "view more" button. */
 	footer?: ReactNode;
@@ -83,6 +83,20 @@ function toOptions(rows: RawFacet[]): FacetOption[] {
 		}));
 }
 
+// The category rows' own existence filter, done here rather than as a second
+// GROQ selection: `count > 0` is exactly the sub-query the grid already pays
+// for. Ordering is the query's.
+function toCategoryOptions(rows: CategoryRow[]): FacetOption[] {
+	return rows
+		.filter((r) => r.slug && r.count > 0)
+		.map((r) => ({
+			value: r.slug as string,
+			label: r.title ?? (r.slug as string),
+			count: r.contextualCount,
+			disabled: r.contextualCount === 0,
+		}));
+}
+
 /**
  * The filterable product listing: filter toolbar, results grid, optional footer.
  *
@@ -91,14 +105,12 @@ function toOptions(rows: RawFacet[]): FacetOption[] {
  * fragments in queries.ts.
  */
 export default function ProductBrowser({
-	facetCategories,
+	categories: categoryRows,
 	facetBrands,
 	badgeCounts,
 	facetPrice,
 	selected,
 	sort,
-	total,
-	showCount = true,
 	products,
 	footer,
 	gridClassName,
@@ -107,26 +119,11 @@ export default function ProductBrowser({
 }: Props) {
 	const t = useTranslations('products');
 	const badgeLabels = t.badges as Record<string, string>;
-	const router = useRouter();
-	const pathname = usePathname();
-	const searchParams = useSearchParams();
-	const [isPending, startTransition] = useTransition();
+	// The same writer the toolbar uses, so this recovery and the toolbar's own
+	// "clear filters" cannot drift on which params they drop.
+	const { clearAll, isPending } = useProductFilterParams();
 
-	// Clear the active filter dimensions (keeping sort) and reset pagination.
-	// Mirrors ProductFilters' clearAll so the empty-state recovery matches the
-	// toolbar's behaviour.
-	function clearFilters() {
-		const params = new URLSearchParams(searchParams.toString());
-		for (const key of ['category', 'brand', 'badge', 'price', 'page']) {
-			params.delete(key);
-		}
-		const qs = params.toString();
-		startTransition(() => {
-			router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-		});
-	}
-
-	const categories = toOptions(facetCategories);
+	const categories = toCategoryOptions(categoryRows);
 	const brands = toOptions(facetBrands);
 	// Show a badge only if it exists catalogue-wide (baseCount); display its
 	// contextual count and disable it when nothing matches the current filters.
@@ -136,7 +133,7 @@ export default function ProductBrowser({
 		const count = badgeCounts?.[value]?.count ?? 0;
 		return {
 			value,
-			label: badgeLabels[value] ?? value,
+			label: badgeLabel(value, badgeLabels),
 			count,
 			disabled: count === 0,
 		};
@@ -157,11 +154,9 @@ export default function ProductBrowser({
 		};
 	});
 
-	const hasActiveFilters =
-		selected.categories.length > 0 ||
-		selected.brands.length > 0 ||
-		selected.badges.length > 0 ||
-		selected.priceBuckets.length > 0;
+	// `sort` deliberately not counted: a reordered listing is still the whole
+	// listing, so the "no results, clear your filters" recovery does not apply.
+	const hasActiveFilters = countActiveFilters(selected) > 0;
 
 	return (
 		<>
@@ -173,8 +168,6 @@ export default function ProductBrowser({
 					prices={prices}
 					selected={selected}
 					sort={sort}
-					total={total}
-					showCount={showCount}
 				/>
 			</div>
 
@@ -197,7 +190,7 @@ export default function ProductBrowser({
 					<p className="t-b-1 text-foreground/60">{t.filters.noResults}</p>
 					<Button
 						variant="outline"
-						onClick={clearFilters}
+						onClick={clearAll}
 						disabled={isPending}
 						className="pointer-coarse:min-h-11"
 					>

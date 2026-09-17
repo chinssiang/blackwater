@@ -1,13 +1,19 @@
 'use client';
 
-import { useMemo, useState, useTransition } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useMemo, useState } from 'react';
 import { Dialog } from '@base-ui/react/dialog';
 import { SlidersHorizontal, X } from 'lucide-react';
-import { interpolate, pickPlural } from '@/lib/dictionary';
+import { cartOverlay } from '@/lib/animate';
+import {
+	DEFAULT_PRODUCT_SORT,
+	PRODUCT_SORT_KEYS,
+	type ProductFilterSelection,
+	countActiveFilters,
+} from '@/lib/productFilters';
 import { cn } from '@/lib/utils';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { useProductFilterParams } from '@/hooks/useProductFilterParams';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useTranslations } from '@/components/LocaleProvider';
 import { CloseIcon } from '@/components/SvgIcons';
@@ -44,26 +50,16 @@ type Props = {
 	brands: FacetOption[];
 	badges: FacetOption[];
 	prices: FacetOption[];
-	selected: {
-		categories: string[];
-		brands: string[];
-		badges: string[];
-		priceBuckets: string[];
-	};
+	selected: ProductFilterSelection;
 	sort: string;
-	/** Total products matching the active filters, shown in the status line. */
-	total: number;
-	/**
-	 * Show the result count in the status line. Off on pages that already show a
-	 * count in their header (e.g. /products/all) so the number isn't duplicated.
-	 */
-	showCount?: boolean;
 };
 
 // The panel enters from the edge it is docked to. Reduced motion is passed as
 // Motion's `custom` so the same variants cover both cases: the fade stays, the
-// travel drops. Mirrors lib/animate's cartPanel/cartOverlay, kept local because
-// only this panel has a side that changes with the viewport.
+// travel drops. Deliberately NOT lib/animate's cartPanel: this one has a side
+// that changes with the viewport, and it eases differently -- parameterizing
+// cartPanel to cover both would restyle the cart drawer. The backdrop half has
+// no such excuse and uses the shared cartOverlay below.
 const panelVariants: Variants = {
 	hide: ({ reduce = false, bottom = false }) => ({
 		opacity: 0,
@@ -79,20 +75,6 @@ const panelVariants: Variants = {
 	},
 };
 
-const backdropVariants: Variants = {
-	hide: { opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } },
-	show: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
-};
-
-const SORT_KEYS = [
-	'az',
-	'za',
-	'newest',
-	'oldest',
-	'price-asc',
-	'price-desc',
-] as const;
-
 export default function ProductFilters({
 	categories,
 	brands,
@@ -100,19 +82,14 @@ export default function ProductFilters({
 	prices,
 	selected,
 	sort,
-	total,
-	showCount = true,
 }: Props) {
-	const router = useRouter();
-	const pathname = usePathname();
-	const searchParams = useSearchParams();
+	const { commit, toggleValue, clearAll, isPending } = useProductFilterParams();
 	const t = useTranslations('products');
 	// In rem, so it agrees with Tailwind's own rem-based `sm:`. getServerSnapshot
 	// is false, so a prerender bakes the phone branch — which is the right one to
 	// bake, since the panel is a bottom sheet there and only mounts on open.
 	const isWide = useMediaQuery('(min-width: 40rem)');
 	const prefersReducedMotion = usePrefersReducedMotion();
-	const [isPending, startTransition] = useTransition();
 	const [open, setOpen] = useState(false);
 	// Phones get a bottom sheet (thumb-reachable); larger screens keep the side
 	// drawer. The panel content only mounts on open, so width is resolved by then.
@@ -122,49 +99,25 @@ export default function ProductFilters({
 	const [draft, setDraft] = useState(selected);
 
 	const filters = t.filters;
+	// PRODUCT_SORT_KEYS, not a local copy: the same list is what parses the
+	// `sort` param server-side, so a key added to one and not the other means the
+	// menu offers a sort the parser silently rejects, or the reverse.
 	const sortItems = useMemo(
 		() =>
-			SORT_KEYS.map((key) => ({
+			PRODUCT_SORT_KEYS.map((key) => ({
 				value: key as string,
 				label: (filters.sortOptions as Record<string, string>)[key] ?? key,
 			})),
 		[filters.sortOptions]
 	);
-	const activeCount =
-		selected.categories.length +
-		selected.brands.length +
-		selected.badges.length +
-		selected.priceBuckets.length;
+	const activeCount = countActiveFilters(selected);
 
-	// Push a new URL with the given param patches. Arrays/strings that are empty
-	// drop the param entirely; every change resets pagination to page 1.
-	function commit(patch: Record<string, string[] | string | null>) {
-		const params = new URLSearchParams(searchParams.toString());
-		params.delete('page');
-		for (const [key, value] of Object.entries(patch)) {
-			const isEmpty =
-				value == null ||
-				value === '' ||
-				(Array.isArray(value) && value.length === 0);
-			if (isEmpty) params.delete(key);
-			else params.set(key, Array.isArray(value) ? value.join(',') : value);
-		}
-		const qs = params.toString();
-		startTransition(() => {
-			router.push(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-		});
-	}
-
-	function toggle(dimension: Dimension, value: string) {
-		const next = new Set(selected[DIMENSION_KEY[dimension]]);
-		if (next.has(value)) next.delete(value);
-		else next.add(value);
-		commit({ [dimension]: [...next] });
-	}
-
-	function clearAll() {
-		commit({ category: null, brand: null, badge: null, price: null });
-	}
+	// The param name IS the dimension, and the hook reads the current list off
+	// the URL rather than off `selected`, so removing two chips in the same
+	// dimension in quick succession composes instead of the second reverting the
+	// first.
+	const toggle = (dimension: Dimension, value: string) =>
+		toggleValue(dimension, value);
 
 	// Drawer-local helpers operate on the draft, not the URL. The draft re-syncs
 	// from the applied filters each time the drawer opens, so closing via the X
@@ -202,11 +155,7 @@ export default function ProductFilters({
 	// precisely so Base UI's own lock stays off and this stays the only writer.
 	useScrollLock(open, () => setOpen(false));
 
-	const draftCount =
-		draft.categories.length +
-		draft.brands.length +
-		draft.badges.length +
-		draft.priceBuckets.length;
+	const draftCount = countActiveFilters(draft);
 
 	// Map a stored slug/value back to its display label for the active chips.
 	// Unknown values (e.g. a badge whose catalogue count dropped to 0 but is
@@ -312,7 +261,7 @@ export default function ProductFilters({
 									render={
 										<motion.div
 											className="z-popover fixed inset-0 bg-black/50"
-											variants={backdropVariants}
+											variants={cartOverlay}
 											initial="hide"
 											animate="show"
 											exit="hide"
@@ -464,7 +413,9 @@ export default function ProductFilters({
 						items={sortItems}
 						value={sort}
 						onValueChange={(value) =>
-							commit({ sort: value === 'az' ? null : value })
+							commit({
+								sort: value === DEFAULT_PRODUCT_SORT ? null : value,
+							})
 						}
 					>
 						<SelectTrigger
@@ -502,43 +453,35 @@ export default function ProductFilters({
 				</div>
 			</div>
 
-			{/* Filtering status — result count, active chips, clear. Shown when
-			   filters are active, or (where a count is shown) when a non-default
-			   sort has flattened the showcase, so the change is never silent. */}
-			{(activeChips.length > 0 || (showCount && sort !== 'az')) && (
+			{/* Filtering status — the active chips and a clear-all. The result count
+			   is NOT here: every host renders its own in its page header, and a
+			   second copy of the same number one row below it read as two
+			   different figures. */}
+			{activeChips.length > 0 && (
 				<div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
-					{showCount && (
-						<span className="t-l-1 text-foreground/90 shrink-0 font-medium uppercase">
-							{interpolate(pickPlural(t.productCount, total), {
-								count: total,
-							})}
-						</span>
-					)}
-					{activeChips.length > 0 && (
-						<div className="flex flex-wrap items-center gap-2">
-							{activeChips.map((chip) => (
-								<Button
-									key={`${chip.dimension}:${chip.value}`}
-									onClick={() => toggle(chip.dimension, chip.value)}
-									variant="ghost"
-									size="sm"
-									className="border-foreground/15 hover:bg-foreground/5 gap-1.5 border uppercase"
-								>
-									{chip.label}
-									<X className="size-3.5" />
-								</Button>
-							))}
+					<div className="flex flex-wrap items-center gap-2">
+						{activeChips.map((chip) => (
 							<Button
-								type="button"
-								onClick={clearAll}
-								className="text-foreground/50 uppercase underline-offset-4 hover:underline"
+								key={`${chip.dimension}:${chip.value}`}
+								onClick={() => toggle(chip.dimension, chip.value)}
 								variant="ghost"
 								size="sm"
+								className="border-foreground/15 hover:bg-foreground/5 gap-1.5 border uppercase"
 							>
-								{filters.clearFilters}
+								{chip.label}
+								<X className="size-3.5" />
 							</Button>
-						</div>
-					)}
+						))}
+						<Button
+							type="button"
+							onClick={clearAll}
+							className="text-foreground/50 uppercase underline-offset-4 hover:underline"
+							variant="ghost"
+							size="sm"
+						>
+							{filters.clearFilters}
+						</Button>
+					</div>
 				</div>
 			)}
 		</div>

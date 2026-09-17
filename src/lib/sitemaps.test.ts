@@ -2,6 +2,7 @@ import {
 	pageProductCategoriesIndexQuery,
 	pageProductCollectionsIndexQuery,
 	pageProductsAllQuery,
+	productFilterFacetsQuery,
 } from '@/sanity/lib/queries';
 import { describe, expect, it } from 'vitest';
 import { LOCALES } from '@/lib/i18n';
@@ -308,8 +309,12 @@ describe('synthetic route entries', () => {
 // page it stands for forces the two to agree — /products/all listed only
 // pProduct while also rendering the category filter strip, so a category rename
 // left its date frozen. Read the types straight out of the page's own query.
+// /products/all fetches in two halves (results + facets), so both are read
+// here: the facet half is where pProductCategory and pBrand are selected, and
+// mapping only the results query would leave this guard blind to exactly the
+// types the bug above was about.
 const PAGE_QUERY: Record<string, string> = {
-	pProductsAllIndex: pageProductsAllQuery,
+	pProductsAllIndex: pageProductsAllQuery + productFilterFacetsQuery,
 	pProductCategoriesIndex: pageProductCategoriesIndexQuery,
 	pProductCollectionsIndex: pageProductCollectionsIndexQuery,
 };

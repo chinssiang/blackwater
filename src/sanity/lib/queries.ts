@@ -1380,15 +1380,24 @@ const productBaseFields = `
 	${productMetadataFields}
 ` as const;
 
+// One category tile: what <ProductCategoriesGrid> renders. `count` is the
+// catalogue-wide product count, which is also the grid's own label.
+const productCategoryTileFields = `
+	_id,
+	"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
+	"slug": slug.current,
+	coverImage {
+		${imageBlockMetaFields}
+	},
+	"count": count(*[_type == "pProduct" && references(^._id) && ${titleVisible}])
+` as const;
+
+const productCategoriesOrder =
+	`order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc)` as const;
+
 const productCategoriesFields = `
-	"categories": *[_type == "pProductCategory"] | order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc) {
-		_id,
-		"title": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-		"slug": slug.current,
-		coverImage {
-			${imageBlockMetaFields}
-		},
-		"count": count(*[_type == "pProduct" && references(^._id) && ${titleVisible}])
+	"categories": *[_type == "pProductCategory"] | ${productCategoriesOrder} {
+		${productCategoryTileFields}
 	}
 ` as const;
 
@@ -1621,6 +1630,11 @@ const productBadgePredicate =
 // description in p-product.ts.
 // Thresholds MUST stay in sync with PRICE_BUCKETS in src/lib/productFilters.ts
 // (literals here because Sanity typegen can't evaluate computed interpolation).
+// This select() is the ONLY place they are spelled out on the GROQ side: the
+// price predicate and every facetPrice bucket below both go through it, rather
+// than restating the same boundaries as their own >= / < pairs. Two copies in
+// the repo, not four, and src/lib/productFilters.test.ts fails when the two
+// disagree.
 const productPriceBucket = `select(
 	priceAmount < 1000 => "u1000",
 	priceAmount < 3000 => "1000-3000",
@@ -1638,6 +1652,19 @@ const productFilterClause = `
 	&& ${productPricePredicate}
 ` as const;
 
+// The other-dimensions filter each facet counts under: its OWN dimension is
+// left out, which is what makes the count read "products this option would add
+// given everything else that is on". Hoisted because the badge block spells its
+// four counts out per badge and the price block per bucket, and a predicate
+// added to one copy and not the other silently reports a different catalogue
+// per dimension. Same shape as productFilterClause above -- a const template
+// interpolating predicate consts -- so this adds no interpolation LEVEL, which
+// is the thing the extractor note at the top of this file warns about.
+const badgeFacetFilter =
+	`${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productPricePredicate}` as const;
+const priceFacetFilter =
+	`${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productBadgePredicate} && defined(priceAmount)` as const;
+
 // Driven by the $sort param. Each select() is null (a no-op) unless its key is
 // active; the trailing productTitleOrder is the default and the tiebreaker, so
 // the unfiltered default order matches what this query returned before filters
@@ -1652,18 +1679,29 @@ const productSortOrder = `order(
 )` as const;
 
 // Facet data for <ProductFilters>. An option is listed only if it has >=1
-// product in this locale. Its `count` is *contextual*: how many products it
+// product in this locale. Its facet count is *contextual*: how many products it
 // would yield given the OTHER active dimensions (its own excluded), so the
 // number stays honest as filters combine. A zero contextual count means
 // "selecting this adds nothing right now"; the UI disables rather than hides it.
 // Badges carry a separate catalogue-wide `baseCount` because, unlike
 // categories/brands, they aren't document-backed and can't be existence-filtered.
+//
+// Categories are NOT projected a second time as a "facetCategories" array. The
+// page already renders every category in its bottom grid, and that projection's
+// `count` is the very same sub-query a separate facet list would have used to
+// existence-filter itself -- so the split version ran one extra full scan of
+// pProduct per category and serialized each category's title and slug twice
+// across the RSC boundary. One array carries both numbers instead, and
+// <ProductBrowser> drops the count == 0 rows in JS.
+const productCategoriesFacetFields = `
+	"categories": *[_type == "pProductCategory"] | ${productCategoriesOrder} {
+		${productCategoryTileFields},
+		"contextualCount": count(*[_type == "pProduct" && references(^._id) && ${titleVisible} && ${productBrandPredicate} && ${productBadgePredicate} && ${productPricePredicate}])
+	}
+` as const;
+
 const productFilterFacets = `
-	"facetCategories": *[_type == "pProductCategory" && count(*[_type == "pProduct" && references(^._id) && ${titleVisible}]) > 0] | order(coalesce(title[language == $locale][0].value, title[language == "en"][0].value) asc) {
-		"value": slug.current,
-		"label": coalesce(title[language == $locale][0].value, title[language == "en"][0].value),
-		"count": count(*[_type == "pProduct" && references(^._id) && ${titleVisible} && ${productBrandPredicate} && ${productBadgePredicate} && ${productPricePredicate}])
-	},
+	${productCategoriesFacetFields},
 	"facetBrands": *[_type == "pBrand" && count(*[_type == "pProduct" && references(^._id) && ${titleVisible}]) > 0] | order(title asc) {
 		"value": slug.current,
 		"label": title,
@@ -1672,37 +1710,53 @@ const productFilterFacets = `
 	"badgeCounts": {
 		"founders-pick": {
 			"baseCount": count(*[_type == "pProduct" && "founders-pick" in badge && ${titleVisible}]),
-			"count": count(*[_type == "pProduct" && "founders-pick" in badge && ${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productPricePredicate}])
+			"count": count(*[_type == "pProduct" && "founders-pick" in badge && ${badgeFacetFilter}])
 		},
 		"most-popular": {
 			"baseCount": count(*[_type == "pProduct" && "most-popular" in badge && ${titleVisible}]),
-			"count": count(*[_type == "pProduct" && "most-popular" in badge && ${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productPricePredicate}])
+			"count": count(*[_type == "pProduct" && "most-popular" in badge && ${badgeFacetFilter}])
 		},
 		"editors-choice": {
 			"baseCount": count(*[_type == "pProduct" && "editors-choice" in badge && ${titleVisible}]),
-			"count": count(*[_type == "pProduct" && "editors-choice" in badge && ${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productPricePredicate}])
+			"count": count(*[_type == "pProduct" && "editors-choice" in badge && ${badgeFacetFilter}])
 		},
 		"new": {
 			"baseCount": count(*[_type == "pProduct" && "new" in badge && ${titleVisible}]),
-			"count": count(*[_type == "pProduct" && "new" in badge && ${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productPricePredicate}])
+			"count": count(*[_type == "pProduct" && "new" in badge && ${badgeFacetFilter}])
 		}
 	},
 	"facetPrice": {
-		"u1000": count(*[_type == "pProduct" && ${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productBadgePredicate} && defined(priceAmount) && priceAmount < 1000]),
-		"1000-3000": count(*[_type == "pProduct" && ${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productBadgePredicate} && defined(priceAmount) && priceAmount >= 1000 && priceAmount < 3000]),
-		"3000-7000": count(*[_type == "pProduct" && ${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productBadgePredicate} && defined(priceAmount) && priceAmount >= 3000 && priceAmount < 7000]),
-		"o7000": count(*[_type == "pProduct" && ${titleVisible} && ${productCategoryPredicate} && ${productBrandPredicate} && ${productBadgePredicate} && defined(priceAmount) && priceAmount >= 7000])
+		"u1000": count(*[_type == "pProduct" && ${priceFacetFilter} && ${productPriceBucket} == "u1000"]),
+		"1000-3000": count(*[_type == "pProduct" && ${priceFacetFilter} && ${productPriceBucket} == "1000-3000"]),
+		"3000-7000": count(*[_type == "pProduct" && ${priceFacetFilter} && ${productPriceBucket} == "3000-7000"]),
+		"o7000": count(*[_type == "pProduct" && ${priceFacetFilter} && ${productPriceBucket} == "o7000"])
 	}
 ` as const;
 
+// The results themselves: the only part of /products/all that depends on $sort
+// and the $start/$end window.
 export const pageProductsAllQuery = defineQuery(`
 	{
 		"products": *[_type == "pProduct" && ${titleVisible}${productFilterClause}]
 			| ${productSortOrder} [$start...$end] {
 			${productCardFields}
 		},
-		"total": count(*[_type == "pProduct" && ${titleVisible}${productFilterClause}]),
-		${productCategoriesFields},
+		"total": count(*[_type == "pProduct" && ${titleVisible}${productFilterClause}])
+	}
+`);
+
+// The facets and the category grid, deliberately a SECOND query rather than
+// more fields on the one above. Both depend on the locale and the active filter
+// dimensions and on nothing else -- so folding them together put $sort and the
+// page window in their cache key, and every page step and every sort change
+// re-ran the whole facet sweep for a byte-identical result. That sweep is the
+// expensive half: roughly one full scan of pProduct per category, per brand,
+// and per badge/price bucket. Split, paging and sorting cost only the query
+// above, and one facet entry is shared by every page of a given filter set.
+// The page runs the two in parallel, so the extra round trip is not on the
+// critical path.
+export const productFilterFacetsQuery = defineQuery(`
+	{
 		${productFilterFacets}
 	}
 `);

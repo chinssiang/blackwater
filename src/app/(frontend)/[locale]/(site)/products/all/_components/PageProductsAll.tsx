@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
 import { resolveHref } from '@/lib/routes';
+import { useProductFilterParams } from '@/hooks/useProductFilterParams';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import {
 	Pagination,
@@ -17,11 +17,14 @@ import ProductBrowser, {
 	type ProductSelection,
 } from '../../_components/ProductBrowser';
 import ProductCategoriesGrid from '../../_components/ProductCategoriesGrid';
+import type { ProductCardData } from '../../_components/ProductGrid';
 import ProductPageHeader from '../../_components/ProductPageHeader';
-import type { PageProductsAllQueryResult } from 'sanity.types';
+import type { ProductFilterFacetsQueryResult } from 'sanity.types';
 
 type Props = {
-	data: NonNullable<PageProductsAllQueryResult>;
+	products: ProductCardData[];
+	/** null only if the facet query itself failed; the page still renders. */
+	facets: ProductFilterFacetsQueryResult | null;
 	currentPage: number;
 	totalPages: number;
 	total: number;
@@ -57,7 +60,8 @@ function getPageRange(
 }
 
 export function PageProductsAll({
-	data,
+	products,
+	facets,
 	currentPage,
 	totalPages,
 	total,
@@ -65,29 +69,17 @@ export function PageProductsAll({
 	sort,
 }: Props) {
 	const locale = useLocale();
-	const pathname = usePathname();
-	const searchParams = useSearchParams();
+	// Pagination links keep whatever filter/sort params are active and swap only
+	// `page`, through the same builder the filter controls write with, so paging
+	// never silently drops the filter the shopper is browsing.
+	const { buildHref } = useProductFilterParams();
 	const breadcrumb = useTranslations('breadcrumb');
 	const t = useTranslations('products');
 	const common = useTranslations('common');
-	const {
-		products,
-		categories,
-		facetCategories,
-		facetBrands,
-		badgeCounts,
-		facetPrice,
-	} = data || {};
+	const { categories, facetBrands, badgeCounts, facetPrice } = facets ?? {};
 
-	// Pagination links keep whatever filter/sort params are active and swap only
-	// `page`, so paging never silently drops the filter the shopper is browsing.
-	const hrefFor = (p: number) => {
-		const params = new URLSearchParams(searchParams.toString());
-		if (p > 1) params.set('page', String(p));
-		else params.delete('page');
-		const qs = params.toString();
-		return pathname + (qs ? `?${qs}` : '');
-	};
+	// Page 1 carries no param, so its URL is the canonical unparameterized one.
+	const hrefFor = (p: number) => buildHref({ page: p > 1 ? String(p) : null });
 
 	return (
 		<>
@@ -125,16 +117,13 @@ export function PageProductsAll({
 			    passed as ProductBrowser's `footer`, outside the gutter, while the
 			    toolbar and grid take `m-x-max` through `className`/`gridClassName`. */}
 			<ProductBrowser
-				facetCategories={facetCategories ?? []}
+				categories={categories ?? []}
 				facetBrands={facetBrands ?? []}
 				badgeCounts={badgeCounts}
 				facetPrice={facetPrice}
 				selected={selected}
 				sort={sort}
-				total={total}
-				// The page header above already prints the count.
-				showCount={false}
-				products={products ?? []}
+				products={products}
 				className="m-x-max"
 				gridClassName="m-x-max mb-20"
 				footer={

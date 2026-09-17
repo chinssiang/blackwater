@@ -2,13 +2,17 @@ import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
 import { sanityFetch } from '@/sanity/lib/live';
-import { pageProductsAllQuery } from '@/sanity/lib/queries';
+import {
+	pageProductsAllQuery,
+	productFilterFacetsQuery,
+} from '@/sanity/lib/queries';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
 import defineMetadata, { notFoundMetadata } from '@/lib/defineMetadata';
 import { getDictionary } from '@/lib/dictionary.server';
 import { LOCALES, type Locale, localizePath } from '@/lib/i18n';
 import {
 	type ProductFilterSearchParams,
+	isProductFilterActive,
 	parseProductFilters,
 } from '@/lib/productFilters';
 import { resolveHref } from '@/lib/routes';
@@ -18,13 +22,31 @@ import { PageProductsAll } from './_components/PageProductsAll';
 
 const PAGE_SIZE = 24;
 
+// The last page number worth asking Sanity about. `page` comes from the URL and
+// the real bound is `total / PAGE_SIZE`, which is only known AFTER the fetch --
+// so without a ceiling `?page=999999` buys a full round trip and its own
+// permanent Data Cache entry, once per crafted value, on a URL space crawlers
+// do enumerate. Deliberately far above any real catalogue (24,000 products)
+// rather than tuned: this is a stop on absurd input, not a page-count rule, and
+// a legitimate page past it still 404s the same way via the `total` check.
+const MAX_PAGE = 1000;
+
 type SearchParams = { page?: string } & ProductFilterSearchParams;
 
-// The filter params arrive as the RAW comma-separated strings, not the parsed
-// arrays, and are parsed inside. cache() keys on argument identity, so an array
-// argument is a fresh key on every call and generateMetadata's "same arguments,
-// so this costs no extra fetch" below would silently become a second round trip.
-const getCachedData = cache(
+// Two fetches, not one, and the split is along what each half's cache key can
+// legitimately contain. The results depend on the filters AND on $sort and the
+// page window; the facets and the category grid depend on the filters and
+// nothing else. Merged, a page step or a sort change was a fresh cache key for
+// the facet sweep too — roughly one full scan of pProduct per category, per
+// brand and per badge/price bucket — for a byte-identical answer. See the note
+// above productFilterFacetsQuery.
+//
+// Both take the filter params as the RAW comma-separated strings, not the
+// parsed arrays, and parse inside. cache() keys on argument identity, so an
+// array argument is a fresh key on every call and generateMetadata's "same
+// arguments, so this costs no extra fetch" below would silently become a second
+// round trip.
+const getCachedProducts = cache(
 	(
 		locale: Locale,
 		start: number,
@@ -54,14 +76,44 @@ const getCachedData = cache(
 				priceBuckets: filters.priceBuckets,
 				sort: filters.sort,
 			},
-			// pBrand: productCardFields derefs brands[]->, and the brand facet
-			// counts products per brand document.
+			// pBrand: productCardFields derefs brands[]->.
+			tags: ['pProduct', 'pBrand'],
+		});
+	}
+);
+
+const getCachedFacets = cache(
+	(
+		locale: Locale,
+		category?: string,
+		brand?: string,
+		badge?: string,
+		price?: string
+	) => {
+		const filters = parseProductFilters({ category, brand, badge, price });
+		return sanityFetch({
+			query: productFilterFacetsQuery,
+			params: {
+				locale,
+				categories: filters.categories,
+				brands: filters.brands,
+				badges: filters.badges,
+				priceBuckets: filters.priceBuckets,
+			},
+			// pProductCategory/pBrand: the facets select those documents and render
+			// their titles, so renaming one changes what this page shows.
 			tags: ['pProduct', 'pProductCategory', 'pBrand'],
 		});
 	}
 );
 
-const fetchArgs = (sp: SearchParams, locale: Locale, start: number) =>
+/** The requested page, or null when it is out of bounds or not a page at all. */
+const parsePage = (raw?: string): number | null => {
+	const page = Math.max(1, parseInt(raw ?? '1', 10) || 1);
+	return page > MAX_PAGE ? null : page;
+};
+
+const productArgs = (sp: SearchParams, locale: Locale, start: number) =>
 	[
 		locale,
 		start,
@@ -72,6 +124,9 @@ const fetchArgs = (sp: SearchParams, locale: Locale, start: number) =>
 		sp.price,
 		sp.sort,
 	] as const;
+
+const facetArgs = (sp: SearchParams, locale: Locale) =>
+	[locale, sp.category, sp.brand, sp.badge, sp.price] as const;
 
 // Was a static English-only `metadata` export: no canonical, no hreflang, and
 // identical for every ?page=N — so each paginated URL was a separately
@@ -87,15 +142,16 @@ export async function generateMetadata({
 }): Promise<Metadata> {
 	const [{ locale }, sp] = await Promise.all([params, searchParams]);
 	const dict = await getDictionary(locale);
-	const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1);
+	const page = parsePage(sp.page);
+	if (page == null) return notFoundMetadata();
 
 	// Beyond the last page the component below renders NotFoundContent at HTTP
 	// 200, so this must de-index rather than emit a canonical that legitimises an
-	// unbounded ?page= space. Same cache() call and arguments as the component,
-	// so this costs no extra fetch.
+	// unbounded ?page= space. The facets are not needed for any of this, which is
+	// the other half of the split's value: metadata costs the cheap query only.
 	const start = (page - 1) * PAGE_SIZE;
-	const { data: pageData } = await getCachedData(
-		...fetchArgs(sp, locale, start)
+	const { data: pageData } = await getCachedProducts(
+		...productArgs(sp, locale, start)
 	);
 	const totalPages = Math.max(1, Math.ceil((pageData?.total ?? 0) / PAGE_SIZE));
 	if (!pageData || page > totalPages) return notFoundMetadata();
@@ -114,14 +170,9 @@ export async function generateMetadata({
 	// four dimensions combine into an unbounded crawl space. So it keeps the
 	// unfiltered canonical and is de-indexed — `follow` so the product links on
 	// it are still crawled.
-	const filters = parseProductFilters(sp);
-	const isFiltered =
-		filters.categories.length > 0 ||
-		filters.brands.length > 0 ||
-		filters.badges.length > 0 ||
-		filters.priceBuckets.length > 0 ||
-		filters.sort !== 'az';
-	if (isFiltered) return { ...base, robots: { index: false, follow: true } };
+	if (isProductFilterActive(parseProductFilters(sp))) {
+		return { ...base, robots: { index: false, follow: true } };
+	}
 
 	if (page === 1) return base;
 
@@ -147,12 +198,17 @@ export default async function Page({
 	params: Promise<{ locale: Locale }>;
 	searchParams: Promise<SearchParams>;
 }) {
-	const { locale } = await params;
-	const sp = await searchParams;
-	const page = Math.max(1, parseInt(sp.page ?? '1', 10) || 1);
+	const [{ locale }, sp] = await Promise.all([params, searchParams]);
+	const page = parsePage(sp.page);
+	// Checked before the fetch, so an absurd page number costs no round trip.
+	if (page == null) return <NotFoundContent locale={locale} />;
 	const start = (page - 1) * PAGE_SIZE;
 
-	const { data } = await getCachedData(...fetchArgs(sp, locale, start));
+	// Independent queries, so they overlap rather than stack.
+	const [{ data }, { data: facets }] = await Promise.all([
+		getCachedProducts(...productArgs(sp, locale, start)),
+		getCachedFacets(...facetArgs(sp, locale)),
+	]);
 
 	if (!data) return <NotFoundContent locale={locale} />;
 
@@ -188,7 +244,8 @@ export default async function Page({
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
 			<PageProductsAll
-				data={{ ...data, products }}
+				products={products}
+				facets={facets}
 				currentPage={page}
 				totalPages={totalPages}
 				total={data.total ?? 0}
