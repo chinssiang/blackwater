@@ -184,14 +184,11 @@ export default function ProductGallery({ images, product }: Props) {
 
 	return (
 		<Carousel opts={opts} aria-label={gallery.label}>
-			{/* ml-0 / pl-0 drop the primitive's inter-slide gutter: these slides are
-			    full-bleed within the frame, so a gutter would reveal the edge of the
-			    neighbouring image while dragging. */}
-			<CarouselContent>
+			<CarouselContent className="ml-0">
 				{images.map((image, i) => (
 					<CarouselItem
 						key={image.url}
-						className="relative aspect-4/3"
+						className="relative aspect-4/3 pl-0"
 						aria-label={interpolate(gallery.slide, {
 							index: i + 1,
 							count: images.length,

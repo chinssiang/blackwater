@@ -167,7 +167,7 @@ export default function PageProductSingle({
 			</nav>
 
 			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
-				<div className="bg-background relative overflow-hidden lg:col-span-7">
+				<div className="bg-background relative aspect-4/3 overflow-hidden lg:aspect-auto lg:col-span-7">
 					{gallerySlot}
 				</div>
 
