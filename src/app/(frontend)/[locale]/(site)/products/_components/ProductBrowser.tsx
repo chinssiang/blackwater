@@ -1,12 +1,13 @@
 'use client';
 
 import { type ReactNode, useTransition } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { PRICE_BUCKETS } from '@/lib/productFilters';
+import { cn } from '@/lib/utils';
+import { useTranslations } from '@/components/LocaleProvider';
+import { Button } from '@/components/ui/Button';
 import ProductFilters, { type FacetOption } from './ProductFilters';
 import ProductGrid, { type ProductCardData } from './ProductGrid';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useTranslations } from '@/components/LocaleProvider';
-import { PRICE_BUCKETS } from '@/lib/productFilters';
-import { Button } from '@/components/ui/Button';
 
 // Raw facet rows as returned by `productFilterFacets` in queries.ts. `count` is the
 // contextual count (products yielded given the other active dimensions).
@@ -60,11 +61,10 @@ type Props = {
 	products: ProductCardData[];
 	/** Rendered after the results grid — pagination or a "view more" button. */
 	footer?: ReactNode;
-	/**
-	 * Rendered in place of the results when no filters are active (e.g. the index
-	 * page's curated showcase). Omit on a plain listing so results always show.
-	 */
-	showcase?: ReactNode;
+	/** Applied to the results grid (gutter + bottom spacing from the host page). */
+	gridClassName?: string;
+	/** Applied to the toolbar and the empty states, which sit outside the grid. */
+	className?: string;
 	/** Reveal-stagger offset forwarded to the grid. */
 	indexOffset?: number;
 };
@@ -84,10 +84,11 @@ function toOptions(rows: RawFacet[]): FacetOption[] {
 }
 
 /**
- * Shared filterable product listing: the filter toolbar plus either the results
- * grid (with an optional footer) or, when nothing is filtered, an optional
- * showcase. Used by both the products index and the all-products page so the
- * filtering UX lives in one place.
+ * The filterable product listing: filter toolbar, results grid, optional footer.
+ *
+ * Used by /products/all only. /products is prerendered per locale and reads no
+ * searchParams, so it has no filter state to render — see the note on the filter
+ * fragments in queries.ts.
  */
 export default function ProductBrowser({
 	facetCategories,
@@ -100,7 +101,8 @@ export default function ProductBrowser({
 	showCount = true,
 	products,
 	footer,
-	showcase,
+	gridClassName,
+	className,
 	indexOffset = 0,
 }: Props) {
 	const t = useTranslations('products');
@@ -161,48 +163,56 @@ export default function ProductBrowser({
 		selected.badges.length > 0 ||
 		selected.priceBuckets.length > 0;
 
-	// Show the showcase only when one is provided and neither a filter nor a
-	// non-default sort is active; otherwise the grid (or empty state) takes over.
-	const showResults = !showcase || hasActiveFilters || sort !== 'az';
-
 	return (
 		<>
-			<ProductFilters
-				categories={categories}
-				brands={brands}
-				badges={badges}
-				prices={prices}
-				selected={selected}
-				sort={sort}
-				total={total}
-				showCount={showCount}
-			/>
+			<div className={className}>
+				<ProductFilters
+					categories={categories}
+					brands={brands}
+					badges={badges}
+					prices={prices}
+					selected={selected}
+					sort={sort}
+					total={total}
+					showCount={showCount}
+				/>
+			</div>
 
-			{showResults ? (
-				products.length > 0 ? (
-					<>
-						<ProductGrid products={products} indexOffset={indexOffset} />
-						{footer}
-					</>
-				) : hasActiveFilters ? (
-					<div className="mb-20 flex max-w-[40ch] flex-col items-start gap-4">
-						<p className="t-b-1 text-foreground/60">{t.filters.noResults}</p>
-						<Button
-							variant="outline"
-							onClick={clearFilters}
-							disabled={isPending}
-							className="pointer-coarse:min-h-11"
-						>
-							{t.filters.clearFilters}
-						</Button>
-					</div>
-				) : (
-					<p className="t-b-1 mb-20 max-w-[40ch] text-foreground/60">
-						{t.filters.emptyCatalogue}
-					</p>
-				)
+			{products.length > 0 ? (
+				<>
+					<ProductGrid
+						products={products}
+						indexOffset={indexOffset}
+						className={gridClassName}
+					/>
+					{footer}
+				</>
+			) : hasActiveFilters ? (
+				<div
+					className={cn(
+						'mb-20 flex max-w-[40ch] flex-col items-start gap-4',
+						className
+					)}
+				>
+					<p className="t-b-1 text-foreground/60">{t.filters.noResults}</p>
+					<Button
+						variant="outline"
+						onClick={clearFilters}
+						disabled={isPending}
+						className="pointer-coarse:min-h-11"
+					>
+						{t.filters.clearFilters}
+					</Button>
+				</div>
 			) : (
-				showcase
+				<p
+					className={cn(
+						't-b-1 text-foreground/60 mb-20 max-w-[40ch]',
+						className
+					)}
+				>
+					{t.emptyAllProducts}
+				</p>
 			)}
 		</>
 	);

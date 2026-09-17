@@ -1,12 +1,8 @@
 import * as React from 'react';
-import {
-	ChevronLeftIcon,
-	ChevronRightIcon,
-	MoreHorizontalIcon,
-} from 'lucide-react';
-
+import { MoreHorizontalIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
+import { ChevronLeftIcon, ChevronRightIcon } from '@/components/SvgIcons';
+import { Button, buttonVariants } from '@/components/ui/Button';
 
 function Pagination({ className, ...props }: React.ComponentProps<'nav'>) {
 	return (
@@ -46,22 +42,25 @@ function PaginationLink({
 	className,
 	isActive,
 	size = 'icon',
+	children,
 	...props
 }: PaginationLinkProps) {
 	return (
-		<Button
-			asChild
-			variant={isActive ? 'outline' : 'ghost'}
-			size={size}
-			className={cn(className)}
+		// `children` is rendered explicitly rather than passed through {...props}:
+		// spreading it hid the anchor's content from jsx-a11y, and every other
+		// component in ui/ reads this way.
+		<a
+			aria-current={isActive ? 'page' : undefined}
+			data-slot="pagination-link"
+			data-active={isActive}
+			className={cn(
+				buttonVariants({ variant: isActive ? 'outline' : 'ghost', size }),
+				className
+			)}
+			{...props}
 		>
-			<a
-				aria-current={isActive ? 'page' : undefined}
-				data-slot="pagination-link"
-				data-active={isActive}
-				{...props}
-			/>
-		</Button>
+			{children}
+		</a>
 	);
 }
 

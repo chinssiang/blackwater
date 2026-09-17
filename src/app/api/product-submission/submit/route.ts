@@ -1,11 +1,11 @@
-import { NextResponse, NextRequest } from 'next/server';
-import nodemailer from 'nodemailer';
-import * as z from 'zod';
+import { NextRequest, NextResponse } from 'next/server';
 import { client } from '@/sanity/lib/client';
-import { productSubmissionConfigQuery } from '@/sanity/lib/queries';
 import { urlForImage } from '@/sanity/lib/image';
+import { productSubmissionConfigQuery } from '@/sanity/lib/queries';
+import * as z from 'zod';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
 import { buildConfirmationEmail, escapeHtml } from './confirmation-email';
+import nodemailer from 'nodemailer';
 
 // The recipient, subject, and all template content are resolved server-side
 // (from Sanity + built-in defaults) so this endpoint can't be used to relay

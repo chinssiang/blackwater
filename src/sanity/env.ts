@@ -19,8 +19,13 @@ export const revalidateSecret = process.env.SANITY_REVALIDATE_SECRET;
  * Used to configure edit intent links, for Presentation Mode, as well as to configure where the Studio is mounted in the router.
  */
 
-export const studioUrl =
-	`${process.env.SITE_URL}/sanity` || 'http://localhost:3000/sanity';
+// Ternary, not `|| fallback`: a template literal is ALWAYS truthy, so the old
+// `` `${process.env.SITE_URL}/sanity` || '…' `` never reached its fallback and an
+// unset SITE_URL yielded the literal string "undefined/sanity" — which
+// Presentation then used as its edit-intent origin.
+export const studioUrl = process.env.SITE_URL
+	? `${process.env.SITE_URL}/sanity`
+	: 'http://localhost:3000/sanity';
 
 function assertValue<T>(v: T | undefined, errorMessage: string): T {
 	if (v === undefined) {

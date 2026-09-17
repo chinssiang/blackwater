@@ -1,53 +1,41 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'motion/react';
-import { toast } from 'sonner';
 import { fadeAnim } from '@/lib/animate';
 import { cn, validateEmail } from '@/lib/utils';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import CustomPortableText from '@/components/CustomPortableText';
-import { useTranslations } from '@/components/LocaleProvider';
-import type { PortableTextSimple } from 'sanity.types';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { Button } from '@/components/ui/Button';
+import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
+import { Input } from '@/components/ui/Input';
+import { motion } from 'motion/react';
+import type { SiteDataQueryResult } from 'sanity.types';
+import { toast } from 'sonner';
 
 type FormState = 'idle' | 'submitting' | 'success';
 
-type NewsletterData = {
-	klaviyoListID?: string | null;
-	heading?: string | null;
-	subheading?: string | null;
-	submitButtonText?: string | null;
-	disclaimer?: PortableTextSimple | null;
-	successHeading?: string | null;
-	successBody?: string | null;
-	errorHeading?: string | null;
-	errorBody?: string | null;
-};
+/** The `newsletterFormFields` projection, including its `| null`. Derived
+ *  rather than restated, and deliberately NOT wrapped in `Partial` — with the
+ *  keys required, a projection that drops `signupEnabled` fails to compile
+ *  instead of silently hiding the form. */
+export type NewsletterData = SiteDataQueryResult['newsletter'];
 
 export function Newsletter({
 	data,
 	className,
 	setGlobalHeightVar = false,
+	placement = 'footer',
 }: {
 	data: NewsletterData;
 	className?: string;
 	setGlobalHeightVar?: boolean;
+	/** Reported to Klaviyo as custom_source. This one component serves both the
+	 *  global footer and the dedicated /newsletter page, which were previously
+	 *  both attributed to the footer. */
+	placement?: 'footer' | 'page';
 }) {
-	const {
-		klaviyoListID,
-		heading,
-		subheading,
-		submitButtonText,
-		disclaimer,
-		successHeading,
-		successBody,
-		errorHeading,
-		errorBody,
-	} = data || {};
-
 	const t = useTranslations('newsletter');
+	const locale = useLocale();
 
 	const [email, setEmail] = useState('');
 	const [formState, setFormState] = useState<FormState>('idle');
@@ -86,7 +74,19 @@ export function Newsletter({
 		return () => observer.disconnect();
 	}, [formState]);
 
-	if (!klaviyoListID) return null;
+	// Not this locale's own list id — see `newsletterFormFields` in queries.ts.
+	if (!data?.signupEnabled) return null;
+
+	const {
+		heading,
+		subheading,
+		submitButtonText,
+		disclaimer,
+		successHeading,
+		successBody,
+		errorHeading,
+		errorBody,
+	} = data;
 
 	const handleSubmit = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -103,17 +103,34 @@ export function Newsletter({
 			const res = await fetch('/api/newsletter/subscribe', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, listId: klaviyoListID }),
+				body: JSON.stringify({ email, locale, placement }),
 			});
 
 			if (res.ok) {
 				setEmail('');
 				setFormState('success');
+			} else if (res.status === 400) {
+				// The route's zod `.email()` is stricter than validateEmail — a CJK or
+				// accented local part passes here and is rejected there. Show it as a
+				// field error, not a generic toast: otherwise the visitor never learns
+				// the address is the problem and retries until the throttle stops them.
+				setValidationError(t.invalidEmail);
+				setFormState('idle');
+			} else if (res.status === 429) {
+				// Distinct from a generic failure: retrying immediately cannot work,
+				// so saying "please try again" would send the visitor in a loop.
+				toast.error(t.rateLimitedHeading, {
+					description: t.rateLimitedBody,
+				});
+				setFormState('idle');
 			} else {
 				toast.error(errorHeading || t.errorHeading, {
 					description: errorBody || t.errorBody,
 				});
 				setFormState('idle');
+				// Status only: the body is one of a few constant sentences, and the
+				// route logs the real cause (locale, list, Klaviyo's reply) server-side.
+				console.error('[newsletter] subscribe failed', locale, res.status);
 			}
 		} catch {
 			toast.error(errorHeading || t.errorHeading, {
@@ -126,7 +143,7 @@ export function Newsletter({
 	return (
 		<div ref={sectionRef} className={cn('text-foreground', className)}>
 			{heading && (
-				<p className="t-h-1 text-balance font-medium mb-3">{heading}</p>
+				<p className="t-h-1 mb-3 font-medium text-balance">{heading}</p>
 			)}
 
 			{formState === 'success' ? (
@@ -140,20 +157,23 @@ export function Newsletter({
 						delay: 0.1,
 						ease: [0, 0.71, 0.2, 1.01],
 					}}
-					className="max-w-sm flex flex-col justify-center"
+					className="flex max-w-sm flex-col justify-center"
 					style={formHeight ? { minHeight: formHeight } : undefined}
 					role="status"
 					aria-live="polite"
 				>
-					{successHeading && (
-						<p className="t-b-1 font-medium">{successHeading}</p>
-					)}
-					{successBody && (
-						<p className="t-b-2 mt-1 text-pretty">{successBody}</p>
-					)}
+					{/* Dictionary fallback, matching the error path: both Sanity fields
+					    are optional, and without a fallback a successful subscribe
+					    swapped the form out for an empty box. */}
+					<p className="t-b-1 font-medium">
+						{successHeading || t.successHeading}
+					</p>
+					<p className="t-b-2 mt-1 text-pretty">
+						{successBody || t.successBody}
+					</p>
 				</motion.div>
 			) : (
-				<div className="space-y-4 w-full md:flex-1 md:max-w-[500px]">
+				<div className="w-full space-y-4 md:max-w-[500px] md:flex-1">
 					{subheading && <p className="t-b-1 text-balance">{subheading}</p>}
 					<form
 						ref={formRef}
@@ -191,7 +211,6 @@ export function Newsletter({
 												: undefined,
 										}}
 										isFocused={isFocused}
-										isShowErrorOnFocus={true}
 									/>
 								</div>
 								<Button
@@ -199,7 +218,7 @@ export function Newsletter({
 									disabled={formState === 'submitting'}
 									variant="outline"
 									size="lg"
-									className="bg-black text-white min-w-22"
+									className="min-w-22 bg-black text-white"
 								>
 									{formState === 'submitting'
 										? t.submitting

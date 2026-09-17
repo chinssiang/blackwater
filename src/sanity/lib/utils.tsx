@@ -5,16 +5,16 @@ export const getPortableTextPreview = (content: PortableTextBlock[]) => {
 		return 'Empty';
 	}
 
-	let contentWithText = content.filter(
+	const contentWithText = content.filter(
 		(el) => el._type == 'block' && el?.children[0]?.text !== ''
 	);
-	let contentWithIframe = content.filter((el) => el._type == 'iframe');
-	let contentWithImageAlt = content.filter(
+	const contentWithIframe = content.filter((el) => el._type == 'iframe');
+	const contentWithImageAlt = content.filter(
 		(el) => el._type == 'image' && (el as any).alt
 	);
 
-	let contentWithImage = content.filter((el) => el._type == 'image');
-	let contentWithTable = content.filter((el) => el._type == 'portableTable');
+	const contentWithImage = content.filter((el) => el._type == 'image');
+	const contentWithTable = content.filter((el) => el._type == 'portableTable');
 	if (contentWithText && contentWithText[0]) {
 		const textChildren = contentWithText[0]?.children;
 		if (!Array.isArray(textChildren)) {

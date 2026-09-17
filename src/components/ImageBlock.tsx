@@ -1,10 +1,10 @@
 'use client';
 
 import { JSX } from 'react';
-import { cn } from '@/lib/utils';
 import { buildImageSrc } from '@/lib/image-utils';
-import SanityImage from '@/components/SanityImage';
+import { cn } from '@/lib/utils';
 import Caption from '@/components/Caption';
+import SanityImage from '@/components/SanityImage';
 import type { SanityImageData } from '@/components/SanityImage';
 
 export interface ImageBlockObj {
@@ -83,7 +83,15 @@ function ImageBlock({
 
 	let content: JSX.Element | null;
 
-	if (responsiveImage) {
+	// `priority` and the <picture> branch are mutually exclusive. A matching
+	// <source> always wins over the inner <img> (the two media queries below
+	// cover every viewport), so the raw full-width cdn.sanity.io srcSet would be
+	// what actually loads — while next/image still emits a
+	// <link rel="preload" as="image"> for its own /_next/image srcSet. That
+	// preloads a resource the browser never requests and makes the LCP an
+	// unoptimized original that ignores `sizes`. For the one prioritized image
+	// per page, take the optimized path and drop the art direction.
+	if (responsiveImage && !priority) {
 		const { dimensions: rDimensions } = responsiveImage.metadata || {};
 		const rWidth = rDimensions?.width ?? undefined;
 		const rHeight = rWidth

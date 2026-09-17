@@ -8,7 +8,7 @@ import {
 	LOCALE_SHORT_LABELS,
 	isLocaleExemptPath,
 	localizePath,
-	stripLocaleFromPath,
+	stripLocaleFromPathname,
 } from '@/lib/i18n';
 import { cn } from '@/lib/utils';
 
@@ -26,7 +26,7 @@ export default function LanguageSwitcher({
 	if (isLocaleExemptPath(pathname)) return null;
 
 	const { locale: currentLocale, path: strippedPath } =
-		stripLocaleFromPath(pathname);
+		stripLocaleFromPathname(pathname);
 
 	return (
 		<div className={cn('t-b-2 flex items-center gap-2 uppercase', className)}>
@@ -43,7 +43,7 @@ export default function LanguageSwitcher({
 							<Link
 								href={localizePath(strippedPath, locale)}
 								onClick={onSelect}
-								className="text-muted-foreground transition-colors hover:text-foreground"
+								className="text-muted-foreground hover:text-foreground transition-colors"
 							>
 								{LOCALE_SHORT_LABELS[locale]}
 							</Link>

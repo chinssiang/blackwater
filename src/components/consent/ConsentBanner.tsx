@@ -1,7 +1,15 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import {
+	CONSENT_CHANGED_EVENT,
+	type ConsentCategories,
+	DENY_ALL,
+	GRANT_ALL,
+	writeConsentClient,
+} from '@/lib/consent';
+import type { Dictionary } from '@/lib/dictionary';
+import { useConsent } from '@/hooks/useConsent';
 import CustomLink from '@/components/CustomLink';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
@@ -14,16 +22,6 @@ import {
 	DialogTitle,
 } from '@/components/ui/Dialog';
 import { Separator } from '@/components/ui/Separator';
-import {
-	pushConsentUpdate,
-	readConsentClient,
-	writeConsentClient,
-	DENY_ALL,
-	GRANT_ALL,
-	type ConsentCategories,
-	type ConsentState,
-} from '@/lib/consent';
-import type { Dictionary } from '@/lib/dictionary';
 
 // Window event other parts of the UI (e.g. a footer "Cookie settings" link)
 // dispatch to re-open the preferences dialog.
@@ -71,55 +69,57 @@ type ConsentCopyKey =
 
 export default function ConsentBanner({
 	settings,
-	initialConsent,
 	fallback,
 }: {
 	settings: ConsentSettings;
-	initialConsent: ConsentState | null;
 	// Locale-aware fallback copy, used before the Sanity copy is authored.
 	fallback: Dictionary['consent'];
 }) {
-	const router = useRouter();
 	const t = (key: ConsentCopyKey) => settings?.[key] || fallback[key];
 
-	const [decided, setDecided] = useState<boolean>(!!initialConsent);
+	// The decision comes straight from the cookie: `undefined` until it has been
+	// read, then null (prompt) or the stored choice. Committing below re-reads
+	// through the same hook, so there is no local copy to keep in step.
+	const consent = useConsent();
 	const [prefsOpen, setPrefsOpen] = useState(false);
-	const [draft, setDraft] = useState<ConsentCategories>({
-		analytics: initialConsent?.analytics ?? false,
-		marketing: initialConsent?.marketing ?? false,
-	});
+	// Copied, not the shared DENY_ALL reference: this is component state, and an
+	// in-place edit of it would corrupt the exported constant for every consumer.
+	const [draft, setDraft] = useState<ConsentCategories>({ ...DENY_ALL });
 
 	// Subscribe to the reopen event so the preferences dialog can be triggered
-	// from elsewhere (e.g. the footer "Cookie settings" link). Initial state comes
-	// from the server-parsed `initialConsent`, which matches the cookie, so no
-	// on-mount re-sync is needed.
+	// from elsewhere (e.g. the footer "Cookie settings" link). The draft is
+	// seeded on open from the same `consent` the banner itself reads, so the
+	// dialog and the banner can never disagree — which a second, direct cookie
+	// read here would allow. Hence `consent` in the deps: the handler must close
+	// over the current decision, not the one at mount.
 	useEffect(() => {
 		const openPrefs = () => {
-			const latest = readConsentClient();
-			if (latest)
-				setDraft({ analytics: latest.analytics, marketing: latest.marketing });
+			if (consent)
+				setDraft({
+					analytics: consent.analytics,
+					marketing: consent.marketing,
+				});
 			setPrefsOpen(true);
 		};
 		window.addEventListener(OPEN_CONSENT_EVENT, openPrefs);
 		return () => window.removeEventListener(OPEN_CONSENT_EVENT, openPrefs);
-	}, []);
+	}, [consent]);
 
-	const commit = useCallback(
-		(categories: ConsentCategories) => {
-			writeConsentClient(categories);
-			pushConsentUpdate(categories);
-			setDecided(true);
-			setPrefsOpen(false);
-			// Re-render the server tree so HeadTrackingCode mounts/removes scripts.
-			router.refresh();
-		},
-		[router]
-	);
+	// Persist, then announce. Everything else — this banner hiding itself, and
+	// HeadTrackingCode mounting or updating the tags — follows from re-reading
+	// the cookie. This replaces the router.refresh() that used to re-render the
+	// server tree: the decision and the scripts are both client-side now, so a
+	// server round trip would tell them nothing.
+	const commit = useCallback((categories: ConsentCategories) => {
+		writeConsentClient(categories);
+		window.dispatchEvent(new Event(CONSENT_CHANGED_EVENT));
+		setPrefsOpen(false);
+	}, []);
 
 	// Hide entirely when the feature is explicitly disabled in Sanity.
 	if (settings?.enabled === false) return null;
 
-	const showBar = !decided;
+	const showBar = consent === null;
 
 	return (
 		<>
@@ -128,17 +128,17 @@ export default function ConsentBanner({
 					role="dialog"
 					aria-label={t('bannerTitle')}
 					aria-live="polite"
-					className="fixed inset-x-0 bottom-0 z-dialog border-t border-foreground/15 bg-background p-x-max py-5 shadow-lg"
+					className="z-dialog border-foreground/15 bg-background p-x-max fixed inset-x-0 bottom-0 border-t py-5 shadow-lg"
 				>
 					<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 						<div className="max-w-2xl">
-							<p className="t-b-1 mb-1 font-medium text-foreground">
+							<p className="t-b-1 text-foreground mb-1 font-medium">
 								{t('bannerTitle')}
 							</p>
 							<p className="t-l-2 text-foreground/70">{t('bannerBody')}</p>
 							<PolicyLinks settings={settings} className="mt-2" />
 						</div>
-						<div className="flex flex-wrap gap-2 justify-end">
+						<div className="flex flex-wrap justify-end gap-2">
 							<Button variant="outline" onClick={() => setPrefsOpen(true)}>
 								{t('preferencesLabel')}
 							</Button>
@@ -214,8 +214,8 @@ function CategoryRow({
 }) {
 	return (
 		<div className="flex items-start justify-between gap-4">
-			<div>
-				<p className="t-b-2 font-medium text-foreground">{title}</p>
+			<div className="space-y-1">
+				<p className="t-b-2 text-foreground font-medium">{title}</p>
 				<p className="t-l-2 text-foreground/60">{description}</p>
 			</div>
 			<Checkbox
@@ -246,7 +246,7 @@ function PolicyLinks({
 				<CustomLink
 					key={i}
 					link={link}
-					className="t-l-2 mr-4 inline-block text-foreground underline underline-offset-2 hover:text-foreground/70"
+					className="t-l-2 text-foreground hover:text-foreground/70 mr-4 inline-block underline underline-offset-2 transition-colors"
 				>
 					{link.label || link.href}
 				</CustomLink>

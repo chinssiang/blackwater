@@ -1,8 +1,8 @@
+import { link } from '@/sanity/schemaTypes/objects/link';
 import { LinkIcon, MasterDetailIcon, WarningOutlineIcon } from '@sanity/icons';
+import { pickLocalizedValue } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 import { defineField, defineType } from 'sanity';
-import { link } from '@/sanity/schemaTypes/objects/link';
-import { pickLocalizedValue } from '@/lib/i18n';
 
 export const navItem = defineType({
 	title: 'Item',
@@ -14,7 +14,8 @@ export const navItem = defineType({
 			title: 'Title',
 			name: 'title',
 			type: 'internationalizedArrayString',
-			description: 'If left empty, the URL will be shown in the Studio preview.',
+			description:
+				'If left empty, the URL will be shown in the Studio preview.',
 		}),
 		link({
 			showLabel: false,
@@ -29,13 +30,7 @@ export const navItem = defineType({
 			href: 'link.href',
 			linkType: 'link.linkType',
 		},
-		prepare({
-			title,
-			internalLinkSlug,
-			internalLinkType,
-			href,
-			linkType,
-		}) {
+		prepare({ title, internalLinkSlug, internalLinkType, href, linkType }) {
 			if ((!linkType || !internalLinkType) && !href) {
 				return {
 					title: 'Empty Item',

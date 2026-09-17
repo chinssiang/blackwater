@@ -3,50 +3,79 @@
  * Drives both the JavaScript `resolveHref` helper and the GROQ query builder so
  * adding/changing a route only requires editing this file.
  */
-
+import {
+	DOCUMENT_ROUTES,
+	type RouteDefinition,
+	buildResolvedHrefGroq as buildGroq,
+} from '@/lib/document-routes';
 import {
 	DEFAULT_LOCALE,
-	localizePath,
-	stripLocaleFromPath,
+	LOCALES,
 	type Locale,
+	localizePath,
+	stripLocaleFromHref,
+	stripLocaleFromPathname,
 } from '@/lib/i18n';
 
-export const DOCUMENT_ROUTES = [
-	{ type: 'pHome', path: '/', slug: false },
-	{ type: 'pGeneral', path: '/', slug: true },
-	{ type: 'pProductIndex', path: '/products', slug: false },
-	{ type: 'pProduct', path: '/products/', slug: true },
-	// Synthetic route (no backing document) — lets the categories index page
-	// reuse resolveHref/defineMetadata for canonical + hreflang.
-	{
-		type: 'pProductCategoriesIndex',
-		path: '/products/categories',
-		slug: false,
-	},
-	{ type: 'pProductCategory', path: '/products/categories/', slug: true },
-	// Synthetic route (no backing document) — lets the collections index page
-	// reuse resolveHref/defineMetadata for canonical + hreflang.
-	{
-		type: 'pProductCollectionsIndex',
-		path: '/products/collections',
-		slug: false,
-	},
-	{ type: 'pProductCollection', path: '/products/collections/', slug: true },
-	{ type: 'pEvents', path: '/events/', slug: false },
-	{ type: 'pEvent', path: '/events/', slug: true },
-	{ type: 'pContact', path: '/contact', slug: false },
-	{ type: 'pFaq', path: '/faq', slug: false },
-	{ type: 'pNewsletter', path: '/newsletter', slug: false },
-	// { type: 'pBlogIndex', path: '/blog', slug: false },
-	// { type: 'pBlog', path: '/blog/', slug: true },
-];
+// Re-exported so callers keep one import site. The table and the GROQ builder
+// live in the import-free leaf beside this file; see the note there.
+export { DOCUMENT_ROUTES, type RouteDefinition };
+
+/** The GROQ href expression, with this app's default locale bound in. */
+export const buildResolvedHrefGroq = () => buildGroq(LOCALES, DEFAULT_LOCALE);
+
+// Reduces a locale-stripped path to the form route comparisons use: no query,
+// no fragment, no trailing slash. An authored href may carry "?"/"#" that a
+// pathname never does, so "/size-guide#tops" has to compare as "/size-guide"
+// or a link is never active on the page it points at.
+function toComparablePath(path: string): string {
+	const trimmed = path.replace(/[?#].*$/, '').replace(/\/+$/, '');
+	return trimmed === '' ? '/' : trimmed;
+}
+
+// The route predicates below all compare a usePathname() value, which the
+// header re-derives for every menu item off one unchanging pathname. Cache the
+// last answer: the function is pure, so a stale entry can only ever be the
+// right answer for that same input.
+let pathnameCache: { pathname: string; normalized: string } | undefined;
+
+function normalizeRoutePath(pathname: string): string {
+	if (pathnameCache?.pathname !== pathname) {
+		pathnameCache = {
+			pathname,
+			normalized: toComparablePath(stripLocaleFromPathname(pathname).path),
+		};
+	}
+	return pathnameCache.normalized;
+}
+
+// The href counterpart. Deliberately NOT normalizeRoutePath: a link target is
+// authored, so a leading "/en/" is a real path segment (a pGeneral page slugged
+// "en") and collapsing it would make the Home link active on that page while
+// its own link never matched.
+function normalizeHrefPath(href: string): string {
+	return toComparablePath(stripLocaleFromHref(href).path);
+}
 
 const HIDE_GLOBAL_NEWSLETTER_PATHS = ['/events-crew', '/newsletter'];
 
 export function shouldHideGlobalNewsletter(pathname: string): boolean {
-	const { path } = stripLocaleFromPath(pathname);
-	const normalized = path.replace(/\/+$/, '') || '/';
+	const normalized = normalizeRoutePath(pathname);
 	return HIDE_GLOBAL_NEWSLETTER_PATHS.includes(normalized);
+}
+
+// Routes that render on the light theme; everything else is dark. Each entry
+// matches itself and its descendants, so listing "/products" covers the whole
+// product subtree. Read by both ThemeProvider (which sets the html class) and
+// Layout (which flags the header) — keep it as the single predicate so the two
+// can never disagree about whether a page is light.
+const LIGHT_THEME_PATHS = ['/products', '/size-guide'];
+
+export function isLightThemePath(pathname: string): boolean {
+	const normalized = normalizeRoutePath(pathname);
+	return LIGHT_THEME_PATHS.some(
+		(base) => normalized === base || normalized.startsWith(`${base}/`)
+	);
 }
 
 export function resolveHref({
@@ -75,79 +104,31 @@ export function resolveHref({
 	return localizePath(path, locale ?? DEFAULT_LOCALE);
 }
 
-export function buildDocumentHrefGroq(slugField = 'slug.current') {
-	const cases = DOCUMENT_ROUTES.map(({ type, path, slug }) =>
-		slug
-			? `_type == "${type}" => "${path}" + ${slugField}`
-			: `_type == "${type}" => "${path}"`
-	);
-
-	cases.push(`defined(${slugField}) => "/" + ${slugField}`, 'null');
-
-	return `select(${cases.join(',')})`;
-}
-
-// NOTE: This GROQ fragment must be kept in sync with DOCUMENT_ROUTES above.
-// It cannot use buildDocumentHrefGroq() here because Sanity's static query
-// extractor cannot evaluate function calls inside template literal interpolations.
-// Uses $locale param (passed by every query that includes this via linkFields).
-// For the default locale (en) the prefix is empty; for others it is "/<locale>".
-export const resolvedHrefGroq = `select(
-		linkType == "internal" => internalLink-> {
-			"url": select(
-				_type == "pHome" => select($locale == "en" => "/", "/" + $locale),
-				select($locale == "en" => "", "/" + $locale) + select(
-					_type == "pGeneral" => "/" + slug.current,
-					_type == "pProductIndex" => "/products",
-					_type == "pProduct" => "/products/" + slug.current,
-					_type == "pProductCategory" => "/products/categories/" + slug.current,
-					_type == "pProductCollection" => "/products/collections/" + slug.current,
-					_type == "pEvents" => "/events/",
-					_type == "pEvent" => "/events/" + slug.current,
-					_type == "pContact" => "/contact",
-					_type == "pFaq" => "/faq",
-					defined(slug.current) => "/" + slug.current,
-					null
-				)
-			)
-		}.url,
-		href
-	)`;
-
 /**
  * Checks if a link should be considered active based on the current path and target URL.
- * @param args - Object containing the current pathName, target url, and an optional flag for exact (child) matching.
+ * @param args - Object containing the current pathName and the target url.
  * @returns True if the link is active, otherwise false.
  */
 export const checkIfLinkIsActive = ({
 	pathName,
 	url,
-	isChild,
 }: {
 	pathName: string;
 	url: string;
-	isChild?: boolean;
 }): boolean => {
 	if (!pathName || !url) return false;
 
-	// Strip the locale prefix and any trailing slash so comparisons are
-	// consistent regardless of locale or how the href was authored
-	// (e.g. "/events/" from GROQ vs "/events" from usePathname).
-	const normalize = (value: string): string => {
-		const { path } = stripLocaleFromPath(value);
-		const trimmed = path.replace(/\/+$/, '');
-		return trimmed === '' ? '/' : trimmed;
-	};
-
-	const current = normalize(pathName);
-	const target = normalize(url);
+	// One side is a pathname and the other an href, so they normalize
+	// differently — see the two helpers above. Both shed the trailing slash, so
+	// "/events/" from GROQ still matches "/events" from usePathname.
+	const current = normalizeRoutePath(pathName);
+	const target = normalizeHrefPath(url);
 
 	// The home link is only active on the home page itself; otherwise every
 	// route would match it as a descendant.
 	if (target === '/') return current === '/';
 
-	// Child links match their own page exactly; section/parent links also stay
-	// active on descendant routes (e.g. /products/foo keeps /products active).
-	if (isChild) return current === target;
+	// Section/parent links stay active on descendant routes as well
+	// (e.g. /products/foo keeps /products active).
 	return current === target || current.startsWith(`${target}/`);
 };

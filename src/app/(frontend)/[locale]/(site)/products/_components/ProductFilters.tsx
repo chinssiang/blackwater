@@ -1,20 +1,18 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useMemo, useState, useTransition } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { motion, useReducedMotion } from 'motion/react';
+import { Dialog } from '@base-ui/react/dialog';
 import { SlidersHorizontal, X } from 'lucide-react';
+import { interpolate, pickPlural } from '@/lib/dictionary';
+import { cn } from '@/lib/utils';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { useScrollLock } from '@/hooks/useScrollLock';
+import { useTranslations } from '@/components/LocaleProvider';
+import { CloseIcon } from '@/components/SvgIcons';
 import { Button } from '@/components/ui/Button';
 import { Checkbox } from '@/components/ui/Checkbox';
-import {
-	Sheet,
-	SheetContent,
-	SheetDescription,
-	SheetFooter,
-	SheetHeader,
-	SheetTitle,
-	SheetTrigger,
-} from '@/components/ui/Sheet';
 import {
 	Select,
 	SelectContent,
@@ -22,10 +20,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/Select';
-import { useTranslations } from '@/components/LocaleProvider';
-import useWindowDimensions from '@/hooks/useWindowDimensions';
-import { interpolate, pickPlural } from '@/lib/dictionary';
-import { cn } from '@/lib/utils';
+import { AnimatePresence, type Variants, motion } from 'motion/react';
 
 export type FacetOption = {
 	value: string;
@@ -65,6 +60,30 @@ type Props = {
 	showCount?: boolean;
 };
 
+// The panel enters from the edge it is docked to. Reduced motion is passed as
+// Motion's `custom` so the same variants cover both cases: the fade stays, the
+// travel drops. Mirrors lib/animate's cartPanel/cartOverlay, kept local because
+// only this panel has a side that changes with the viewport.
+const panelVariants: Variants = {
+	hide: ({ reduce = false, bottom = false }) => ({
+		opacity: 0,
+		x: reduce || bottom ? 0 : '100%',
+		y: reduce || !bottom ? 0 : '100%',
+		transition: { duration: 0.2, ease: 'easeIn' },
+	}),
+	show: {
+		opacity: 1,
+		x: 0,
+		y: 0,
+		transition: { duration: 0.3, ease: [0.32, 0.72, 0, 1] },
+	},
+};
+
+const backdropVariants: Variants = {
+	hide: { opacity: 0, transition: { duration: 0.2, ease: 'easeIn' } },
+	show: { opacity: 1, transition: { duration: 0.25, ease: 'easeOut' } },
+};
+
 const SORT_KEYS = [
 	'az',
 	'za',
@@ -88,18 +107,29 @@ export default function ProductFilters({
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
 	const t = useTranslations('products');
-	const { isSm } = useWindowDimensions();
-	const prefersReducedMotion = useReducedMotion();
+	// In rem, so it agrees with Tailwind's own rem-based `sm:`. getServerSnapshot
+	// is false, so a prerender bakes the phone branch — which is the right one to
+	// bake, since the panel is a bottom sheet there and only mounts on open.
+	const isWide = useMediaQuery('(min-width: 40rem)');
+	const prefersReducedMotion = usePrefersReducedMotion();
 	const [isPending, startTransition] = useTransition();
 	const [open, setOpen] = useState(false);
 	// Phones get a bottom sheet (thumb-reachable); larger screens keep the side
 	// drawer. The panel content only mounts on open, so width is resolved by then.
-	const side = isSm ? 'bottom' : 'right';
+	const isBottom = !isWide;
 	// Drawer checkboxes stage into a local draft; nothing is fetched until the
 	// user taps "Show results". Sort and the active-filter chips stay live.
 	const [draft, setDraft] = useState(selected);
 
 	const filters = t.filters;
+	const sortItems = useMemo(
+		() =>
+			SORT_KEYS.map((key) => ({
+				value: key as string,
+				label: (filters.sortOptions as Record<string, string>)[key] ?? key,
+			})),
+		[filters.sortOptions]
+	);
 	const activeCount =
 		selected.categories.length +
 		selected.brands.length +
@@ -167,6 +197,10 @@ export default function ProductFilters({
 		if (next) setDraft(selected);
 		setOpen(next);
 	}
+
+	// The app's single scroll-lock owner; the dialog below is `modal="trap-focus"`
+	// precisely so Base UI's own lock stays off and this stays the only writer.
+	useScrollLock(open, () => setOpen(false));
 
 	const draftCount =
 		draft.categories.length +
@@ -244,123 +278,190 @@ export default function ProductFilters({
 	return (
 		<div className="mb-10" aria-busy={isPending}>
 			{/* Controls bar — pinned under the header (matches the events pages) */}
-			<div className="sticky top-header z-10 flex items-center justify-between gap-3 bg-background/95 py-3 backdrop-blur-sm">
+			<div className="top-header bg-background/95 sticky z-10 flex items-center justify-between gap-3 py-3 backdrop-blur-sm">
 				{/* Filters panel trigger */}
-				<Sheet open={open} onOpenChange={handleOpenChange}>
-					<SheetTrigger asChild>
-						<Button variant="outline" className="gap-2 pointer-coarse:min-h-11">
-							<SlidersHorizontal />
-							{filters.title}
-							{activeCount > 0 && (
-								<span className="t-spec ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded bg-primary/20 px-1.5 text-primary">
-									{activeCount}
-								</span>
-							)}
-						</Button>
-					</SheetTrigger>
-					<SheetContent
-						side={side}
-						className={cn(
-							'gap-0',
-							side === 'bottom'
-								? 'max-h-[85svh] rounded-t-2xl'
-								: 'w-full sm:max-w-112'
-						)}
-					>
-						{side === 'bottom' && (
-							<div
-								aria-hidden
-								className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-foreground/20"
+				<Dialog.Root
+					open={open}
+					onOpenChange={handleOpenChange}
+					modal="trap-focus"
+				>
+					<Dialog.Trigger
+						render={
+							<Button
+								variant="outline"
+								className="gap-2 pointer-coarse:min-h-11"
 							/>
+						}
+					>
+						<SlidersHorizontal />
+						{filters.title}
+						{activeCount > 0 && (
+							<span className="t-spec bg-primary/20 text-primary ml-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded px-1.5">
+								{activeCount}
+							</span>
 						)}
-						<SheetHeader className="border-b border-foreground/10">
-							<SheetTitle className="t-h-3 uppercase">
-								{filters.title}
-							</SheetTitle>
-							<SheetDescription className="sr-only">
-								{filters.description}
-							</SheetDescription>
-						</SheetHeader>
+					</Dialog.Trigger>
 
-						<div className="flex-1 overflow-y-auto px-4 pt-6 space-y-6">
-							{facets.map((facet) => (
-								<fieldset
-									key={facet.dimension}
-									className="border-foreground/10 not-last:border-b"
+					{/* Base UI's Motion recipe: the controlled `open` gates the portal
+					    inside AnimatePresence so the exit plays, and `keepMounted` stops
+					    Base UI unmounting the panel from under it. */}
+					<AnimatePresence>
+						{open && (
+							<Dialog.Portal keepMounted key="product-filters">
+								<Dialog.Backdrop
+									render={
+										<motion.div
+											className="z-popover fixed inset-0 bg-black/50"
+											variants={backdropVariants}
+											initial="hide"
+											animate="show"
+											exit="hide"
+										/>
+									}
+								/>
+								<Dialog.Popup
+									render={
+										<motion.div
+											className={cn(
+												'bg-background text-foreground z-popover fixed flex flex-col',
+												isBottom
+													? 'inset-x-0 bottom-0 max-h-[85svh] rounded-t-2xl border-t'
+													: 'inset-y-0 right-0 w-full max-w-112 border-l'
+											)}
+											variants={panelVariants}
+											initial="hide"
+											animate="show"
+											exit="hide"
+											custom={{
+												reduce: prefersReducedMotion,
+												bottom: isBottom,
+											}}
+										/>
+									}
 								>
-									<legend className="t-l-2 mb-3 uppercase text-foreground/65">
-										{facet.label}
-									</legend>
-									<ul className="pb-6">
-										{facet.options.map((option) => {
-											const checked = facet.selected.includes(option.value);
-											// Disable options that yield nothing under the applied
-											// filters, but never a checked one (it must stay
-											// removable). Counts reflect the applied selection, not
-											// the in-progress draft, so they refresh on "Show results".
-											const disabled = Boolean(option.disabled) && !checked;
-											return (
-												<li key={option.value}>
-													<label
-														className={cn(
-															'flex items-center gap-3 py-1.5',
-															disabled ? 'cursor-not-allowed' : 'cursor-pointer'
-														)}
-													>
-														<Checkbox
-															checked={checked}
-															disabled={disabled}
-															onCheckedChange={() =>
-																toggleDraft(facet.dimension, option.value)
-															}
-														/>
-														<span
-															className={cn(
-																't-b-2 flex-1',
-																disabled
-																	? 'text-foreground/35'
-																	: 'text-foreground'
-															)}
-														>
-															{option.label}
-														</span>
-														<span
-															className={cn(
-																't-spec',
-																disabled
-																	? 'text-foreground/25'
-																	: 'text-foreground/40'
-															)}
-														>
-															{option.count}
-														</span>
-													</label>
-												</li>
-											);
-										})}
-									</ul>
-								</fieldset>
-							))}
-						</div>
+									{isBottom && (
+										<div
+											aria-hidden
+											className="bg-foreground/20 mx-auto mt-2 h-1 w-10 shrink-0 rounded-full"
+										/>
+									)}
+									<div className="border-foreground/10 flex shrink-0 items-center justify-between gap-4 border-b px-4 py-4">
+										<Dialog.Title className="t-h-3 uppercase">
+											{filters.title}
+										</Dialog.Title>
+										<Dialog.Description className="sr-only">
+											{filters.description}
+										</Dialog.Description>
+										<Dialog.Close
+											render={
+												<Button
+													variant="ghost"
+													size="sm"
+													aria-label={filters.close}
+													className="-mr-2 px-2"
+												/>
+											}
+										>
+											<CloseIcon className="size-4" />
+										</Dialog.Close>
+									</div>
 
-						<SheetFooter className="flex-row gap-3 border-t border-foreground/10">
-							{draftCount > 0 && (
-								<Button variant="ghost" className="flex-1" onClick={clearDraft}>
-									{filters.clearAll}
-								</Button>
-							)}
-							<Button className="flex-1" onClick={applyDraft}>
-								{filters.showResults}
-							</Button>
-						</SheetFooter>
-					</SheetContent>
-				</Sheet>
+									<div className="flex-1 space-y-6 overflow-y-auto px-4 pt-6">
+										{facets.map((facet) => (
+											<fieldset
+												key={facet.dimension}
+												className="border-foreground/10 not-last:border-b"
+											>
+												<legend className="t-l-2 text-foreground/65 mb-3 uppercase">
+													{facet.label}
+												</legend>
+												<ul className="pb-6">
+													{facet.options.map((option) => {
+														const checked = facet.selected.includes(
+															option.value
+														);
+														// Disable options that yield nothing under the applied
+														// filters, but never a checked one (it must stay
+														// removable). Counts reflect the applied selection, not
+														// the in-progress draft, so they refresh on "Show results".
+														const disabled =
+															Boolean(option.disabled) && !checked;
+														return (
+															<li key={option.value}>
+																<label
+																	className={cn(
+																		'flex items-center gap-3 py-1.5',
+																		disabled
+																			? 'cursor-not-allowed'
+																			: 'cursor-pointer'
+																	)}
+																>
+																	<Checkbox
+																		checked={checked}
+																		disabled={disabled}
+																		onCheckedChange={() =>
+																			toggleDraft(facet.dimension, option.value)
+																		}
+																	/>
+																	<span
+																		className={cn(
+																			't-b-2 flex-1',
+																			disabled
+																				? 'text-foreground/35'
+																				: 'text-foreground'
+																		)}
+																	>
+																		{option.label}
+																	</span>
+																	<span
+																		className={cn(
+																			't-spec',
+																			disabled
+																				? 'text-foreground/25'
+																				: 'text-foreground/40'
+																		)}
+																	>
+																		{option.count}
+																	</span>
+																</label>
+															</li>
+														);
+													})}
+												</ul>
+											</fieldset>
+										))}
+									</div>
+
+									<div className="border-foreground/10 flex shrink-0 flex-row gap-3 border-t p-4">
+										{draftCount > 0 && (
+											<Button
+												variant="ghost"
+												className="flex-1"
+												onClick={clearDraft}
+											>
+												{filters.clearAll}
+											</Button>
+										)}
+										<Button className="flex-1" onClick={applyDraft}>
+											{filters.showResults}
+										</Button>
+									</div>
+								</Dialog.Popup>
+							</Dialog.Portal>
+						)}
+					</AnimatePresence>
+				</Dialog.Root>
 
 				<div className="flex items-center gap-2">
-					<span className="t-l-2 uppercase text-foreground/65 hidden sm:inline">
+					<span className="t-l-2 text-foreground/65 hidden uppercase sm:inline">
 						{filters.sortBy}
 					</span>
 					<Select
+						// `items`, following CustomForm: without it Base UI can only echo
+						// the raw value, so the trigger read "az" instead of "Name (A–Z)"
+						// until the popup had mounted once. Memoized because Base UI keys
+						// its store on `items` by identity.
+						items={sortItems}
 						value={sort}
 						onValueChange={(value) =>
 							commit({ sort: value === 'az' ? null : value })
@@ -372,10 +473,10 @@ export default function ProductFilters({
 						>
 							<SelectValue />
 						</SelectTrigger>
-						<SelectContent position="popper" side="bottom">
-							{SORT_KEYS.map((key) => (
-								<SelectItem key={key} value={key}>
-									{(filters.sortOptions as Record<string, string>)[key]}
+						<SelectContent side="bottom" alignItemWithTrigger={false}>
+							{sortItems.map((item) => (
+								<SelectItem key={item.value} value={item.value}>
+									{item.label}
 								</SelectItem>
 							))}
 						</SelectContent>
@@ -389,10 +490,10 @@ export default function ProductFilters({
 				>
 					{isPending &&
 						(prefersReducedMotion ? (
-							<div className="h-full w-full bg-primary/50" />
+							<div className="bg-primary/50 h-full w-full" />
 						) : (
 							<motion.div
-								className="h-full w-1/3 bg-primary"
+								className="bg-primary h-full w-1/3"
 								initial={{ x: '-120%' }}
 								animate={{ x: '360%' }}
 								transition={{ repeat: Infinity, duration: 1.1, ease: 'linear' }}
@@ -407,7 +508,7 @@ export default function ProductFilters({
 			{(activeChips.length > 0 || (showCount && sort !== 'az')) && (
 				<div className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
 					{showCount && (
-						<span className="t-l-1 shrink-0 uppercase text-foreground/90 font-medium">
+						<span className="t-l-1 text-foreground/90 shrink-0 font-medium uppercase">
 							{interpolate(pickPlural(t.productCount, total), {
 								count: total,
 							})}
@@ -421,7 +522,7 @@ export default function ProductFilters({
 									onClick={() => toggle(chip.dimension, chip.value)}
 									variant="ghost"
 									size="sm"
-									className="gap-1.5 border border-foreground/15 uppercase hover:bg-foreground/5"
+									className="border-foreground/15 hover:bg-foreground/5 gap-1.5 border uppercase"
 								>
 									{chip.label}
 									<X className="size-3.5" />
@@ -430,7 +531,7 @@ export default function ProductFilters({
 							<Button
 								type="button"
 								onClick={clearAll}
-								className="uppercase text-foreground/50 underline-offset-4 hover:underline"
+								className="text-foreground/50 uppercase underline-offset-4 hover:underline"
 								variant="ghost"
 								size="sm"
 							>

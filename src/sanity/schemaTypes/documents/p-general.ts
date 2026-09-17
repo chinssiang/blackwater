@@ -1,8 +1,8 @@
+import { language } from '@/sanity/schemaTypes/objects/language';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
+import { DEFAULT_LOCALE, isLocale, localizePath } from '@/lib/i18n';
 import { defineType } from 'sanity';
-import { localizePath, isLocale, DEFAULT_LOCALE } from '@/lib/i18n';
 
 export const pGeneral = defineType({
 	title: 'Page',
@@ -21,8 +21,14 @@ export const pGeneral = defineType({
 			name: 'pageModules',
 			type: 'array',
 			description:
-				'Optional modules rendered below the main content — e.g. an FAQ section.',
-			of: [{ type: 'freeform' }, { type: 'faqList' }],
+				'Optional sections rendered below the main content, in this order.',
+			of: [
+				{ type: 'heroBlock' },
+				{ type: 'freeform' },
+				{ type: 'faqBlock' },
+				{ type: 'eventsBlock' },
+				{ type: 'productsBlock' },
+			],
 		},
 		sharing(),
 	],
@@ -36,7 +42,10 @@ export const pGeneral = defineType({
 			return {
 				title,
 				subtitle: slug?.current
-					? localizePath(`/${slug.current}`, isLocale(language) ? language : DEFAULT_LOCALE)
+					? localizePath(
+							`/${slug.current}`,
+							isLocale(language) ? language : DEFAULT_LOCALE
+						)
 					: 'Missing page slug',
 			};
 		},

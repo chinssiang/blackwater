@@ -1,9 +1,9 @@
-import type { NextRequest } from 'next/server';
 import { redirect } from 'next/navigation';
+import type { NextRequest } from 'next/server';
 import { client } from '@/sanity/lib/client';
 import * as queries from '@/sanity/lib/queries';
-import { resolveHref } from '@/lib/routes';
 import { type Locale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
 
 export async function GET(request: NextRequest) {
 	const { searchParams } = new URL(request.url);
@@ -13,7 +13,11 @@ export async function GET(request: NextRequest) {
 	const lang = searchParams.get('lang');
 	const homePageID = await client.fetch(queries.homeID);
 
-	if (docId && docId.includes(homePageID)) {
+	// homePageID is `string | null` — the query returns null on a dataset with
+	// no pHome document. Guard it: `includes(null)` coerces to the string
+	// "null", which matches any id containing that substring and misses the
+	// real homepage. `includes` rather than `===` so a `drafts.` id matches.
+	if (homePageID && docId && docId.includes(homePageID)) {
 		redirect('/');
 	}
 

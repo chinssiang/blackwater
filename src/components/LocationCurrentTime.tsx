@@ -1,15 +1,10 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useEffect, useState } from 'react';
 import { TZDate } from '@date-fns/tz';
 import { format } from 'date-fns';
-import { enUS, zhTW } from 'date-fns/locale';
+import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import type { Locale } from '@/lib/i18n';
-
-const DATE_FNS_LOCALES: Record<Locale, Locale extends 'zh_tw' ? typeof zhTW : typeof enUS> = {
-	en: enUS,
-	zh_tw: zhTW,
-} as Record<Locale, typeof enUS | typeof zhTW>;
 
 export function LocationCurrentTime() {
 	const [time, setTime] = useState<Date>(() => new Date());
@@ -36,11 +31,21 @@ export function LocationCurrentTime() {
 	}, []);
 
 	const tzDate = new TZDate(time, 'Asia/Singapore');
-	const formattedTime = format(tzDate, t.dateFormat, { locale: DATE_FNS_LOCALES[locale] });
+	const formattedTime = format(tzDate, t.dateFormat, {
+		locale: DATE_FNS_LOCALES[locale],
+	});
 	const colonIndex = formattedTime.indexOf(':');
 
 	return (
-		<time suppressHydrationWarning className="tabular-nums">
+		// min-w must match the Lazy wrapper's placeholder so the placeholder →
+		// clock swap is width-stable. 15ch covers the widest realistic string in
+		// both locales ("週六, 下午 11:31" — 4 CJK glyphs at ~2ch each — and
+		// "Wed, 11:28 AM"); `ch` is the digit advance, which `tabular-nums` makes
+		// uniform, so the box also survives the 9:59 → 10:00 rollover.
+		<time
+			suppressHydrationWarning
+			className="inline-block min-w-[15ch] tabular-nums"
+		>
 			{formattedTime.slice(0, colonIndex)}
 			<span className="animate-blinker">:</span>
 			{formattedTime.slice(colonIndex + 1)}

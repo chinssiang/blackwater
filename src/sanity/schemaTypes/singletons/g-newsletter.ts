@@ -1,6 +1,6 @@
+import { language } from '@/sanity/schemaTypes/objects/language';
 import { EnvelopeIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
-import { language } from '@/sanity/schemaTypes/objects/language';
 
 export const gNewsletter = defineType({
 	title: 'Newsletter Form',

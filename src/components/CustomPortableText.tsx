@@ -1,10 +1,11 @@
-import sanitizeHtml from 'sanitize-html';
 import { PortableText, PortableTextReactComponents } from '@portabletext/react';
 import type {
+	ArbitraryTypedObject,
 	PortableTextBlock,
-	PortableTextSpan,
 	PortableTextLink,
+	PortableTextSpan,
 } from '@portabletext/types';
+import { sanitizeEmbedSnippet } from '@/lib/sanitize-embed';
 import { cn } from '@/lib/utils';
 import CustomLink from '@/components/CustomLink';
 import ImageBlock from '@/components/ImageBlock';
@@ -40,22 +41,9 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 			if (!embedSnippet) {
 				return null;
 			}
-			const sanitized = sanitizeHtml(embedSnippet, {
-				allowedTags: ['iframe'],
-				allowedAttributes: {
-					iframe: [
-						'src',
-						'width',
-						'height',
-						'frameborder',
-						'allow',
-						'allowfullscreen',
-						'title',
-						'loading',
-						'referrerpolicy',
-					],
-				},
-			});
+			// Shared with the Studio preview (schemaTypes/objects/custom-iframe.tsx),
+			// so the two renderers of this field cannot drift apart.
+			const sanitized = sanitizeEmbedSnippet(embedSnippet);
 			if (!sanitized) {
 				return null;
 			}
@@ -93,7 +81,16 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 export default function CustomPortableText({
 	blocks,
 }: {
-	blocks: PortableTextBlock[];
+	// Not `PortableTextBlock[]`. TypeGen emits `children?:` as optional on every
+	// generated block, while @portabletext/types' PortableTextBlock requires it,
+	// so no query result satisfies that type. This is <PortableText>'s own
+	// default value type, which the generated shapes do satisfy - and it is what
+	// admits the custom `image` / `iframe` members handled below, which are
+	// arbitrary typed objects rather than blocks.
+	//
+	// Nullable because most queries project portable text with a `[]{...}` that
+	// yields null on an empty field; the guard below already returns null.
+	blocks?: (PortableTextBlock | ArbitraryTypedObject)[] | null;
 }) {
 	if (!blocks) return null;
 

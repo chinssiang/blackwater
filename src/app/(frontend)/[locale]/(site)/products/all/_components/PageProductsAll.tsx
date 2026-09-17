@@ -2,16 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { motion } from 'motion/react';
-import ProductCategoriesGrid from '../../_components/ProductCategoriesGrid';
-import ProductPageHeader from '../../_components/ProductPageHeader';
-import ProductBrowser, {
-	type ProductSelection,
-} from '../../_components/ProductBrowser';
-import { useReveal } from '@/hooks/useReveal';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { resolveHref } from '@/lib/routes';
-import { localizePath } from '@/lib/i18n';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import {
 	Pagination,
 	PaginationContent,
@@ -21,6 +13,11 @@ import {
 	PaginationNext,
 	PaginationPrevious,
 } from '@/components/ui/Pagination';
+import ProductBrowser, {
+	type ProductSelection,
+} from '../../_components/ProductBrowser';
+import ProductCategoriesGrid from '../../_components/ProductCategoriesGrid';
+import ProductPageHeader from '../../_components/ProductPageHeader';
 import type { PageProductsAllQueryResult } from 'sanity.types';
 
 type Props = {
@@ -67,10 +64,9 @@ export function PageProductsAll({
 	selected,
 	sort,
 }: Props) {
-	const reveal = useReveal();
 	const locale = useLocale();
-	const searchParams = useSearchParams();
 	const pathname = usePathname();
+	const searchParams = useSearchParams();
 	const breadcrumb = useTranslations('breadcrumb');
 	const t = useTranslations('products');
 	const common = useTranslations('common');
@@ -83,7 +79,8 @@ export function PageProductsAll({
 		facetPrice,
 	} = data || {};
 
-	// Pagination links keep the current filter/sort params and only swap `page`.
+	// Pagination links keep whatever filter/sort params are active and swap only
+	// `page`, so paging never silently drops the filter the shopper is browsing.
 	const hrefFor = (p: number) => {
 		const params = new URLSearchParams(searchParams.toString());
 		if (p > 1) params.set('page', String(p));
@@ -92,56 +89,16 @@ export function PageProductsAll({
 		return pathname + (qs ? `?${qs}` : '');
 	};
 
-	const pagination = totalPages > 1 && (
-		<Pagination className="mb-20">
-			<PaginationContent>
-				{currentPage > 1 && (
-					<PaginationItem>
-						<PaginationPrevious
-							href={hrefFor(currentPage - 1)}
-							text={common.previous}
-						/>
-					</PaginationItem>
-				)}
-
-				{getPageRange(currentPage, totalPages).map((p, i) =>
-					p === 'ellipsis' ? (
-						<PaginationItem key={`ellipsis-${i}`}>
-							<PaginationEllipsis />
-						</PaginationItem>
-					) : (
-						<PaginationItem key={p}>
-							<PaginationLink href={hrefFor(p)} isActive={p === currentPage}>
-								{p}
-							</PaginationLink>
-						</PaginationItem>
-					)
-				)}
-
-				{currentPage < totalPages && (
-					<PaginationItem>
-						<PaginationNext
-							href={hrefFor(currentPage + 1)}
-							text={common.next}
-						/>
-					</PaginationItem>
-				)}
-			</PaginationContent>
-		</Pagination>
-	);
-
 	return (
 		<>
 			{/* Breadcrumb */}
-			<motion.nav
+			<nav
 				aria-label="Breadcrumb"
-				className="t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
-				{...reveal}
-				transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
+				className="m-x-max reveal t-l-2 text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 uppercase lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
-					className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
+					className="hover:text-foreground inline-flex items-center transition-colors pointer-coarse:min-h-11"
 				>
 					{breadcrumb.products}
 				</Link>
@@ -151,13 +108,22 @@ export function PageProductsAll({
 				<span aria-current="page" className="text-foreground/90">
 					{t.allProducts}
 				</span>
-			</motion.nav>
+			</nav>
 
 			<ProductPageHeader
 				title={t.allProducts}
 				counts={[{ count: total, forms: t.productCount }]}
 			/>
 
+			{/* The pagination below is the one top-level section here with no
+			    `m-x-max`, deliberately: Pagination is `mx-auto w-full` with centred
+			    content, so it spans the window but its links stay centred on the same
+			    axis the gutter would have centred them on. Adding the gutter means
+			    fighting both of those classes — `m-x-max` loses the cascade to
+			    `mx-auto` (a custom @utility sorts before Tailwind's own), and a margin
+			    plus `w-full` overflows the viewport by the gutter's width. So it is
+			    passed as ProductBrowser's `footer`, outside the gutter, while the
+			    toolbar and grid take `m-x-max` through `className`/`gridClassName`. */}
 			<ProductBrowser
 				facetCategories={facetCategories ?? []}
 				facetBrands={facetBrands ?? []}
@@ -166,13 +132,57 @@ export function PageProductsAll({
 				selected={selected}
 				sort={sort}
 				total={total}
+				// The page header above already prints the count.
 				showCount={false}
 				products={products ?? []}
-				footer={pagination}
+				className="m-x-max"
+				gridClassName="m-x-max mb-20"
+				footer={
+					totalPages > 1 && (
+						<Pagination className="mb-20">
+							<PaginationContent>
+								{currentPage > 1 && (
+									<PaginationItem>
+										<PaginationPrevious
+											href={hrefFor(currentPage - 1)}
+											text={common.previous}
+										/>
+									</PaginationItem>
+								)}
+
+								{getPageRange(currentPage, totalPages).map((p, i) =>
+									p === 'ellipsis' ? (
+										<PaginationItem key={`ellipsis-${i}`}>
+											<PaginationEllipsis />
+										</PaginationItem>
+									) : (
+										<PaginationItem key={p}>
+											<PaginationLink
+												href={hrefFor(p)}
+												isActive={p === currentPage}
+											>
+												{p}
+											</PaginationLink>
+										</PaginationItem>
+									)
+								)}
+
+								{currentPage < totalPages && (
+									<PaginationItem>
+										<PaginationNext
+											href={hrefFor(currentPage + 1)}
+											text={common.next}
+										/>
+									</PaginationItem>
+								)}
+							</PaginationContent>
+						</Pagination>
+					)
+				}
 			/>
 
 			{categories && categories.length > 0 && (
-				<div className="border-t border-foreground/10 pt-12 lg:pt-16">
+				<div className="m-x-max border-foreground/10 border-t pt-12 lg:pt-16">
 					<ProductCategoriesGrid categories={categories} />
 				</div>
 			)}

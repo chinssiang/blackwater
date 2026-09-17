@@ -13,6 +13,49 @@
 	"locationCurrentTime": {
 		"dateFormat": "iii, p"
 	},
+	"weather": {
+		"label": "Taipei",
+		"observedAt": "Updated {time}",
+		"metrics": {
+			"feelsLike": "Feels like",
+			"wind": "Wind",
+			"humidity": "Humidity",
+			"rain": "Rain",
+			"aqi": "AQI"
+		},
+		"units": {
+			"celsius": "°C",
+			"kilometresPerHour": "km/h",
+			"percent": "%",
+			"millimetres": "mm"
+		},
+		"conditions": {
+			"clear": "Clear",
+			"mainlyClear": "Mainly clear",
+			"partlyCloudy": "Partly cloudy",
+			"overcast": "Overcast",
+			"fog": "Fog",
+			"drizzle": "Drizzle",
+			"freezingDrizzle": "Freezing drizzle",
+			"rain": "Rain",
+			"freezingRain": "Freezing rain",
+			"snow": "Snow",
+			"snowGrains": "Snow grains",
+			"showers": "Showers",
+			"snowShowers": "Snow showers",
+			"thunderstorm": "Thunderstorm",
+			"thunderstormHail": "Thunderstorm, hail",
+			"unknown": "Unknown"
+		},
+		"aqiBands": {
+			"good": "Good",
+			"moderate": "Moderate",
+			"unhealthySensitive": "Unhealthy for sensitive groups",
+			"unhealthy": "Unhealthy",
+			"veryUnhealthy": "Very unhealthy",
+			"hazardous": "Hazardous"
+		}
+	},
 	"events": {
 		"headers": {
 			"codex": "codex",
@@ -24,31 +67,100 @@
 			"previousMonth": "Previous",
 			"nextMonth": "Next",
 			"viewEvent": "View {title}",
-			"viewLocation": "{location}, opens map in a new tab"
+			"viewLocation": "{location}, opens map in a new tab",
+			"switchTo": {
+				"calendar": "Switch to calendar view",
+				"list": "Switch to list view"
+			}
 		},
 		"status": {
 			"today": "today",
 			"ended": "ended",
-			"tba": "TBA"
+			"tba": "TBA",
+			"postponed": "Postponed",
+			"cancelled": "Cancelled"
 		},
 		"daysUntil": {
 			"one": "in {count} day",
 			"other": "in {count} days"
 		},
 		"emptyMonth": "No events for this month",
+		"viewAll": "All events",
+		"carousel": {
+			"label": "Upcoming events",
+			"previous": "Previous events",
+			"next": "More events"
+		},
+		"related": {
+			"series": "More in {category}",
+			"seriesGeneric": "Latest events",
+			"venue": "Also at {location}"
+		},
+		"detail": {
+			"location": "Location",
+			"goodToKnow": "Good to know",
+			"startFinish": "Start & Finish",
+			"station": "Station {number}",
+			"gettingHere": "Getting Here",
+			"headingOut": "Heading Out",
+			"notes": "Event Notes",
+			"flavorChallenge": "Flavor Challenge",
+			"exampleImageAlt": "Example of {quest}"
+		},
+		"spec": {
+			"venue": "Venue",
+			"distance": "Distance",
+			"distanceValue": "{km} km",
+			"type": "Type",
+			"entry": "Entry",
+			"free": "Free",
+			"ends": "Ends",
+			"eventType": {
+				"group-run": "Group run",
+				"race": "Race",
+				"social": "Social",
+				"trail": "Trail"
+			}
+		},
 		"dateFormat": "iii, MM.dd.yy, h:mm aaa",
-		"monthYearFormat": "MMMM yyyy"
+		"monthYearFormat": "MMMM yyyy",
+		"view": {
+			"list": "List",
+			"calendar": "Calendar"
+		},
+		"calendar": {
+			"gridLabel": "Events in {month}",
+			"weekdayFormat": "EEE",
+			"weekdayNarrowFormat": "EEEEE",
+			"dayFormat": "EEEE, MMMM d, yyyy",
+			"dayHeadingFormat": "EEEE, MMMM d",
+			"timeFormat": "h:mm aaa",
+			"today": "Today",
+			"dayPanelLabel": "Events on the selected day",
+			"selectDayPrompt": "Select a day to see its events",
+			"close": "Close",
+			"selectDay": "{day}, {events}",
+			"eventCount": {
+				"one": "{count} event",
+				"other": "{count} events"
+			},
+			"moreEvents": "+{count} more"
+		}
 	},
 	"products": {
 		"categoriesTitle": "Categories",
 		"collectionsTitle": "Collections",
 		"categoriesDescription": "Browse our product categories.",
+		"collectionsDescription": "Browse our product collections.",
+		"allProductsDescription": "Every product the club has vetted, in one list.",
 		"allCategories": "All categories",
 		"allCollection": "All {collection}",
 		"whyUseIt": "Why do we use it?",
 		"whoIsItFor": "Who is it for?",
 		"whenReachForIt": "When do we reach for it?",
 		"whyWeChoseIt": "Why we chose it",
+		"sizeGuide": "Size guide",
+		"viewFullSizeGuide": "View full size guide",
 		"buyIt": "Buy it",
 		"buyAriaLabel": "Buy {product} (opens in a new tab)",
 		"thisProduct": "this product",
@@ -57,9 +169,13 @@
 		"moreCategory": "More {category}",
 		"allProducts": "All products",
 		"moreProducts": "More products",
-		"kickerCollection": "Collection",
-		"kickerCategory": "Category",
-		"productCount": { "one": "{count} product", "other": "{count} products" },
+		"emptyAllProducts": "Nothing here yet. Picks are added as the club vets new gear.",
+		"emptyCategory": "No picks in this category yet. Check back as the shelf grows.",
+		"emptyCollections": "No collections yet. They group picks around a theme or season.",
+		"productCount": {
+			"one": "{count} product",
+			"other": "{count} products"
+		},
 		"categoryCount": {
 			"one": "{count} category",
 			"other": "{count} categories"
@@ -74,6 +190,34 @@
 			"editors-choice": "Editor's Choice",
 			"new": "New"
 		},
+		"soldOut": "Sold out",
+		"fromPrice": "From {price}",
+		"optionUnavailable": "{value} (sold out)",
+		"notify": {
+			"title": "Notify when back in stock",
+			"emailLabel": "Email address",
+			"emailPlaceholder": "you@example.com",
+			"submit": "Notify me",
+			"submitting": "Submitting…",
+			"successHeading": "You're on the list",
+			"successBody": "We'll email you when this is back in stock.",
+			"errorHeading": "Something went wrong",
+			"errorBody": "Please try again in a moment.",
+			"invalidEmail": "Please enter a valid email address.",
+			"rateLimitedHeading": "Too many attempts",
+			"rateLimitedBody": "Please wait a few minutes and try again.",
+			"ariaLabel": "Get notified when {product} is back in stock"
+		},
+		"gallery": {
+			"label": "Product images",
+			"imageAlt": "{product} — image {index} of {count}",
+			"slide": "Image {index} of {count}",
+			"goTo": "Go to image {index}",
+			"previous": "Previous image",
+			"next": "Next image"
+		},
+		"kickerCollection": "Collection",
+		"kickerCategory": "Category",
 		"filters": {
 			"title": "Filters",
 			"description": "Filter and sort the product list.",
@@ -101,17 +245,38 @@
 			"showResults": "Show results",
 			"noResults": "No products match your filters.",
 			"clearFilters": "Clear all filters",
-			"emptyCatalogue": "Nothing here yet. Picks are added as the club vets new gear."
+			"close": "Close filters"
 		}
+	},
+	"sizeGuide": {
+		"sizeColumn": "SIZE",
+		"measurementColumn": "MEASUREMENT",
+		"units": {
+			"cm": "CM",
+			"in": "IN"
+		},
+		"unitToggleAria": "Measurement unit for {section}",
+		"navAria": "Size guide sections",
+		"tableRegionAria": "Size chart table, scrollable",
+		"empty": "No size charts yet."
 	},
 	"productSubmission": {
 		"triggerLabel": "Submit a product",
 		"title": "Submit a product",
 		"description": "Know a product we should feature? Send it our way.",
 		"fields": {
-			"name": { "label": "Full name", "placeholder": "Your full name" },
-			"email": { "label": "Email", "placeholder": "you@example.com" },
-			"productUrl": { "label": "Product URL", "placeholder": "https://..." }
+			"name": {
+				"label": "Full name",
+				"placeholder": "Your full name"
+			},
+			"email": {
+				"label": "Email",
+				"placeholder": "you@example.com"
+			},
+			"productUrl": {
+				"label": "Product URL",
+				"placeholder": "https://..."
+			}
 		},
 		"submit": "Submit",
 		"submitting": "Submitting...",
@@ -131,14 +296,48 @@
 		"openMenu": "Open menu",
 		"closeMenu": "Close menu"
 	},
+	"cart": {
+		"title": "Cart",
+		"open": "Open cart",
+		"close": "Close cart",
+		"empty": "Your cart is empty.",
+		"browseProducts": "Browse products",
+		"addToCart": "Add to cart",
+		"add": "Add",
+		"addAriaLabel": "Add {product} to cart",
+		"adding": "Adding…",
+		"added": "Added to cart",
+		"selectSize": "Select a size",
+		"checkout": "Checkout",
+		"subtotal": "Subtotal",
+		"shippingNote": "Shipping and taxes are calculated at checkout.",
+		"quantity": "Quantity",
+		"increaseAriaLabel": "Increase quantity of {product}",
+		"decreaseAriaLabel": "Decrease quantity of {product}",
+		"remove": "Remove",
+		"removeAriaLabel": "Remove {product} from cart",
+		"itemCount": {
+			"one": "{count} item",
+			"other": "{count} items"
+		},
+		"stockLimited": "Only {count} left in stock",
+		"errorHeading": "We couldn't update your cart",
+		"errorBody": "Please try again in a moment.",
+		"loadError": "We couldn't load your cart.",
+		"retry": "Try again"
+	},
 	"newsletter": {
 		"emailLabel": "Email address",
 		"emailPlaceholder": "Your email",
 		"submit": "Subscribe",
 		"submitting": "Subscribing…",
 		"invalidEmail": "Please enter a valid email address.",
+		"successHeading": "You're subscribed",
+		"successBody": "Thanks — check your inbox to confirm.",
 		"errorHeading": "Something went wrong",
-		"errorBody": "Please try again."
+		"errorBody": "Please try again.",
+		"rateLimitedHeading": "Too many attempts",
+		"rateLimitedBody": "Please wait a few minutes and try again."
 	},
 	"consent": {
 		"bannerTitle": "We value your privacy",

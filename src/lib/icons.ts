@@ -1,3 +1,4 @@
+import { IconType } from 'react-icons';
 import {
 	FaFacebookF,
 	FaGithub,
@@ -8,7 +9,6 @@ import {
 	FaXTwitter,
 	FaYoutube,
 } from 'react-icons/fa6';
-import { IconType } from 'react-icons';
 
 type SocialIconKey =
 	| 'facebook'

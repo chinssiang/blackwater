@@ -1,58 +1,104 @@
 'use client';
 
+import type { CSSProperties, ReactNode } from 'react';
 import Link from 'next/link';
-import ImageBlock from '@/components/ImageBlock';
-import CustomPortableText from '@/components/CustomPortableText';
-import { motion } from 'motion/react';
-import type { PageProductSingleQueryResult } from 'sanity.types';
-import {
-	hasArrayValue,
-	appendReferralParams,
-	REFERRAL_SOURCE,
-	formatPrice,
-} from '@/lib/utils';
-import { useReveal } from '@/hooks/useReveal';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { interpolate } from '@/lib/dictionary';
+import { REVEAL_SOFT } from '@/lib/animate';
+import { badgeLabel, sortBadges } from '@/lib/product-badges';
 import { resolveHref } from '@/lib/routes';
-import { localizePath } from '@/lib/i18n';
-import ProductCard from '../../_components/ProductCard';
-import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
+import { hasArrayValue } from '@/lib/utils';
+import CustomPortableText from '@/components/CustomPortableText';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import { isRenderable } from '@/components/SizeChartTable';
 import {
 	Accordion,
+	AccordionContent,
 	AccordionItem,
 	AccordionTrigger,
-	AccordionContent,
 } from '@/components/ui/Accordion';
+import { Badge } from '@/components/ui/Badge';
+import SizeChartDialog, { SIZE_GUIDE_LINK_CLASS } from './SizeChartDialog';
+import type { PageProductSingleQueryResult } from 'sanity.types';
+
+// Renders only what Sanity already has: title, copy, size guide. All three
+// Shopify-dependent regions — gallery, buy column, related grid — arrive as
+// slots holding streamed server components, so nothing here waits on a
+// Storefront round trip.
+
+// Explicitly the fields this component renders, not the whole query result.
+// Everything crossing into a client component is serialized into the HTML and
+// every later RSC response, so the payload used to carry both related-product
+// arrays, the SEO `sharing` block and every commerce field — none of which are
+// read here — on every product page.
+type ProductData = NonNullable<PageProductSingleQueryResult>;
 
 type Props = {
-	data: NonNullable<PageProductSingleQueryResult>;
+	data: Pick<
+		ProductData,
+		| 'title'
+		| 'badge'
+		| 'categories'
+		| 'brands'
+		| 'content'
+		| 'whyUseIt'
+		| 'whoIsItFor'
+		| 'whenReachForIt'
+		| 'metadata'
+		| 'sizeChart'
+	>;
+	/**
+	 * The image frame's contents: <ProductMainImage> directly for products with
+	 * no Shopify handle, otherwise a streamed <ProductGalleryColumn>.
+	 */
+	gallerySlot: ReactNode;
+	/** Streamed <ProductBuyColumn> — price, variants, buy button. */
+	buySlot: ReactNode;
+	/** Streamed <ProductRelatedGrid>. */
+	relatedSlot: ReactNode;
 };
 
-export default function PageProductSingle({ data }: Props) {
-	const reveal = useReveal();
+export default function PageProductSingle({
+	data,
+	gallerySlot,
+	buySlot,
+	relatedSlot,
+}: Props) {
 	const locale = useLocale();
 	const breadcrumb = useTranslations('breadcrumb');
 	const productText = useTranslations('products');
 	const {
 		title,
-		slug,
 		badge,
 		categories,
 		brands,
-		mainImage,
-		price,
-		priceAmount,
-		purchaseLink,
 		content,
 		whyUseIt,
 		whoIsItFor,
 		whenReachForIt,
 		metadata,
-		relatedProducts,
-		defaultRelatedProducts,
+		sizeChart,
 	} = data || {};
+
+	const sortedBadges = sortBadges(badge);
+
+	// One decision, made here: a chart with a table opens in place, and one
+	// without falls back to the size guide page. The dialog owns no part of this
+	// — a second copy of the predicate would drift and leave the animated
+	// wrapper below rendering around nothing.
+	const sizeGuideBase = resolveHref({ documentType: 'pSizeGuide', locale });
+	// The #slug anchor only resolves for charts the size guide page renders, which
+	// is exactly the set the fallback excludes — so the fallback links to the page
+	// itself, and only the dialog gets the anchored deep link.
+	const sizeGuideHref =
+		sizeGuideBase && sizeChart?.slug
+			? `${sizeGuideBase}#${sizeChart.slug}`
+			: null;
+	const sizeGuideControl = !sizeChart ? null : isRenderable(sizeChart) ? (
+		<SizeChartDialog chart={sizeChart} sizeGuideHref={sizeGuideHref} />
+	) : sizeGuideBase ? (
+		<Link href={sizeGuideBase} className={SIZE_GUIDE_LINK_CLASS}>
+			{productText.sizeGuide}
+		</Link>
+	) : null;
 
 	// `whenReachForIt` is a GROQ conditional-projection union (richText OR list
 	// variant); contentType isn't a true discriminant, so read it via `any`.
@@ -82,11 +128,6 @@ export default function PageProductSingle({ data }: Props) {
 			},
 	].filter(Boolean) as any[];
 
-	const displayRelated =
-		relatedProducts && relatedProducts.length > 0
-			? relatedProducts
-			: defaultRelatedProducts;
-
 	const categoryLabel = hasArrayValue(categories)
 		? categories
 				.map((c: any) => c.title)
@@ -100,9 +141,6 @@ export default function PageProductSingle({ data }: Props) {
 				.join(', ')
 		: null;
 
-	const firstCategory = hasArrayValue(categories)
-		? (categories[0] as any)
-		: null;
 	// Keep the eyebrow concise: lead with the brand (the key identifier) and
 	// let the breadcrumb carry the category. Products can be tagged with many
 	// categories, so listing them all here reads as noise.
@@ -110,16 +148,13 @@ export default function PageProductSingle({ data }: Props) {
 
 	return (
 		<>
-			{/* Breadcrumb */}
-			<motion.nav
+			<nav
 				aria-label="Breadcrumb"
-				className="t-l-2 uppercase text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 lg:mb-16"
-				{...reveal}
-				transition={{ duration: 0.6, ease: [0, 0.71, 0.2, 1.01] }}
+				className="p-x-max t-l-2 text-foreground/60 mb-10 flex flex-wrap items-center gap-x-2 gap-y-1 uppercase lg:mb-16"
 			>
 				<Link
 					href={resolveHref({ documentType: 'pProductIndex', locale })!}
-					className="inline-flex items-center transition-colors hover:text-foreground pointer-coarse:min-h-11"
+					className="hover:text-foreground inline-flex items-center transition-colors pointer-coarse:min-h-11"
 				>
 					{breadcrumb.products}
 				</Link>
@@ -129,164 +164,75 @@ export default function PageProductSingle({ data }: Props) {
 				<span aria-current="page" className="text-foreground/90">
 					{title}
 				</span>
-			</motion.nav>
+			</nav>
 
-			<div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:gap-12 mb-16 lg:mb-24">
-				{/* Image */}
-				<motion.div
-					className="relative aspect-4/3 overflow-hidden p-6 lg:col-span-7 lg:p-10"
-					{...reveal}
-					transition={{ duration: 0.8, delay: 0.05, ease: [0, 0.5, 0.5, 1] }}
-				>
-					{mainImage ? (
-						<ImageBlock
-							fill="contain"
-							imageObj={mainImage as any}
-							alt={title ?? ''}
-							sizes="(max-width: 1024px) 100vw, 58vw"
-							priority
-						/>
-					) : (
-						<div className="absolute inset-0 bg-foreground/10" />
-					)}
-				</motion.div>
+			<div className="mb-16 grid grid-cols-1 gap-8 lg:mb-24 lg:grid-cols-12 lg:gap-12">
+				<div className="bg-background relative aspect-4/3 overflow-hidden lg:col-span-7 lg:aspect-auto">
+					{gallerySlot}
+				</div>
 
-				{/* Details */}
-				<div className="flex flex-col lg:col-span-5 lg:pt-2">
-					{badge && badge.length > 0 && (
-						<motion.div
-							className="mb-4 flex flex-wrap gap-1.5"
-							{...reveal}
-							transition={{
-								duration: 0.6,
-								delay: 0.08,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
+				<div className="p-x-max flex flex-col lg:col-span-5 lg:pt-2 lg:pl-0">
+					{sortedBadges.length > 0 && (
+						<div
+							className="reveal mb-4 flex flex-wrap gap-1.5"
+							style={{ '--reveal-delay': '0.08s' } as CSSProperties}
 						>
-							{badge.map((b: string) => (
-								<Badge key={b}>
-									{(productText.badges as Record<string, string>)[b] ?? b}
-								</Badge>
+							{sortedBadges.map((b) => (
+								<Badge key={b}>{badgeLabel(b, productText.badges)}</Badge>
 							))}
-						</motion.div>
+						</div>
 					)}
 
-					{eyebrow && (
-						<motion.p
-							className="t-l-1 text-foreground"
-							{...reveal}
-							transition={{
-								duration: 0.6,
-								delay: 0.1,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
-						>
-							{eyebrow}
-						</motion.p>
-					)}
+					{eyebrow && <p className="t-l-1 text-foreground">{eyebrow}</p>}
 
-					<motion.h1
-						className="mt-3 text-balance t-h-1 uppercase"
-						{...reveal}
-						transition={{
-							duration: 0.8,
-							delay: 0.15,
-							ease: [0, 0.71, 0.2, 1.01],
-						}}
-					>
-						{title}
-					</motion.h1>
+					<h1 className="t-h-1 mt-3 text-balance uppercase">{title}</h1>
 
-					{(priceAmount != null || price) && (
-						<motion.p
-							className="t-spec font-semibold mt-5 text-foreground/75"
-							{...reveal}
-							transition={{
-								duration: 0.6,
-								delay: 0.2,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
-						>
-							{priceAmount != null ? formatPrice(priceAmount) : price}
-						</motion.p>
-					)}
+					{/* Price, variants and the buy button — everything that waits on
+					    Shopify — arrive here as a streamed server component. */}
+					{buySlot}
 
-					{purchaseLink && (
-						<motion.div
-							className="mt-6"
-							{...reveal}
-							transition={{
-								duration: 0.6,
-								delay: 0.25,
-								ease: [0, 0.71, 0.2, 1.01],
-							}}
+					{sizeGuideControl && (
+						<div
+							className="reveal mt-5"
+							style={{ '--reveal-delay': '0.28s' } as CSSProperties}
 						>
-							<Button asChild>
-								<a
-									href={appendReferralParams(purchaseLink, {
-										source: REFERRAL_SOURCE,
-										medium: 'referral',
-										campaign: 'curated-products',
-										content: slug ?? undefined,
-									})}
-									target="_blank"
-									rel="noopener"
-									aria-label={interpolate(productText.buyAriaLabel, {
-										product: title ?? productText.thisProduct,
-									})}
-									className="group lg:w-60 transition-[background-color,filter] hover:brightness-[0.97] uppercase w-full"
-								>
-									{productText.buyIt}
-									<span
-										aria-hidden
-										className="transition-transform duration-300 ease-out group-hover:translate-x-0.5 group-hover:-translate-y-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0 motion-reduce:group-hover:translate-y-0"
-									>
-										↗
-									</span>
-								</a>
-							</Button>
-						</motion.div>
+							{sizeGuideControl}
+						</div>
 					)}
 
 					{content && content.length > 0 && (
-						<motion.div
-							className="mt-10 lg:max-w-[60ch] border-t border-foreground/10 pt-8"
-							{...reveal}
-							transition={{
-								duration: 0.8,
-								delay: 0.3,
-								ease: [0, 0.5, 0.5, 1],
-							}}
+						<div
+							className="reveal border-foreground/10 mt-10 border-t pt-8 lg:max-w-[60ch]"
+							style={
+								{ ...REVEAL_SOFT, '--reveal-delay': '0.3s' } as CSSProperties
+							}
 						>
-							<p className="t-l-1 mb-5 uppercase text-foreground/65">
+							<p className="t-l-1 text-foreground/65 mb-5 uppercase">
 								{productText.whyWeChoseIt}
 							</p>
-							<div className="t-b-1 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4]">
+							<div className="t-b-1 text-foreground/80 text-pretty [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
 								<CustomPortableText blocks={content as any} />
 							</div>
-						</motion.div>
+						</div>
 					)}
 
 					{staticSections.length > 0 && (
-						<motion.div
-							className="mt-8 lg:max-w-[60ch] border-t border-foreground/10"
-							{...reveal}
-							transition={{
-								duration: 0.8,
-								delay: 0.35,
-								ease: [0, 0.5, 0.5, 1],
-							}}
+						<div
+							className="reveal border-foreground/10 mt-8 border-t lg:max-w-[60ch]"
+							style={
+								{ ...REVEAL_SOFT, '--reveal-delay': '0.35s' } as CSSProperties
+							}
 						>
 							{staticSections.map((item: any) => (
 								<div
 									key={item.value}
-									className="border-b border-foreground/10 py-4"
+									className="border-foreground/10 border-b py-4"
 								>
-									<p className="t-l-1 uppercase text-foreground/65">
+									<p className="t-l-1 text-foreground/65 uppercase">
 										{item.title}
 									</p>
 									{item.contentType === 'richText' && item.richText && (
-										<div className="t-b-1 mt-3 text-foreground/80 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5 leading-[1.4]">
+										<div className="t-b-1 text-foreground/80 mt-3 [&_li]:mb-1 [&_ol]:mb-4 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-4 [&_ul]:mb-4 [&_ul]:list-disc [&_ul]:pl-5">
 											<CustomPortableText blocks={item.richText} />
 										</div>
 									)}
@@ -301,29 +247,26 @@ export default function PageProductSingle({ data }: Props) {
 									)}
 								</div>
 							))}
-						</motion.div>
+						</div>
 					)}
 
 					{metadata && metadata.length > 0 && (
-						<motion.div
-							className="mt-8 max-w-[60ch] border-t border-foreground/10 pt-4"
-							{...reveal}
-							transition={{
-								duration: 0.8,
-								delay: 0.4,
-								ease: [0, 0.5, 0.5, 1],
-							}}
+						<div
+							className="reveal border-foreground/10 mt-8 max-w-[60ch] border-t pt-4"
+							style={
+								{ ...REVEAL_SOFT, '--reveal-delay': '0.4s' } as CSSProperties
+							}
 						>
-							<Accordion type="multiple">
+							<Accordion multiple>
 								{metadata.map((item: any, i: number) => {
 									const value = item._key ?? `meta-${i}`;
 									return (
 										<AccordionItem
 											key={value}
 											value={value}
-											className="border-foreground/10 "
+											className="border-foreground/10"
 										>
-											<AccordionTrigger className="t-l-2 uppercase text-foreground/65">
+											<AccordionTrigger className="t-l-1 text-foreground/65 uppercase">
 												{item.title}
 											</AccordionTrigger>
 											<AccordionContent>
@@ -348,44 +291,13 @@ export default function PageProductSingle({ data }: Props) {
 									);
 								})}
 							</Accordion>
-						</motion.div>
+						</div>
 					)}
 				</div>
 			</div>
 
-			{/* Related products */}
-			{displayRelated && displayRelated.length > 0 && (
-				<section className="border-t border-foreground/10 pt-12 lg:pt-16">
-					<div className="mb-6 flex items-baseline justify-between gap-4 lg:mb-8">
-						<h2 className="t-l-2 uppercase text-foreground/70">
-							{firstCategory?.title
-								? interpolate(productText.moreCategory, {
-										category: firstCategory.title,
-									})
-								: productText.morePicks}
-						</h2>
-						<Link
-							href={
-								firstCategory?.slug
-									? resolveHref({
-											documentType: 'pProductCategory',
-											slug: firstCategory.slug,
-											locale,
-										})!
-									: localizePath('/products/all', locale)
-							}
-							className="t-l-2 inline-flex items-center uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
-						>
-							{firstCategory?.title ?? productText.allProducts}
-						</Link>
-					</div>
-					<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 2xl:gap-x-10">
-						{displayRelated.map((product, index) => (
-							<ProductCard key={product._id} product={product} index={index} />
-						))}
-					</div>
-				</section>
-			)}
+			{/* Below the fold and Shopify-dependent, so it streams too. */}
+			{relatedSlot}
 		</>
 	);
 }

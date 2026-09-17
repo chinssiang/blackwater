@@ -1,16 +1,12 @@
 'use client';
 
-import { Fragment } from 'react';
+import { type CSSProperties, Fragment } from 'react';
 import Link from 'next/link';
-import { motion } from 'motion/react';
-import { useReveal } from '@/hooks/useReveal';
-import { pickPlural, interpolate } from '@/lib/dictionary';
+import { interpolate, pickPlural } from '@/lib/dictionary';
 
 type CountForms = { one: string; other: string };
 
 type Props = {
-	/** Wayfinding label shown only where it carries real context (single pages). */
-	kicker?: string | null;
 	title?: string | null;
 	/** Count segments shown in the header, e.g.
 	   [{count: 48, forms: t.productCount}]. `forms` is a localized {one, other}
@@ -25,14 +21,7 @@ type Props = {
 	lede?: string | null;
 };
 
-export default function ProductPageHeader({
-	kicker,
-	title,
-	counts,
-	lede,
-}: Props) {
-	const reveal = useReveal();
-
+export default function ProductPageHeader({ title, counts, lede }: Props) {
 	const segments = (counts ?? [])
 		.filter(
 			(c): c is { count: number; forms: CountForms; href?: string | null } =>
@@ -44,23 +33,16 @@ export default function ProductPageHeader({
 		}));
 
 	return (
-		<motion.header
-			className="mb-12 lg:mb-20"
-			{...reveal}
-			transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
+		<header
+			className="m-x-max reveal mb-12 lg:mb-20"
+			style={{ '--reveal-duration': '0.8s' } as CSSProperties}
 		>
-			{kicker && (
-				<p className="t-l-2 mb-4 uppercase text-foreground/65">{kicker}</p>
-			)}
-
 			<div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-3">
 				{title && (
-					<h1 className="max-w-[18ch] text-balance text-[clamp(2rem,6vw,3.75rem)] uppercase leading-[0.95] tracking-[-0.02em]">
-						{title}
-					</h1>
+					<h1 className="t-h-1 max-w-[18ch] text-balance uppercase">{title}</h1>
 				)}
 				{segments.length > 0 && (
-					<p className="t-spec whitespace-nowrap text-foreground/65">
+					<p className="t-spec text-foreground/65 whitespace-nowrap">
 						{segments.map((seg, i) => (
 							<Fragment key={i}>
 								{i > 0 && (
@@ -71,7 +53,7 @@ export default function ProductPageHeader({
 								{seg.href ? (
 									<Link
 										href={seg.href}
-										className="transition-colors hover:text-accent-foreground pointer-coarse:min-h-11"
+										className="hover:text-accent-foreground transition-colors pointer-coarse:min-h-11"
 									>
 										{seg.label}
 									</Link>
@@ -85,10 +67,8 @@ export default function ProductPageHeader({
 			</div>
 
 			{lede && (
-				<p className="t-b-1 mt-6 max-w-[62ch] leading-relaxed text-foreground/70">
-					{lede}
-				</p>
+				<p className="t-b-1 text-foreground/70 mt-6 max-w-[62ch]">{lede}</p>
 			)}
-		</motion.header>
+		</header>
 	);
 }

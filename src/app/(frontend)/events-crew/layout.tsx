@@ -1,13 +1,13 @@
 import type { Metadata } from 'next';
 import { draftMode } from 'next/headers';
+import { getCachedSiteData, pickLayoutData } from '@/sanity/lib/siteData';
 import { stegaClean } from '@sanity/client/stega';
+import { buildBaseMetadata } from '@/lib/defineBaseMetadata';
+import { getDictionary } from '@/lib/dictionary.server';
+import { DEFAULT_LOCALE } from '@/lib/i18n';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import { Layout } from '@/components/layout';
 import HtmlShell from '@/components/layout/HtmlShell';
-import { getCachedSiteData } from '@/sanity/lib/siteData';
-import { getDictionary } from '@/lib/dictionary.server';
-import { buildBaseMetadata } from '@/lib/defineBaseMetadata';
-import { DEFAULT_LOCALE } from '@/lib/i18n';
 
 export async function generateMetadata(): Promise<Metadata> {
 	const { data } = await getCachedSiteData(DEFAULT_LOCALE);
@@ -33,7 +33,7 @@ export default async function EventsCrewLayout({
 			isDraftModeEnabled={isDraftModeEnabled}
 		>
 			<LocaleProvider locale={DEFAULT_LOCALE} dictionary={dictionary}>
-				<Layout siteData={data}>{children}</Layout>
+				<Layout siteData={pickLayoutData(data)}>{children}</Layout>
 			</LocaleProvider>
 		</HtmlShell>
 	);

@@ -1,4 +1,4 @@
-import { defineType, defineField } from 'sanity';
+import { defineField, defineType } from 'sanity';
 
 export const settingsGeneral = defineType({
 	title: 'General Settings',
@@ -138,10 +138,26 @@ export const settingsGeneral = defineType({
 			group: 'contact',
 			options: { collapsible: true, collapsed: true },
 			fields: [
-				defineField({ name: 'streetAddress', type: 'string', title: 'Street Address' }),
-				defineField({ name: 'addressLocality', type: 'internationalizedArrayString', title: 'City / Locality' }),
-				defineField({ name: 'addressRegion', type: 'internationalizedArrayString', title: 'Region / State' }),
-				defineField({ name: 'postalCode', type: 'string', title: 'Postal Code' }),
+				defineField({
+					name: 'streetAddress',
+					type: 'string',
+					title: 'Street Address',
+				}),
+				defineField({
+					name: 'addressLocality',
+					type: 'internationalizedArrayString',
+					title: 'City / Locality',
+				}),
+				defineField({
+					name: 'addressRegion',
+					type: 'internationalizedArrayString',
+					title: 'Region / State',
+				}),
+				defineField({
+					name: 'postalCode',
+					type: 'string',
+					title: 'Postal Code',
+				}),
 				defineField({
 					name: 'addressCountry',
 					type: 'string',

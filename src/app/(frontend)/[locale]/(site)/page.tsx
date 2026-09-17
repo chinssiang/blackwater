@@ -1,17 +1,35 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
-import { pageHomeQuery } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
+import { PAGE_MODULE_TAGS, pageHomeQuery } from '@/sanity/lib/queries';
+import { stegaClean } from '@sanity/client/stega';
 import defineFaqJsonLd, { collectFaqItems } from '@/lib/defineFaqJsonLd';
-import JsonLd from '@/components/JsonLd';
+import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { type Locale } from '@/lib/i18n';
+import JsonLd from '@/components/JsonLd';
 import PageHome from '../_components/PageHome';
 
+// pageModules can carry an eventsBlock, whose rows are decided from the wall
+// clock rather than from content, so tag invalidation alone would serve
+// build-time state forever. Composes with the content tags rather than replacing
+// them; this is still SSG with ISR, not dynamic rendering, and it does NOT cap
+// the deliberate no-TTL Storefront fetches (Next takes the minimum only across
+// *lower* fetch revalidates, and `false` is infinite, not lower).
+//
+// The honest cost is scope: this route's pages are hourly-ISR whether or not
+// they carry the module, because a segment revalidate must be a static literal
+// and cannot be derived from page content. `use cache` + `cacheLife` would be
+// the per-module answer and is blocked — see next.config.mjs, where it was tried
+// and reverted because next-sanity's sanityFetch calls draftMode() internally.
+export const revalidate = 3600;
+
 const getCachedHomeData = cache(async (locale: string) =>
-	sanityFetch({ query: pageHomeQuery, params: { locale }, tags: ['pHome'] })
+	sanityFetch({
+		query: pageHomeQuery,
+		params: { locale },
+		tags: ['pHome', ...PAGE_MODULE_TAGS],
+	})
 );
 
 type Props = { params: Promise<{ locale: string }> };
@@ -46,12 +64,14 @@ export default async function Page(props: Props) {
 			</div>
 		);
 
-	const faqJsonLd = defineFaqJsonLd(collectFaqItems(stegaClean(data.pageModules)));
+	const faqJsonLd = defineFaqJsonLd(
+		collectFaqItems(stegaClean(data.pageModules))
+	);
 
 	return (
 		<>
 			{faqJsonLd && <JsonLd data={faqJsonLd} />}
-			<PageHome data={data} />
+			<PageHome data={data} locale={locale as Locale} />
 		</>
 	);
 }

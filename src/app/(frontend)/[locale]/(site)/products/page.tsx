@@ -1,57 +1,45 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductIndexQuery } from '@/sanity/lib/queries';
-import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
-import { type Locale } from '@/lib/i18n';
-import {
-	parseProductFilters,
-	type ProductFilters,
-	type ProductFilterSearchParams,
-} from '@/lib/productFilters';
+import { stegaClean } from '@sanity/client/stega';
+import defineMetadata, {
+	normalizeLocales,
+	omitPageMetadata,
+} from '@/lib/defineMetadata';
+import { getDictionary } from '@/lib/dictionary.server';
+import { LOCALES, type Locale } from '@/lib/i18n';
+import { applyCardPrices, getCardCommerce } from '@/lib/shopify/product';
 import { PageProductIndex } from './_components/PageProductIndex';
 
-const getCachedProductIndexData = cache(
-	async (locale: string, filters: ProductFilters) =>
-		sanityFetch({
-			query: pageProductIndexQuery,
-			params: {
-				locale,
-				categories: filters.categories,
-				brands: filters.brands,
-				badges: filters.badges,
-				priceBuckets: filters.priceBuckets,
-				sort: filters.sort,
-			},
-			tags: [
-				'pProductIndex',
-				'pProduct',
-				'pProductCategory',
-				'pProductCollection',
-				'pBrand',
-			],
-		})
+// Prerender both locale variants at build time so the heavy per-category
+// count() GROQ query stays out of the request path (mirrors the detail route,
+// which prerenders + relies on tag-based revalidation via /revalidate-tag).
+export function generateStaticParams() {
+	return LOCALES.map((locale) => ({ locale }));
+}
+
+const getCachedProductIndexData = cache(async (locale: string) =>
+	sanityFetch({
+		query: pageProductIndexQuery,
+		params: { locale },
+		// pBrand: productCardFields derefs brands[]->.
+		tags: [
+			'pProductIndex',
+			'pProduct',
+			'pProductCategory',
+			'pProductCollection',
+			'pBrand',
+		],
+	})
 );
 
-// Canonical (unfiltered) view used for metadata regardless of active filters.
-const UNFILTERED: ProductFilters = {
-	categories: [],
-	brands: [],
-	badges: [],
-	priceBuckets: [],
-	sort: 'az',
-};
-
-type Props = {
-	params: Promise<{ locale: string }>;
-	searchParams: Promise<ProductFilterSearchParams>;
-};
+type Props = { params: Promise<{ locale: string }> };
 
 export async function generateMetadata(props: Props): Promise<Metadata> {
 	const { locale } = await props.params;
-	const { data } = await getCachedProductIndexData(locale, UNFILTERED);
+	const { data } = await getCachedProductIndexData(locale);
 	const cleanData = stegaClean(data);
 	return defineMetadata({
 		data: cleanData,
@@ -60,23 +48,57 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
 	});
 }
 
+// Next's build-time type check (unlike CLI tsc) bails to `any` on this
+// query's generated union, so the callback params below are annotated with
+// indexed-access types instead of relying on inference.
+type IndexData = NonNullable<
+	Awaited<ReturnType<typeof getCachedProductIndexData>>['data']
+>;
+type IndexCollection = NonNullable<IndexData['collections']>[number];
+
 export default async function Page(props: Props) {
 	const { locale } = await props.params;
-	const filters = parseProductFilters(await props.searchParams);
-	const { data } = await getCachedProductIndexData(locale, filters);
+	const { data } = await getCachedProductIndexData(locale);
 
 	if (!data) return <NotFoundContent locale={locale} />;
 
-	return (
-		<PageProductIndex
-			data={data}
-			selected={{
-				categories: filters.categories,
-				brands: filters.brands,
-				badges: filters.badges,
-				priceBuckets: filters.priceBuckets,
-			}}
-			sort={filters.sort}
-		/>
-	);
+	// One batched Shopify lookup covers the "all products" grid and every
+	// collection strip; each array is then re-priced from the same map.
+	const [cardCommerce, dict] = await Promise.all([
+		getCardCommerce(
+			[
+				...(data.allProductsList ?? []),
+				...(data.collections ?? []).flatMap(
+					(c: IndexCollection) => c?.products ?? []
+				),
+			].map((p: { shopifyHandle?: string | null }) => p.shopifyHandle),
+			locale as Locale
+		),
+		getDictionary(locale as Locale),
+	]);
+
+	const pricedData = {
+		...data,
+		allProductsList: applyCardPrices(
+			data.allProductsList,
+			cardCommerce,
+			locale as Locale,
+			dict.products.fromPrice
+		),
+		collections: (data.collections ?? []).map((collection: IndexCollection) =>
+			collection
+				? {
+						...collection,
+						products: applyCardPrices(
+							collection.products,
+							cardCommerce,
+							locale as Locale,
+							dict.products.fromPrice
+						),
+					}
+				: collection
+		),
+	};
+
+	return <PageProductIndex data={omitPageMetadata(pricedData)} />;
 }

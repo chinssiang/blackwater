@@ -1,0 +1,13 @@
+#!/bin/sh
+# The binary directly, not `npx`: on a checkout where `npm ci` has not run, npx
+# tries to FETCH lint-staged from the registry rather than failing fast — in a
+# hook, with no TTY. The guard supplies the diagnosis npx's failure would have.
+#
+# Git runs hooks from the worktree root, and worktrees inherit core.hooksPath
+# from the shared config while having their own node_modules — so a worktree
+# that has not been installed lands here rather than on a bare sh 127.
+if [ ! -x node_modules/.bin/lint-staged ]; then
+	echo "pre-commit: lint-staged not found. Run 'npm ci' in $(pwd)." >&2
+	exit 1
+fi
+node_modules/.bin/lint-staged && npm run typecheck

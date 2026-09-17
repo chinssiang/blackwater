@@ -1,45 +1,27 @@
 'use client';
 
-import { ArrowRight } from '@/components/SvgIcons';
-import { hasArrayValue } from '@/lib/utils';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { motion } from 'motion/react';
-import { useReveal } from '@/hooks/useReveal';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
-import { resolveHref } from '@/lib/routes';
-import { localizePath } from '@/lib/i18n';
+import { REVEAL_SOFT, revealStagger } from '@/lib/animate';
+import type { WithoutPageMetadata } from '@/lib/defineMetadata';
 import { interpolate } from '@/lib/dictionary';
+import { localizePath } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
+import { cn, hasArrayValue } from '@/lib/utils';
 import ImageBlock from '@/components/ImageBlock';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
+import ProductCard from '@/components/ProductCard';
+import { ArrowRight } from '@/components/SvgIcons';
+import { buttonVariants } from '@/components/ui/Button';
 import ProductCategoriesGrid from './ProductCategoriesGrid';
-import ProductGrid from './ProductGrid';
-import ProductBrowser, { type ProductSelection } from './ProductBrowser';
 import type { PageProductIndexQueryResult } from 'sanity.types';
-import { Button } from '@/components/ui/Button';
 
 type Props = {
-	data: NonNullable<PageProductIndexQueryResult>;
-	selected: ProductSelection;
-	sort: string;
+	data: WithoutPageMetadata<NonNullable<PageProductIndexQueryResult>>;
 };
 
 type Collection = NonNullable<
 	NonNullable<NonNullable<PageProductIndexQueryResult>['collections']>[number]
 >;
-
-function MoreProductsButton({ href, label }: { href: string; label: string }) {
-	return (
-		<div className="mt-20 flex justify-center lg:mt-30">
-			<Button
-				asChild
-				size="lg"
-				className="t-l-1 whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11 px-6"
-			>
-				<Link href={href}>{label}</Link>
-			</Button>
-		</div>
-	);
-}
 
 function CollectionMasthead({ collection }: { collection: Collection }) {
 	const locale = useLocale();
@@ -57,14 +39,14 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 	}).trim();
 
 	return (
-		<div className="border-t border-foreground/15 pt-4">
+		<div className="border-foreground/15 border-t pt-4">
 			{cover?.image &&
 				(href ? (
 					<Link
 						href={href}
-						className="group block overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-foreground focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+						className="group focus-visible:ring-accent-foreground focus-visible:ring-offset-background block overflow-hidden focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
 					>
-						<div className="relative aspect-4/3 overflow-hidden bg-foreground/6 sm:aspect-16/7 lg:aspect-12/4">
+						<div className="bg-foreground/6 relative aspect-4/3 overflow-hidden sm:aspect-16/7 lg:aspect-12/4">
 							<ImageBlock
 								className="h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-[1.02] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
 								imageObj={cover}
@@ -74,7 +56,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 						</div>
 					</Link>
 				) : (
-					<div className="relative aspect-4/3 overflow-hidden bg-foreground/6 sm:aspect-16/7 lg:aspect-12/4">
+					<div className="bg-foreground/6 relative aspect-4/3 overflow-hidden sm:aspect-16/7 lg:aspect-12/4">
 						<ImageBlock
 							className="h-full w-full object-cover"
 							imageObj={cover}
@@ -86,11 +68,9 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 
 			<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 				<div>
-					<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance tracking-tight">
-						{collection.title}
-					</h2>
+					<h2 className="t-h-2 text-balance uppercase">{collection.title}</h2>
 					{collection.description && (
-						<p className="t-b-1 mt-3 max-w-[60ch] leading-relaxed text-foreground/70">
+						<p className="t-b-1 text-foreground/70 mt-3 max-w-[60ch]">
 							{collection.description}
 						</p>
 					)}
@@ -98,7 +78,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 				{href && (
 					<Link
 						href={href}
-						className="t-l-2 inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11 gap-1"
+						className="t-l-2 text-foreground/70 hover:text-accent-foreground inline-flex items-center gap-1 whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11"
 					>
 						{allLabel}
 						<ArrowRight className="size-2.5" />
@@ -109,7 +89,7 @@ function CollectionMasthead({ collection }: { collection: Collection }) {
 	);
 }
 
-export function PageProductIndex({ data, selected, sort }: Props) {
+export function PageProductIndex({ data }: Props) {
 	const {
 		title,
 		subtitle,
@@ -118,137 +98,140 @@ export function PageProductIndex({ data, selected, sort }: Props) {
 		categories,
 		allProducts,
 		allProductsList,
-		allProductsTotal,
-		facetCategories,
-		facetBrands,
-		badgeCounts,
-		facetPrice,
 	} = data || {};
-	const reveal = useReveal();
 	const locale = useLocale();
 	const t = useTranslations('products');
-	const searchParams = useSearchParams();
 	const allProductsHref = localizePath('/products/all', locale);
 
-	// Carry the active filters/sort over to the all-products page.
-	const qs = searchParams.toString();
-	const filteredAllHref = allProductsHref + (qs ? `?${qs}` : '');
+	// Exactly one image on the page gets fetchpriority="high" — the first one in
+	// the viewport. Which block that is depends on the data, so derive it rather
+	// than hard-code it: a category tile only renders an image when the category
+	// has a cover (CategoryTile's `hasImage`), and a collection strip only renders
+	// when it has products. Order of appearance: category covers → first non-empty
+	// collection strip → the all-products grid.
+	// categories[0], not .some(): ProductCategoriesGrid grants priority to index 0
+	// only, and CategoryTile renders no image at all when its category has no
+	// cover. Testing "any category has a cover" would hand priority to a tile
+	// that renders nothing while suppressing it everywhere else — leaving the
+	// page with zero fetchpriority="high" images.
+	const categoriesHaveCover = Boolean(categories?.[0]?.coverImage?.image);
+	const firstCollectionIndex =
+		collections?.findIndex((c) => c && hasArrayValue(c.products)) ?? -1;
+	const lcpOwner: 'categories' | 'collection' | 'all' = categoriesHaveCover
+		? 'categories'
+		: firstCollectionIndex >= 0
+			? 'collection'
+			: 'all';
 
-	// Curated showcase shown when no filter is active.
-	const showcase = (
+	return (
 		<>
+			<section className="p-x-max mb-14 lg:mb-24">
+				{subtitle && (
+					<p className="t-l-2 text-foreground/65 mb-5 uppercase lg:mb-7">
+						{subtitle}
+					</p>
+				)}
+				{title && (
+					<h1 className="t-h-1 max-w-sm text-balance uppercase">{title}</h1>
+				)}
+				{description && (
+					<p className="t-b-1 text-foreground/70 mt-7 max-w-[60ch] lg:mt-9">
+						{description}
+					</p>
+				)}
+			</section>
+
 			<ProductCategoriesGrid
+				className="p-x-max"
 				categories={categories ?? null}
 				showViewAll
-				priority
+				priority={lcpOwner === 'categories'}
 			/>
 
 			{collections?.map((collection, index) => {
-				if (!collection) return null;
+				if (!collection) {
+					return null;
+				}
 				const products = collection.products;
-				if (!hasArrayValue(products)) return null;
+				if (!hasArrayValue(products)) {
+					return null;
+				}
 				return (
-					<motion.section
+					<section
 						key={collection._id}
-						className="mt-14 lg:mt-24"
-						{...reveal}
-						transition={{
-							duration: 0.8,
-							delay: index * 0.06,
-							ease: [0, 0.5, 0.5, 1],
-						}}
+						className="m-x-max reveal mt-14 lg:mt-24"
+						style={revealStagger(index)}
 					>
 						<CollectionMasthead collection={collection} />
+
 						{products && products.length > 0 && (
-							<ProductGrid products={products} className="mt-8 lg:mt-12" />
+							<div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-12 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
+								{products.map((product, productIndex) => (
+									<ProductCard
+										key={product._id}
+										product={product}
+										index={productIndex}
+										priority={
+											lcpOwner === 'collection' &&
+											index === firstCollectionIndex &&
+											productIndex === 0
+										}
+									/>
+								))}
+							</div>
 						)}
-					</motion.section>
+					</section>
 				);
 			})}
 
 			{hasArrayValue(allProductsList) && (
-				<motion.section
-					className="mt-14 lg:mt-24"
-					{...reveal}
-					transition={{ duration: 0.8, ease: [0, 0.5, 0.5, 1] }}
-				>
-					<div className="border-t border-foreground/15 pt-4">
+				<section className="m-x-max reveal mt-14 lg:mt-24" style={REVEAL_SOFT}>
+					<div className="border-foreground/15 border-t pt-4">
 						<div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
 							{allProducts?.title && (
-								<h2 className="text-[clamp(1.25rem,2.6vw,2rem)] uppercase leading-none text-balance">
+								<h2 className="t-h-2 text-balance uppercase">
 									{allProducts.title}
 								</h2>
 							)}
 							<Link
 								href={allProductsHref}
-								className="t-l-2 ml-auto inline-flex items-center whitespace-nowrap uppercase text-foreground/70 transition-colors hover:text-accent-foreground pointer-coarse:min-h-11 gap-1"
+								className="t-l-2 text-foreground/70 hover:text-accent-foreground ml-auto inline-flex items-center gap-1 whitespace-nowrap uppercase transition-colors pointer-coarse:min-h-11"
 							>
 								{t.allProducts}
 								<ArrowRight className="size-2.5" />
 							</Link>
 						</div>
 						{allProducts?.description && (
-							<p className="t-b-1 mt-3 max-w-[60ch] leading-relaxed text-foreground/70">
+							<p className="t-b-1 text-foreground/70 mt-3 max-w-[60ch]">
 								{allProducts.description}
 							</p>
 						)}
 					</div>
 
-					<ProductGrid
-						products={allProductsList}
-						className="mt-8 lg:mt-12"
-					/>
+					<div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-12 lg:mt-12 lg:grid-cols-3 lg:gap-y-16 2xl:grid-cols-4 2xl:gap-x-10">
+						{allProductsList.map((product, productIndex) => (
+							<ProductCard
+								key={product._id}
+								product={product}
+								index={productIndex}
+								priority={lcpOwner === 'all' && productIndex === 0}
+							/>
+						))}
+					</div>
 
-					<MoreProductsButton
-						href={allProductsHref}
-						label={t.moreProducts}
-					/>
-				</motion.section>
+					<div className="mt-20 flex justify-center lg:mt-30">
+						<Link
+							href={allProductsHref}
+							className={cn(
+								buttonVariants({ size: 'lg' }),
+								't-l-1 px-6 whitespace-nowrap uppercase pointer-coarse:min-h-11'
+							)}
+						>
+							{t.moreProducts}
+						</Link>
+					</div>
+				</section>
 			)}
-		</>
-	);
-
-	// When filtering collapses the showcase, offer a jump to the full paginated
-	// list (which carries the same filters) if there are more matches than shown.
-	const hasMore = (allProductsTotal ?? 0) > (allProductsList?.length ?? 0);
-	const filteredFooter = hasMore ? (
-		<MoreProductsButton href={filteredAllHref} label={t.moreProducts} />
-	) : null;
-
-	return (
-		<>
-			<motion.section
-				className="mb-14 lg:mb-24"
-				{...reveal}
-				transition={{ duration: 0.8, ease: [0, 0.71, 0.2, 1.01] }}
-			>
-				{subtitle && (
-					<p className="t-l-2 mb-5 uppercase text-foreground/65 lg:mb-7">
-						{subtitle}
-					</p>
-				)}
-				{title && (
-					<h1 className="text-balance t-h-1 uppercase max-w-sm">{title}</h1>
-				)}
-				{description && (
-					<p className="t-b-1 mt-7 max-w-[60ch] leading-relaxed text-foreground/70 lg:mt-9">
-						{description}
-					</p>
-				)}
-			</motion.section>
-
-			<ProductBrowser
-				facetCategories={facetCategories ?? []}
-				facetBrands={facetBrands ?? []}
-				badgeCounts={badgeCounts}
-				facetPrice={facetPrice}
-				selected={selected}
-				sort={sort}
-				total={allProductsTotal ?? 0}
-				products={allProductsList ?? []}
-				footer={filteredFooter}
-				showcase={showcase}
-			/>
 		</>
 	);
 }

@@ -1,6 +1,6 @@
-import { client } from '@/sanity/lib/client';
 import { defineEnableDraftMode } from 'next-sanity/draft-mode';
 import { token } from '@/sanity/env';
+import { client } from '@/sanity/lib/client';
 
 /**
  * defineEnableDraftMode() is used to enable draft mode. Set the route of this file

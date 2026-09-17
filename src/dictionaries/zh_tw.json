@@ -13,6 +13,49 @@
 	"locationCurrentTime": {
 		"dateFormat": "iii, p"
 	},
+	"weather": {
+		"label": "台北",
+		"observedAt": "更新於 {time}",
+		"metrics": {
+			"feelsLike": "體感溫度",
+			"wind": "風速",
+			"humidity": "濕度",
+			"rain": "降雨",
+			"aqi": "空氣品質"
+		},
+		"units": {
+			"celsius": "°C",
+			"kilometresPerHour": "公里/小時",
+			"percent": "%",
+			"millimetres": "毫米"
+		},
+		"conditions": {
+			"clear": "晴",
+			"mainlyClear": "晴時多雲",
+			"partlyCloudy": "多雲",
+			"overcast": "陰",
+			"fog": "霧",
+			"drizzle": "細雨",
+			"freezingDrizzle": "凍雨（細）",
+			"rain": "雨",
+			"freezingRain": "凍雨",
+			"snow": "雪",
+			"snowGrains": "霰",
+			"showers": "陣雨",
+			"snowShowers": "陣雪",
+			"thunderstorm": "雷雨",
+			"thunderstormHail": "雷雨並有冰雹",
+			"unknown": "未知"
+		},
+		"aqiBands": {
+			"good": "良好",
+			"moderate": "普通",
+			"unhealthySensitive": "對敏感族群不健康",
+			"unhealthy": "對所有族群不健康",
+			"veryUnhealthy": "非常不健康",
+			"hazardous": "危害"
+		}
+	},
 	"events": {
 		"headers": {
 			"codex": "活動",
@@ -24,31 +67,100 @@
 			"previousMonth": "上一個月",
 			"nextMonth": "下一個月",
 			"viewEvent": "查看 {title}",
-			"viewLocation": "{location}，於新分頁開啟地圖"
+			"viewLocation": "{location}，於新分頁開啟地圖",
+			"switchTo": {
+				"calendar": "切換至日曆檢視",
+				"list": "切換至列表檢視"
+			}
 		},
 		"status": {
 			"today": "今天",
 			"ended": "已結束",
-			"tba": "待定"
+			"tba": "待定",
+			"postponed": "延期",
+			"cancelled": "取消"
 		},
 		"daysUntil": {
 			"one": "{count} 天後",
 			"other": "{count} 天後"
 		},
 		"emptyMonth": "本月暫無活動",
+		"viewAll": "所有活動",
+		"carousel": {
+			"label": "近期活動",
+			"previous": "上一批活動",
+			"next": "更多活動"
+		},
+		"related": {
+			"series": "{category} 的其他活動",
+			"seriesGeneric": "最新活動",
+			"venue": "{location} 的其他活動"
+		},
+		"detail": {
+			"location": "地點",
+			"goodToKnow": "注意事項",
+			"startFinish": "起終點",
+			"station": "第 {number} 站",
+			"gettingHere": "前往方式",
+			"headingOut": "離開方式",
+			"notes": "活動說明",
+			"flavorChallenge": "主題挑戰",
+			"exampleImageAlt": "{quest} 範例"
+		},
+		"spec": {
+			"venue": "地點",
+			"distance": "距離",
+			"distanceValue": "{km} 公里",
+			"type": "類型",
+			"entry": "費用",
+			"free": "免費",
+			"ends": "結束",
+			"eventType": {
+				"group-run": "團跑",
+				"race": "競賽",
+				"social": "社交",
+				"trail": "越野跑"
+			}
+		},
 		"dateFormat": "yyyy/MM/dd (iii) HH:mm",
-		"monthYearFormat": "yyyy年M月"
+		"monthYearFormat": "yyyy年M月",
+		"view": {
+			"list": "列表",
+			"calendar": "日曆"
+		},
+		"calendar": {
+			"gridLabel": "{month}的活動",
+			"weekdayFormat": "EEE",
+			"weekdayNarrowFormat": "EEEEE",
+			"dayFormat": "yyyy年M月d日 EEEE",
+			"dayHeadingFormat": "M月d日 EEEE",
+			"timeFormat": "HH:mm",
+			"today": "今天",
+			"dayPanelLabel": "所選日期的活動",
+			"selectDayPrompt": "選擇日期以查看當日活動",
+			"close": "關閉",
+			"selectDay": "{day}，{events}",
+			"eventCount": {
+				"one": "{count} 個活動",
+				"other": "{count} 個活動"
+			},
+			"moreEvents": "還有 {count} 個"
+		}
 	},
 	"products": {
 		"categoriesTitle": "分類",
 		"collectionsTitle": "系列",
 		"categoriesDescription": "瀏覽我們嚴選的商品分類。",
+		"collectionsDescription": "瀏覽我們嚴選的商品系列。",
+		"allProductsDescription": "俱樂部嚴選的所有商品，一次瀏覽。",
 		"allCategories": "所有分類",
 		"allCollection": "所有{collection}",
 		"whyUseIt": "我們為什麼使用它？",
 		"whoIsItFor": "它適合誰？",
 		"whenReachForIt": "我們何時會選用它？",
 		"whyWeChoseIt": "我們為什麼選擇它",
+		"sizeGuide": "尺寸指南",
+		"viewFullSizeGuide": "查看完整尺寸指南",
 		"buyIt": "購買",
 		"buyAriaLabel": "購買 {product}（在新分頁開啟）",
 		"thisProduct": "此商品",
@@ -57,17 +169,55 @@
 		"moreCategory": "更多{category}",
 		"allProducts": "所有商品",
 		"moreProducts": "更多商品",
-		"kickerCollection": "系列",
-		"kickerCategory": "分類",
-		"productCount": { "one": "{count} 件商品", "other": "{count} 件商品" },
-		"categoryCount": { "one": "{count} 個分類", "other": "{count} 個分類" },
-		"collectionCount": { "one": "{count} 個系列", "other": "{count} 個系列" },
+		"emptyAllProducts": "目前尚無商品，俱樂部審核新裝備後會陸續加入。",
+		"emptyCategory": "此分類目前尚無精選，隨著選品增加請再回來看看。",
+		"emptyCollections": "目前尚無系列。系列會依主題或季節將精選分組。",
+		"productCount": {
+			"one": "{count} 件商品",
+			"other": "{count} 件商品"
+		},
+		"categoryCount": {
+			"one": "{count} 個分類",
+			"other": "{count} 個分類"
+		},
+		"collectionCount": {
+			"one": "{count} 個系列",
+			"other": "{count} 個系列"
+		},
 		"badges": {
 			"founders-pick": "創辦人精選",
 			"most-popular": "最受歡迎",
 			"editors-choice": "編輯精選",
 			"new": "新品"
 		},
+		"soldOut": "已售完",
+		"fromPrice": "{price} 起",
+		"optionUnavailable": "{value}（已售完）",
+		"notify": {
+			"title": "補貨時通知我",
+			"emailLabel": "電子郵件",
+			"emailPlaceholder": "you@example.com",
+			"submit": "通知我",
+			"submitting": "傳送中…",
+			"successHeading": "已為您登記",
+			"successBody": "商品補貨時我們會以電子郵件通知您。",
+			"errorHeading": "發生錯誤",
+			"errorBody": "請稍後再試一次。",
+			"invalidEmail": "請輸入有效的電子郵件地址。",
+			"rateLimitedHeading": "嘗試次數過多",
+			"rateLimitedBody": "請稍候幾分鐘後再試。",
+			"ariaLabel": "當 {product} 補貨時通知我"
+		},
+		"gallery": {
+			"label": "商品圖片",
+			"imageAlt": "{product} — 第 {index} 張圖片，共 {count} 張",
+			"slide": "第 {index} 張圖片，共 {count} 張",
+			"goTo": "前往第 {index} 張圖片",
+			"previous": "上一張圖片",
+			"next": "下一張圖片"
+		},
+		"kickerCollection": "系列",
+		"kickerCategory": "分類",
 		"filters": {
 			"title": "篩選",
 			"description": "篩選並排序商品列表。",
@@ -95,17 +245,38 @@
 			"showResults": "顯示結果",
 			"noResults": "沒有符合篩選條件的商品。",
 			"clearFilters": "清除所有篩選",
-			"emptyCatalogue": "目前尚無商品。俱樂部嚴選新裝備後會陸續加入。"
+			"close": "關閉篩選"
 		}
+	},
+	"sizeGuide": {
+		"sizeColumn": "尺寸",
+		"measurementColumn": "測量部位",
+		"units": {
+			"cm": "CM",
+			"in": "IN"
+		},
+		"unitToggleAria": "{section} 的測量單位",
+		"navAria": "尺寸指南章節",
+		"tableRegionAria": "尺寸表，可捲動",
+		"empty": "目前尚無尺寸表。"
 	},
 	"productSubmission": {
 		"triggerLabel": "推薦商品",
 		"title": "推薦商品",
 		"description": "知道值得推薦的商品嗎？歡迎告訴我們。",
 		"fields": {
-			"name": { "label": "姓名", "placeholder": "請輸入您的姓名" },
-			"email": { "label": "電子郵件", "placeholder": "you@example.com" },
-			"productUrl": { "label": "商品網址", "placeholder": "https://..." }
+			"name": {
+				"label": "姓名",
+				"placeholder": "請輸入您的姓名"
+			},
+			"email": {
+				"label": "電子郵件",
+				"placeholder": "you@example.com"
+			},
+			"productUrl": {
+				"label": "商品網址",
+				"placeholder": "https://..."
+			}
 		},
 		"submit": "送出",
 		"submitting": "送出中...",
@@ -125,14 +296,48 @@
 		"openMenu": "開啟選單",
 		"closeMenu": "關閉選單"
 	},
+	"cart": {
+		"title": "購物車",
+		"open": "開啟購物車",
+		"close": "關閉購物車",
+		"empty": "您的購物車是空的。",
+		"browseProducts": "瀏覽商品",
+		"addToCart": "加入購物車",
+		"add": "加入",
+		"addAriaLabel": "將 {product} 加入購物車",
+		"adding": "加入中…",
+		"added": "已加入購物車",
+		"selectSize": "請選擇尺寸",
+		"checkout": "前往結帳",
+		"subtotal": "小計",
+		"shippingNote": "運費與稅金將於結帳時計算。",
+		"quantity": "數量",
+		"increaseAriaLabel": "增加 {product} 的數量",
+		"decreaseAriaLabel": "減少 {product} 的數量",
+		"remove": "移除",
+		"removeAriaLabel": "從購物車移除 {product}",
+		"itemCount": {
+			"one": "{count} 件商品",
+			"other": "{count} 件商品"
+		},
+		"stockLimited": "僅剩 {count} 件",
+		"errorHeading": "我們無法更新您的購物車",
+		"errorBody": "請稍後再試一次。",
+		"loadError": "我們無法載入您的購物車。",
+		"retry": "再試一次"
+	},
 	"newsletter": {
 		"emailLabel": "電子郵件地址",
 		"emailPlaceholder": "您的電子郵件",
 		"submit": "訂閱",
 		"submitting": "訂閱中…",
 		"invalidEmail": "請輸入有效的電子郵件地址。",
+		"successHeading": "訂閱成功",
+		"successBody": "感謝訂閱 — 請至信箱確認。",
 		"errorHeading": "發生錯誤",
-		"errorBody": "請再試一次。"
+		"errorBody": "請再試一次。",
+		"rateLimitedHeading": "嘗試次數過多",
+		"rateLimitedBody": "請稍候幾分鐘後再試。"
 	},
 	"consent": {
 		"bannerTitle": "我們重視您的隱私",

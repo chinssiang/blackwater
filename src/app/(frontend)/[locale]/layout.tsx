@@ -1,14 +1,13 @@
 import type { Metadata } from 'next';
+import { draftMode } from 'next/headers';
 import { notFound } from 'next/navigation';
-import { cookies, draftMode } from 'next/headers';
+import { getCachedSiteData } from '@/sanity/lib/siteData';
 import { stegaClean } from '@sanity/client/stega';
+import { buildBaseMetadata } from '@/lib/defineBaseMetadata';
+import { getDictionary } from '@/lib/dictionary.server';
+import { LOCALES, type Locale, isLocale } from '@/lib/i18n';
 import { LocaleProvider } from '@/components/LocaleProvider';
 import HtmlShell from '@/components/layout/HtmlShell';
-import { getCachedSiteData } from '@/sanity/lib/siteData';
-import { getDictionary } from '@/lib/dictionary.server';
-import { buildBaseMetadata } from '@/lib/defineBaseMetadata';
-import { LOCALES, type Locale, isLocale } from '@/lib/i18n';
-import { CONSENT_COOKIE, parseConsentCookie } from '@/lib/consent';
 
 export function generateStaticParams() {
 	return LOCALES.map((locale) => ({ locale }));
@@ -39,20 +38,22 @@ export default async function LocaleLayout({
 	if (!isLocale(locale)) notFound();
 
 	const { isEnabled: isDraftModeEnabled } = await draftMode();
-	const [{ data }, dictionary, cookieStore] = await Promise.all([
+	// NOTE: deliberately no cookies() here. Reading a Dynamic API in this root
+	// layout opted every /[locale]/* route out of static generation (measured:
+	// all `ƒ` + cache-control: no-store; without it the whole subtree is `●`). The
+	// consent decision is read in the browser instead — see src/hooks/useConsent.
+	const [{ data }, dictionary] = await Promise.all([
 		getCachedSiteData(locale),
 		getDictionary(locale as Locale),
-		cookies(),
 	]);
-	const consent = parseConsentCookie(cookieStore.get(CONSENT_COOKIE)?.value);
 
 	return (
 		<HtmlShell
 			locale={locale as Locale}
 			siteData={data}
-			consent={consent}
 			consentFallback={dictionary.consent}
 			isDraftModeEnabled={isDraftModeEnabled}
+			enableTracking
 		>
 			<LocaleProvider locale={locale as Locale} dictionary={dictionary}>
 				{children}

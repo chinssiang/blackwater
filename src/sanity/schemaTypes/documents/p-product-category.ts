@@ -1,7 +1,7 @@
-import { pickLocalizedValue } from '@/lib/i18n';
-import { slug } from '@/sanity/schemaTypes/objects/slug';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
+import { isUniqueAcrossType, slug } from '@/sanity/schemaTypes/objects/slug';
 import { TagsIcon } from '@sanity/icons';
+import { pickLocalizedValue } from '@/lib/i18n';
 import { defineField, defineType } from 'sanity';
 
 export const pProductCategory = defineType({
@@ -27,7 +27,9 @@ export const pProductCategory = defineType({
 			title: 'Description',
 			type: 'internationalizedArrayText',
 		}),
-		slug(),
+		// isUniqueAcrossType, not the default: with no `language` field the
+		// default check short-circuits to "unique" for every value.
+		slug({ isUnique: isUniqueAcrossType }),
 		customImage({
 			title: 'Cover Image',
 			name: 'coverImage',
@@ -46,7 +48,8 @@ export const pProductCategory = defineType({
 			name: 'seoTitle',
 			title: 'SEO Title',
 			type: 'internationalizedArrayString',
-			description: 'Overrides the meta title per language. Falls back to Title.',
+			description:
+				'Overrides the meta title per language. Falls back to Title.',
 			fieldset: 'seo',
 		}),
 		defineField({
@@ -61,7 +64,8 @@ export const pProductCategory = defineType({
 			name: 'shareGraphic',
 			title: 'Share Graphic',
 			type: 'image',
-			description: '1200 x 630px. Falls back to Cover Image, then the site default.',
+			description:
+				'1200 x 630px. Falls back to Cover Image, then the site default.',
 			fieldset: 'seo',
 		}),
 	],

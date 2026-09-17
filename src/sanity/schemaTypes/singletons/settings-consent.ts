@@ -1,4 +1,4 @@
-import { defineType, defineField } from 'sanity';
+import { defineField, defineType } from 'sanity';
 
 export const settingsConsent = defineType({
 	title: 'Consent',
@@ -29,7 +29,8 @@ export const settingsConsent = defineType({
 			name: 'bannerBody',
 			type: 'internationalizedArrayText',
 			title: 'Banner Body',
-			description: 'Short explanation shown in the banner and preferences dialog.',
+			description:
+				'Short explanation shown in the banner and preferences dialog.',
 			group: 'banner',
 		}),
 		defineField({
@@ -85,7 +86,10 @@ export const settingsConsent = defineType({
 			name: 'marketingTitle',
 			type: 'internationalizedArrayString',
 			title: 'Marketing — Title',
-			description: 'Gates Klaviyo onsite tracking.',
+			description:
+				'Gates advertising signals (Google Consent Mode ad_storage, ' +
+				'ad_user_data, ad_personalization) and, together with Analytics, ' +
+				'whether the Google Tag Manager container loads at all.',
 			group: 'categories',
 		}),
 		defineField({

@@ -98,6 +98,7 @@
 	--z-index-popover: calc(var(--z-index-overlay) - 1);
 	--z-index-overlay: 100;
 	--z-index-dialog: calc(var(--z-index-overlay) + 1);
+	--z-index-tooltip: calc(var(--z-index-dialog) + 1);
 	--z-index-g-toolbar: 98;
 }
 
@@ -163,11 +164,18 @@
 		--secondary: oklch(0.97 0 0);
 		--secondary-foreground: oklch(0.205 0 0);
 		--muted: oklch(0.97 0 0);
-		--muted-foreground: oklch(0.556 0 0);
+		/* Darkened from oklch(0.556) = #7e7e7e. `--background` above is
+		   oklch(0.9612) = #f2f2f2, where #7e7e7e is only 3.63:1 — below AA — so
+		   every `text-muted-foreground` on the force-light routes (/products and
+		   /size-guide; see LIGHT_THEME_PATHS in src/lib/routes.ts) failed. A grey
+		   has to be at least as dark as #6f6f6f to clear 4.5:1 on this
+		   background; oklch(0.5) = #6b6b6b is ≈4.8:1. The .dark value is
+		   unaffected — oklch(0.708) on the dark background is already ≈7.7:1. */
+		--muted-foreground: oklch(0.5 0 0);
 		--accent: oklch(0.97 0 0);
 		--accent-foreground: oklch(48.49% 0.291 264.12);
 		--destructive: oklch(0.577 0.245 27.325);
-		--border: oklch(0.922 0 0);
+		--border: oklch(0.75 0 0);
 		--input: oklch(0.922 0 0);
 		--ring: oklch(0.708 0 0);
 		--chart-1: oklch(0.87 0 0);
@@ -196,6 +204,49 @@
 		);
 		--h-header: 42px;
 		--s-section: 80px;
+
+		/* Type sizes shared by more than one rule. A size gets a var only when two
+		   rules render the SAME role -- the `t-*` component token and its `.wysiwyg`
+		   prose twin. Roles that render in exactly one rule keep their clamp inline
+		   below, and two roles that merely share a pixel value keep separate
+		   declarations, so retuning one cannot silently move the other. Each such
+		   pair is reasoned at its own rule.
+
+		   Retune here, not in either rule -- h1/h2/h3 were 28/24/16px and 30/24/20px
+		   for the same three roles, which is how a `faqBlock` heading ended up 50%
+		   larger than the `eventsBlock` heading beside it on the same page.
+
+		   Every rung ramps across one window, 369px to 1444px, flat outside it --
+		   0.093vw per pixel of travel, so a 2px rung is 0.1861vw and a 4px rung
+		   0.3722vw. Keep new rungs on that slope and give the intercept FOUR
+		   decimals: at three, rounding moves a rung's window by up to 15px and
+		   the ladder stops sharing one. That is not hypothetical -- h1/h2/h3 sat
+		   at three decimals and ended their ramps at 1441/1429/1437px while
+		   every rung below them ended at 1444. CLAUDE.md's type-scale section
+		   carries the reasoning.
+
+		   The ladder, floor -> ceiling:
+
+		     h1   24 -> 28    t-h-1, .wysiwyg h1
+		     h2   22 -> 24    t-h-2, .wysiwyg h2 + blockquote
+		     h3   18 -> 20    t-h-3, .wysiwyg h3        (card titles)
+		     l0   16 -> 17    t-l-0
+		     h4   16 -> 17    .wysiwyg h4
+		     h5   15 -> 16    .wysiwyg h5/h6
+		     b1   14 -> 15    t-b-1, .wysiwyg p/ol/ul
+		     b2   12 -> 13    t-b-2
+		     l1   12 -> 13    t-l-1
+		     spec 11 -> 12    t-spec
+		     l2   11 -> 12    t-l-2
+
+		   `l2` is the one rung that moved at BOTH ends: it was a flat 10px, carrying
+		   43 call sites including ConsentBanner's body copy and the size-chart row
+		   labels. 10px is below the practical floor for uppercase micro-labels,
+		   which have no ascenders or descenders to read shape from. */
+		--t-size-h1: clamp(1.5rem, 1.4142rem + 0.3722vw, 1.75rem);
+		--t-size-h2: clamp(1.375rem, 1.3321rem + 0.1861vw, 1.5rem);
+		--t-size-h3: clamp(1.125rem, 1.0821rem + 0.1861vw, 1.25rem);
+		--t-size-b1: clamp(0.875rem, 0.8536rem + 0.093vw, 0.9375rem);
 
 		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
 		--width-md: min(100vw - calc(var(--s-contain) * 2), var(--container-md));
@@ -298,6 +349,83 @@
 }
 
 @layer components {
+	/* The cart panel is light in both themes (bg-white/text-black), but the
+	   tokens its contents resolve — borders, muted copy, the recommendation
+	   cards' hover and focus colours — inherit from <html>, which is dark on
+	   every route except /products and /size-guide. There that leaves
+	   --border at white/10% (dividers invisible on white) and
+	   --muted-foreground around 2.6:1 (fails AA). Pin the values :root
+	   declares so the panel reads the same wherever it is opened.
+
+	   Set on the panel element itself, so it simply out-inherits .dark on
+	   <html> — no layer or specificity contest involved. */
+	.cart-surface {
+		--background: oklch(0.9612 0 0);
+		--foreground: oklch(0.145 0 0);
+		--muted: oklch(0.97 0 0);
+		/* Keep in step with :root — same AA reason documented there. */
+		--muted-foreground: oklch(0.5 0 0);
+		--accent: oklch(0.97 0 0);
+		--accent-foreground: oklch(48.49% 0.291 264.12);
+		--primary: oklch(0.205 0 0);
+		--primary-foreground: oklch(0.985 0 0);
+		--border: oklch(0.75 0 0);
+		--input: oklch(0.922 0 0);
+		--ring: oklch(0.708 0 0);
+	}
+
+	/* Sanity-authored section colours, applied by SectionShell.
+	 *
+	 * Same mechanism as .cart-surface above -- redefine the tokens on a scope
+	 * element so descendants out-inherit the theme -- and it exists for the same
+	 * reason. `@theme inline` compiles `text-foreground` to `color:
+	 * var(--foreground)` and `bg-background` to `background-color:
+	 * var(--background)`, each read at the element carrying the class, so a
+	 * utility on a descendant always beats a `color` inherited from the section.
+	 * Setting `color` alone left ProductCard's `text-foreground` lines untouched
+	 * and its `bg-background` image frame black.
+	 *
+	 * Only --section-fg / --section-bg cross from JS; everything else is derived
+	 * here. .cart-surface has to enumerate twelve fixed values because its
+	 * surface is a known colour, but these two are whatever an editor picked, so
+	 * enumerating would mean extending a list every time a component reaches for
+	 * another token. The lesson .cart-surface records is that stopping at
+	 * ink+paper is not enough: leaving --border and --muted-foreground themed
+	 * makes dividers invisible and muted copy fail AA on an off-theme surface --
+	 * concretely, ui/Accordion's `border-b` and its `text-muted-foreground`
+	 * chevron inside a light FAQ section on the dark theme. */
+	.section-ink {
+		--foreground: var(--section-fg);
+		/* --primary and --accent-foreground are this palette's ink one step over
+		 * (dark: .9491 and .985 against a .985 foreground), not an independent
+		 * brand hue -- left themed, a Badge (`bg-primary/25 text-primary`) renders
+		 * near-white on near-white inside a light section. */
+		--primary: var(--section-fg);
+		/* Paired with --primary above, not left to .section-paper: a section can
+		 * set a text colour and no background, and a Button's fill and its label
+		 * moving independently is how you get black-on-near-black. */
+		--primary-foreground: var(--section-bg, var(--background));
+		--accent-foreground: var(--section-fg);
+		--muted-foreground: color-mix(in oklab, var(--section-fg) 65%, transparent);
+		--border: color-mix(in oklab, var(--section-fg) 25%, transparent);
+		--input: color-mix(in oklab, var(--section-fg) 25%, transparent);
+		--ring: color-mix(in oklab, var(--section-fg) 50%, transparent);
+	}
+
+	/* Always accompanied by .section-ink: resolveSectionAppearance derives a
+	 * legible ink from the background when the editor set no text colour, so a
+	 * background alone can no longer leave the theme's near-white ink sitting on
+	 * an authored light surface. */
+	.section-paper {
+		--background: var(--section-bg);
+		--card: var(--section-bg);
+		--muted: color-mix(
+			in oklab,
+			var(--section-fg, currentcolor) 12%,
+			transparent
+		);
+	}
+
 	.field-hint-ring {
 		&::before {
 			content: '';
@@ -337,32 +465,46 @@
 		h1 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 30px;
-			line-height: 0.9;
+			font-size: var(--t-size-h1);
+			line-height: 1.1;
 			letter-spacing: -0.04em;
 		}
 
-		h2 {
+		/* The pull quote is the h2 role rendered at a different place in the
+		   flow, not a size of its own -- it was a flat 24px, which is where
+		   --t-size-h2 tops out. Sharing the selector is what keeps a leading or
+		   tracking retune from moving the heading and leaving the quote behind;
+		   the var alone only ever protected the size. */
+		h2,
+		blockquote,
+		blockquote p {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 24px;
-			line-height: 0.9;
+			font-size: var(--t-size-h2);
+			line-height: 1.15;
 			letter-spacing: -0.02em;
 		}
 
 		h3 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 20px;
-			line-height: 1;
+			font-size: var(--t-size-h3);
+			line-height: 1.2;
 			letter-spacing: -0.02em;
 		}
 
+		/* h4 keeps its own rung. It was a flat 18px until b87fac5 folded it in
+		   with h5/h6 at 16px, which left prose with one level where it had two
+		   and made h4 identical to h6. 18px is not the way back, though -- that
+		   is h3's floor, so the two read as one on a phone. 16->17 sits clear of
+		   both. Deliberately its own clamp rather than `.t-l-0`'s, which lands
+		   on the same numbers: a prose heading and an event date are different
+		   roles, and a prose retune must not move a ticket. */
 		h4 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 18px;
-			line-height: 1;
+			font-size: clamp(1rem, 0.9786rem + 0.093vw, 1.0625rem);
+			line-height: 1.2;
 			letter-spacing: -0.02em;
 		}
 
@@ -370,8 +512,8 @@
 		h6 {
 			font-family: var(--font-default);
 			font-weight: 500;
-			font-size: 16px;
-			line-height: 1;
+			font-size: clamp(0.9375rem, 0.9161rem + 0.093vw, 1rem);
+			line-height: 1.2;
 			letter-spacing: -0.02em;
 		}
 
@@ -401,8 +543,8 @@
 		ul {
 			font-family: var(--font-default);
 			font-weight: 400;
-			font-size: 14px;
-			line-height: 1;
+			font-size: var(--t-size-b1);
+			line-height: 1.5;
 			letter-spacing: -0.02em;
 
 			a {
@@ -436,15 +578,6 @@
 			margin: 30px auto;
 			quotes: '\201C' '\201D' '\2018' '\2019';
 
-			&,
-			p {
-				font-family: var(--font-default);
-				font-weight: 500;
-				font-size: 24px;
-				line-height: 0.9;
-				letter-spacing: -0.02em;
-			}
-
 			p {
 				display: inline;
 				margin: 0;
@@ -473,10 +606,40 @@
 }
 
 @layer components {
+	/* LINE HEIGHT IS A ROLE, NOT A CONSTANT. Every token below used to be
+	   `line-height: 1`, which is a tight-but-defensible display setting on a
+	   heading and a readability failure on anything that wraps: at 1 the
+	   descenders of one line sit on the ascenders of the next. It cost twelve
+	   independent call-site patches at five different values -- `leading-5`,
+	   `leading-[1.4]` twice, `leading-relaxed` four times, `[&_p]:leading-[125%]`
+	   and `leading-snug` four times -- so body prose had five leadings depending
+	   on which page you were on. The value lives here once per role now:
+
+	     prose that wraps (b1, b2, .wysiwyg p)        1.5
+	     labels and metadata (l0, l1, l2, spec)       1.2 - 1.3
+	     headings (h1, h2, h3)                        1.1 - 1.2
+
+	   1.5 is the figure WCAG 1.4.8 asks for within a paragraph and the value
+	   1.4.12 (Text Spacing, AA) expects content to survive a user forcing.
+
+	   A `leading-*` utility still beats these rules, which is the escape hatch --
+	   but of the twelve patches only ProductCard's EXCERPT survives (not its
+	   title, which carries no leading utility), where the leading sets the
+	   reserved height of a `line-clamp-2 min-h-[2lh]` card in a grid rather
+	   than the readability of a paragraph. Header and ToolBar set
+	   `[&_a]:leading-header` on their nav links, which is chrome-height
+	   centring, not type. Anything else is a sign this table is wrong.
+
+	   FONT SIZE is the one property a call site can no longer take by accident:
+	   `cn()` registers these nine class names with tailwind-merge so a `t-*`
+	   deletes an earlier `text-sm`. The reasoning lives with the config in
+	   `src/lib/utils.ts`; adding a rung here means adding it there too, and
+	   `src/lib/type-scale.test.ts` fails if the two disagree. */
+
 	.t-h-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 28px;
+		font-size: var(--t-size-h1);
 		line-height: 1.1;
 		letter-spacing: -0.04em;
 	}
@@ -484,59 +647,89 @@
 	.t-h-2 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 24px;
-		line-height: 0.9;
+		font-size: var(--t-size-h2);
+		/* Was 0.9, then 1. A line box shorter than the type clips ascenders the
+		   moment a heading wraps, and this token now carries every page-module
+		   section heading (SectionShell), which wraps far more often than the two
+		   single-line call sites it had before. 1 did not actually clear them at
+		   -0.02em on this face; 1.15 does and is still tight. */
+		line-height: 1.15;
 		letter-spacing: -0.02em;
 	}
 
 	.t-h-3 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 16px;
-		line-height: 1;
+		font-size: var(--t-size-h3);
+		/* The card-title rung -- event tickets, product cards, category labels --
+		   so two-line titles are the norm here, not the exception. */
+		line-height: 1.2;
 		letter-spacing: -0.02em;
 	}
 
 	.t-b-1 {
 		font-family: var(--font-default);
 		font-weight: 400;
-		font-size: 14px;
-		line-height: 1;
+		font-size: var(--t-size-b1);
+		line-height: 1.5;
 		letter-spacing: -0.02em;
 	}
 
 	.t-b-2 {
 		font-family: var(--font-default);
 		font-weight: 400;
-		font-size: 12px;
-		line-height: 1;
+		font-size: clamp(0.75rem, 0.7286rem + 0.093vw, 0.8125rem);
+		line-height: 1.5;
 		letter-spacing: -0.02em;
 	}
 
+	/* Uppercase metadata one rung above `.t-l-1`: event location, date and
+	   start/finish values, the events sticky-bar month, the crew kicker. In the
+	   label family, not the heading family -- these are values and labels, and
+	   they sat on `.t-h-3` only because 482c1e5 renamed a six-level scale down
+	   into three names.
+
+	   Lands on the same 16->17px as `.wysiwyg h4` and deliberately keeps its own
+	   clamp; that rule carries the reasoning. */
+	.t-l-0 {
+		font-family: var(--font-default);
+		font-weight: 500;
+		font-size: clamp(1rem, 0.9786rem + 0.093vw, 1.0625rem);
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+	}
+
+	/* `.t-l-1` and `.t-l-2` are set in caps at most call sites (13 of 21 and 32
+	   of 43), and caps carry no ascenders or descenders for the eye to read word
+	   shape from -- they read letter by letter, so they need room between the
+	   letters. Both tracked NEGATIVE until now, which is the display-heading
+	   setting applied to the two rungs it hurts most. They open up toward
+	   `.t-spec`'s existing +0.04em instead. */
 	.t-l-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 12px;
-		line-height: 1;
-		letter-spacing: -0.02em;
+		font-size: clamp(0.75rem, 0.7286rem + 0.093vw, 0.8125rem);
+		line-height: 1.25;
+		letter-spacing: 0.02em;
 	}
 
 	.t-l-2 {
 		font-family: var(--font-default);
 		font-weight: 500;
-		font-size: 10px;
-		line-height: 1;
-		letter-spacing: -0.012em;
+		font-size: clamp(0.6875rem, 0.6661rem + 0.093vw, 0.75rem);
+		line-height: 1.3;
+		letter-spacing: 0.04em;
 	}
 
 	/* Spec voice: the typewriter face used for curated metadata (prices,
 	   index numerals, brand/category data). Reads as a counter-voice against
-	   the display caps. */
+	   the display caps. Shares `.t-l-2`'s rung by pixels but not by var -- see
+	   the ladder comment in :root. */
 	.t-spec {
 		font-family: var(--font-feature);
 		font-weight: 500;
-		font-size: 11px;
-		line-height: 1;
+		font-size: clamp(0.6875rem, 0.6661rem + 0.093vw, 0.75rem);
+		line-height: 1.25;
 		letter-spacing: 0.04em;
 	}
 }
@@ -602,6 +795,36 @@
 
 @utility p-x-max {
 	padding-inline: var(--padding-max);
+}
+
+@utility m-x-max {
+	margin-inline: var(--padding-max);
+}
+
+/* Vertical spacing for page-module sections. The values come from Sanity as
+   Tailwind scale steps, which cannot be turned into class names at runtime --
+   Tailwind only emits utilities it finds as literal strings in the source, so a
+   generated `mt-${n}` never exists (the SPACING_CLASSES map this replaces was a
+   stub, and every one of the 30 spacing options resolved to nothing).
+   SectionShell passes the raw scale step inline instead and this utility
+   multiplies it by `--spacing`, the same way pt-header-space-* and min-h-main-*
+   above do -- so retuning the theme's step moves section spacing with every
+   other `mt-*` on the site rather than leaving it stranded at 4px. It is also
+   what makes the sm: breakpoint reachable from an inline style. Always padding, never margin: a section that paints a
+   background needs the space inside its own box, and padding also sidesteps
+   margin-collapse between adjacent sections. */
+@utility section-spacing {
+	padding-top: calc(var(--section-pt, 0) * var(--spacing));
+	padding-bottom: calc(var(--section-pb, 0) * var(--spacing));
+
+	@variant sm {
+		padding-top: calc(
+			var(--section-pt-sm, var(--section-pt, 0)) * var(--spacing)
+		);
+		padding-bottom: calc(
+			var(--section-pb-sm, var(--section-pb, 0)) * var(--spacing)
+		);
+	}
 }
 
 @utility p-fill {
@@ -716,25 +939,156 @@ body:has([data-not-found]) footer {
 }
 
 /* Page navigation fade. The route content in the Layout is keyed by pathname
-   and remounts on navigation, replaying this fade-in. A plain opacity animation
-   on the content (not a View Transition snapshot of the full-height page) avoids
-   the geometry "morph" that read as the page scrolling to the top and back. */
-@keyframes page-in {
-	from {
-		opacity: 0;
-	}
-	to {
-		opacity: 1;
-	}
+   and remounts on navigation, replaying this fade-in. A plain opacity fade on
+   the content (not a View Transition snapshot of the full-height page) avoids
+   the geometry "morph" that read as the page scrolling to the top and back.
+
+   A transition with @starting-style, not a keyframe animation: an animation
+   from opacity 0 begins its active phase at t=0, so a document whose timeline
+   never advances (see `reveal` below) would hold the entire <main> — the whole
+   page, not one column — at opacity 0. `animation-fill-mode` cannot help; it
+   only governs the phases outside the active one. */
+.animate-page-in {
+	transition: opacity 0.3s ease-out;
 }
 
-.animate-page-in {
-	animation: page-in 0.3s ease-out both;
+@starting-style {
+	.animate-page-in {
+		opacity: 0;
+	}
 }
 
 /* Honor reduced-motion: show content instantly, no fade. */
 @media (prefers-reduced-motion: reduce) {
 	.animate-page-in {
-		animation: none;
+		transition: none;
+	}
+}
+
+/* The site header's background, in one place, as a function of
+   --header-progress: 1 everywhere, so the header is its usual 95% paper plus
+   blur-xs; 0 under a full-bleed hero (HeroBlock marks the hero's background
+   wrapper `data-hero-underlay`), so the very first paint is transparent with
+   no post-hydration flip. The hero's own wrapper, HeroUnderlay, then writes
+   the scroll progress inline for as long as it is mounted (HEADER_SOLID_AT
+   there sets how soon it reaches 1) and adds `data-header-solid` once it
+   does. The blur is a step, not a ramp: a
+   backdrop-filter over the animating canvas re-blurs on every wave frame and a
+   ramped radius defeats any caching, so it stays `none` until the paper is
+   solid enough to hide the switch.
+
+   Registered with inherits: false so a progress write invalidates the header
+   alone, not everything inside it. The explicit `1` in the rule below is the
+   fallback where @property is unsupported. */
+@property --header-progress {
+	syntax: '<number>';
+	initial-value: 1;
+	inherits: false;
+}
+
+@layer components {
+	[data-site-header] {
+		--header-progress: 1;
+		background-color: color-mix(
+			in oklab,
+			var(--background) calc(var(--header-progress) * 95%),
+			transparent
+		);
+		backdrop-filter: blur(var(--blur-xs));
+	}
+
+	body:has([data-hero-underlay]) [data-site-header] {
+		--header-progress: 0;
+	}
+
+	body:has([data-hero-underlay]) [data-site-header]:not([data-header-solid]) {
+		backdrop-filter: none;
+	}
+}
+
+/* The canonical note on how the fixed header gets its space. The header is
+   `position: fixed`, so it donates no layout space; the `main` rule below
+   carries it instead. A full-bleed hero is the
+   one thing that wants the header over it rather than above it, so it drops
+   that padding and starts at the very top of the viewport.
+
+   Scoped on `body:has(...)` to match the two header-background rules above
+   verbatim, so the two halves of "this page opens with a full-bleed hero"
+   read the same subtree and cannot disagree. Keyed on the same
+   `data-hero-underlay` marker for the same reason. The attribute is in the
+   prerendered HTML, so this matches on the first paint -- no post-hydration
+   flip. HeroBlock keeps `mt-header-space-0` on the copy, which is what holds
+   the text clear of the header once the section is under it.
+
+   This replaces a negative top margin on the hero, which cancelled the
+   header's flow box back out. That worked only by collapsing its margin
+   THROUGH <main> (no padding or border there to stop it) and so moved
+   <main>'s own box -- meaning any padding later added to <main> would have
+   silently killed the overlap, with no error and nothing to grep for.
+
+   Both rules are unlayered, so `body:has(...) main` beats bare `main` on
+   specificity alone and neither can be outranked by a Tailwind utility in the
+   utilities layer. Everything from here down is outside every layer, which
+   `.animate-page-in` above relies on for the same reason. */
+main {
+	/* Declared here rather than as a `pt-header-space-0` class on <Main>,
+	   because `cn()` does not classify that custom utility: its
+	   `extendTailwindMerge` config registers the nine `t-*` type rungs and
+	   nothing else, so `cn('pt-header-space-0', 'pt-0')` keeps BOTH and
+	   emission order picks the winner -- a caller's override would silently do
+	   nothing. (This said "bare twMerge with no extendTailwindMerge" before the
+	   type-scale branch added one; the conclusion is unchanged, since only the
+	   rungs are registered.)
+
+	   Spelled out rather than `@apply pt-header-space-0`, which compiles to
+	   nothing here: the utility is functional (`pt-header-space-*`), and
+	   @apply does not resolve one from this rule -- the declaration vanished
+	   with no error and <main> shipped unpadded. Keep this sum in step with
+	   the `*-header-space-*` utilities above if the announcement bar lands. */
+	padding-top: calc(var(--height-header) + var(--height-announcement));
+}
+
+body:has([data-hero-underlay]) main {
+	padding-top: 0;
+}
+
+/* Entrance reveal for page content, staggered via --reveal-delay.
+
+   This drives the visibility of the price and the buy button, so the visible
+   state is the *resting* state: the element declares no opacity of its own, and
+   the hidden value lives only in @starting-style as a transition start point.
+   Deliberately not a JS mount animation (Motion needs hydration plus a live rAF
+   before content becomes visible at all) and not a keyframe animation (which
+   holds its `from` state for as long as the document timeline is frozen — a
+   page the browser never paints, such as a discarded tab, sits at currentTime 0
+   indefinitely).
+
+   The guarantee this gives is narrower than "nothing has to run": a transition
+   is created as soon as a second style resolution happens, and it holds the
+   start value for the whole --reveal-delay window. So a stalled clock can still
+   hide a *delayed* reveal — measured directly: a frozen-timeline browser
+   reported a live CSSTransition at currentTime 0 with computed opacity 0. What
+   it does buy is that visibility never depends on JS, and that an element with
+   no delay is never hidden for longer than one frame. Keep delays off anything
+   a shopper must be able to see or click; the buy column's 0.2–0.28s stagger is
+   the practical ceiling.
+
+   Omitting a base `opacity` also keeps this composable: `reveal opacity-50`
+   resolves to 50%, where a hard-coded `opacity: 1` here would fight Tailwind's
+   own utility in the same cascade layer.
+
+   Browsers without @starting-style show the content immediately, un-faded. */
+@utility reveal {
+	transition: opacity var(--reveal-duration, 0.6s)
+		var(--reveal-ease, cubic-bezier(0, 0.71, 0.2, 1.01)) var(--reveal-delay, 0s);
+
+	@starting-style {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.reveal {
+		transition: none;
 	}
 }

@@ -1,6 +1,6 @@
-import { pickLocalizedValue } from '@/lib/i18n';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
 import { TagsIcon } from '@sanity/icons';
+import { pickLocalizedValue } from '@/lib/i18n';
 import { defineField, defineType } from 'sanity';
 
 export const pEventStatus = defineType({
@@ -9,7 +9,11 @@ export const pEventStatus = defineType({
 	type: 'document',
 	icon: TagsIcon,
 	fields: [
-		defineField({ name: 'title', title: 'Title', type: 'internationalizedArrayString' }),
+		defineField({
+			name: 'title',
+			title: 'Title',
+			type: 'internationalizedArrayString',
+		}),
 		slug(),
 		{
 			title: 'Status text color',

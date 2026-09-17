@@ -1,0 +1,64 @@
+name: Checks
+
+# No branch filters. `dev` is the working branch and several long-lived
+# integration branches (feat/*, improve/*) receive PRs; filtering to [main, dev]
+# meant a push to dev and every feature-branch PR ran nothing. Since the
+# pre-commit hook now lints only STAGED files, this workflow is the only
+# whole-repo gate — a conflict resolved into an unstaged file passes the hook and
+# must not also slip past CI.
+on: [push, pull_request]
+
+# A second push to a PR made the first run's ~12 minutes pure waste.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The app reads Sanity at boot — src/sanity/lib/live.ts throws at module load
+  # without a token — so even the build needs these. Add them as repo Actions
+  # secrets. SITE_URL is not a secret but must be set: src/sanity/env.ts derives
+  # studioUrl from it, and the sitemap emits absolute URLs.
+  NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_SANITY_PROJECT_ID }}
+  NEXT_PUBLIC_SANITY_DATASET: ${{ secrets.NEXT_PUBLIC_SANITY_DATASET }}
+  SANITY_API_READ_TOKEN: ${{ secrets.SANITY_API_READ_TOKEN }}
+  SITE_URL: http://localhost:3001
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - run: npm run lint
+      - run: npm run format:check
+
+      # PageProps/LayoutProps/RouteContext live in .next/types, which only
+      # exists once route types have been generated — must precede typecheck.
+      - run: npx next typegen
+      - run: npm run typecheck
+
+      - run: npm run test
+
+      # Last, and in this order: `npm run typegen` rewrites the committed
+      # generated files, so anything reading them afterwards (typecheck, the
+      # unit suite) would be reading regenerated output and mask exactly the
+      # staleness this step exists to catch. It runs `generate:groq` first, so
+      # one diff covers all three generated files — a separate generate:groq
+      # step would just run it a second time.
+      - name: Fail if generated files are stale
+        run: |
+          npm run typegen
+          git diff --exit-code -- \
+            sanity.types.ts \
+            schema.json \
+            src/sanity/lib/groq-constants.generated.ts
+
+      # Build last — the slowest step, and the only one that exercises
+      # generateStaticParams for every dynamic route.
+      - run: npm run build

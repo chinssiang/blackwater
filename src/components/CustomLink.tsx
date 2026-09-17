@@ -17,9 +17,12 @@ import { cn } from '@/lib/utils';
  */
 interface CustomLinkProps extends React.AnchorHTMLAttributes<HTMLAnchorElement> {
 	link?: {
-		href?: string;
-		isNewTab?: boolean;
-		linkType?: 'internal' | 'external';
+		href?: string | null;
+		// Nullable, not just optional: a GROQ projection yields `null` for an
+		// absent field, never `undefined`, so every link projected from Sanity
+		// carries nulls here.
+		isNewTab?: boolean | null;
+		linkType?: 'internal' | 'external' | null;
 	};
 	children?: React.ReactNode;
 	className?: string;

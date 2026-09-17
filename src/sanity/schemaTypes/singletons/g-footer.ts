@@ -10,7 +10,8 @@ export const gFooter = defineType({
 		{
 			title: 'Footer Menus',
 			name: 'menus',
-			description: 'Each menu becomes a footer column. Manage entries in Global → Menus.',
+			description:
+				'Each menu becomes a footer column. Manage entries in Global → Menus.',
 			type: 'array',
 			of: [{ type: 'reference', to: [{ type: 'settingsMenu' }] }],
 			validation: (Rule) => Rule.max(6),

@@ -1,21 +1,20 @@
 'use client';
-import { motion } from 'motion/react';
-import { fadeAnim } from '@/lib/animate';
-import CustomPortableText from '@/components/CustomPortableText';
+
 import React, { useMemo, useState } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
-	Controller,
-	useForm,
-	FieldValues,
 	Control,
+	Controller,
 	ControllerFieldState,
+	FieldValues,
+	useForm,
 } from 'react-hook-form';
 import * as z from 'zod';
-import { cn, hasArrayValue, formatObjectToHtml } from '@/lib/utils';
-
+import { fadeAnim } from '@/lib/animate';
+import { cn, hasArrayValue } from '@/lib/utils';
+import CustomPortableText from '@/components/CustomPortableText';
+import { useLocale } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui/Button';
-import { Spinner } from '@/components/ui/Spinner';
 import {
 	Field,
 	FieldContent,
@@ -28,12 +27,14 @@ import { Input } from '@/components/ui/Input';
 import {
 	Select,
 	SelectContent,
+	SelectGroup,
 	SelectItem,
 	SelectTrigger,
 	SelectValue,
-	SelectGroup,
 } from '@/components/ui/Select';
+import { Spinner } from '@/components/ui/Spinner';
 import { Textarea } from '@/components/ui/Textarea';
+import { motion } from 'motion/react';
 
 // Type definitions
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
@@ -117,7 +118,6 @@ interface CustomFormData {
 	errorMessage: string | null;
 	sendToEmail: string | null;
 	emailSubject: string | null;
-	formFailureNotificationEmail: string | null;
 }
 
 interface CustomFormProps {
@@ -125,33 +125,6 @@ interface CustomFormProps {
 	data?: CustomFormData | null;
 	className?: string;
 	fieldGapX?: number;
-}
-
-interface EmailData {
-	email: string;
-	emailSubject: string;
-	emailHtmlContent: string;
-}
-
-interface SendEmailParams {
-	apiUrl: string;
-	emailData: EmailData;
-}
-
-interface SendErrorNotificationParams {
-	emailTo: string;
-	bodyData: {
-		sendToEmail?: string;
-		emailSubject?: string;
-		formData: FieldValues;
-	};
-	errorInfo: string;
-}
-
-interface EmailResult {
-	success: boolean;
-	attempts: number;
-	lastError?: Error;
 }
 
 interface FieldComponentTypeProps {
@@ -177,7 +150,9 @@ export function createDynamicResolver(fieldsArray: FormField[]) {
 		const { fieldName, required, inputType, minLength } = field;
 		if (!fieldName) return;
 
-		let schema: z.ZodTypeAny = z.string();
+		// No initializer: the if/else below assigns on every path, so a starting
+		// value is dead and hides which branch actually set the schema.
+		let schema: z.ZodTypeAny;
 
 		if (required) {
 			schema = z.string().min(1, { message: 'This field is required' });
@@ -217,6 +192,20 @@ const FieldComponentType: React.FC<FieldComponentTypeProps> = ({
 }) => {
 	const { inputType, placeholder, selectOptions } = field || {};
 
+	// One derivation feeding both the `items` prop and the rendered options, so
+	// the label the trigger shows can never drift from the item picked. Memoized
+	// because Base UI keys its store on `items` by identity: a fresh array each
+	// render re-runs its layout effect and re-renders <SelectValue>.
+	const options = useMemo(
+		() =>
+			(selectOptions ?? []).map((item) => ({
+				key: item._key,
+				value: item.value ?? '',
+				label: item.title,
+			})),
+		[selectOptions]
+	);
+
 	switch (inputType) {
 		case 'textarea':
 			return (
@@ -231,21 +220,26 @@ const FieldComponentType: React.FC<FieldComponentTypeProps> = ({
 			return (
 				<Select
 					name={field.fieldName ?? undefined}
-					value={controllerField.value || undefined}
+					// `items` lets the trigger show the option's title before the popup has
+					// ever mounted; without it Base UI can only echo the raw value.
+					items={options}
+					// null, not undefined: undefined would flip the select to uncontrolled,
+					// and null is Base UI's "nothing selected", which shows the placeholder.
+					value={controllerField.value || null}
 					onValueChange={controllerField.onChange}
 				>
 					<SelectTrigger
 						id={id}
-						className={cn('w-full', { ' pr-8': fieldState.invalid })}
+						className={cn('w-full', { 'pr-8': fieldState.invalid })}
 					>
 						<SelectValue placeholder={placeholder ?? undefined} />
 					</SelectTrigger>
 
-					<SelectContent side="bottom" position="popper">
+					<SelectContent side="bottom" alignItemWithTrigger={false}>
 						<SelectGroup>
-							{selectOptions?.map((item) => (
-								<SelectItem key={item._key} value={item.value ?? ''}>
-									{item.title}
+							{options.map((item) => (
+								<SelectItem key={item.key} value={item.value}>
+									{item.label}
 								</SelectItem>
 							))}
 						</SelectGroup>
@@ -314,7 +308,6 @@ const FormItem: React.FC<FormItemProps> = ({ form, field }) => {
 								<FieldStatus
 									fieldState={fieldState}
 									isFocused={isFocused}
-									isShowErrorOnFocus={true}
 									className={cn({
 										'top-5': inputType === 'textarea',
 									})}
@@ -334,16 +327,9 @@ export function CustomForm({
 	className,
 	fieldGapX,
 }: CustomFormProps) {
-	const {
-		formTitle,
-		formFields,
-		successMessage,
-		errorMessage,
-		sendToEmail,
-		emailSubject,
-		formFailureNotificationEmail,
-	} = data || {};
+	const { formTitle, formFields, successMessage, errorMessage } = data || {};
 
+	const locale = useLocale();
 	const [formState, setFormState] = useState<FormState>(FORM_STATES.IDLE);
 
 	const defaultValues = useMemo(() => {
@@ -367,9 +353,11 @@ export function CustomForm({
 	const onHandleSubmit = async (formData: FieldValues) => {
 		setFormState(FORM_STATES.SUBMITTING);
 
+		// Deliberately NOT sending sendToEmail/emailSubject: the route resolves
+		// both from pContact itself, so a caller cannot name the recipient. The
+		// locale only picks which pContact translation to read.
 		const bodyData = {
-			sendToEmail: sendToEmail ?? undefined,
-			emailSubject: emailSubject ?? undefined,
+			locale,
 			formData: formData,
 		};
 
@@ -383,14 +371,7 @@ export function CustomForm({
 			});
 
 			if (!response.ok) {
-				const errorText = await response.text();
-				sendErrorNotificationEmail({
-					emailTo: formFailureNotificationEmail || '',
-					bodyData: bodyData,
-					errorInfo: errorText,
-				});
-				setFormState(FORM_STATES.ERROR);
-				throw new Error(errorText);
+				throw new Error(await response.text());
 			}
 			form.reset();
 
@@ -400,11 +381,6 @@ export function CustomForm({
 				console.error('Form submission error:', error);
 			}
 			setFormState(FORM_STATES.ERROR);
-			sendErrorNotificationEmail({
-				emailTo: formFailureNotificationEmail || '',
-				bodyData: bodyData,
-				errorInfo: error instanceof Error ? error.message : String(error),
-			});
 		}
 	};
 
@@ -413,7 +389,7 @@ export function CustomForm({
 			onSubmit={form.handleSubmit(onHandleSubmit)}
 			className={cn(className)}
 		>
-			<div className="t-b-2 mb-15 wysiwyg">
+			<div className="t-b-2 wysiwyg mb-15">
 				{formTitle && <CustomPortableText blocks={formTitle as any} />}
 				{formState === FORM_STATES.SUCCESS && (
 					<motion.p
@@ -464,116 +440,11 @@ export function CustomForm({
 				size="xl"
 			>
 				{formState === FORM_STATES.SUBMITTING ? (
-					<Spinner className="mr-3 -ml-1 text-accent" />
+					<Spinner className="text-accent mr-3 -ml-1" />
 				) : (
 					'Submit'
 				)}
 			</Button>
 		</form>
 	);
-}
-
-/**
- * Sends an error notification email with form data and error information.
- * Attempts multiple backup email endpoints if primary fails.
- * @param {string} params.emailTo - Recipient email address
- * @param {Object} params.formData - Form data to include in email
- * @param {string} params.errorInfo - Error information to include in email
- * @returns {Promise<{success: boolean, attempts: number, lastError?: Error}>}
- */
-async function sendErrorNotificationEmail({
-	emailTo,
-	bodyData,
-	errorInfo,
-}: SendErrorNotificationParams): Promise<EmailResult> {
-	const { sendToEmail, emailSubject, formData } = bodyData;
-	const emailData: EmailData = {
-		email: emailTo,
-		emailSubject: emailSubject || 'Form Submission Error',
-		emailHtmlContent: `
-			<p>
-				Your form failed to send. Please notify your website administrator. A backup is provided below.
-			</p>
-			<p>
-				<strong>Error Details: </strong><br>
-				Page URL: ${window.location.href}<br>
-				Timestamp: ${new Date().toISOString()}<br>
-				${formatObjectToHtml(errorInfo)}
-			</p>
-      <p>
-				<strong>Form Data: </strong><br>
-				Send to: ${sendToEmail}<br>
-				Subject: ${emailSubject}<br>
-				${formatObjectToHtml(formData)}
-			</p>`,
-	};
-
-	async function sendEmail({
-		apiUrl,
-		emailData,
-	}: SendEmailParams): Promise<boolean> {
-		const controller = new AbortController();
-		const timeout = setTimeout(() => controller.abort(), 5000); // 5s timeout
-
-		try {
-			const response = await fetch(apiUrl, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(emailData),
-				signal: controller.signal,
-			});
-
-			if (!response.ok) {
-				const errorText = await response.text();
-				throw new Error(
-					`HTTP error! status: ${response.status}, body: ${errorText}`
-				);
-			}
-
-			return true;
-		} catch (error) {
-			if (process.env.NODE_ENV !== 'production') {
-				console.error(`Email sending failed for ${apiUrl}:`, error);
-			}
-			return false;
-		} finally {
-			clearTimeout(timeout);
-		}
-	}
-
-	const emailApiUrls: string[] = [
-		'/api/send-notification-email',
-		'/api/send-backup-email',
-		'/api/send-backup-email?useTransporter2=true',
-	];
-
-	let attempts = 0;
-	let lastError: Error | null = null;
-
-	for (const apiUrl of emailApiUrls) {
-		attempts++;
-
-		try {
-			const success = await sendEmail({ apiUrl, emailData });
-			if (success) {
-				return { success: true, attempts };
-			}
-		} catch (error) {
-			lastError = error instanceof Error ? error : new Error(String(error));
-			console.error(`Attempt ${attempts} failed:`, error);
-		}
-
-		// Add delay between retries
-		if (attempts < emailApiUrls.length) {
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-		}
-	}
-
-	return {
-		success: false,
-		attempts,
-		lastError: lastError || undefined,
-	};
 }

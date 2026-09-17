@@ -1,30 +1,53 @@
-import {
-	pickLocalizedValue,
-	isLocale,
-	LOCALE_SHORT_LABELS,
-	type Locale,
-} from '@/lib/i18n';
-import { resolveHref } from '@/lib/routes';
-import sharing from '@/sanity/schemaTypes/objects/sharing';
-import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
-import { StarIcon, ImageIcon } from '@sanity/icons';
-import { defineArrayMember, defineField, defineType } from 'sanity';
+import { ShopifyProductInput } from '@/sanity/schemaTypes/components/ShopifyProductInput';
 import customImage from '@/sanity/schemaTypes/objects/custom-image';
+import { isUniqueAcrossType, slug } from '@/sanity/schemaTypes/objects/slug';
+import { ImageIcon, StarIcon } from '@sanity/icons';
+import {
+	DEFAULT_LOCALE,
+	maxLengthPerLanguage,
+	pickLocalizedValue,
+	requireSomeValue,
+} from '@/lib/i18n';
+import { PRODUCT_BADGE_OPTIONS } from '@/lib/product-badges';
+import { resolveHref } from '@/lib/routes';
+import {
+	type ValidationContext,
+	defineArrayMember,
+	defineField,
+	defineType,
+} from 'sanity';
+
+/**
+ * One document per product: the handle on this document is the whole truth
+ * about being Shopify-linked (the old per-language sibling inheritance is
+ * gone — there are no siblings). Synchronous, so validators need no network.
+ */
+function linkedToShopify(context: ValidationContext): boolean {
+	const doc = context.document as { shopify?: { handle?: string } } | undefined;
+	return Boolean(doc?.shopify?.handle);
+}
 
 export const pProduct = defineType({
 	title: 'Product',
 	name: 'pProduct',
 	type: 'document',
 	icon: StarIcon,
+	fieldsets: [
+		{
+			name: 'seo',
+			title: 'SEO + Social Sharing',
+			options: { collapsible: true, collapsed: true },
+		},
+	],
 	fields: [
 		defineField({
 			name: 'title',
-			type: 'string',
-			validation: (Rule) => [Rule.required()],
+			type: 'internationalizedArrayString',
+			validation: (Rule) => Rule.custom(requireSomeValue),
 		}),
-		slug(),
-		language(),
+		// isUniqueAcrossType, not the default: with no `language` field the
+		// default check short-circuits to `true` and accepts every duplicate.
+		slug({ isUnique: isUniqueAcrossType }),
 		defineField({
 			name: 'categories',
 			type: 'array',
@@ -49,60 +72,123 @@ export const pProduct = defineType({
 		}),
 		customImage({ title: 'Main Image', name: 'mainImage' }),
 		defineField({
-			name: 'priceAmount',
-			title: 'Price',
-			type: 'number',
+			name: 'shopify',
+			title: 'Shopify',
+			type: 'object',
 			description:
-				'Product price in NTD. Shown on the site and used for sorting and filtering. Enter the number only, e.g. 1299.',
-			validation: (Rule) => Rule.required().min(0),
+				'Link this product to Shopify. When linked, price, availability and the Add to cart button come live from Shopify: the manual price and purchase link below are only fallbacks for when Shopify is unreachable, while the sold-out toggle stays a manual override.',
+			options: { collapsible: true, collapsed: false },
+			fields: [
+				defineField({
+					name: 'handle',
+					title: 'Product handle',
+					type: 'string',
+					description:
+						'The product handle from Shopify admin (the last part of the product URL, e.g. "waffle-knit-beanie"). One product, one handle — every language renders from it; localized prices come from Shopify Markets, not separate products.',
+					components: { input: ShopifyProductInput },
+					validation: (Rule) =>
+						Rule.custom((value) => {
+							if (!value) return true;
+							if (value !== value.trim())
+								return 'Remove leading/trailing spaces';
+							if (/\s/.test(value)) return 'Handles cannot contain spaces';
+							return true;
+						}),
+				}),
+			],
 		}),
 		defineField({
 			name: 'price',
-			title: 'Price (deprecated)',
 			type: 'string',
-			readOnly: true,
 			description:
-				'Legacy free-text price. No longer shown on the site; superseded by Price above. Kept for reference only.',
+				'e.g. $1,299 or From $49/mo. Fallback only when a Shopify product is linked above.',
+			// Required only while there's no Shopify link — once one exists the
+			// live price is authoritative and this field is an unused fallback,
+			// so demanding a value here would leave linked products permanently
+			// un-publishable (or permanently warned at).
+			validation: (Rule) => [
+				Rule.custom((value, context) =>
+					value || linkedToShopify(context) ? true : 'Required'
+				),
+				Rule.custom((value, context) =>
+					value && linkedToShopify(context)
+						? 'Not shown while Shopify is reachable — the live price is used instead. Kept as the fallback for when it is not.'
+						: true
+				).warning(),
+			],
+		}),
+		defineField({
+			name: 'priceAmount',
+			title: 'Price (for filtering)',
+			type: 'number',
+			description:
+				'Product price in NTD, numbers only (e.g. 1299). Not shown on the site — the displayed price comes from Shopify when linked, and from the fallback above when not. This is the value the /products/all price filter and the price sort read, because those run in GROQ and cannot reach Shopify.',
+			// A warning, not Rule.required(): a product with no value here is
+			// perfectly sellable, it just drops out of the price buckets and
+			// sorts last. Blocking publish over a filter key would make a
+			// Shopify-linked product un-publishable for a field it never renders.
+			validation: (Rule) => [
+				Rule.min(0),
+				Rule.custom((value) =>
+					value == null
+						? 'No price set — this product is excluded from the price filter and sorts last by price.'
+						: true
+				).warning(),
+			],
 		}),
 		defineField({
 			name: 'purchaseLink',
 			title: 'Purchase Link',
 			type: 'url',
+			description:
+				'External buy link for products we do not sell through our own Shopify cart. Ignored once a Shopify product is linked above — the Add to cart button is shown instead — and only falls back to this link if Shopify is unreachable.',
+			validation: (Rule) =>
+				Rule.custom((value, context) =>
+					value && linkedToShopify(context)
+						? 'Not used while Shopify is reachable — shoppers get the Add to cart button instead. This link stays as the fallback for when it is not, including if the handle above stops resolving, so it is safe to leave in place.'
+						: true
+				).warning(),
+		}),
+		defineField({
+			name: 'soldOut',
+			title: 'Sold Out',
+			type: 'boolean',
+			initialValue: false,
+			description:
+				'When on, the purchase button becomes a disabled "Sold out" state and a "Notify when back in stock" form appears. Shopify-linked products get this automatically from live availability; the toggle stays as a manual override.',
 		}),
 		defineField({
 			name: 'badge',
 			title: 'Badge',
+			description:
+				'All of these show on listing cards, in the order listed here. Each extra badge can add another line over the product image on a phone, so use them sparingly.',
 			type: 'array',
 			of: [defineArrayMember({ type: 'string' })],
-			options: {
-				list: [
-					{ title: "Founder's Pick", value: 'founders-pick' },
-					{ title: 'Most Popular', value: 'most-popular' },
-					{ title: "Editor's Choice", value: 'editors-choice' },
-					{ title: 'New', value: 'new' },
-				],
-			},
+			options: { list: [...PRODUCT_BADGE_OPTIONS] },
+			validation: (Rule) => Rule.unique(),
 		}),
 		defineField({
 			name: 'excerpt',
-			type: 'text',
-			rows: 3,
+			type: 'internationalizedArrayText',
 			description: 'Short description shown on listing cards',
-			validation: (Rule) => Rule.max(200).warning('Keep under 200 characters'),
+			validation: (Rule) =>
+				Rule.custom(
+					maxLengthPerLanguage(200, 'Keep under 200 characters')
+				).warning(),
 		}),
 		defineField({
 			name: 'content',
-			type: 'portableTextSimple',
+			type: 'internationalizedArrayPortableTextSimple',
 		}),
 		defineField({
 			name: 'whyUseIt',
 			title: 'Why do we use it?',
-			type: 'portableTextSimple',
+			type: 'internationalizedArrayPortableTextSimple',
 		}),
 		defineField({
 			name: 'whoIsItFor',
 			title: 'Who is it for?',
-			type: 'portableTextSimple',
+			type: 'internationalizedArrayPortableTextSimple',
 		}),
 		defineField({
 			name: 'whenReachForIt',
@@ -125,7 +211,7 @@ export const pProduct = defineType({
 				defineField({
 					name: 'richText',
 					title: 'Rich Text',
-					type: 'portableTextSimple',
+					type: 'internationalizedArrayPortableTextSimple',
 					hidden: ({ parent }) => parent?.contentType !== 'richText',
 				}),
 				defineField({
@@ -144,11 +230,16 @@ export const pProduct = defineType({
 							fields: [
 								defineField({
 									name: 'text',
-									type: 'string',
-									validation: (Rule) => Rule.required(),
+									type: 'internationalizedArrayString',
+									validation: (Rule) => Rule.custom(requireSomeValue),
 								}),
 							],
-							preview: { select: { title: 'text' } },
+							preview: {
+								select: { title: 'text' },
+								prepare: ({ title }) => ({
+									title: pickLocalizedValue(title) ?? 'Untitled',
+								}),
+							},
 						}),
 					],
 					hidden: ({ parent }) => parent?.contentType !== 'list',
@@ -167,8 +258,8 @@ export const pProduct = defineType({
 					fields: [
 						defineField({
 							name: 'title',
-							type: 'string',
-							validation: (Rule) => Rule.required(),
+							type: 'internationalizedArrayString',
+							validation: (Rule) => Rule.custom(requireSomeValue),
 						}),
 						defineField({
 							name: 'contentType',
@@ -187,7 +278,7 @@ export const pProduct = defineType({
 						defineField({
 							name: 'richText',
 							title: 'Rich Text',
-							type: 'portableTextSimple',
+							type: 'internationalizedArrayPortableTextSimple',
 							hidden: ({ parent }) => parent?.contentType !== 'richText',
 						}),
 						defineField({
@@ -206,11 +297,16 @@ export const pProduct = defineType({
 									fields: [
 										defineField({
 											name: 'text',
-											type: 'string',
-											validation: (Rule) => Rule.required(),
+											type: 'internationalizedArrayString',
+											validation: (Rule) => Rule.custom(requireSomeValue),
 										}),
 									],
-									preview: { select: { title: 'text' } },
+									preview: {
+										select: { title: 'text' },
+										prepare: ({ title }) => ({
+											title: pickLocalizedValue(title) ?? 'Untitled',
+										}),
+									},
 								}),
 							],
 							hidden: ({ parent }) => parent?.contentType !== 'list',
@@ -220,13 +316,21 @@ export const pProduct = defineType({
 						select: { title: 'title', contentType: 'contentType' },
 						prepare({ title, contentType }) {
 							return {
-								title: title || 'Untitled',
+								title: pickLocalizedValue(title) || 'Untitled',
 								subtitle: contentType === 'list' ? 'Tags / Text' : 'Rich text',
 							};
 						},
 					},
 				}),
 			],
+		}),
+		defineField({
+			name: 'sizeChart',
+			title: 'Size Chart',
+			type: 'reference',
+			to: [{ type: 'gSizeChart' }],
+			description:
+				'Adds a size guide on the product page, opening this chart in a dialog. Charts are shared, so several products can point at the same one.',
 		}),
 		defineField({
 			title: 'Related Products',
@@ -241,34 +345,71 @@ export const pProduct = defineType({
 			],
 			validation: (Rule) => Rule.unique(),
 		}),
-		sharing(),
+		// Field-level SEO, mirroring pProductCategory (which replaced the shared
+		// `sharing()` object for the same reason: its metaTitle/metaDesc are plain
+		// strings, which can't carry two languages on one document).
+		defineField({
+			name: 'disableIndex',
+			title: 'Disable Index',
+			type: 'boolean',
+			description: 'Instruct search engines not to index or follow this page',
+			initialValue: false,
+			fieldset: 'seo',
+		}),
+		defineField({
+			name: 'seoTitle',
+			title: 'SEO Title',
+			type: 'internationalizedArrayString',
+			description:
+				'Overrides the meta title per language. Falls back to Title.',
+			fieldset: 'seo',
+		}),
+		defineField({
+			name: 'seoDescription',
+			title: 'SEO Description',
+			type: 'internationalizedArrayText',
+			description:
+				'Overrides the meta description per language. Use no more than 160 characters. Falls back to Excerpt.',
+			fieldset: 'seo',
+		}),
+		defineField({
+			name: 'shareGraphic',
+			title: 'Share Graphic',
+			type: 'image',
+			description:
+				'1200 x 630px. Falls back to Main Image, then the site default.',
+			fieldset: 'seo',
+		}),
 	],
 	preview: {
 		select: {
 			title: 'title',
 			slug: 'slug',
-			language: 'language',
 			categoryTitle: 'categories.0.title',
 			mainImage: 'mainImage',
+			soldOut: 'soldOut',
+			shopifyHandle: 'shopify.handle',
 		},
 		prepare({
-			title = 'Untitled',
+			title,
 			slug = {},
-			language,
 			categoryTitle,
 			mainImage,
+			soldOut,
+			shopifyHandle,
 		}: Record<string, any>) {
 			const href = slug?.current
 				? resolveHref({
 						documentType: 'pProduct',
 						slug: slug.current,
-						locale: language as Locale,
+						locale: DEFAULT_LOCALE,
 					})
 				: null;
-			const tag = isLocale(language) ? LOCALE_SHORT_LABELS[language] : '';
+			// One document per product, so the handle here is the whole truth about
+			// being Shopify-linked — no per-language sibling can carry it instead.
 			return {
-				title: tag ? `[${tag}] ${title}` : title,
-				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — ${href ?? '/products/(no slug)'}`,
+				title: pickLocalizedValue(title) || 'Untitled',
+				subtitle: `[${pickLocalizedValue(categoryTitle) ?? '(no category)'}] — ${href ?? '/products/(no slug)'}${soldOut ? ' · Sold out' : ''}${shopifyHandle ? ' · 🔗 Shopify' : ''}`,
 				media: mainImage?.image.asset || ImageIcon,
 			};
 		},

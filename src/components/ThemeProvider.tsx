@@ -1,9 +1,9 @@
 'use client';
 
 import * as React from 'react';
-import { usePathname } from 'next/navigation';
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
-import { stripLocaleFromPath } from '@/lib/i18n';
+import { usePathname } from 'next/navigation';
+import { isLightThemePath } from '@/lib/routes';
 
 // next-themes (0.4.6, latest) injects its anti-flash theme <script> via
 // React.createElement. React 19 logs "Encountered a script tag while rendering
@@ -15,6 +15,18 @@ import { stripLocaleFromPath } from '@/lib/i18n';
 // (dev only — the warning is stripped from production builds) and let every other
 // console.error through.
 function useSilenceNextThemesScriptWarning() {
+	// The React Compiler does not merely skip this hook — it trips an internal
+	// INVARIANT on the `console.error` reassignment below ("Expected temporaries
+	// to be promoted to named identifiers in an earlier pass"), which is a
+	// compiler bug rather than a rule violation. It is invisible today only
+	// because Next leaves `panicThreshold` at its 'none' default; setting that
+	// option, or moving to the Rust port, turns it into a hard build failure in
+	// a file nobody touched. Opting out explicitly keeps that from happening.
+	//
+	// Note `react-hooks/globals` is at `error` and does NOT flag the assignment,
+	// so lint being green is not evidence the compiler is happy with this file.
+	'use no memo';
+
 	React.useEffect(() => {
 		if (process.env.NODE_ENV === 'production') return;
 		const original = console.error;
@@ -38,8 +50,7 @@ function ThemeProvider({
 	...props
 }: React.ComponentProps<typeof NextThemesProvider>) {
 	const pathname = usePathname();
-	const { path } = stripLocaleFromPath(pathname);
-	const isLight = path === '/products' || path.startsWith('/products/');
+	const isLight = isLightThemePath(pathname);
 
 	useSilenceNextThemesScriptWarning();
 

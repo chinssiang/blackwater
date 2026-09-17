@@ -117,6 +117,26 @@ export function ArrowRight({ className }: SvgIconsProps) {
 	);
 }
 
+// Marks a venue. Same 24x24 stroke geometry as ArrowRight above, so the two
+// sit together at the same optical weight.
+export function MapPin({ className }: SvgIconsProps) {
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={cn(className)}
+		>
+			<path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
+			<circle cx="12" cy="10" r="3" />
+		</svg>
+	);
+}
+
 export function Plus({ className }: SvgIconsProps) {
 	return (
 		<svg
@@ -131,6 +151,38 @@ export function Plus({ className }: SvgIconsProps) {
 		>
 			<path d="M5 12h14"></path>
 			<path d="M12 5v14"></path>
+		</svg>
+	);
+}
+
+export function ChevronLeftIcon({ className }: SvgIconsProps) {
+	return (
+		<svg
+			className={cn(className)}
+			viewBox="0 0 6 9"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				d="M4.70703 8.35352L0.707031 4.35352L4.70703 0.353516"
+				stroke="currentColor"
+			/>
+		</svg>
+	);
+}
+
+export function ChevronRightIcon({ className }: SvgIconsProps) {
+	return (
+		<svg
+			className={cn(className)}
+			viewBox="0 0 6 9"
+			fill="none"
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				d="M0.353516 8.35352L4.35352 4.35352L0.353516 0.353516"
+				stroke="currentColor"
+			/>
 		</svg>
 	);
 }

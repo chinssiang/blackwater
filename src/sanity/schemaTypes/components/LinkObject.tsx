@@ -10,10 +10,10 @@ import {
 	SearchIcon,
 } from '@sanity/icons';
 import { Autocomplete, Card, Flex, Stack, Switch, Text } from '@sanity/ui';
-import { isValidUrl, validateEmail } from '@/lib/utils';
+import { LOCALE_SHORT_LABELS, type Locale, isLocale } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
-import { LOCALE_SHORT_LABELS, isLocale, type Locale } from '@/lib/i18n';
-import { set, unset, type ObjectInputProps } from 'sanity';
+import { isValidUrl, validateEmail } from '@/lib/utils';
+import { type ObjectInputProps, set, unset } from 'sanity';
 
 type LinkType = 'internal' | 'external';
 
@@ -52,6 +52,10 @@ export const externalLinkDefaults = (
 	isNewTab: !href.startsWith('#'),
 });
 
+// Must stay in step with `internalLink.to[]` in objects/link.ts: a type listed
+// here but not there is offered in the picker and then rejected by reference
+// validation. The blog types were listed here while their routes are commented
+// out of DOCUMENT_ROUTES, so they resolved to no URL.
 const pageDocumentOrder = [
 	'pHome',
 	'pGeneral',
@@ -62,9 +66,9 @@ const pageDocumentOrder = [
 	'pEvents',
 	'pEvent',
 	'pContact',
-	'pBlogIndex',
-	'pBlog',
 	'pFaq',
+	'pSizeGuide',
+	'pNewsletter',
 ];
 
 type PageFetch = {

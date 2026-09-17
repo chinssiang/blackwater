@@ -1,7 +1,7 @@
 import formBuilder from '@/sanity/schemaTypes/objects/form-builder';
+import { language } from '@/sanity/schemaTypes/objects/language';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
-import { language } from '@/sanity/schemaTypes/objects/language';
 import { BookIcon } from '@sanity/icons';
 import { defineType } from 'sanity';
 
@@ -43,13 +43,6 @@ export const pContact = defineType({
 				},
 				{
 					name: 'emailSubject',
-					type: 'string',
-				},
-				{
-					title: 'Form Failure Notification Email',
-					name: 'formFailureNotificationEmail',
-					description:
-						'A failure notification is sent when the form fails to submit. The notification includes all information that users have submitted. Use comma to separate emails.',
 					type: 'string',
 				},
 			],

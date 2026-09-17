@@ -1,10 +1,13 @@
 import { LinkObject } from '@/sanity/schemaTypes/components/LinkObject';
 import { LinkIcon, MasterDetailIcon, WarningOutlineIcon } from '@sanity/icons';
+import { pickLocalizedValue } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 import { defineField, defineType } from 'sanity';
-import { pickLocalizedValue } from '@/lib/i18n';
 
-type LinkFactoryArgs = {
+// Exported: `call-to-action.ts` builds a factory with the identical option bag
+// and the two are coupled by design (a callToAction emits a `type: 'link'`
+// field), so an option added here has to reach there too.
+export type LinkFactoryArgs = {
 	title?: string;
 	name?: string;
 	showLabel?: boolean;
@@ -45,6 +48,12 @@ export function link({
 					{ type: 'pHome' },
 					{ type: 'pGeneral' },
 					{ type: 'pContact' },
+					{ type: 'pSizeGuide' },
+					// pFaq was offered by the Studio link picker but missing here, so
+					// selecting an FAQ page failed reference validation; pNewsletter is
+					// routable and was absent from both.
+					{ type: 'pFaq' },
+					{ type: 'pNewsletter' },
 					{ type: 'pProductIndex' },
 					{ type: 'pProduct' },
 					{ type: 'pProductCategory' },

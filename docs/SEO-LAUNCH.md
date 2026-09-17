@@ -15,8 +15,15 @@ cited once it's deployed, filled with content, and indexed. Work through this li
 - [ ] Deploy to the live domain.
 - [ ] Set `SITE_URL` to the canonical production URL (e.g. `https://www.blackwaterrc.com`).
       Canonical tags, `sitemap_index.xml`, `robots.txt`, and all JSON-LD use it.
+- [ ] Confirm `SITE_URL`'s host is the host the site actually serves on — apex vs `www`
+      matters. A sitemap index whose children are on another host is accepted by Search
+      Console and then yields zero discovered URLs, with no error shown.
 - [ ] Confirm `https://<domain>/robots.txt` lists the AI crawler rules + the sitemap line.
 - [ ] Confirm `https://<domain>/sitemap_index.xml` and its child sitemaps load.
+- [ ] `curl -sI https://<domain>/sitemap.xml` → `200` + `content-type: application/xml`,
+      **no** `location` header. It is a rewrite, not a redirect (next.config.mjs), and a
+      config edit can revert that silently. Use `curl`, not a browser: this path served a
+      *permanent* 308 until 2026-09-15 and browsers cache those hard.
 
 ## 2. Enter content in Sanity Studio (empty fields = nothing to match)
 
@@ -43,7 +50,9 @@ cited once it's deployed, filled with content, and indexed. Work through this li
 ## 4. Google Search Console (accelerates indexing — the real gate)
 
 - [ ] Add + verify the domain property.
-- [ ] Submit `sitemap_index.xml`.
+- [ ] Submit `sitemap_index.xml` — the canonical one, and the one `robots.txt` declares.
+      Do **not** also submit `/sitemap.xml`; it is an alias serving the same index, and
+      submitting both splits per-sitemap coverage across duplicate rows.
 - [ ] "Request indexing" for the homepage + key pages (URL Inspection).
 - [ ] After a few days, check **Pages** (indexed status) and **Enhancements** (FAQ, Breadcrumb,
       Events rich-result reports).

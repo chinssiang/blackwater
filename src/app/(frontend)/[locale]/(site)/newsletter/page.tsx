@@ -1,9 +1,9 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageNewsletterQuery } from '@/sanity/lib/queries';
+import { stegaClean } from '@sanity/client/stega';
 import defineMetadata, { normalizeLocales } from '@/lib/defineMetadata';
 import { type Locale } from '@/lib/i18n';
 import { PageNewsletter } from './_components/PageNewsletter';
@@ -34,7 +34,8 @@ export default async function Page(props: Props) {
 	const { data } = await getCachedNewsletterData(locale);
 
 	const { sharing } = data || {};
-	if (!data || sharing?.disableIndex === true) return <NotFoundContent locale={locale} />;
+	if (!data || sharing?.disableIndex === true)
+		return <NotFoundContent locale={locale} />;
 
 	return <PageNewsletter data={data} />;
 }

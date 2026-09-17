@@ -34,7 +34,8 @@ function isI18nItem(item: unknown): item is Record<string, unknown> {
 function walk(node: unknown, path: string, patches: NodePatch[]): void {
 	if (Array.isArray(node)) {
 		node.forEach((item, i) => {
-			const key = isRecord(item) && typeof item._key === 'string' ? item._key : undefined;
+			const key =
+				isRecord(item) && typeof item._key === 'string' ? item._key : undefined;
 			const itemPath = key ? `${path}[_key=="${key}"]` : `${path}[${i}]`;
 			if (isI18nItem(item)) {
 				patches.push(at(`${itemPath}.language`, set(item._key as string)));

@@ -4,11 +4,11 @@ import type { SettingsMenu } from 'sanity.types';
 
 export function ToolBar({ menu }: { menu: SettingsMenu }) {
 	return (
-		<motion.nav className="bg-background/85 backdrop-blur-xs text-foreground px-contain lg:hidden fixed bottom-0 w-full h-g-toolbar border-t border-t-foreground/36 z-g-toolbar">
+		<motion.nav className="bg-background/85 text-foreground px-contain h-g-toolbar border-t-foreground/36 z-g-toolbar fixed bottom-0 w-full border-t backdrop-blur-xs lg:hidden">
 			{menu && (
 				<Menu
 					data={menu}
-					className="flex items-center t-b-2 gap-2.5 select-none uppercase justify-between [&_a]:w-full [&_a]:leading-g-toolbar [&_a]:h-g-toolbar [&_li]:text-center [&_li]:flex-1 [&_li:first-child]:text-left [&_li:last-child]:text-right"
+					className="t-b-2 [&_a]:leading-g-toolbar [&_a]:h-g-toolbar flex items-center justify-between gap-2.5 uppercase select-none [&_a]:w-full [&_li]:flex-1 [&_li]:text-center [&_li:first-child]:text-left [&_li:last-child]:text-right"
 				/>
 			)}
 		</motion.nav>

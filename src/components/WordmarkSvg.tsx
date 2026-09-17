@@ -1,4 +1,5 @@
 import { cn } from '@/lib/utils';
+
 type WordmarkSvgProps = {
 	className?: string;
 };

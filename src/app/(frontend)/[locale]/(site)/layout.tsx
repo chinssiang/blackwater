@@ -1,5 +1,6 @@
+import { getCachedSiteData, pickLayoutData } from '@/sanity/lib/siteData';
+import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
 import { Layout } from '@/components/layout';
-import { getCachedSiteData } from '@/sanity/lib/siteData';
 
 // The site chrome (Header, Newsletter, Footer, ToolBar). Lives in a route group
 // so that [locale]/not-found.tsx — which sits outside (site) — renders without
@@ -13,6 +14,11 @@ export default async function SiteLayout({
 	params: Promise<{ locale: string }>;
 }) {
 	const { locale } = await params;
-	const { data } = await getCachedSiteData(locale);
-	return <Layout siteData={data}>{children}</Layout>;
+	// Narrowed rather than cast: the segment is a URL string, and the tag
+	// `locale:<locale>` it keys is now type-checked, so an unrecognised value
+	// must resolve to a real locale instead of minting a bogus cache tag.
+	const { data } = await getCachedSiteData(
+		isLocale(locale) ? locale : DEFAULT_LOCALE
+	);
+	return <Layout siteData={pickLayoutData(data)}>{children}</Layout>;
 }

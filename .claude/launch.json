@@ -1,11 +1,17 @@
 {
-  "version": "0.0.1",
-  "configurations": [
-    {
-      "name": "blackwater-dev",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
-      "port": 3001
-    }
-  ]
+	"version": "0.0.1",
+	"configurations": [
+		{
+			"name": "blackwater-dev",
+			"runtimeExecutable": "npm",
+			"runtimeArgs": ["run", "dev"],
+			"port": 3001
+		},
+		{
+			"name": "blackwater-prod",
+			"runtimeExecutable": "npx",
+			"runtimeArgs": ["next", "start", "--port=3002"],
+			"port": 3002
+		}
+	]
 }

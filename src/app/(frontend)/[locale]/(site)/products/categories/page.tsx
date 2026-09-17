@@ -1,14 +1,14 @@
+import { cache } from 'react';
 import type { Metadata } from 'next';
 import { NotFoundContent } from '@/app/(frontend)/[locale]/_components/NotFoundContent';
-import { cache } from 'react';
-import { stegaClean } from '@sanity/client/stega';
-import { type Locale, LOCALES } from '@/lib/i18n';
 import { sanityFetch } from '@/sanity/lib/live';
 import { pageProductCategoriesIndexQuery } from '@/sanity/lib/queries';
-import defineMetadata from '@/lib/defineMetadata';
+import { stegaClean } from '@sanity/client/stega';
 import defineBreadcrumbJsonLd from '@/lib/defineBreadcrumbJsonLd';
-import { resolveHref } from '@/lib/routes';
+import defineMetadata, { omitPageMetadata } from '@/lib/defineMetadata';
 import { getDictionary } from '@/lib/dictionary.server';
+import { LOCALES, type Locale } from '@/lib/i18n';
+import { resolveHref } from '@/lib/routes';
 import JsonLd from '@/components/JsonLd';
 import { PageProductCategoriesIndex } from './_components/PageProductCategoriesIndex';
 
@@ -26,8 +26,11 @@ export async function generateMetadata({
 	params: Promise<{ locale: Locale }>;
 }): Promise<Metadata> {
 	const { locale } = await params;
-	const dict = await getDictionary(locale);
-	const { data } = await getCachedData(locale);
+	// Same reasoning as the page component below: independent, so don't serialize.
+	const [dict, { data }] = await Promise.all([
+		getDictionary(locale),
+		getCachedData(locale),
+	]);
 	const clean = stegaClean(data);
 	return defineMetadata({
 		data: {
@@ -43,23 +46,40 @@ export async function generateMetadata({
 	});
 }
 
-export default async function Page({ params }: { params: Promise<{ locale: Locale }> }) {
+export default async function Page({
+	params,
+}: {
+	params: Promise<{ locale: Locale }>;
+}) {
 	const { locale } = await params;
-	const { data } = await getCachedData(locale);
+	// Independent: the index document is a Sanity round trip, the dictionary a
+	// local import. Awaited in sequence the dictionary sat behind the network
+	// call for no reason — same shape as the sibling product routes.
+	const [{ data }, dict] = await Promise.all([
+		getCachedData(locale),
+		getDictionary(locale),
+	]);
 
 	if (!data) return <NotFoundContent locale={locale} />;
-
-	const dict = await getDictionary(locale);
 	const breadcrumbJsonLd = defineBreadcrumbJsonLd([
-		{ name: dict.breadcrumb.home, path: resolveHref({ documentType: 'pHome', locale }) },
-		{ name: dict.breadcrumb.products, path: resolveHref({ documentType: 'pProductIndex', locale }) },
-		{ name: dict.products.categoriesTitle, path: resolveHref({ documentType: 'pProductCategoriesIndex', locale }) },
+		{
+			name: dict.breadcrumb.home,
+			path: resolveHref({ documentType: 'pHome', locale }),
+		},
+		{
+			name: dict.breadcrumb.products,
+			path: resolveHref({ documentType: 'pProductIndex', locale }),
+		},
+		{
+			name: dict.products.categoriesTitle,
+			path: resolveHref({ documentType: 'pProductCategoriesIndex', locale }),
+		},
 	]);
 
 	return (
 		<>
 			{breadcrumbJsonLd && <JsonLd data={breadcrumbJsonLd} />}
-			<PageProductCategoriesIndex data={data} />
+			<PageProductCategoriesIndex data={omitPageMetadata(data)} />
 		</>
 	);
 }

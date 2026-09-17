@@ -1,23 +1,21 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
-import { Controller, useForm, type Control } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { type Control, Controller, useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { cn, isValidUrl } from '@/lib/utils';
-import useWindowDimensions from '@/hooks/useWindowDimensions';
-import { Button } from '@/components/ui/Button';
-import { Input } from '@/components/ui/Input';
-import { Spinner } from '@/components/ui/Spinner';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import {
-	Field,
-	FieldContent,
-	FieldGroup,
-	FieldLabel,
-	FieldStatus,
-} from '@/components/ui/Field';
+	Popover,
+	PopoverContent,
+	PopoverDescription,
+	PopoverHeader,
+	PopoverTitle,
+	PopoverTrigger,
+} from '@/components/Popover';
+import { Button } from '@/components/ui/Button';
 import {
 	Dialog,
 	DialogContent,
@@ -27,13 +25,15 @@ import {
 	DialogTrigger,
 } from '@/components/ui/Dialog';
 import {
-	Popover,
-	PopoverContent,
-	PopoverDescription,
-	PopoverHeader,
-	PopoverTitle,
-	PopoverTrigger,
-} from '@/components/Popover';
+	Field,
+	FieldContent,
+	FieldGroup,
+	FieldLabel,
+	FieldStatus,
+} from '@/components/ui/Field';
+import { Input } from '@/components/ui/Input';
+import { Spinner } from '@/components/ui/Spinner';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 
 type FormState = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -47,9 +47,9 @@ type FormValues = {
 // the auto-prepended protocol) so over-long pastes can't pass client
 // validation only to get a generic 400 from the server.
 const FIELDS = [
-	{ name: 'name', type: 'text', maxLength: 200 },
-	{ name: 'email', type: 'email', maxLength: 320 },
-	{ name: 'productUrl', type: 'text', maxLength: 1990 },
+	{ name: 'name', type: 'text', maxLength: 200, autoComplete: 'name' },
+	{ name: 'email', type: 'email', maxLength: 320, autoComplete: 'email' },
+	{ name: 'productUrl', type: 'text', maxLength: 1990, autoComplete: 'url' },
 ] as const;
 
 // Animated paper-plane shown inside the success panel: the plane lifts off
@@ -57,7 +57,7 @@ const FIELDS = [
 // the submission was sent. Falls back to a static icon when motion is reduced.
 function SuccessSend({ reduce }: { reduce: boolean }) {
 	return (
-		<span className="grid size-12 place-items-center overflow-hidden rounded-full text-foreground">
+		<span className="text-foreground grid size-12 place-items-center overflow-hidden rounded-full">
 			<motion.svg
 				viewBox="0 0 24 24"
 				fill="none"
@@ -106,6 +106,7 @@ function ProductField({
 	name,
 	type,
 	maxLength,
+	autoComplete,
 	control,
 	label,
 	placeholder,
@@ -113,6 +114,7 @@ function ProductField({
 	name: keyof FormValues;
 	type: 'text' | 'email';
 	maxLength: number;
+	autoComplete: string;
 	control: Control<FormValues>;
 	label: string;
 	placeholder: string;
@@ -134,6 +136,10 @@ function ProductField({
 								id={id}
 								type={type}
 								maxLength={maxLength}
+								autoComplete={autoComplete}
+								spellCheck={
+									type === 'email' || name === 'productUrl' ? false : undefined
+								}
 								inputMode={name === 'productUrl' ? 'url' : undefined}
 								placeholder={placeholder}
 								aria-invalid={fieldState.invalid}
@@ -144,11 +150,7 @@ function ProductField({
 									setIsFocused(false);
 								}}
 							/>
-							<FieldStatus
-								fieldState={fieldState}
-								isFocused={isFocused}
-								isShowErrorOnFocus
-							/>
+							<FieldStatus fieldState={fieldState} isFocused={isFocused} />
 						</div>
 					</FieldContent>
 				</Field>
@@ -165,15 +167,17 @@ export function ProductSubmission() {
 	const [formState, setFormState] = useState<FormState>('idle');
 	const showSuccess = formState === 'success';
 
-	// `useWindowDimensions` returns the real width on the client's first render
-	// but 0 on the server, so gate the container choice behind a mount flag:
-	// server + first client render use the Popover branch (matching markup, no
-	// hydration mismatch), then we switch to the mobile Dialog after mount. The
-	// closed trigger is identical in both, so the swap is invisible.
-	const [mounted, setMounted] = useState(false);
-	useEffect(() => setMounted(true), []);
-	const { isDesktop } = useWindowDimensions();
-	const useMobileDialog = mounted && !isDesktop;
+	// One subscription instead of a mount flag plus a width. `useMediaQuery`'s
+	// server snapshot is `false`, so the prerender and the first client render
+	// both take the Popover branch (matching markup, no hydration mismatch) and
+	// the mobile Dialog swaps in after hydration. The closed trigger is identical
+	// in both, so the swap is invisible.
+	//
+	// The query is phrased as max-width deliberately: the false-on-server branch
+	// has to be the one that is correct with no JS, so it must be the Popover.
+	// Written in rem because Tailwind v4's breakpoints are rem-based — `64rem` is
+	// `lg`, so this and any `lg:` rule agree at a non-16px root font size.
+	const useMobileDialog = useMediaQuery('(max-width: 63.999rem)');
 
 	const resolver = useMemo(
 		() =>
@@ -263,7 +267,11 @@ export function ProductSubmission() {
 			size="icon-lg"
 			aria-label={t.triggerLabel}
 			className={cn(
-				'pointer-events-auto relative size-12 border-0 bg-transparent text-white',
+				// bg-transparent: the SVG rect below paints this button, animating its
+				// corner radius. Any background on the button itself shows through at
+				// the corners while that spring runs, and destroys the rect's
+				// deliberate fill-primary/95 translucency.
+				'pointer-events-auto relative size-12 border-0 bg-transparent text-white hover:opacity-90',
 				showSuccess ? 'rounded-full' : 'rounded-xl'
 			)}
 		>
@@ -369,12 +377,13 @@ export function ProductSubmission() {
 		</Button>
 	);
 
-	const fields = FIELDS.map(({ name, type, maxLength }) => (
+	const fields = FIELDS.map(({ name, type, maxLength, autoComplete }) => (
 		<ProductField
 			key={name}
 			name={name}
 			type={type}
 			maxLength={maxLength}
+			autoComplete={autoComplete}
 			control={form.control}
 			label={t.fields[name].label}
 			placeholder={t.fields[name].placeholder}
@@ -419,7 +428,7 @@ export function ProductSubmission() {
 	if (useMobileDialog) {
 		return (
 			<Dialog open={open} onOpenChange={handleOpenChange}>
-				<DialogTrigger asChild>{fab}</DialogTrigger>
+				<DialogTrigger render={fab} />
 				<DialogContent className="max-h-[85svh] gap-3 overflow-y-auto rounded-xl p-4">
 					<DialogHeader className="pr-8 text-left">
 						<DialogTitle>{t.title}</DialogTitle>
@@ -444,13 +453,13 @@ export function ProductSubmission() {
 	// Desktop: keep the FAB + popover anchored to the trigger.
 	return (
 		<Popover open={open} onOpenChange={handleOpenChange}>
-			<PopoverTrigger asChild>{fab}</PopoverTrigger>
+			<PopoverTrigger render={fab} />
 			<PopoverContent
 				side="top"
 				align="end"
 				sideOffset={8}
 				collisionPadding={12}
-				className="z-popover w-80 max-h-(--radix-popover-content-available-height) gap-3 overflow-y-auto p-4"
+				className="max-h-(--available-height) w-80 gap-3 overflow-y-auto p-4"
 			>
 				<PopoverHeader>
 					<PopoverTitle>{t.title}</PopoverTitle>
