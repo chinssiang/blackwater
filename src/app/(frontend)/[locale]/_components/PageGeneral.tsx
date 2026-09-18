@@ -53,12 +53,12 @@ export default async function PageGeneral({ data, locale }: PageGeneralProps) {
 				</div>
 			</section>
 
-			{pageModules?.map((module) => (
+			{pageModules?.map((module, index) => (
 				<PageModules
 					key={module._key}
 					module={module}
 					locale={locale}
-					// No headingLevel: the page title above already owns this page's h1.
+					isPageOpener={index === 0}
 					ownsWeatherWidget={!!widgetHeroKey && module._key === widgetHeroKey}
 				/>
 			))}

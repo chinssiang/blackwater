@@ -50,8 +50,6 @@ export function Footer({ data }: { data: FooterProps }) {
 								<li key={item?._key ?? i}>
 									<CustomLink
 										link={item?.link}
-										// py-1.5: `t-l-1` is 12px/1, so the row was a 12px
-										// tap target against the 24px minimum.
 										className="text-foreground hover:text-foreground/80 t-l-1 flex gap-3 py-1.5 uppercase transition-colors md:gap-10"
 									>
 										<NumberPrefix>
@@ -64,7 +62,7 @@ export function Footer({ data }: { data: FooterProps }) {
 							{col === menus!.length - 1 && (
 								<li>
 									<ManageCookiesButton
-										className="hover:text-foreground/80 text-foreground flex gap-3 md:gap-10"
+										className="hover:text-foreground/80 text-foreground flex gap-3 py-1.5 md:gap-10"
 										prefix={
 											<NumberPrefix>
 												{col + 1}.{(menu?.items?.length ?? 0) + 1}
@@ -78,8 +76,6 @@ export function Footer({ data }: { data: FooterProps }) {
 				</nav>
 			)}
 			<div className="mt-20 flex flex-col items-start justify-between gap-4 md:flex-row lg:mt-62">
-				{/* The wordmark is the only content, so the link needs its own
-				    accessible name — an <svg> of bare <path>s exposes none. */}
 				<Link href="/" aria-label={siteTitle ? `${siteTitle} — home` : 'Home'}>
 					<WordmarkSvg className="h-3 w-auto" />
 				</Link>

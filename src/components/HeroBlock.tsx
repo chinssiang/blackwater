@@ -49,6 +49,13 @@ type HeroBlockProps = {
 	 * why this is ownership rather than position.
 	 */
 	ownsWeatherWidget?: boolean;
+	/**
+	 * Whether this hero is the page's FIRST module, i.e. the thing a visitor sees
+	 * on the first paint. Decided by position in the page component, like
+	 * `headingLevel` and unlike `ownsWeatherWidget` — see the note on the heading
+	 * below for why the heading level cannot stand in for it.
+	 */
+	isPageOpener?: boolean;
 	className?: string;
 };
 
@@ -91,6 +98,7 @@ export default function HeroBlock({
 	data,
 	headingLevel = 'h2',
 	ownsWeatherWidget = false,
+	isPageOpener = false,
 	className,
 }: HeroBlockProps) {
 	const {
@@ -194,9 +202,38 @@ export default function HeroBlock({
 				)}
 
 				{hasHeading && (
+					// A hero that OPENS the page carries no `reveal`, and that is
+					// load-bearing: its heading is the largest thing in the first
+					// viewport, so it is the LCP element, and `reveal` starts it at
+					// `opacity: 0` through @starting-style. Chrome does not accept a
+					// fully transparent element as an LCP candidate, so the entrance
+					// animation was deferring the measurement itself -- see the note in
+					// layout/index.tsx, which exempts the first paint from
+					// `animate-page-in` for the same reason and is the other half of
+					// this fix. A hero further down the page is below the fold on the
+					// first paint, so it keeps its entrance.
+					//
+					// Gated on `isPageOpener` (position), NOT on `headingLevel`. Those
+					// look interchangeable and are not: PageGeneral renders the page
+					// title as its own <h1> and passes no level, so every one of its
+					// modules sits at the 'h2' default -- while this component renders
+					// the heading at `t-h-1` whatever the tag, i.e. far larger than
+					// PageGeneral's `t-b-1` title. Keying on the tag therefore left a
+					// heroBlock in slot 0 of any /[slug] page as an LCP element that
+					// still faded in, which is the exact condition this exists to
+					// remove.
+					//
+					// Do NOT substitute a `transition-*`/`duration-*` utility here to
+					// "keep some motion": `reveal` sets the transition shorthand from
+					// @layer utilities, and a Tailwind transition utility at equal
+					// specificity rewrites transition-property and kills the entrance
+					// silently (CLAUDE.md, page architecture).
 					<Heading
-						className="t-h-1 reveal text-balance uppercase"
-						style={revealStagger(1)}
+						className={cn(
+							't-h-1 text-balance uppercase',
+							!isPageOpener && 'reveal'
+						)}
+						style={isPageOpener ? undefined : revealStagger(1)}
 					>
 						{heading}
 					</Heading>

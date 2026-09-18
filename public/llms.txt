@@ -1,0 +1,19 @@
+# Blackwater RC
+
+> Blackwater RC is a Taipei-based running club built on the foundation of movement — running as a total system that integrates mind, body, and energy. The site covers the club's events, its crew, and its apparel.
+
+The site is published in English (unprefixed paths) and Traditional Chinese (`/zh_tw/...`). Every page below exists in both; prefix a path with `/zh_tw` for the Chinese version.
+
+## Main
+
+- [Home](https://www.blackwaterrc.com/): the club, its current season, and upcoming sessions.
+- [Events](https://www.blackwaterrc.com/events): every upcoming and past run, race and session, as a list or a month calendar. Individual events live at `/events/<slug>`.
+- [Products](https://www.blackwaterrc.com/products): the club's apparel and gear. Individual products live at `/products/<slug>`; browse by [category](https://www.blackwaterrc.com/products/categories) or [collection](https://www.blackwaterrc.com/products/collections).
+- [Contact](https://www.blackwaterrc.com/contact): how to reach the club.
+- [Newsletter](https://www.blackwaterrc.com/newsletter): sign up for club announcements.
+
+## Reference
+
+- [FAQ](https://www.blackwaterrc.com/faq): common questions about the club, its sessions and its orders.
+- [Size guide](https://www.blackwaterrc.com/size-guide): garment measurements for the apparel, in cm and inches.
+- [Sitemap index](https://www.blackwaterrc.com/sitemap_index.xml): the canonical sitemap, listing the pages, events and products sitemaps.

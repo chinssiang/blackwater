@@ -606,36 +606,6 @@
 }
 
 @layer components {
-	/* LINE HEIGHT IS A ROLE, NOT A CONSTANT. Every token below used to be
-	   `line-height: 1`, which is a tight-but-defensible display setting on a
-	   heading and a readability failure on anything that wraps: at 1 the
-	   descenders of one line sit on the ascenders of the next. It cost twelve
-	   independent call-site patches at five different values -- `leading-5`,
-	   `leading-[1.4]` twice, `leading-relaxed` four times, `[&_p]:leading-[125%]`
-	   and `leading-snug` four times -- so body prose had five leadings depending
-	   on which page you were on. The value lives here once per role now:
-
-	     prose that wraps (b1, b2, .wysiwyg p)        1.5
-	     labels and metadata (l0, l1, l2, spec)       1.2 - 1.3
-	     headings (h1, h2, h3)                        1.1 - 1.2
-
-	   1.5 is the figure WCAG 1.4.8 asks for within a paragraph and the value
-	   1.4.12 (Text Spacing, AA) expects content to survive a user forcing.
-
-	   A `leading-*` utility still beats these rules, which is the escape hatch --
-	   but of the twelve patches only ProductCard's EXCERPT survives (not its
-	   title, which carries no leading utility), where the leading sets the
-	   reserved height of a `line-clamp-2 min-h-[2lh]` card in a grid rather
-	   than the readability of a paragraph. Header and ToolBar set
-	   `[&_a]:leading-header` on their nav links, which is chrome-height
-	   centring, not type. Anything else is a sign this table is wrong.
-
-	   FONT SIZE is the one property a call site can no longer take by accident:
-	   `cn()` registers these nine class names with tailwind-merge so a `t-*`
-	   deletes an earlier `text-sm`. The reasoning lives with the config in
-	   `src/lib/utils.ts`; adding a rung here means adding it there too, and
-	   `src/lib/type-scale.test.ts` fails if the two disagree. */
-
 	.t-h-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
@@ -648,11 +618,6 @@
 		font-family: var(--font-default);
 		font-weight: 500;
 		font-size: var(--t-size-h2);
-		/* Was 0.9, then 1. A line box shorter than the type clips ascenders the
-		   moment a heading wraps, and this token now carries every page-module
-		   section heading (SectionShell), which wraps far more often than the two
-		   single-line call sites it had before. 1 did not actually clear them at
-		   -0.02em on this face; 1.15 does and is still tight. */
 		line-height: 1.15;
 		letter-spacing: -0.02em;
 	}
@@ -683,14 +648,6 @@
 		letter-spacing: -0.02em;
 	}
 
-	/* Uppercase metadata one rung above `.t-l-1`: event location, date and
-	   start/finish values, the events sticky-bar month, the crew kicker. In the
-	   label family, not the heading family -- these are values and labels, and
-	   they sat on `.t-h-3` only because 482c1e5 renamed a six-level scale down
-	   into three names.
-
-	   Lands on the same 16->17px as `.wysiwyg h4` and deliberately keeps its own
-	   clamp; that rule carries the reasoning. */
 	.t-l-0 {
 		font-family: var(--font-default);
 		font-weight: 500;
@@ -699,18 +656,12 @@
 		letter-spacing: -0.02em;
 	}
 
-	/* `.t-l-1` and `.t-l-2` are set in caps at most call sites (13 of 21 and 32
-	   of 43), and caps carry no ascenders or descenders for the eye to read word
-	   shape from -- they read letter by letter, so they need room between the
-	   letters. Both tracked NEGATIVE until now, which is the display-heading
-	   setting applied to the two rungs it hurts most. They open up toward
-	   `.t-spec`'s existing +0.04em instead. */
 	.t-l-1 {
 		font-family: var(--font-default);
 		font-weight: 500;
 		font-size: clamp(0.75rem, 0.7286rem + 0.093vw, 0.8125rem);
 		line-height: 1.25;
-		letter-spacing: 0.02em;
+		letter-spacing: -0.04em;
 	}
 
 	.t-l-2 {
@@ -718,19 +669,15 @@
 		font-weight: 500;
 		font-size: clamp(0.6875rem, 0.6661rem + 0.093vw, 0.75rem);
 		line-height: 1.3;
-		letter-spacing: 0.04em;
+		letter-spacing: -0.04em;
 	}
 
-	/* Spec voice: the typewriter face used for curated metadata (prices,
-	   index numerals, brand/category data). Reads as a counter-voice against
-	   the display caps. Shares `.t-l-2`'s rung by pixels but not by var -- see
-	   the ladder comment in :root. */
 	.t-spec {
 		font-family: var(--font-feature);
 		font-weight: 500;
 		font-size: clamp(0.6875rem, 0.6661rem + 0.093vw, 0.75rem);
 		line-height: 1.25;
-		letter-spacing: 0.04em;
+		letter-spacing: -0.04em;
 	}
 }
 

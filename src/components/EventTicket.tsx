@@ -139,7 +139,15 @@ export function EventTicket({
 					// `items-start` + flex, not an inline icon: the venue wraps to two
 					// lines on the narrow mobile card, and this keeps the pin on the
 					// first line with the text hanging beside it rather than under it.
-					<p className="t-spec flex items-start gap-1.5 uppercase">
+					// `wrap-anywhere` is required by the `min-w-6` below, not cosmetic:
+					// that utility replaces the flex item's default `min-width: auto`
+					// (= min-content) floor, so without a break opportunity a venue name
+					// containing one long unbreakable token shrinks its link box below
+					// the text it renders — measured at 320px, a 186px box around 296px
+					// of text, leaving most of the visible words outside their own tap
+					// target and painting past the card. The category <p> above already
+					// wraps this way for the same class of name.
+					<p className="t-spec flex items-start gap-1.5 uppercase wrap-anywhere">
 						<MapPin className="mt-px size-3 shrink-0" aria-hidden />
 						{displayLocationLink ? (
 							<a
@@ -148,8 +156,25 @@ export function EventTicket({
 								rel="noopener noreferrer"
 								// Above the ticket's stretched link (z-10) so the map link
 								// stays individually clickable.
+								//
+								// `py-1.5 -my-1.5 min-w-6` is the tap target, not styling.
+								// `.t-spec` is an 11-12px rung at line-height 1.25, so the
+								// bare text box was ~13.8px tall and WCAG 2.5.8 wants 24x24
+								// (Lighthouse `target-size` failed on exactly this element).
+								// The padding takes the height to ~25.8px and the equal
+								// negative margin gives the space back, so the pin alignment,
+								// the two-line wrap and the `space-y-2.5` gap to the status
+								// pills are all unchanged -- only the hit box grows, downward,
+								// into area the ticket's own stretched link would otherwise
+								// have had.
+								//
+								// The WIDTH needs `min-w-6` rather than matching `px`/`-mx`:
+								// a short CJK venue name renders a 21px-wide link, and
+								// `-mx-1.5` would cancel the `gap-1.5` to the pin and sit the
+								// text against the icon. A min-width only raises the floor, so
+								// it is inert for every name long enough to pass already.
 								className={cn(
-									'hover:text-foreground/60 relative z-10 rounded transition-[color,box-shadow]',
+									'hover:text-foreground/60 relative z-10 -my-1.5 min-w-6 rounded py-1.5 transition-[color,box-shadow]',
 									INLINE_LINK_FOCUS
 								)}
 							>

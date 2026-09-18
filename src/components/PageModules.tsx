@@ -22,14 +22,6 @@ type PageModulesProps = {
 	// they need the locale as a prop rather than through LocaleProvider's client
 	// context. Passed down from PageHome/PageGeneral.
 	locale: Locale;
-	/**
-	 * The tag for the module's own heading. The homepage passes 'h1' for slot 0,
-	 * because nothing above it claims the page's heading; PageGeneral leaves it
-	 * alone, since it renders the page title as an h1 itself. Threaded to every
-	 * type that renders a heading, not just heroBlock -- slot 0 is decided by
-	 * POSITION, and hidden modules are filtered in GROQ, so any type can end up
-	 * there.
-	 */
 	headingLevel?: 'h1' | 'h2';
 	/**
 	 * Whether this module owns the page's single weather widget. Decided by the
@@ -45,6 +37,18 @@ type PageModulesProps = {
 	 * its modules at the 'h2' default.
 	 */
 	ownsWeatherWidget?: boolean;
+	/**
+	 * Whether this is the page's FIRST module — what a visitor sees on the first
+	 * paint, and so where the LCP element lives. Only heroBlock reads it, to drop
+	 * the entrance fade from a heading Chrome is about to measure.
+	 *
+	 * Deliberately separate from `headingLevel`, which looks like the same fact
+	 * and is not: PageGeneral renders its own <h1> and passes no level, so every
+	 * one of its modules sits at the 'h2' default while still being able to open
+	 * the page. Also separate from `ownsWeatherWidget`, which is ownership rather
+	 * than position for the reason above.
+	 */
+	isPageOpener?: boolean;
 };
 
 export default function PageModules({
@@ -52,6 +56,7 @@ export default function PageModules({
 	locale,
 	headingLevel,
 	ownsWeatherWidget,
+	isPageOpener,
 }: PageModulesProps) {
 	const type = module._type;
 
@@ -77,6 +82,7 @@ export default function PageModules({
 					data={module}
 					headingLevel={headingLevel}
 					ownsWeatherWidget={ownsWeatherWidget}
+					isPageOpener={isPageOpener}
 				/>
 			);
 

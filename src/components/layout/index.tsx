@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useLayoutEffect, useMemo } from 'react';
+import React, { useLayoutEffect, useMemo, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import type { LayoutData } from '@/sanity/lib/siteData';
 import { shouldHideGlobalNewsletter } from '@/lib/routes';
@@ -27,6 +27,27 @@ export function Layout({ children, siteData }: LayoutProps) {
 		siteData || {};
 	const pathname = usePathname();
 	const hideNewsletter = shouldHideGlobalNewsletter(pathname);
+
+	// The page-navigation fade is applied from the SECOND route onward only, so
+	// the first paint carries no `animate-page-in`. That rule starts <main> --
+	// the whole page -- at `opacity: 0` via @starting-style, and Chrome does not
+	// record an LCP candidate for a fully transparent element: measured on
+	// production, it held the hero <h1> ineligible for ~480ms past FCP, which in
+	// turn pulled the entire ~620KB script graph onto Lighthouse's simulated LCP
+	// critical path (4.4s simulated against a 505ms observed LCP).
+	//
+	// Absence of the class is the FINAL state, so the prerendered HTML is already
+	// correct with no JS and nothing is corrected after hydration -- the class is
+	// only ever added later, on a navigation that by definition has JS.
+	//
+	// Latched during render rather than in an effect: <Main key={pathname}>
+	// remounts in the same render as the pathname change, so an effect would set
+	// the flag after @starting-style had already resolved without the class and
+	// the first navigation would not fade. Latched rather than compared, so
+	// navigating BACK to the entry route still fades.
+	const [entryPathname] = useState(pathname);
+	const [hasNavigated, setHasNavigated] = useState(false);
+	if (!hasNavigated && pathname !== entryPathname) setHasNavigated(true);
 	// SPA pageview tracking lives in HeadTrackingCode — the one component
 	// allowed to talk to gtag, so it stays behind the consent gate.
 
@@ -69,7 +90,10 @@ export function Layout({ children, siteData }: LayoutProps) {
 					<AdaSkip />
 					<GlobalProgressBar />
 					<Header data={headerData} />
-					<Main key={pathname} className="animate-page-in">
+					<Main
+						key={pathname}
+						className={hasNavigated ? 'animate-page-in' : undefined}
+					>
 						{children}
 						{!hideNewsletter && (
 							<div data-hide-on-404 className="border-foreground/36 border-t">
