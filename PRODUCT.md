@@ -15,16 +15,21 @@ community. They are choosing whether to show up, not completing a transaction.
 ## Product Purpose
 
 Blackwater RC (台北跑團) is a Taipei-based running club. This site is its
-bilingual community hub, not a store:
+bilingual community hub, and its shop:
 
 - an events calendar (weekly group runs, races, socials, and gamified trail "quests"),
-- a curated running-gear guide (club-vetted picks with affiliate "Buy it" links, no cart),
+- the club's apparel and gear — a Shopify-backed store with an on-site cart and
+  Shopify's hosted checkout, presented curatorially rather than as a catalogue.
+  Some entries are still club-vetted picks carrying an affiliate "Buy it" link
+  instead of a cart button; both shapes coexist,
 - newsletter / email capture, and
 - internal crew rostering for event operations.
 
 Success is people finding the club and showing up: strong discoverability (the
 project invests heavily in SEO/AEO and structured data so answer engines can cite
-it) and a growing, returning community. There is no membership paywall, login, or
+it) and a growing, returning community. Commerce serves that, not the reverse —
+the shop is how you wear the club, not the reason the site exists. There is no
+membership paywall and no login; the shopper leaves only at Shopify's hosted
 checkout.
 
 ## Brand Personality
