@@ -148,20 +148,37 @@ deliberate — they are different roles at the same size.
 
 ## Spacing, layout, radius
 
-**Containers** (`@theme inline`): `xs` 300 · `sm` 600 · `md` 900 · `lg` 1024 ·
-`xl` 1200 · `2xl` 1600 · `3xl` 1800 · `max` 2000px. `3xs` and `2xs` are explicitly
-set to `initial` — Tailwind's own values are disabled, so there is no rung below
-300px.
+**Containers**: Tailwind's `--container-*` scale is left at STOCK, and that is
+load-bearing. It used to be rescaled in `@theme inline` (`md` 900px instead of
+448, `lg` 1024 instead of 512, `3xl` 1800 instead of 768) to act as the site's
+layout ladder — but Tailwind v4 resolves `w-*`, `min-w-*`, `max-w-*`, `basis-*`
+and `columns-*` from that one namespace, so every named width in the repo meant
+something other than its name: a shadcn `sm:max-w-lg` dialog rendered at 1024px,
+a `max-w-md` prose column at 900px, and three files had grown hand-written
+workarounds saying so. The section ladder had it worse — `m` and `s` came out
+wider than `l` and `xl`. The site's own ceiling is **`--s-container-max`**
+(2000px), outside that namespace, because it is not a rung. Left at stock the
+named rungs mean what they say, so reach for them — `max-w-md` is 448px,
+`max-w-3xl` 768px, `max-w-7xl` 1280px — and keep an arbitrary value for a width
+no rung expresses rather than for restating one. Only `3xs` and `2xs` are still
+overridden, to `initial`, so there is no rung below `xs`.
 
 **Gutter and rhythm:** `--spacing-contain: max(3vw, 15px)`;
 `--spacing-section: 80px`, 96px at `lg`. Header height is 42px, 52px at `lg`.
 
-**Width and padding helpers** clamp content to the container scale:
-`--width-<step>: min(100vw - 2 * gutter, --container-<step>)` and
-`--padding-<step>: (100vw - --width-<step>) / 2`. The `p-x-*` family
-(`p-x-sm`…`p-x-max`) applies the padding form as `padding-inline`;
-**`m-x-max` is the only margin member** — there is no `m-x-sm`…`m-x-3xl`.
-`SECTION_INSET` (`src/lib/utils.ts`) is `p-x-max`, the site's standard inset.
+**Width and padding helpers** clamp content to the site's ceiling:
+`--width-max: min(100vw - 2 * gutter, --s-container-max)` and
+`--padding-max: (100vw - --width-max) / 2`. **One rung, not seven** — the
+`--width-<step>` twins existed only to feed `p-x-sm`…`p-x-3xl`, all six
+of which had reached zero call sites, and they were the only reason the container
+scale above had to be rescaled at all; utilities and tokens went together.
+`p-x-max` applies the padding form as `padding-inline` and `m-x-max` as
+`margin-inline`; `--width-max` is also read directly (`w-(--width-max)` in
+`WeatherWidget`). `SECTION_INSET` (`src/lib/utils.ts`) is `p-x-max`, the site's
+standard inset **for a page root** — a full-width box centring its content on
+`--s-container-max`. A `<SectionShell>` does not use it; a section's inset is the
+`--section-inset` property instead, because the length depends on whether the
+editor capped the section. See §Sections.
 
 **Header-space utilities** — `pt-header-space-*`, `mt-header-space-*`,
 `top-header-space-*`, `min-h-main-*` — all resolve through `--height-header` and
@@ -188,11 +205,12 @@ z-index is trapped below the events month bar's `z-10`.
 ## Sections
 
 Every page module renders through `<SectionShell>` (`src/components/SectionShell.tsx`),
-the one place a Sanity `sectionAppearance` object becomes classes and styles. Two
+the one place a Sanity `sectionAppearance` object becomes classes and styles. Three
 things there are load-bearing and look like tidy-ups waiting to happen:
 
 - **The authored colours are applied as _token_ overrides, not just `color`/`background-color`.** `globals.css` declares its palette under `@theme inline`, so `text-foreground` compiles to `color: var(--foreground)`, `text-foreground/60` to a `color-mix()` over that same var, and `bg-background` to `background-color: var(--background)` — each read at the element carrying the class. A utility on a descendant therefore always beats a `color` inherited from the section, which is why setting a text colour left `<ProductCard>`'s own `text-foreground` lines untouched and its `bg-background` image frame black. The shell redefines `--foreground`/`--background` (plus `--primary`, `--primary-foreground` and `--accent-foreground`, which in this palette are the same ink one step over — left themed, a `<Badge>` rendered near-white on near-white inside a white section). `--muted`, `--border` and `--ring` stay themed: they are surfaces and edges, not ink. Only what the editor actually set is remapped, so an uncoloured section is unchanged.
 - **Spacing is four CSS custom properties plus the `section-spacing` utility, never generated class names.** Tailwind only emits utilities whose names appear literally in the source, so an interpolated `mt-${n}` never exists — the `SPACING_CLASSES` map this replaced was a stub containing four entries, and all thirty spacing options silently resolved to `null`. The shell writes `--section-pt`/`--section-pb`/`--section-pt-sm`/`--section-pb-sm` as lengths (`value * 0.25rem`, the Tailwind scale step) and the utility reads them, which is also what makes the `sm:` breakpoint reachable from an inline style. Always padding, never margin: a section painting a background needs the space inside its own box.
+- **The horizontal inset is one published custom property, `--section-inset`, not a class.** The shell reads `isFullWidth` off the resolver and writes the property inline on every `<section>`: the centring `var(--padding-max)` — `(100vw − min(100vw − 2×--s-contain, --s-container-max)) / 2` — when the section spans its container, and the flat gutter `var(--s-contain)` when the editor capped it. The centring form belongs only on a full-width box: a capped section is already centred by its own `max-w-*` + `mx-auto`, so the two compound, and at 2560px a 320px section ends up 280px of padding a side around nothing. Below the container ceiling the two lengths are identical, which is why this only shows on very wide viewports. **A property rather than a class because three elements have to agree and only one is the shell's own markup** — a `bleed` section puts no inset on itself, so `EventsCarousel`'s track and nav row carry theirs, and a child cannot read a class on its ancestor. All three resolve `--section-inset`, through two utilities declared in `globals.css` — `p-x-section` (exported as `SECTION_CONTENT_INSET`, on the `<section>`, its bleed heading row and the carousel's nav row) and `p-l-section` (`SECTION_INSET_START`, the leading edge of the carousel track), both falling back to `--padding-max` for a consumer rendered outside a shell. Named utilities rather than `px-[var(--section-inset)]` at each call site, because Tailwind only emits an arbitrary value whose exact class name appears as a literal in the source — one composed from a shared const emits nothing and the inset collapses to zero. The carousel pair used to name `--padding-max` outright and silently stopped agreeing with the heading the moment an editor capped a `bleed` module. Never hand-write an inset onto a section, and never pair `p-x-max` with a `max-w-*` anywhere else. The max-width ladder itself is Tailwind's own rungs — `max-w-7xl`/`5xl`/`3xl`/`xl`/`xs` — and each lands exactly on its `MAX_WIDTH_PX` entry (1280/1024/768/576/320px), which is only true because the `--container-*` scale is left at stock. It was briefly arbitrary values, while the override still made `max-w-3xl` mean 1800px. The two maps are kept in step by hand: nothing ties `max-w-3xl` to 768 in the type system, so `section-appearance.test.ts` pins every class and asserts the ladder ascends. One consequence of naming them — the rungs are rem-based, so at a root font other than 16px the rendered cap scales while `MAX_WIDTH_PX` does not, which skews `ProductsBlock`'s image `sizes` hint and never the layout.
 
 The heading renders as `t-h-2 uppercase`, deliberately not `t-h-3`: `t-h-3` is the
 card-title rung, so a section heading in it was the exact size of the cards it
