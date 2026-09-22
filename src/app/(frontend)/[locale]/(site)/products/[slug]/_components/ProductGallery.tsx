@@ -59,6 +59,11 @@ function GallerySlide({
 			alt={alt}
 			fill
 			sizes="(max-width: 1024px) 100vw, 58vw"
+			// The gallery is the whole reason someone is on this page, and the
+			// default 75 was visibly costing it: a 1080px hero came back as an
+			// 8.8KB AVIF. 85 has to be in `images.qualities` (next.config.mjs) or
+			// Next silently serves the nearest allowed value instead.
+			quality={85}
 			priority={priority}
 			loading={eager ? 'eager' : undefined}
 			className="object-contain"

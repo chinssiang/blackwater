@@ -1,7 +1,11 @@
 'use client';
 
 import { JSX } from 'react';
-import { buildImageSrc } from '@/lib/image-utils';
+import {
+	SANITY_IMAGE_QUALITY,
+	buildSanityImageUrl,
+	resolveRenderedRatio,
+} from '@/lib/image-utils';
 import { cn } from '@/lib/utils';
 import Caption from '@/components/Caption';
 import SanityImage from '@/components/SanityImage';
@@ -22,9 +26,51 @@ interface ImageBlockProps {
 	fill?: 'cover' | 'contain';
 	breakpoint?: number;
 	quality?: number;
-	format?: string;
 	sizes?: string;
 	priority?: boolean;
+}
+
+// Next's default deviceSizes + imageSizes, which next.config.mjs overrides
+// neither of. Restated here because a <source srcSet> is a plain string: it
+// cannot go through next/image's `loader`, so the candidate widths have to be
+// spelled out. Keep in step if the image config ever gains its own lists.
+const CANDIDATE_WIDTHS = [
+	32, 48, 64, 96, 128, 256, 384, 640, 750, 828, 1080, 1200, 1920, 2048, 3840,
+];
+
+/**
+ * A responsive srcSet for a <source>, built through the same Sanity CDN builder
+ * the inner <img> uses.
+ *
+ * Capped at the asset's own width -- and the cap is the last entry, not a filter,
+ * so the widest candidate is the widest that actually exists. That is stricter
+ * than the inner <img> manages: next/image builds its descriptors from the global
+ * width lists with no per-image way to trim them, so it will advertise `3840w` for
+ * a 1080px asset. Here nothing over-promises.
+ *
+ * It does NOT also narrow the list by the smallest vw share in `sizes`, which is
+ * the other half of what next/image's own getWidths does. That rule is a regex
+ * over `sizes` and copying it means copying its blind spot -- a `calc(100vw - 2rem)`
+ * matches nothing and silently falls back to every width -- to save ~1KB of
+ * pre-gzip markup on a branch that currently renders on no page in the site. The
+ * native-width cap already does the part that matters.
+ */
+function buildSrcSet(
+	image: SanityImageData,
+	nativeWidth: number | undefined,
+	quality: number,
+	cropRatio: number | undefined
+): string {
+	const widths = nativeWidth
+		? [...CANDIDATE_WIDTHS.filter((w) => w < nativeWidth), nativeWidth]
+		: CANDIDATE_WIDTHS;
+
+	return widths
+		.map(
+			(w) =>
+				`${buildSanityImageUrl(image, { width: w, quality, cropRatio })} ${w}w`
+		)
+		.join(', ');
 }
 
 function ImageBlock({
@@ -33,8 +79,7 @@ function ImageBlock({
 	className,
 	fill,
 	breakpoint = 768,
-	quality = 75,
-	format = 'webp',
+	quality = SANITY_IMAGE_QUALITY,
 	sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
 	priority = false,
 }: ImageBlockProps): JSX.Element | null {
@@ -56,27 +101,16 @@ function ImageBlock({
 
 	if (!image) return null;
 
-	const { metadata } = image;
-	const { dimensions } = metadata || {};
-	const { width: rawWidth, aspectRatio } = dimensions || {};
-	const width = rawWidth ?? undefined;
-	const height = width
-		? Math.round(width / (customRatio || aspectRatio || 1))
-		: undefined;
-	const src =
-		buildImageSrc(image, { width, height, format: format as any, quality }) ||
-		'';
-
+	// No `fill` prop: SanityImage derives it from the same metadata and the same
+	// customRatio, so passing it here only gave the two a way to disagree.
 	const imageEl = (
 		<SanityImage
 			image={image}
 			alt={alt}
 			customRatio={customRatio}
 			quality={quality}
-			format={format}
 			sizes={sizes}
 			priority={priority}
-			fill={!width || !height}
 			className={className}
 		/>
 	);
@@ -85,39 +119,59 @@ function ImageBlock({
 
 	// `priority` and the <picture> branch are mutually exclusive. A matching
 	// <source> always wins over the inner <img> (the two media queries below
-	// cover every viewport), so the raw full-width cdn.sanity.io srcSet would be
-	// what actually loads — while next/image still emits a
-	// <link rel="preload" as="image"> for its own /_next/image srcSet. That
-	// preloads a resource the browser never requests and makes the LCP an
-	// unoptimized original that ignores `sizes`. For the one prioritized image
-	// per page, take the optimized path and drop the art direction.
+	// cover every viewport), while next/image still emits a
+	// <link rel="preload" as="image"> for its OWN srcSet — so a prioritized image
+	// would preload one resource and then load another. For the one prioritized
+	// image per page, take the plain next/image path and drop the art direction.
+	//
+	// What the <source>s carry is the part that changed. They used to hold a
+	// single raw, full-resolution cdn.sanity.io URL, so the bytes that actually
+	// loaded in this branch were an unoptimized original that ignored `sizes`
+	// entirely — the optimization bug the `!priority` guard was never about. They
+	// are real srcSets now, built through the same CDN builder as the inner
+	// <img>, so both branches are optimized and only the preload argument above
+	// still justifies the guard.
 	if (responsiveImage && !priority) {
+		// Only the <source> elements need these: they carry the intrinsic ratio
+		// that the inner <img> gets from SanityImage. Each ratio is passed to
+		// buildSrcSet as well as used for the attribute, so the bytes come back
+		// cropped to the box the <source> advertises -- see buildSanityImageUrl.
+		const { dimensions } = image.metadata || {};
+		const width = dimensions?.width ?? undefined;
+		const ratio = resolveRenderedRatio(
+			dimensions?.aspectRatio,
+			image.crop,
+			customRatio
+		);
+		const height = width && ratio ? Math.round(width / ratio) : undefined;
+
 		const { dimensions: rDimensions } = responsiveImage.metadata || {};
 		const rWidth = rDimensions?.width ?? undefined;
-		const rHeight = rWidth
-			? Math.round(
-					rWidth / (customRatioMobile || rDimensions?.aspectRatio || 1)
-				)
-			: undefined;
-		const responsiveSrc =
-			buildImageSrc(responsiveImage, {
-				width: rWidth,
-				height: rHeight,
-				format: format as any,
-				quality,
-			}) || '';
+		const rRatio = resolveRenderedRatio(
+			rDimensions?.aspectRatio,
+			responsiveImage.crop,
+			customRatioMobile
+		);
+		const rHeight = rWidth && rRatio ? Math.round(rWidth / rRatio) : undefined;
 
 		content = (
 			<picture className={cn(fillClass, className)}>
 				<source
 					media={`(min-width: ${breakpoint + 1}px)`}
-					srcSet={src}
+					srcSet={buildSrcSet(image, width, quality, customRatio || undefined)}
+					sizes={sizes}
 					width={width}
 					height={height}
 				/>
 				<source
 					media={`(max-width: ${breakpoint}px)`}
-					srcSet={responsiveSrc}
+					srcSet={buildSrcSet(
+						responsiveImage,
+						rWidth,
+						quality,
+						customRatioMobile || undefined
+					)}
+					sizes={sizes}
 					width={rWidth}
 					height={rHeight}
 				/>

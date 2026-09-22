@@ -27,14 +27,31 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 			if (!value?.asset) return;
 
 			const { link } = value || {};
+			// The prose column, not the generic `…, 33vw` default, which asked for
+			// roughly half the pixels a body image is shown at.
+			//
+			// 900px is --container-md, the WIDEST constrained prose column this
+			// component renders in (PageGeneral's `wysiwyg-page max-w-md`). The
+			// narrower call sites -- the product page's `lg:max-w-[60ch]`, a
+			// FaqBlock answer -- deliberately over-request against it rather than
+			// under-request, since softness is the failure that brought us here and
+			// the cap is 900px either way. A Freeform inside a full-bleed
+			// SectionShell is the one case this still under-serves.
+			//
+			// Fixing that properly means the layout owner passing `sizes` down,
+			// which is a prop this component does not have and no caller would
+			// fill today; SectionShell's own `maxWidth` enum is where it would come
+			// from (see MAX_WIDTH_CLASSES in section-appearance.ts).
+			const imageSizes = '(max-width: 768px) 100vw, min(90vw, 900px)';
+
 			if (link?.href) {
 				return (
 					<CustomLink link={link}>
-						<ImageBlock imageObj={value} />
+						<ImageBlock imageObj={value} sizes={imageSizes} />
 					</CustomLink>
 				);
 			}
-			return <ImageBlock imageObj={value} />;
+			return <ImageBlock imageObj={value} sizes={imageSizes} />;
 		},
 		iframe: ({ value }) => {
 			const { embedSnippet } = value;

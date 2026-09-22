@@ -120,6 +120,19 @@ const nextConfig = {
 	},
 	images: {
 		formats: ['image/avif', 'image/webp'],
+		// Next 16 defaults `qualities` to [75], and the coercion is SILENT: a
+		// `quality` prop outside the list is snapped to the nearest allowed value
+		// client-side in get-img-props, so the prop was inert everywhere and
+		// nothing ever errored. (The 400 only appears on a hand-edited
+		// /_next/image URL, which is why this went unnoticed.)
+		//
+		// Both entries are the Shopify product images, the only thing still
+		// reaching this optimizer: 85 for the gallery, 75 for the cart thumbnail.
+		// Neither entry governs SANITY_IMAGE_QUALITY, even though it currently
+		// shares 75's value -- SanityImage has its own `loader`, so the allowlist
+		// has no say over it, and it does not warn either because that component
+		// keeps `quality` off the <Image> prop. Changing it needs nothing here.
+		qualities: [75, 85],
 		remotePatterns: [
 			{
 				protocol: 'https',
