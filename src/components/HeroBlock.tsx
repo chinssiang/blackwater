@@ -139,7 +139,7 @@ export default function HeroBlock({
 	const underlapsHeader =
 		!!waveBackground &&
 		headingLevel === 'h1' &&
-		resolveSectionAppearance(appearance).maxWidthClass === 'w-full';
+		resolveSectionAppearance(appearance).isFullWidth;
 
 	// Same bail as the other modules: an empty hero would still reserve a full
 	// viewport of blank page, which is worse than not rendering.
@@ -191,7 +191,7 @@ export default function HeroBlock({
 
 			<div
 				className={cn(
-					'mx-auto max-w-2xl',
+					'mx-auto max-w-[1600px]',
 					underlapsHeader && 'mt-header-space-0'
 				)}
 			>

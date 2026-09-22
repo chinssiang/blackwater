@@ -17,21 +17,40 @@ export type MaxWidth = 'none' | 'xl' | 'l' | 'm' | 's' | 'xs';
 // size its images: `sizes` is resolved by the browser before any layout exists,
 // so a vw figure alone always describes the FULL-width case. Kept beside the
 // class map for the reason stated below -- the two have to agree.
-export const MAX_WIDTH_PX: Record<Exclude<MaxWidth, 'none'>, number> = {
+export const MAX_WIDTH_PX = {
 	xl: 1280,
 	l: 1024,
 	m: 768,
 	s: 576,
 	xs: 320,
-};
+} as const satisfies Record<Exclude<MaxWidth, 'none'>, number>;
 
-const MAX_WIDTH_CLASSES: Record<MaxWidth, string> = {
+// Arbitrary values, deliberately NOT `max-w-3xl` and friends. Originally because
+// globals.css rescaled Tailwind's `--container-*` namespace, which is where
+// `max-w-*` reads its rungs from -- `3xl` was 1800px, `xl` 1200px -- so `m` and
+// `s` rendered WIDER than `xl` and `l` and a `faqBlock` asking for a 768px
+// reading measure got 1800px. That override is gone now (see the note at the top
+// of globals.css), so the rungs would be honest again.
+//
+// They stay arbitrary anyway, for a second reason that outlives the first: these
+// five widths have to equal MAX_WIDTH_PX, which sizes the images inside a
+// narrowed section, and no Tailwind rung sits at all five. Naming them would
+// re-couple this ladder to a scale it does not control.
+//
+// The type below spells each class out as a literal -- Tailwind only emits
+// utilities whose names it finds as literal strings, so these cannot be
+// generated -- while pinning it to its MAX_WIDTH_PX entry, so the two maps
+// disagreeing, or a new rung reaching only one of them, is a COMPILE error
+// rather than something a test has to notice.
+export const MAX_WIDTH_CLASSES: {
+	[K in keyof typeof MAX_WIDTH_PX]: `max-w-[${(typeof MAX_WIDTH_PX)[K]}px]`;
+} & { none: 'w-full' } = {
 	none: 'w-full',
-	xl: 'max-w-7xl',
-	l: 'max-w-5xl',
-	m: 'max-w-3xl',
-	s: 'max-w-xl',
-	xs: 'max-w-xs',
+	xl: 'max-w-[1280px]',
+	l: 'max-w-[1024px]',
+	m: 'max-w-[768px]',
+	s: 'max-w-[576px]',
+	xs: 'max-w-[320px]',
 };
 
 // An allowlist rather than a passthrough: `textAlign` arrives as a class name
@@ -76,6 +95,14 @@ export type SectionAppearance = {
 export type ResolvedSectionAppearance = {
 	alignClass: string;
 	maxWidthClass: string;
+	/**
+	 * Whether the section spans its container rather than being capped. Two
+	 * decisions read it -- which horizontal inset <SectionShell> publishes
+	 * (the centring `--padding-max` or the flat gutter) and whether a wave hero may
+	 * underlap the header -- and both were previously comparing the class string
+	 * by hand, so a rename of the `none` class would have silently flipped one.
+	 */
+	isFullWidth: boolean;
 	/** The section's own text colour, or a legible default over an authored background. */
 	inkCss: string | undefined;
 	paperCss: string | undefined;
@@ -123,12 +150,15 @@ export function resolveSectionAppearance(
 			? ensureAccessibleTextColor(null, backgroundColor) || undefined
 			: undefined);
 
+	// `||`, not `??`: a cleared field can arrive as '' , which `??` passes
+	// through as a class name of nothing.
+	const maxWidthClass =
+		MAX_WIDTH_CLASSES[width as MaxWidth] || MAX_WIDTH_CLASSES.none;
+
 	return {
 		alignClass: TEXT_ALIGN_CLASSES.has(align) ? align : DEFAULT_ALIGN,
-		// `||`, not `??`: a cleared field can arrive as '' , which `??` passes
-		// through as a class name of nothing.
-		maxWidthClass:
-			MAX_WIDTH_CLASSES[width as MaxWidth] || MAX_WIDTH_CLASSES.none,
+		maxWidthClass,
+		isFullWidth: maxWidthClass === MAX_WIDTH_CLASSES.none,
 		inkCss,
 		paperCss,
 		spacing: {

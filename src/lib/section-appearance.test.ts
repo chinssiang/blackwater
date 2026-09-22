@@ -1,6 +1,6 @@
 import { vercelStegaCombine } from '@vercel/stega';
 import { describe, expect, it } from 'vitest';
-import { resolveSectionAppearance } from './section-appearance';
+import { MAX_WIDTH_PX, resolveSectionAppearance } from './section-appearance';
 
 const color = (r: number, g: number, b: number, a = 1) => ({
 	hex: '#000000',
@@ -32,17 +32,46 @@ describe('resolveSectionAppearance', () => {
 	it('maps every max-width the schema offers', () => {
 		const cases = {
 			none: 'w-full',
-			xl: 'max-w-7xl',
-			l: 'max-w-5xl',
-			m: 'max-w-3xl',
-			s: 'max-w-xl',
-			xs: 'max-w-xs',
+			xl: 'max-w-[1280px]',
+			l: 'max-w-[1024px]',
+			m: 'max-w-[768px]',
+			s: 'max-w-[576px]',
+			xs: 'max-w-[320px]',
 		} as const;
 		for (const [maxWidth, expected] of Object.entries(cases)) {
 			expect(resolveSectionAppearance({ maxWidth }).maxWidthClass).toBe(
 				expected
 			);
 		}
+	});
+
+	// The invariant the named Tailwind rungs broke silently, and the one the
+	// class/px type coupling in section-appearance.ts CANNOT express: `m` and `s`
+	// resolved to 1800px and 1200px, so both were wider than `l` (1024px) and `m`
+	// wider than `xl` (1280px). An editor picking a smaller option got a bigger
+	// section. (That the two maps agree at all is now a compile error, not a
+	// test -- see MAX_WIDTH_CLASSES' type.)
+	it('ascends -- xs < s < m < l < xl', () => {
+		const widths = (['xs', 's', 'm', 'l', 'xl'] as const).map(
+			(key) => MAX_WIDTH_PX[key]
+		);
+		expect(widths).toEqual([...widths].sort((a, b) => a - b));
+		expect(new Set(widths).size, 'no two rungs share a width').toBe(
+			widths.length
+		);
+	});
+
+	// `isFullWidth` is what SectionShell reads to pick the length it publishes as
+	// `--section-inset`: the centring `--padding-max` or the flat gutter, and what
+	// HeroBlock reads to decide whether a wave hero may underlap the header.
+	// Only the two cases the `maxWidthClass` tests above do not already imply:
+	// an unrecognised key must land on `true` (a reimplementation reading
+	// `width === 'none'` would return false and inset a full-bleed section), and
+	// a real rung must land on `false`.
+	it('follows the resolved class, including on the fallback path', () => {
+		// FaqBlock's retired 'md'/'lg' vocabulary, still in older documents.
+		expect(resolveSectionAppearance({ maxWidth: 'md' }).isFullWidth).toBe(true);
+		expect(resolveSectionAppearance({ maxWidth: 'm' }).isFullWidth).toBe(false);
 	});
 
 	it('falls back on a cleared max-width rather than emitting no class', () => {
@@ -65,7 +94,7 @@ describe('resolveSectionAppearance', () => {
 			maxWidth: stega('m'),
 		});
 		expect(r.alignClass).toBe('text-center');
-		expect(r.maxWidthClass).toBe('max-w-3xl');
+		expect(r.maxWidthClass).toBe('max-w-[768px]');
 	});
 
 	it('refuses an unrecognised alignment instead of emitting it as a class', () => {

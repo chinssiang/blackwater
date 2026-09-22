@@ -377,9 +377,11 @@ export default function CartDrawerPanel({
 									// white. See
 									// globals.css.
 									//
-									// Explicit max-width, not max-w-sm: globals.css remaps the
-									// container scale (sm is 600px here, xs 300px), so the
-									// Tailwind size names don't give a drawer-shaped panel.
+									// Explicit max-width, not max-w-sm: a drawer wants a panel
+									// width, and none of Tailwind's named rungs is one. (This
+									// used to say globals.css remapped the container scale --
+									// it did, sm being 600px and xs 300px; that rescale is gone
+									// and the explicit value is simply the right call.)
 									//
 									// `bg-background`/`text-foreground`, not `bg-white`/`text-black`:
 									// the pinned tokens are the site's own light surface and ink, and

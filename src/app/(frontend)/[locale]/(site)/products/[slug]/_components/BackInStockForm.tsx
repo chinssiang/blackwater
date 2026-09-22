@@ -83,7 +83,7 @@ export default function BackInStockForm({
 	};
 
 	return (
-		<div className="mt-6 max-w-sm">
+		<div className="mt-6 max-w-[600px]">
 			<p className="t-l-1 text-foreground/65 mb-3 uppercase">{notify.title}</p>
 			<form onSubmit={handleSubmit} noValidate>
 				<Field data-invalid={!!validationError || undefined}>
