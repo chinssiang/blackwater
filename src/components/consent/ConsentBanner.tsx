@@ -131,7 +131,7 @@ export default function ConsentBanner({
 					className="z-dialog border-foreground/15 bg-background p-x-max fixed inset-x-0 bottom-0 border-t py-5 shadow-lg"
 				>
 					<div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-						<div className="max-w-[1600px]">
+						<div className="max-w-2xl">
 							<p className="t-b-1 text-foreground mb-1 font-medium">
 								{t('bannerTitle')}
 							</p>

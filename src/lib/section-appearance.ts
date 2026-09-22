@@ -17,40 +17,41 @@ export type MaxWidth = 'none' | 'xl' | 'l' | 'm' | 's' | 'xs';
 // size its images: `sizes` is resolved by the browser before any layout exists,
 // so a vw figure alone always describes the FULL-width case. Kept beside the
 // class map for the reason stated below -- the two have to agree.
-export const MAX_WIDTH_PX = {
+export const MAX_WIDTH_PX: Record<Exclude<MaxWidth, 'none'>, number> = {
 	xl: 1280,
 	l: 1024,
 	m: 768,
 	s: 576,
 	xs: 320,
-} as const satisfies Record<Exclude<MaxWidth, 'none'>, number>;
+};
 
-// Arbitrary values, deliberately NOT `max-w-3xl` and friends. Originally because
-// globals.css rescaled Tailwind's `--container-*` namespace, which is where
-// `max-w-*` reads its rungs from -- `3xl` was 1800px, `xl` 1200px -- so `m` and
-// `s` rendered WIDER than `xl` and `l` and a `faqBlock` asking for a 768px
-// reading measure got 1800px. That override is gone now (see the note at the top
-// of globals.css), so the rungs would be honest again.
+// Tailwind's own rungs, and each one lands exactly on its MAX_WIDTH_PX entry
+// above: `7xl` is 80rem, `5xl` 64rem, `3xl` 48rem, `xl` 36rem, `xs` 20rem --
+// 1280/1024/768/576/320px at a 16px root.
 //
-// They stay arbitrary anyway, for a second reason that outlives the first: these
-// five widths have to equal MAX_WIDTH_PX, which sizes the images inside a
-// narrowed section, and no Tailwind rung sits at all five. Naming them would
-// re-couple this ladder to a scale it does not control.
+// That agreement is only true because globals.css leaves the `--container-*`
+// scale at STOCK. It used to rescale it, which is where `max-w-*` reads its
+// rungs from, so `3xl` meant 1800px and `xl` 1200px -- `m` and `s` rendered
+// WIDER than `xl` and `l`, and a `faqBlock` asking for a 768px reading measure
+// got 1800px. Do not reintroduce that override (the note at the top of
+// globals.css says why); these five names are the whole reason it must not
+// come back.
 //
-// The type below spells each class out as a literal -- Tailwind only emits
-// utilities whose names it finds as literal strings, so these cannot be
-// generated -- while pinning it to its MAX_WIDTH_PX entry, so the two maps
-// disagreeing, or a new rung reaching only one of them, is a COMPILE error
-// rather than something a test has to notice.
-export const MAX_WIDTH_CLASSES: {
-	[K in keyof typeof MAX_WIDTH_PX]: `max-w-[${(typeof MAX_WIDTH_PX)[K]}px]`;
-} & { none: 'w-full' } = {
+// The two maps are kept in step BY HAND. There is no type that ties `max-w-3xl`
+// to 768, so adding a rung means editing both -- `section-appearance.test.ts`
+// pins each class and asserts the ladder ascends, which is what caught the
+// inversion above.
+//
+// One consequence of naming them: the rungs are rem-based, so at a root font
+// other than 16px the rendered cap scales while MAX_WIDTH_PX does not. That
+// skews `ProductsBlock`'s image `sizes` hint slightly, never the layout.
+const MAX_WIDTH_CLASSES: Record<MaxWidth, string> = {
 	none: 'w-full',
-	xl: 'max-w-[1280px]',
-	l: 'max-w-[1024px]',
-	m: 'max-w-[768px]',
-	s: 'max-w-[576px]',
-	xs: 'max-w-[320px]',
+	xl: 'max-w-7xl',
+	l: 'max-w-5xl',
+	m: 'max-w-3xl',
+	s: 'max-w-xl',
+	xs: 'max-w-xs',
 };
 
 // An allowlist rather than a passthrough: `textAlign` arrives as a class name

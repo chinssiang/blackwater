@@ -157,7 +157,7 @@ export function Newsletter({
 						delay: 0.1,
 						ease: [0, 0.71, 0.2, 1.01],
 					}}
-					className="flex max-w-[600px] flex-col justify-center"
+					className="flex max-w-sm flex-col justify-center"
 					style={formHeight ? { minHeight: formHeight } : undefined}
 					role="status"
 					aria-live="polite"
@@ -179,7 +179,7 @@ export function Newsletter({
 						ref={formRef}
 						onSubmit={handleSubmit}
 						noValidate
-						className="max-w-[600px]"
+						className="max-w-sm"
 					>
 						<Field data-invalid={!!validationError || undefined}>
 							<FieldLabel htmlFor="newsletter-email" className="sr-only">

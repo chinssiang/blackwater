@@ -80,10 +80,12 @@
 	   hand-written workarounds saying so. The section ladder had it worse: `m` and
 	   `s` came out WIDER than `l` and `xl`.
 
-	   So the site's own ceiling is `--s-container-max` below, outside this
-	   namespace, and anything wanting a specific width states it (`max-w-[900px]`)
-	   rather than borrowing a Tailwind name for it. Do not reintroduce a
-	   `--container-*` override here; add a `--s-*` token instead.
+	   Left at stock, the named rungs mean what they say, so REACH FOR THEM:
+	   `max-w-md` is 448px, `max-w-3xl` 768px, `max-w-7xl` 1280px. An arbitrary
+	   value is for a width no rung expresses, not for restating one. The site's
+	   own ceiling is `--s-container-max` below, outside this namespace, because
+	   it is not a rung. Do not reintroduce a `--container-*` override here; add a
+	   `--s-*` token instead.
 
 	   `3xs`/`2xs` stay disabled -- there is no rung below `xs`. */
 	--container-3xs: initial;

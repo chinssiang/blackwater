@@ -132,9 +132,7 @@ export function PageProductIndex({ data }: Props) {
 					</p>
 				)}
 				{title && (
-					<h1 className="t-h-1 max-w-[600px] text-balance uppercase">
-						{title}
-					</h1>
+					<h1 className="t-h-1 max-w-sm text-balance uppercase">{title}</h1>
 				)}
 				{description && (
 					<p className="t-b-1 text-foreground/70 mt-7 max-w-[60ch] lg:mt-9">

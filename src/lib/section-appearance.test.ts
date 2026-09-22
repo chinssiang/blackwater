@@ -32,11 +32,11 @@ describe('resolveSectionAppearance', () => {
 	it('maps every max-width the schema offers', () => {
 		const cases = {
 			none: 'w-full',
-			xl: 'max-w-[1280px]',
-			l: 'max-w-[1024px]',
-			m: 'max-w-[768px]',
-			s: 'max-w-[576px]',
-			xs: 'max-w-[320px]',
+			xl: 'max-w-7xl',
+			l: 'max-w-5xl',
+			m: 'max-w-3xl',
+			s: 'max-w-xl',
+			xs: 'max-w-xs',
 		} as const;
 		for (const [maxWidth, expected] of Object.entries(cases)) {
 			expect(resolveSectionAppearance({ maxWidth }).maxWidthClass).toBe(
@@ -45,12 +45,13 @@ describe('resolveSectionAppearance', () => {
 		}
 	});
 
-	// The invariant the named Tailwind rungs broke silently, and the one the
-	// class/px type coupling in section-appearance.ts CANNOT express: `m` and `s`
-	// resolved to 1800px and 1200px, so both were wider than `l` (1024px) and `m`
-	// wider than `xl` (1280px). An editor picking a smaller option got a bigger
-	// section. (That the two maps agree at all is now a compile error, not a
-	// test -- see MAX_WIDTH_CLASSES' type.)
+	// The invariant that broke silently while globals.css rescaled Tailwind's
+	// `--container-*` scale: `max-w-3xl` meant 1800px and `max-w-xl` 1200px, so
+	// `m` and `s` were WIDER than `l` (1024px) and `m` wider than `xl` (1280px),
+	// and an editor picking a smaller option got a bigger section. The scale is
+	// stock again, which is what makes the rungs in the test above land on these
+	// numbers -- nothing in the type system ties the two maps together, so this
+	// and the class table above are the whole guard.
 	it('ascends -- xs < s < m < l < xl', () => {
 		const widths = (['xs', 's', 'm', 'l', 'xl'] as const).map(
 			(key) => MAX_WIDTH_PX[key]
@@ -94,7 +95,7 @@ describe('resolveSectionAppearance', () => {
 			maxWidth: stega('m'),
 		});
 		expect(r.alignClass).toBe('text-center');
-		expect(r.maxWidthClass).toBe('max-w-[768px]');
+		expect(r.maxWidthClass).toBe('max-w-3xl');
 	});
 
 	it('refuses an unrecognised alignment instead of emitting it as a class', () => {

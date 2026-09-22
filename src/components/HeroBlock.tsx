@@ -191,7 +191,7 @@ export default function HeroBlock({
 
 			<div
 				className={cn(
-					'mx-auto max-w-[1600px]',
+					'mx-auto max-w-2xl',
 					underlapsHeader && 'mt-header-space-0'
 				)}
 			>

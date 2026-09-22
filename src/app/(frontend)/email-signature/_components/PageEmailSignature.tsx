@@ -76,7 +76,7 @@ export function PageEmailSignature({ siteUrl }: PageEmailSignature) {
 
 	return (
 		<div className="p-contain flex flex-col items-center justify-center gap-10 pt-[calc(var(--height-header)+60px)]">
-			<div className="flex max-w-[900px] flex-col gap-4">
+			<div className="flex max-w-md flex-col gap-4">
 				<div className="flex w-full flex-wrap gap-2">
 					<div className="flex flex-1 flex-col gap-1">
 						<label htmlFor="email-signature-name" className="t-l-1 mb-1">
