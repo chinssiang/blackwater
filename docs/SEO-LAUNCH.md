@@ -23,7 +23,7 @@ cited once it's deployed, filled with content, and indexed. Work through this li
 - [ ] `curl -sI https://<domain>/sitemap.xml` → `200` + `content-type: application/xml`,
       **no** `location` header. It is a rewrite, not a redirect (next.config.mjs), and a
       config edit can revert that silently. Use `curl`, not a browser: this path served a
-      *permanent* 308 until 2026-09-15 and browsers cache those hard.
+      _permanent_ 308 until 2026-09-15 and browsers cache those hard.
 
 ## 2. Enter content in Sanity Studio (empty fields = nothing to match)
 
