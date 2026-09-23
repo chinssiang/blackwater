@@ -23,10 +23,28 @@
  * clobbered; a stray `landingTitle` beside one is cleared, because leaving it
  * keeps the site's build guard armed with no way for the operator to disarm it.
  *
- * Deliberately NOT set on the new block: sectionAppearance. Its schema
- * initialValue only applies to blocks created in the Studio, and an empty
- * object here would be indistinguishable from one an editor cleared. The
- * component's own defaults cover it.
+ * sectionAppearance IS set, to match the heroes authored in the Studio today.
+ * This used to be deliberately omitted on the grounds that "the component's own
+ * defaults cover it" -- true when HeroBlock centred its copy unconditionally
+ * (`mx-auto max-w-2xl`), and no longer true now that the copy column's margin
+ * follows the authored Text Alignment. An absent object resolves to
+ * DEFAULT_ALIGN 'text-left', which maps to `mr-auto`, so a migrated homepage
+ * would open left-hugging while every hand-authored hero in dev carries an
+ * explicit `text-center` and stays centred -- a visible prod/dev split on the
+ * one page this script exists to populate.
+ *
+ * `textAlign` is therefore 'text-center', which DELIBERATELY DIFFERS from the
+ * schema's own `initialValue` ('text-left'; `maxWidth` does match). Do not
+ * "correct" it to agree with the schema -- that is exactly the left-hugging
+ * split above, and because this script self-expires it would surface only after
+ * the prod run. The source of truth is what the dev heroes carry, not what the
+ * object seeds. Written out rather than left to `initialValue` at all, which
+ * only fires for blocks created in the Studio.
+ *
+ * `_type` is written too, so the object matches a Studio-authored one exactly.
+ * That is the shape `sanity.types.ts` declares -- a required literal on the
+ * sectionAppearance projection of every page-module query -- and this script
+ * cannot be re-run to add it afterwards.
  *
  * Usage:
  *   set -a; . ./.env.local; set +a
@@ -142,7 +160,19 @@ async function main() {
 			continue;
 		}
 
-		const hero = { _type: 'heroBlock', _key: randomUUID(), heading };
+		const hero = {
+			_type: 'heroBlock',
+			_key: randomUUID(),
+			heading,
+			// Matches a Studio-authored hero exactly, `_type` included. Note that
+			// `textAlign` deliberately differs from the schema's initialValue --
+			// read the note above before changing either value.
+			sectionAppearance: {
+				_type: 'sectionAppearance',
+				textAlign: 'text-center',
+				maxWidth: 'none',
+			},
+		};
 
 		console.log(`  move  ${label} — "${heading}" → heroBlock (slot 0)`);
 		transaction.patch(home._id, (patch) =>

@@ -124,7 +124,7 @@ export const heroBlock = defineType({
 			name: 'sectionAppearance',
 			type: 'sectionAppearance',
 			description:
-				'A plain Background Color earns a legible default ink (so does the wave); a background image does not, so set a Text Color that survives it.',
+				'Max Width caps the copy column only — the background image and the animated wave always span the full width, and so does a Background Color (a capped section would leave the wave a hard edge). Note the list reads out of order here: “Full” uses the hero’s own reading measure (~672px), which is narrower than M, L and XL; the sized options set an explicit column width. A plain Background Color earns a legible default ink (so does the wave); a background image does not, so set a Text Color that survives it.',
 		}),
 		pageModuleHidden(),
 	],
