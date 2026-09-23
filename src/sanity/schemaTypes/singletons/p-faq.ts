@@ -34,24 +34,12 @@ export const pFaq = defineType({
 			to: [{ type: 'gFaqList' }],
 			description:
 				'Which FAQ set this page shows. Sets are managed in Global → FAQ Sets. Both language versions of this page should point at the same set — that is what keeps the two FAQ pages in step.',
-			// A WARNING, not an error, for the same reason the inline `questions`
-			// array this replaced carried one: the field arrives on documents that
-			// only gain a value when scripts/create-faq-sets.mjs runs, a separate
-			// hand-run step. A hard required() makes both prod pFaq documents
-			// unpublishable for the whole window between deploying this schema and
-			// running that script, blocking unrelated edits to title, intro and SEO
-			// — and an editor who breaks the deadlock by picking a set by hand has
-			// it overwritten by the migration anyway.
-			//
-			// Tighten to Rule.required() once prod is migrated. (faqBlock.faqSet is
-			// required today and correctly so: those modules are editor-created
-			// from here on, so they have no migration window.)
 			validation: (Rule) =>
 				Rule.custom((value) =>
 					value
 						? true
 						: 'Pick the FAQ set this page renders — without one, /faq shows only its title and intro.'
-				).warning(),
+				),
 		}),
 		sharing(),
 	],
