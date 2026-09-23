@@ -8443,6 +8443,13 @@
         },
         "optional": true
       },
+      "lumaUrl": {
+        "type": "objectAttribute",
+        "value": {
+          "type": "string"
+        },
+        "optional": true
+      },
       "highlights": {
         "type": "objectAttribute",
         "value": {
