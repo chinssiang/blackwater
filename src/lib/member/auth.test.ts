@@ -4,6 +4,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { PRIVACY_NOTICE_VERSION, createAuth } from './auth';
 import * as schema from './schema';
+import { getMemberSession } from './session';
 import { LOCALE_HEADER, SIGN_IN_ERRORS } from './shared';
 
 // The whole sign-in flow, end to end: the committed migration applied to a real
@@ -65,19 +66,42 @@ async function setup({ rateLimit = false } = {}) {
 	const signIn = (email: string, otp: string) =>
 		post('/sign-in/email-otp', { email, otp });
 
-	return { pg, auth, sent, post, requestCode, signIn };
+	/** Signs in end to end and returns the cookie to send back. */
+	const signedIn = async (email = 'runner@example.com') => {
+		await requestCode(email);
+		const cookie = sessionCookie(await signIn(email, sent.at(-1)!.code));
+		if (!cookie) throw new Error('sign-in set no session cookie');
+		return cookie;
+	};
+
+	const getSession = (cookie: string) =>
+		auth.handler(
+			new Request(`${ORIGIN}/api/auth/get-session`, { headers: { cookie } })
+		);
+
+	return { pg, auth, sent, post, requestCode, signIn, signedIn, getSession };
+}
+
+type Ctx = Awaited<ReturnType<typeof setup>>;
+
+/** The full Set-Cookie line for the session cookie, attributes included. */
+function sessionSetCookie(res: Response) {
+	return res.headers
+		.getSetCookie()
+		.find((c) => c.startsWith('bw.session_token='));
 }
 
 /** The `name=value` pair of the session cookie, as a browser would send it. */
 function sessionCookie(res: Response) {
-	const cookie = res.headers
-		.getSetCookie()
-		.find((c) => c.startsWith('bw.session_token='));
-	return cookie?.split(';')[0];
+	return sessionSetCookie(res)?.split(';')[0];
 }
 
+/** Any six digits that are not `code`. */
+const wrongCodeFor = (code: string) =>
+	code === '000000' ? '111111' : '000000';
+
 describe('member sign-in', () => {
-	let ctx: Awaited<ReturnType<typeof setup>>;
+	let ctx: Ctx;
 	beforeEach(async () => {
 		ctx = await setup();
 	});
@@ -148,12 +172,9 @@ describe('member sign-in', () => {
 	});
 
 	it('returns the member for a request carrying the session cookie', async () => {
-		await ctx.requestCode('runner@example.com');
-		const cookie = sessionCookie(
-			await ctx.signIn('runner@example.com', ctx.sent[0].code)
-		);
+		const cookie = await ctx.signedIn();
 		const session = await ctx.auth.api.getSession({
-			headers: new Headers({ cookie: cookie! }),
+			headers: new Headers({ cookie }),
 		});
 		expect(session?.user.email).toBe('runner@example.com');
 	});
@@ -161,7 +182,7 @@ describe('member sign-in', () => {
 	it('rejects a wrong code, and a right code used twice', async () => {
 		await ctx.requestCode('runner@example.com');
 		const { code } = ctx.sent[0];
-		const wrong = code === '000000' ? '111111' : '000000';
+		const wrong = wrongCodeFor(code);
 		const first = await ctx.signIn('runner@example.com', wrong);
 		expect(first.status).toBe(400);
 		// The form picks its message from this field (see SIGN_IN_ERRORS).
@@ -173,7 +194,7 @@ describe('member sign-in', () => {
 	it('burns the code after three wrong attempts', async () => {
 		await ctx.requestCode('runner@example.com');
 		const { code } = ctx.sent[0];
-		const wrong = code === '000000' ? '111111' : '000000';
+		const wrong = wrongCodeFor(code);
 		for (let i = 0; i < 3; i++) await ctx.signIn('runner@example.com', wrong);
 		const res = await ctx.signIn('runner@example.com', code);
 		expect(res.status).toBe(403);
@@ -192,28 +213,20 @@ describe('member sign-in', () => {
 	});
 
 	it('refuses a signed-in request from another origin', async () => {
-		await ctx.requestCode('runner@example.com');
-		const cookie = sessionCookie(
-			await ctx.signIn('runner@example.com', ctx.sent[0].code)
-		);
+		const cookie = await ctx.signedIn();
 		const res = await ctx.post(
 			'/sign-out',
 			{},
-			{ cookie: cookie!, origin: 'https://evil.example' }
+			{ cookie, origin: 'https://evil.example' }
 		);
 		expect(res.status).toBe(403);
 	});
 
 	it('signs out, after which the cookie no longer works', async () => {
-		await ctx.requestCode('runner@example.com');
-		const cookie = sessionCookie(
-			await ctx.signIn('runner@example.com', ctx.sent[0].code)
-		);
-		expect((await ctx.post('/sign-out', {}, { cookie: cookie! })).status).toBe(
-			200
-		);
+		const cookie = await ctx.signedIn();
+		expect((await ctx.post('/sign-out', {}, { cookie })).status).toBe(200);
 		const session = await ctx.auth.api.getSession({
-			headers: new Headers({ cookie: cookie! }),
+			headers: new Headers({ cookie }),
 		});
 		expect(session).toBeNull();
 	});
@@ -241,12 +254,12 @@ describe('member sign-in rate limit', () => {
 // cookie, so the /account page's own session read can extend the database row
 // but never the cookie. SessionRefresh on that page exists for this.
 describe('staying signed in', () => {
-	const getSession = (ctx: Awaited<ReturnType<typeof setup>>, cookie: string) =>
-		ctx.auth.handler(
-			new Request(`${ORIGIN}/api/auth/get-session`, { headers: { cookie } })
-		);
+	let ctx: Ctx;
+	beforeEach(async () => {
+		ctx = await setup();
+	});
 
-	const daysLeft = async (ctx: Awaited<ReturnType<typeof setup>>) => {
+	const daysLeft = async () => {
 		const { rows } = await ctx.pg.query<{ days: number }>(
 			'select extract(epoch from expires_at - now()) / 86400 as days from member_session'
 		);
@@ -254,46 +267,47 @@ describe('staying signed in', () => {
 	};
 
 	it('extends a day-old session and re-issues its cookie for another 30 days', async () => {
-		const ctx = await setup();
-		await ctx.requestCode('runner@example.com');
-		const cookie = sessionCookie(
-			await ctx.signIn('runner@example.com', ctx.sent[0].code)
-		)!;
+		const cookie = await ctx.signedIn();
 		// Two days since the last refresh (updateAge is one day).
 		await ctx.pg.exec(
 			"update member_session set expires_at = now() + interval '28 days'"
 		);
 
-		const res = await getSession(ctx, cookie);
+		const res = await ctx.getSession(cookie);
 		expect(res.status).toBe(200);
-		const reissued = res.headers
-			.getSetCookie()
-			.find((c) => c.startsWith('bw.session_token='));
-		expect(reissued).toMatch(/Max-Age=2592000/);
-		expect(await daysLeft(ctx)).toBeGreaterThan(29.9);
+		expect(sessionSetCookie(res)).toMatch(/Max-Age=2592000/);
+		expect(await daysLeft()).toBeGreaterThan(29.9);
+	});
+
+	it('still re-issues the cookie after the page has read the session on the server', async () => {
+		// The real order on /account: getCurrentMember() reads the session in a
+		// Server Component (which cannot set a cookie), THEN SessionRefresh calls
+		// the route. If the server read refreshed the row, the route would see a
+		// fresh session and re-issue nothing -- the cookie would still die 30 days
+		// after sign-in.
+		const cookie = await ctx.signedIn();
+		await ctx.pg.exec(
+			"update member_session set expires_at = now() + interval '28 days'"
+		);
+
+		await getMemberSession(ctx.auth, new Headers({ cookie }));
+		const res = await ctx.getSession(cookie);
+		expect(sessionSetCookie(res)).toMatch(/Max-Age=2592000/);
 	});
 
 	it('leaves a fresh session alone, so a visit costs no write', async () => {
-		const ctx = await setup();
-		await ctx.requestCode('runner@example.com');
-		const cookie = sessionCookie(
-			await ctx.signIn('runner@example.com', ctx.sent[0].code)
-		)!;
-		const res = await getSession(ctx, cookie);
+		const cookie = await ctx.signedIn();
+		const res = await ctx.getSession(cookie);
 		expect(res.status).toBe(200);
 		expect(sessionCookie(res)).toBeUndefined();
 	});
 
 	it('signs out a member who has not been back for 30 days', async () => {
-		const ctx = await setup();
-		await ctx.requestCode('runner@example.com');
-		const cookie = sessionCookie(
-			await ctx.signIn('runner@example.com', ctx.sent[0].code)
-		)!;
+		const cookie = await ctx.signedIn();
 		await ctx.pg.exec(
 			"update member_session set expires_at = now() - interval '1 second'"
 		);
-		const res = await getSession(ctx, cookie);
+		const res = await ctx.getSession(cookie);
 		expect(await res.json()).toBeNull();
 	});
 });
