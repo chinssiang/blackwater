@@ -115,9 +115,15 @@ const eslintConfig = defineConfig([
 				{
 					patterns: [
 						{
-							group: ['@/lib/member/db', '**/lib/member/db'],
+							// ./auth too: its internal adapter reads any member's rows.
+							group: [
+								'@/lib/member/db',
+								'**/lib/member/db',
+								'@/lib/member/auth',
+								'**/lib/member/auth',
+							],
 							message:
-								'Read member data through a function in src/lib/member/ that scopes the query, not through the client.',
+								'Read member data through a function in src/lib/member/ that scopes the query, not through the client or the auth instance.',
 						},
 						{
 							group: [
