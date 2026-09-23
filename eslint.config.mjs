@@ -102,6 +102,39 @@ const eslintConfig = defineConfig([
 		},
 	},
 
+	// Member data has no row-level security: the database will serve any
+	// member's rows to any query. So the client and the drivers are importable
+	// only inside src/lib/member/, where every read is written to scope itself,
+	// and one directory is what a review has to check.
+	{
+		files: ['**/*.{ts,mts,tsx}'],
+		ignores: ['src/lib/member/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							group: ['@/lib/member/db', '**/lib/member/db'],
+							message:
+								'Read member data through a function in src/lib/member/ that scopes the query, not through the client.',
+						},
+						{
+							group: [
+								'drizzle-orm',
+								'drizzle-orm/*',
+								'@neondatabase/serverless',
+								'@electric-sql/pglite',
+							],
+							message:
+								'Database drivers belong in src/lib/member/ only; see the note on its db.ts.',
+						},
+					],
+				},
+			],
+		},
+	},
+
 	eslintConfigPrettier, // must stay LAST — turns off rules that conflict with Prettier
 ]);
 

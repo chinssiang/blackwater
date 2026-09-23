@@ -16,6 +16,8 @@
 schema.json
 sanity.types.ts
 src/sanity/lib/groq-constants.generated.ts
+# drizzle-kit writes its migration snapshots space-indented, like schema.json.
+drizzle/meta/
 
 # Each worktree is a second full checkout with its OWN .prettierrc, so without
 # this `prettier .` descends into them: +1.8s, thousands of "[warn] Ignored
