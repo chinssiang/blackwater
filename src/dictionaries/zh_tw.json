@@ -387,12 +387,6 @@
 			"memberSince": "自 {date} 起成為會員",
 			"signOut": "登出",
 			"signingOut": "登出中…"
-		},
-		"email": {
-			"subject": "您的 Blackwater RC 登入驗證碼：{code}",
-			"intro": "這是您登入 Blackwater RC 的驗證碼：",
-			"expiry": "10 分鐘內有效。",
-			"ignore": "如果您沒有要求登入，可以忽略這封信。沒有驗證碼，任何人都無法登入。"
 		}
 	}
 }

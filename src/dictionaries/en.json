@@ -387,12 +387,6 @@
 			"memberSince": "Member since {date}",
 			"signOut": "Sign out",
 			"signingOut": "Signing out…"
-		},
-		"email": {
-			"subject": "Your Blackwater RC sign-in code: {code}",
-			"intro": "Here is your code to sign in to Blackwater RC:",
-			"expiry": "It works for 10 minutes.",
-			"ignore": "If you didn't ask to sign in, you can ignore this email. No one can sign in without the code."
 		}
 	}
 }

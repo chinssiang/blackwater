@@ -42,13 +42,8 @@ export function createAuth({
 		trustedOrigins,
 		database: drizzleAdapter(db, {
 			provider: 'pg',
-			schema: {
-				member: schema.member,
-				memberSession: schema.memberSession,
-				memberAccount: schema.memberAccount,
-				memberVerification: schema.memberVerification,
-				authRateLimit: schema.authRateLimit,
-			},
+			// schema.ts exports exactly the five tables, keyed by model name.
+			schema,
 		}),
 		user: {
 			modelName: 'member',

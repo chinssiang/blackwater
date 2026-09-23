@@ -17,6 +17,12 @@ import { toast } from 'sonner';
 
 type Step = 'email' | 'code';
 
+/** One line under the field: an error, or the "new code sent" notice. One
+ *  state rather than two, so setting either always clears the other. */
+type Message = { kind: 'error' | 'notice'; text: string } | null;
+
+const ERROR_ID = 'sign-in-error';
+
 /**
  * Two steps on one page: an email, then the code emailed to it. A member row
  * is created by the first successful code, so signing up and signing in are
@@ -34,10 +40,12 @@ export function SignInForm() {
 	const [step, setStep] = useState<Step>('email');
 	const [email, setEmail] = useState('');
 	const [code, setCode] = useState('');
-	const [error, setError] = useState('');
-	const [notice, setNotice] = useState('');
+	const [message, setMessage] = useState<Message>(null);
 	const [submitting, setSubmitting] = useState(false);
 	const codeInput = useRef<HTMLInputElement>(null);
+
+	const error = message?.kind === 'error' ? message.text : '';
+	const setError = (text: string) => setMessage({ kind: 'error', text });
 
 	// The heading and the field both change under the member, so put them
 	// where the next keystroke goes.
@@ -70,7 +78,7 @@ export function SignInForm() {
 	const onSubmitEmail = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!validateEmail(email)) return setError(t.invalidEmail);
-		setError('');
+		setMessage(null);
 		setSubmitting(true);
 		if (await sendCode()) setStep('code');
 		setSubmitting(false);
@@ -81,11 +89,10 @@ export function SignInForm() {
 	// and the "new code sent" notice below is announced from where focus stays.
 	const onResend = async () => {
 		if (submitting) return;
-		setError('');
-		setNotice('');
+		setMessage(null);
 		setCode('');
 		setSubmitting(true);
-		if (await sendCode()) setNotice(t.resent);
+		if (await sendCode()) setMessage({ kind: 'notice', text: t.resent });
 		setSubmitting(false);
 	};
 
@@ -93,15 +100,13 @@ export function SignInForm() {
 		if (submitting) return;
 		setStep('email');
 		setCode('');
-		setError('');
-		setNotice('');
+		setMessage(null);
 	};
 
 	const onSubmitCode = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (code.length !== CODE_LENGTH) return setError(t.invalidCode);
-		setError('');
-		setNotice('');
+		setMessage(null);
 		setSubmitting(true);
 		const res = await fetch('/api/auth/sign-in/email-otp', {
 			method: 'POST',
@@ -124,49 +129,40 @@ export function SignInForm() {
 		setSubmitting(false);
 	};
 
-	const errorId = 'sign-in-error';
-	const submitClass = 'min-w-22 bg-black text-white';
+	// The props both steps' inputs share: typing clears the error, and the
+	// error is what describes the field.
+	const inputProps = {
+		'aria-invalid': !!error,
+		'aria-describedby': error ? ERROR_ID : undefined,
+		disabled: submitting,
+	};
 
 	if (step === 'email') {
 		return (
 			<>
 				<h1 className="t-h-1 mb-3 font-medium text-balance">{t.heading}</h1>
 				<p className="t-b-1 mb-6 text-pretty">{t.intro}</p>
-				<form onSubmit={onSubmitEmail} noValidate>
-					<Field data-invalid={!!error || undefined}>
-						<FieldLabel htmlFor="sign-in-email">{t.emailLabel}</FieldLabel>
-						<div className="flex gap-3">
-							<Input
-								id="sign-in-email"
-								type="email"
-								autoComplete="email"
-								placeholder={t.emailPlaceholder}
-								value={email}
-								onChange={(e) => {
-									setEmail(e.target.value);
-									if (error) setError('');
-								}}
-								aria-invalid={!!error}
-								aria-describedby={error ? errorId : undefined}
-								disabled={submitting}
-							/>
-							<Button
-								type="submit"
-								variant="outline"
-								size="lg"
-								disabled={submitting}
-								className={submitClass}
-							>
-								{submitting ? t.sending : t.sendCode}
-							</Button>
-						</div>
-						{error && (
-							<p id={errorId} role="alert" className="t-b-2 text-destructive">
-								{error}
-							</p>
-						)}
-					</Field>
-				</form>
+				<InlineField
+					id="sign-in-email"
+					label={t.emailLabel}
+					submitLabel={submitting ? t.sending : t.sendCode}
+					onSubmit={onSubmitEmail}
+					submitting={submitting}
+					error={error}
+				>
+					<Input
+						{...inputProps}
+						id="sign-in-email"
+						type="email"
+						autoComplete="email"
+						placeholder={t.emailPlaceholder}
+						value={email}
+						onChange={(e) => {
+							setEmail(e.target.value);
+							if (error) setMessage(null);
+						}}
+					/>
+				</InlineField>
 				<p className="t-b-2 text-foreground/60 mt-4 text-pretty">{t.privacy}</p>
 			</>
 		);
@@ -178,48 +174,34 @@ export function SignInForm() {
 			<p className="t-b-1 mb-6 break-words">
 				{interpolate(t.codeSentTo, { email })}
 			</p>
-			<form onSubmit={onSubmitCode} noValidate>
-				<Field data-invalid={!!error || undefined}>
-					<FieldLabel htmlFor="sign-in-code">{t.codeLabel}</FieldLabel>
-					<div className="flex gap-3">
-						<Input
-							ref={codeInput}
-							id="sign-in-code"
-							// A numeric keypad on phones, and iOS/Android offer the code
-							// straight from the incoming email.
-							inputMode="numeric"
-							autoComplete="one-time-code"
-							pattern="[0-9]*"
-							maxLength={CODE_LENGTH}
-							value={code}
-							onChange={(e) => {
-								setCode(e.target.value.replace(/\D/g, ''));
-								if (error) setError('');
-							}}
-							aria-invalid={!!error}
-							aria-describedby={error ? errorId : undefined}
-							disabled={submitting}
-							className="tracking-[0.3em]"
-						/>
-						<Button
-							type="submit"
-							variant="outline"
-							size="lg"
-							disabled={submitting}
-							className={submitClass}
-						>
-							{submitting ? t.verifying : t.verify}
-						</Button>
-					</div>
-					{error && (
-						<p id={errorId} role="alert" className="t-b-2 text-destructive">
-							{error}
-						</p>
-					)}
-				</Field>
-			</form>
+			<InlineField
+				id="sign-in-code"
+				label={t.codeLabel}
+				submitLabel={submitting ? t.verifying : t.verify}
+				onSubmit={onSubmitCode}
+				submitting={submitting}
+				error={error}
+			>
+				<Input
+					{...inputProps}
+					ref={codeInput}
+					id="sign-in-code"
+					// A numeric keypad on phones, and iOS/Android offer the code
+					// straight from the incoming email.
+					inputMode="numeric"
+					autoComplete="one-time-code"
+					pattern="[0-9]*"
+					maxLength={CODE_LENGTH}
+					value={code}
+					onChange={(e) => {
+						setCode(e.target.value.replace(/\D/g, ''));
+						if (error) setMessage(null);
+					}}
+					className="tracking-[0.3em]"
+				/>
+			</InlineField>
 			<p role="status" className="t-b-2 mt-3 min-h-[1.5em]">
-				{notice}
+				{message?.kind === 'notice' ? message.text : ''}
 			</p>
 			<div className="mt-2 flex flex-wrap gap-x-6 gap-y-2">
 				<Button
@@ -242,5 +224,49 @@ export function SignInForm() {
 				</Button>
 			</div>
 		</>
+	);
+}
+
+/** A labelled input with its submit button beside it and the error beneath. */
+function InlineField({
+	id,
+	label,
+	submitLabel,
+	onSubmit,
+	submitting,
+	error,
+	children,
+}: {
+	id: string;
+	label: string;
+	submitLabel: string;
+	onSubmit: (e: React.FormEvent) => void;
+	submitting: boolean;
+	error: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<form onSubmit={onSubmit} noValidate>
+			<Field data-invalid={!!error || undefined}>
+				<FieldLabel htmlFor={id}>{label}</FieldLabel>
+				<div className="flex gap-3">
+					{children}
+					<Button
+						type="submit"
+						variant="outline"
+						size="lg"
+						disabled={submitting}
+						className="min-w-22 bg-black text-white"
+					>
+						{submitLabel}
+					</Button>
+				</div>
+				{error && (
+					<p id={ERROR_ID} role="alert" className="t-b-2 text-destructive">
+						{error}
+					</p>
+				)}
+			</Field>
+		</form>
 	);
 }
