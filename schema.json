@@ -6985,13 +6985,6 @@
         },
         "optional": true
       },
-      "landingTitle": {
-        "type": "objectAttribute",
-        "value": {
-          "type": "string"
-        },
-        "optional": true
-      },
       "textColor": {
         "type": "objectAttribute",
         "value": {

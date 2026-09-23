@@ -2,7 +2,9 @@
 
 import { type CSSProperties, JSX } from 'react';
 import {
+	type ImageBlockObj,
 	SANITY_IMAGE_QUALITY,
+	type SanityImageData,
 	buildSanityImageUrl,
 	hotspotObjectPosition,
 	resolveRenderedRatio,
@@ -10,15 +12,8 @@ import {
 import { cn } from '@/lib/utils';
 import Caption from '@/components/Caption';
 import SanityImage from '@/components/SanityImage';
-import type { SanityImageData } from '@/components/SanityImage';
 
-export interface ImageBlockObj {
-	image?: SanityImageData | null;
-	imageMobile?: SanityImageData | null;
-	customRatio?: number | null;
-	customRatioMobile?: number | null;
-	caption?: string | null;
-}
+export type { ImageBlockObj };
 
 interface ImageBlockProps {
 	imageObj?: ImageBlockObj | null;

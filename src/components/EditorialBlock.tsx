@@ -1,22 +1,18 @@
 import type { ReactNode } from 'react';
-import type {
-	ArbitraryTypedObject,
-	PortableTextBlock,
-} from '@portabletext/types';
 import { stegaClean } from '@sanity/client/stega';
 import { revealEntrance } from '@/lib/animate';
+import {
+	type EditorialBlockData,
+	editorialBlockIsRenderable,
+	resolveEditorialCta,
+} from '@/lib/editorial-block';
 import { resolveCopyColumnClass } from '@/lib/section-appearance';
 import { SECTION_CONTENT_INSET, cn, hasArrayValue } from '@/lib/utils';
-import { toVimeoEmbedUrl } from '@/lib/vimeo';
 import CustomLink from '@/components/CustomLink';
 import CustomPortableText from '@/components/CustomPortableText';
-import EditorialVideoDialog, {
-	type EditorialVideo,
-} from '@/components/EditorialVideoDialog';
-import ImageBlock, { type ImageBlockObj } from '@/components/ImageBlock';
-import SectionShell, {
-	type SectionAppearance,
-} from '@/components/SectionShell';
+import EditorialVideoDialog from '@/components/EditorialVideoDialog';
+import ImageBlock from '@/components/ImageBlock';
+import SectionShell from '@/components/SectionShell';
 import { buttonVariants } from '@/components/ui/Button';
 
 // The copy column's width when Max Width is 'Full' -- a reading measure rather
@@ -24,24 +20,7 @@ import { buttonVariants } from '@/components/ui/Button';
 const DEFAULT_COPY_MEASURE = 'max-w-xl';
 
 type EditorialBlockProps = {
-	data: {
-		// Both resolved to booleans in GROQ (editorialBlockField), never the raw
-		// radio strings.
-		backgroundLayout?: boolean | null;
-		imageRight?: boolean | null;
-		eyebrow?: string | null;
-		heading?: string | null;
-		paragraph?: (PortableTextBlock | ArbitraryTypedObject)[] | null;
-		image?: ImageBlockObj | null;
-		callToAction?: {
-			label?: string | null;
-			// Exactly one target family is projected, by the CTA's `action`.
-			link?: { href?: unknown; isNewTab?: boolean | null } | null;
-			vimeoUrl?: string | null;
-			videoFile?: { url?: string | null; mimeType?: string | null } | null;
-		} | null;
-		sectionAppearance?: SectionAppearance;
-	};
+	data: EditorialBlockData;
 	headingLevel?: 'h1' | 'h2';
 	/** The page's first module -- see HeroBlock, which reads it the same way. */
 	isPageOpener?: boolean;
@@ -85,39 +64,27 @@ export default function EditorialBlock({
 	const paragraphIn = revealEntrance(2, isPageOpener);
 	const ctaIn = revealEntrance(3, isPageOpener);
 
-	const ctaLabel = callToAction?.label;
-	// `href` arrives as `unknown`: resolvedHrefGroq is a select() typegen cannot
-	// narrow.
-	const ctaHref =
-		typeof callToAction?.link?.href === 'string'
-			? callToAction.link.href
-			: null;
-	const vimeoEmbedUrl = toVimeoEmbedUrl(callToAction?.vimeoUrl);
-	const fileUrl = callToAction?.videoFile?.url;
-	const video: EditorialVideo | null = vimeoEmbedUrl
-		? { vimeoEmbedUrl }
-		: fileUrl
-			? { fileUrl, mimeType: callToAction?.videoFile?.mimeType }
-			: null;
-
+	const resolvedCta = resolveEditorialCta(callToAction);
 	let cta: ReactNode = null;
-	if (ctaLabel && video) {
-		cta = <EditorialVideoDialog label={ctaLabel} video={video} />;
-	} else if (ctaLabel && ctaHref) {
+	if (resolvedCta && 'video' in resolvedCta) {
+		cta = (
+			<EditorialVideoDialog
+				label={resolvedCta.label}
+				video={resolvedCta.video}
+			/>
+		);
+	} else if (resolvedCta) {
 		cta = (
 			<CustomLink
-				link={{
-					href: ctaHref,
-					isNewTab: callToAction?.link?.isNewTab ?? false,
-				}}
+				link={{ href: resolvedCta.href, isNewTab: resolvedCta.isNewTab }}
 				className={buttonVariants({ size: 'lg' })}
 			>
-				{ctaLabel}
+				{resolvedCta.label}
 			</CustomLink>
 		);
 	}
 
-	if (!(hasImage || eyebrow || hasHeading || hasParagraph || cta)) {
+	if (!editorialBlockIsRenderable(data)) {
 		return null;
 	}
 

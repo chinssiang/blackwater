@@ -7,7 +7,10 @@ import {
 } from '@/lib/i18n';
 
 const NON_DEFAULT_LOCALES = LOCALES.filter((l) => l !== DEFAULT_LOCALE);
-const PASSTHROUGH_PREFIXES = LOCALE_EXEMPT_PREFIXES;
+// Plus the Studio picker's preview frames, which carry their own locale
+// segment. They are not LOCALE_EXEMPT (they have a zh_tw variant), so they are
+// listed here rather than there.
+const PASSTHROUGH_PREFIXES = [...LOCALE_EXEMPT_PREFIXES, '/module-preview'];
 
 const LOCALE_HEADER = 'x-locale';
 
@@ -43,5 +46,7 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-	matcher: ['/((?!api|sanity|_next/static|_next/image|favicon.ico|.*\\..*).*)'],
+	matcher: [
+		'/((?!(?:api|sanity)(?:/|$)|_next/static|_next/image|favicon.ico|.*\\..*).*)',
+	],
 };

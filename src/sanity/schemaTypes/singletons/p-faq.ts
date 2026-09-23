@@ -34,15 +34,12 @@ export const pFaq = defineType({
 			to: [{ type: 'gFaqList' }],
 			description:
 				'Which FAQ set this page shows. Sets are managed in Global → FAQ Sets. Both language versions of this page should point at the same set — that is what keeps the two FAQ pages in step.',
-			// A WARNING, not an error, so the unset field could not make the pFaq
-			// documents unpublishable while the one-shot FAQ-set migration was
-			// pending. Both datasets are migrated (the script went in 0db5fb7).
 			validation: (Rule) =>
 				Rule.custom((value) =>
 					value
 						? true
 						: 'Pick the FAQ set this page renders — without one, /faq shows only its title and intro.'
-				).warning(),
+				),
 		}),
 		sharing(),
 	],

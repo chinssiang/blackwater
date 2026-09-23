@@ -1,5 +1,4 @@
 import { Suspense } from 'react';
-import localFont from 'next/font/local';
 import '@/globals.css';
 import { SanityLive } from '@/sanity/lib/live';
 import { stegaClean } from '@sanity/client/stega';
@@ -7,6 +6,7 @@ import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import defineSiteJsonLd from '@/lib/defineSiteJsonLd';
 import type { Dictionary } from '@/lib/dictionary';
+import { baselTypewriter, fontABCDisplay } from '@/lib/fonts';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
 import ReactQueryProvider from '@/lib/providers/ReactQueryProvider';
 import DraftModeTools from '@/components/DraftModeTools';
@@ -19,30 +19,6 @@ import HeadTrackingCode, {
 	type TrackingIntegrations,
 } from '@/components/layout/HeadTrackingCode';
 import { Toaster } from 'sonner';
-
-const fontABCDisplay = localFont({
-	src: [
-		{
-			path: '../../app/fonts/abc-display-regular.woff2',
-			weight: '400',
-			style: 'normal',
-		},
-	],
-	variable: '--font-ABC-Display',
-	display: 'swap',
-});
-
-const baselTypewriter = localFont({
-	src: [
-		{
-			path: '../../app/fonts/basel-typewriter.woff2',
-			weight: '400',
-			style: 'normal',
-		},
-	],
-	variable: '--font-basel-typewriter',
-	display: 'swap',
-});
 
 export default function HtmlShell({
 	locale,

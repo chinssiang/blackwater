@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { PlayIcon } from 'lucide-react';
+import type { EditorialVideo } from '@/lib/editorial-block';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import { useTranslations } from '@/components/LocaleProvider';
 import { CloseIcon } from '@/components/SvgIcons';
@@ -24,9 +25,6 @@ import {
 // Kept apart from EditorialBlock, which stays a Server Component, so only this
 // button and its dialog ship to the client. `@base-ui/react/dialog` already
 // rides in the header chrome, so there is no bundle reason to split it further.
-
-export type EditorialVideo =
-	{ vimeoEmbedUrl: string } | { fileUrl: string; mimeType?: string | null };
 
 export default function EditorialVideoDialog({
 	label,

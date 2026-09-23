@@ -733,8 +733,9 @@ const heroBlockField = `
 	"waveBackground": backgroundEffect == 'wave',
 	// Narrower than imageBlockMetaFields, which the other image projections use.
 	// That fragment also pulls caption and a link projection, and this object has
-	// neither: hero-block.ts declares its customImage with hasCaptionOption false
-	// and no link option, and the image renders aria-hidden behind the copy.
+	// neither: schemaTypes/objects/hero-block.ts declares its customImage with
+	// hasCaptionOption false and no link option, and the image renders
+	// aria-hidden behind the copy.
 	// Dropping the link arm keeps the ~2KB resolvedHrefGroq select() out of the
 	// compiled query and, more to the point, one interpolation level off the
 	// pageHome/pageGeneral chain the note above is about.
@@ -989,21 +990,11 @@ export const contactFormConfigQuery = defineQuery(`{
 	"subject": ${byLocale('pContact')}[defined(contactForm.emailSubject)][0].contactForm.emailSubject
 }`);
 
-export // `landingTitle` is not rendered: PageHome reads it only to tell "this dataset
-// predates the hero migration" from "this homepage has no modules yet", and the
-// migration unsets it, so it and the schema field retire together.
-//
-// `moduleCount` counts pageModules BEFORE `moduleVisible` filters it. Without it
-// the guard cannot separate "no modules authored" from "every module parked with
-// the eye toggle", so hiding the only module reproduced the unmigrated signature
-// and failed the production build.
-const pageHomeQuery = defineQuery(`
+export const pageHomeQuery = defineQuery(`
 	${byLocale('pHome')}[0]{
 		${baseFields},
 		${availableLocalesField},
 		"isHomepage": true,
-		landingTitle,
-		"moduleCount": count(pageModules),
 		"textColor": textColor->color,
 		pageModules[${moduleVisible}]{
 			${pageModuleFields}

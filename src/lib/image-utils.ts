@@ -1,5 +1,10 @@
 import { urlForImage } from '@/sanity/lib/image';
 import type { SanityImageSource } from '@sanity/image-url';
+import type {
+	SanityImageAssetReference,
+	SanityImageCrop,
+	SanityImageHotspot,
+} from 'sanity.types';
 
 /**
  * The quality every Sanity image is requested at.
@@ -40,6 +45,35 @@ interface SanityRgb {
 	g: number;
 	b: number;
 	a: number;
+}
+
+// The projected image shapes <SanityImage> and <ImageBlock> render. Declared
+// here rather than in those client components so the Node-side leaf modules
+// (hero-block.ts, editorial-block.ts) can type their data without depending on
+// `src/components`; both components re-export them.
+export interface SanityImageData {
+	asset?: SanityImageAssetReference | null;
+	crop?: SanityImageCrop | null;
+	hotspot?: SanityImageHotspot | null;
+	altText?: string | null;
+	metadata?: {
+		lqip?: string | null;
+		dimensions?: {
+			width?: number | null;
+			height?: number | null;
+			aspectRatio?: number | null;
+		} | null;
+		mimeType?: string | null;
+		isOpaque?: boolean | null;
+	} | null;
+}
+
+export interface ImageBlockObj {
+	image?: SanityImageData | null;
+	imageMobile?: SanityImageData | null;
+	customRatio?: number | null;
+	customRatioMobile?: number | null;
+	caption?: string | null;
 }
 
 export interface SanityColor {

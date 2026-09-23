@@ -4,33 +4,14 @@ import { JSX, useState } from 'react';
 import Image, { type ImageLoader } from 'next/image';
 import {
 	SANITY_IMAGE_QUALITY,
+	type SanityImageData,
 	buildSanityImageUrl,
 	hotspotObjectPosition,
 	resolveRenderedRatio,
 } from '@/lib/image-utils';
 import { cn } from '@/lib/utils';
-import type {
-	SanityImageAssetReference,
-	SanityImageCrop,
-	SanityImageHotspot,
-} from 'sanity.types';
 
-export interface SanityImageData {
-	asset?: SanityImageAssetReference | null;
-	crop?: SanityImageCrop | null;
-	hotspot?: SanityImageHotspot | null;
-	altText?: string | null;
-	metadata?: {
-		lqip?: string | null;
-		dimensions?: {
-			width?: number | null;
-			height?: number | null;
-			aspectRatio?: number | null;
-		} | null;
-		mimeType?: string | null;
-		isOpaque?: boolean | null;
-	} | null;
-}
+export type { SanityImageData };
 
 export interface SanityImageProps {
 	image?: SanityImageData | null;

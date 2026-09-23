@@ -3,9 +3,10 @@ import { stegaClean } from '@sanity/client/stega';
 // Turns whatever Vimeo URL an editor pastes into the player URL the editorial
 // module's video dialog embeds, or null when it is not one we can embed.
 //
-// One function for both sides: editorial-block.ts validates `vimeoUrl` through
-// it and EditorialBlock renders through it, so a URL the Studio accepts is
-// exactly a URL the page can play.
+// One function for both sides: the schema's editorial-block.ts
+// (schemaTypes/objects/) validates `vimeoUrl` through it and EditorialBlock
+// renders through it, so a URL the Studio accepts is exactly a URL the page
+// can play.
 //
 // `autoplay=1` because the dialog only mounts the player after a click on the
 // CTA, so playback starting is the whole point of that click. `dnt=1` stops
