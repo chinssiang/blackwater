@@ -178,6 +178,19 @@ Products are **hybrid**: Sanity owns everything editorial (slug/routes, title, c
 
 **The rules that govern `src/lib/shopify/`, `src/app/api/shopify/`, `src/components/cart/` and the product detail page live in `.claude/rules/shopify-cart.md`**, which loads automatically on its `paths` frontmatter whenever those files are in play — several of its constraints (uncached carts, no `@inContext` on cart calls, the split `mainImage`/gallery ownership, the `cache()` argument-identity requirement) look like inconsistencies begging to be tidied up and must not be. Read it before touching any of those; if you are editing them and it has not loaded, open it explicitly.
 
+### Membership (`src/lib/member/`)
+
+Free membership, signed in with a 6-digit code emailed to the member — no passwords. **Better Auth** (email-OTP plugin) on **Drizzle + Neon Postgres**, all inside the Next app. Not Auth.js: it has been security-maintenance-only since joining Better Auth in 2026, and its own docs send new projects here. Member data lives in Postgres, **never in Sanity** — the Studio has no row-level access, the app deliberately holds no write token, and `gTeamMember` is the crew roster, not members.
+
+- **The database client is fenced.** There is no row-level security, so any query can read any member's rows. `eslint.config.mjs` forbids importing `@/lib/member/db` or a driver (`drizzle-orm`, `@neondatabase/serverless`, `@electric-sql/pglite`) outside `src/lib/member/`. New member reads go in that directory as functions taking the member's id; do not widen the fence to reach the client from a page.
+- **`getDb()` and `getAuth()` are created on first use, never at import.** `next build` imports these modules to collect page data, and neither CI nor a preview deploy has a `DATABASE_URL`.
+- **`/account` is the only dynamic page under `[locale]`**, because `getCurrentMember()` reads cookies. Call it from a page, never from a layout — that takes every page beneath out of static generation (see Page Architecture). Nothing in the chrome knows whether you are signed in.
+- **`advanced.disableOriginCheck: false` looks redundant and is not.** It is already false in production, but Better Auth defaults it to _true_ when `NODE_ENV` is `test`, which also switches off its CSRF check — so without it the test suite proves the protection while running with it disabled. `auth.test.ts`'s cross-origin case failed exactly that way before it was set.
+- **Schema changes:** edit `schema.ts`, run `npm run db:generate`, and commit the SQL in `drizzle/` (its `meta/` snapshots are Prettier-ignored). `npm run db:migrate` applies it to `DATABASE_URL` and is run by hand, never by the build. `auth.test.ts` applies the committed migrations to an in-process Postgres (PGlite), so a migration that does not match the schema fails CI.
+- **Codes are hashed at rest** (`storeOTP: 'hashed'` — the library default is plain text), expire after 10 minutes, burn after 3 wrong tries, and are rate-limited in the **database**, so every Vercel instance shares one count.
+- **Codes go out over the contact form's SMTP account** (`sign-in-email.ts`), Gmail by default, so all three share its daily cap (~500/day personal, 2,000 Workspace). Changing provider is a change to `sendSignInCode()` only.
+- **`PRIVACY_NOTICE_VERSION`** (`auth.ts`) is stamped on each new member as the record of which notice they saw. Bump it whenever `account.signIn.privacy` changes in either dictionary.
+
 ### Environment Variables
 
 The full list is in `.env.example`; the Shopify walkthrough is `docs/SHOPIFY-SETUP.md`. What those files don't say:
@@ -185,6 +198,7 @@ The full list is in `.env.example`; the Shopify walkthrough is `docs/SHOPIFY-SET
 - **The Shopify vars are all optional.** Without `SHOPIFY_STORE_DOMAIN` plus a Storefront token, the whole integration no-ops and products render from the manual Sanity fields.
 - `SHOPIFY_STOREFRONT_PRIVATE_TOKEN` (Headless channel) is preferred over `SHOPIFY_STOREFRONT_API_TOKEN` — the public one is throttled per buyer IP.
 - `SANITY_READ_WRITE_TOKEN` is **only** for the one-shot `scripts/`, never read by the app. `SANITY_API_READ_TOKEN` cannot mutate.
+- `DATABASE_URL` and `BETTER_AUTH_SECRET` are needed only by `/account` and `/api/auth`; every other page builds and serves without them. Rotating the secret signs every member out.
 - `SHOPIFY_ADMIN_API_TOKEN` is retired and read nowhere — a 38-char `shpss_` value is an app _client secret_, not an access token, and belongs in neither.
 
 ### Troubleshooting
