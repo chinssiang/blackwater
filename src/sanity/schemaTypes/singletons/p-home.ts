@@ -1,3 +1,4 @@
+import { PageModulesInput } from '@/sanity/schemaTypes/components/PageModulesInput';
 import { language } from '@/sanity/schemaTypes/objects/language';
 import sharing from '@/sanity/schemaTypes/objects/sharing';
 import { slug } from '@/sanity/schemaTypes/objects/slug';
@@ -28,6 +29,7 @@ export const pHome = defineType({
 				{ type: 'eventsBlock' },
 				{ type: 'productsBlock' },
 			],
+			components: { input: PageModulesInput },
 		},
 		sharing(),
 	],
