@@ -24,6 +24,7 @@ export const pHome = defineType({
 			type: 'array',
 			of: [
 				{ type: 'heroBlock' },
+				{ type: 'editorialBlock' },
 				{ type: 'freeform' },
 				{ type: 'faqBlock' },
 				{ type: 'eventsBlock' },

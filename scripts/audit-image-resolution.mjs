@@ -62,6 +62,7 @@ const QUERY = /* groq */ `
 *[
   _type in ["pProduct", "pProductCategory", "pProductCollection"]
   && !(_id in path("drafts.**"))
+  && !(_id in path("versions.**"))
 ]{
   _id,
   _type,
@@ -79,6 +80,9 @@ const docs = await client.fetch(QUERY);
 
 const missing = docs.filter((d) => !d.asset);
 const withAsset = docs.filter((d) => d.asset?.width);
+// An asset with no stored dimensions cannot be judged either way, so it is
+// listed on its own rather than dropped from both counts.
+const unsized = docs.filter((d) => d.asset && !d.asset.width);
 const tooSmall = withAsset.filter(
 	(d) => d.asset.width < (MIN_WIDTH[d._type] ?? LOWEST_BAR)
 );
@@ -107,6 +111,14 @@ if (tooSmall.length) {
 				`${pad(`${MIN_WIDTH[d._type] ?? LOWEST_BAR}px`, 8)} ${d.asset.originalFilename ?? ''}`
 		);
 	}
+	console.log('');
+}
+
+if (unsized.length) {
+	console.log(
+		`${unsized.length} documents have an image with no stored dimensions:`
+	);
+	for (const d of unsized) console.log(`  ${d._type}  ${d.slug ?? d._id}`);
 	console.log('');
 }
 

@@ -47,7 +47,7 @@ export default function PageHome({ data, locale }: PageHomeProps) {
 			    `shouldShowWeatherWidget` no longer needs to name "/" and cannot
 			    double up with the hero copy. Dropping that route rule on the premise
 			    that the homepage opens with a hero left prod — whose pHome documents
-			    still have no pageModules at all — with no widget in either locale,
+			    then had no pageModules at all — with no widget in either locale,
 			    and did the same for any homepage opening with another module type or
 			    whose hero is switched off. */}
 			{!widgetHeroKey && <WeatherWidget className="fixed lg:bottom-6" />}

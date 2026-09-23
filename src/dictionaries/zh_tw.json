@@ -389,5 +389,8 @@
 			"signingOut": "登出中…"
 		},
 		"unavailable": "會員登入暫時無法使用，請稍後再試。"
+	},
+	"video": {
+		"close": "關閉影片"
 	}
 }

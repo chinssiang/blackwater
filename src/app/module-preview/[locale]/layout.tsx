@@ -49,14 +49,15 @@ export default async function ModulePreviewLayout({
 }) {
 	const { locale } = await params;
 	if (!isLocale(locale)) notFound();
-	const { products, cart } = await getDictionary(locale);
+	const { products, cart, video } = await getDictionary(locale);
 	// Only the namespaces a module reads on the CLIENT: ProductCard's `products`,
-	// and `cart` for its quick-add control. Everything handed to LocaleProvider
-	// is serialized into each frame's RSC payload, five frames per picker open,
-	// and the server modules resolve their own strings. The cast is the price of
-	// LocaleProvider typing the whole dictionary; a module that starts reading
-	// another namespace client-side must be added here or it reads undefined.
-	const dictionary = { products, cart } as Dictionary;
+	// `cart` for its quick-add control, and `video` for EditorialVideoDialog.
+	// Everything handed to LocaleProvider is serialized into each frame's RSC
+	// payload, one frame per module type per picker open, and the server modules
+	// resolve their own strings. The cast is the price of LocaleProvider typing
+	// the whole dictionary; a module that starts reading another namespace
+	// client-side must be added here or it reads undefined.
+	const dictionary = { products, cart, video } as Dictionary;
 
 	return (
 		<html

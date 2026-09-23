@@ -57,11 +57,11 @@ const MAX_WIDTH_CLASSES: Record<MaxWidth, string> = {
 // An allowlist rather than a passthrough: `textAlign` arrives as a class name
 // straight from a document, so anything unrecognised must fall back rather than
 // reach the class attribute.
-// Exported as a tuple, and `alignClass` is narrowed to it below, so a consumer
-// mapping these to something else (HeroBlock turns them into an auto margin)
-// gets a COMPILE error when a fifth alignment is added rather than a silent
-// fallback. Same reason MAX_WIDTH_CLASSES and MAX_WIDTH_PX are pinned by a test:
-// two hand-kept maps of the same vocabulary are how this drifts.
+// A tuple, and `alignClass` is narrowed to it below, so COPY_MARGIN_CLASSES --
+// which maps these to an auto margin -- is a COMPILE error when a fifth
+// alignment is added rather than a silent fallback. Same reason
+// MAX_WIDTH_CLASSES and MAX_WIDTH_PX are pinned by a test: two hand-kept maps of
+// the same vocabulary are how this drifts.
 export const TEXT_ALIGN_CLASSES = [
 	'text-left',
 	'text-center',
@@ -69,7 +69,51 @@ export const TEXT_ALIGN_CLASSES = [
 	'text-justify',
 ] as const;
 
-export type TextAlignClass = (typeof TEXT_ALIGN_CLASSES)[number];
+type TextAlignClass = (typeof TEXT_ALIGN_CLASSES)[number];
+
+// Which auto margin puts a capped copy column where its Text Alignment says it
+// belongs. Total over TextAlignClass, so adding a fifth alignment fails the
+// build here instead of silently centring.
+//
+// Only for a module that caps a narrow COPY COLUMN inside a full-width section
+// -- heroBlock and editorialBlock, whose artwork spans the section. Every other
+// module is centred by the shell's own `mx-auto` on the <section>, because
+// there the section IS the capped box.
+const COPY_MARGIN_CLASSES: Record<TextAlignClass, string> = {
+	'text-left': 'mr-auto',
+	'text-justify': 'mr-auto',
+	'text-center': 'mx-auto',
+	'text-right': 'ml-auto',
+};
+
+/**
+ * The classes for that copy column: the authored Max Width and the auto margin
+ * its Text Alignment calls for, with `defaultMeasure` standing in for 'Full' --
+ * a module whose section spans the page still wants a reading measure, not the
+ * whole row.
+ *
+ * `w-full` is load-bearing, not tidying. In a `flex flex-col` section the
+ * column is a flex item on the CROSS axis, and an auto cross-axis margin
+ * disables `align-self: stretch` (Flexbox 9.4), leaving the box shrink-to-fit,
+ * where a max-width binds only once the content already exceeds it. Measured on
+ * a heading-only hero: 168px without it, the authored 768px with it.
+ *
+ * A choice between the two measures rather than `cn(defaultMeasure,
+ * maxWidthClass)`, which resolves only through tailwind-merge's group
+ * classification and leaves a stray class behind.
+ */
+export function resolveCopyColumnClass(
+	appearance: SectionAppearance | undefined,
+	defaultMeasure: string
+): string {
+	const { alignClass, maxWidthClass, isFullWidth } =
+		resolveSectionAppearance(appearance);
+	return [
+		'w-full',
+		COPY_MARGIN_CLASSES[alignClass],
+		isFullWidth ? defaultMeasure : maxWidthClass,
+	].join(' ');
+}
 
 // A Set for the lookup, because `align` arrives as an unnarrowed string.
 const TEXT_ALIGN_CLASS_SET: ReadonlySet<string> = new Set(TEXT_ALIGN_CLASSES);

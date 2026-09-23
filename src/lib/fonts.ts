@@ -2,7 +2,7 @@ import localFont from 'next/font/local';
 
 // The two brand faces, declared once for every root layout that renders site
 // markup: HtmlShell, and the Studio's module-preview frames
-// (src/app/module-preview/layout.tsx). The `t-*` type utilities resolve these
+// (src/app/module-preview/[locale]/layout.tsx). The `t-*` type utilities resolve these
 // variables, so a layout that renders modules without them falls back silently.
 
 export const fontABCDisplay = localFont({

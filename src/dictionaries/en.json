@@ -389,5 +389,8 @@
 			"signingOut": "Signing out…"
 		},
 		"unavailable": "Member sign-in isn't available right now. Please try again later."
+	},
+	"video": {
+		"close": "Close video"
 	}
 }

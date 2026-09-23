@@ -1,5 +1,6 @@
 import dynamic from 'next/dynamic';
 import type { Locale } from '@/lib/i18n';
+import EditorialBlock from './EditorialBlock';
 import EventsBlock from './EventsBlock';
 import FaqBlock from './FaqBlock';
 import HeroBlock from './HeroBlock';
@@ -39,8 +40,9 @@ type PageModulesProps = {
 	ownsWeatherWidget?: boolean;
 	/**
 	 * Whether this is the page's FIRST module — what a visitor sees on the first
-	 * paint, and so where the LCP element lives. Only heroBlock reads it, to drop
-	 * the entrance fade from a heading Chrome is about to measure.
+	 * paint, and so where the LCP element lives. heroBlock and editorialBlock
+	 * read it, to drop the entrance fade from a heading Chrome is about to
+	 * measure.
 	 *
 	 * Deliberately separate from `headingLevel`, which looks like the same fact
 	 * and is not: PageGeneral renders its own <h1> and passes no level, so every
@@ -82,6 +84,15 @@ export default function PageModules({
 					data={module}
 					headingLevel={headingLevel}
 					ownsWeatherWidget={ownsWeatherWidget}
+					isPageOpener={isPageOpener}
+				/>
+			);
+
+		case 'editorialBlock':
+			return (
+				<EditorialBlock
+					data={module}
+					headingLevel={headingLevel}
 					isPageOpener={isPageOpener}
 				/>
 			);

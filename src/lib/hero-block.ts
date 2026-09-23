@@ -1,4 +1,9 @@
+import type {
+	ArbitraryTypedObject,
+	PortableTextBlock,
+} from '@portabletext/types';
 import { stegaClean } from '@sanity/client/stega';
+import type { ImageBlockObj } from '@/lib/image-utils';
 import type { SectionAppearance } from '@/lib/section-appearance';
 import { hasArrayValue } from '@/lib/utils';
 
@@ -9,8 +14,8 @@ import { hasArrayValue } from '@/lib/utils';
 export type HeroBlockData = {
 	eyebrow?: string | null;
 	heading?: string | null;
-	paragraph?: any;
-	backgroundImage?: any;
+	paragraph?: (PortableTextBlock | ArbitraryTypedObject)[] | null;
+	backgroundImage?: ImageBlockObj | null;
 	// Resolved to a boolean in GROQ (heroBlockField), never the raw string.
 	waveBackground?: boolean | null;
 	callToAction?: {

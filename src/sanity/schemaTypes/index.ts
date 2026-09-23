@@ -18,6 +18,7 @@ import { pGeneral } from './documents/p-general';
 import { pProduct } from './documents/p-product';
 import { pProductCategory } from './documents/p-product-category';
 import { pProductCollection } from './documents/p-product-collection';
+import { editorialBlock } from './objects/editorial-block';
 import { eventStation } from './objects/event-station';
 import { eventsBlock } from './objects/events-block';
 import { faqBlock } from './objects/faq-block';
@@ -103,6 +104,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	faqBlock,
 	eventsBlock,
 	heroBlock,
+	editorialBlock,
 	productsBlock,
 	formField,
 	link(),

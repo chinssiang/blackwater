@@ -1,34 +1,35 @@
 'use client';
 
-import { JSX } from 'react';
+import { type CSSProperties, JSX } from 'react';
 import {
+	type ImageBlockObj,
 	SANITY_IMAGE_QUALITY,
+	type SanityImageData,
 	buildSanityImageUrl,
+	hotspotObjectPosition,
 	resolveRenderedRatio,
 } from '@/lib/image-utils';
 import { cn } from '@/lib/utils';
 import Caption from '@/components/Caption';
 import SanityImage from '@/components/SanityImage';
-import type { SanityImageData } from '@/components/SanityImage';
 
-export interface ImageBlockObj {
-	image?: SanityImageData | null;
-	imageMobile?: SanityImageData | null;
-	customRatio?: number | null;
-	customRatioMobile?: number | null;
-	caption?: string | null;
-}
+export type { ImageBlockObj };
 
 interface ImageBlockProps {
 	imageObj?: ImageBlockObj | null;
 	alt?: string;
 	className?: string;
 	fill?: 'cover' | 'contain';
-	breakpoint?: number;
 	quality?: number;
 	sizes?: string;
 	priority?: boolean;
 }
+
+// Where the mobile image takes over from the desktop one, in the two <source>
+// media queries below. A constant rather than a prop: the hotspot override has
+// to name the same width as a literal class, and a prop could only make the two
+// disagree (no caller ever passed one).
+const MOBILE_MAX_WIDTH = 768;
 
 // Next's default deviceSizes + imageSizes, which next.config.mjs overrides
 // neither of. Restated here because a <source srcSet> is a plain string: it
@@ -78,7 +79,6 @@ function ImageBlock({
 	alt,
 	className,
 	fill,
-	breakpoint = 768,
 	quality = SANITY_IMAGE_QUALITY,
 	sizes = '(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw',
 	priority = false,
@@ -154,17 +154,48 @@ function ImageBlock({
 		);
 		const rHeight = rWidth && rRatio ? Math.round(rWidth / rRatio) : undefined;
 
+		// The <img> carries the desktop image's hotspot (SanityImage sets it); the
+		// mobile <source> is a different bitmap with its own. One element takes one
+		// position, so below the breakpoint the <picture> sets
+		// `--hotspot-override`, which SanityImage's inline position defers to, and
+		// the <img> reads it directly for the case where the desktop image has no
+		// hotspot and so no inline position at all. Always, not only when the
+		// mobile image has a hotspot of its own, or it would inherit the desktop
+		// one. The query is a literal because Tailwind only emits classes it finds
+		// verbatim; image-utils.test.ts holds it to MOBILE_MAX_WIDTH. Not on a
+		// contained image, which globals.css keeps centred.
+		const mobilePosition =
+			hotspotObjectPosition(
+				rDimensions?.aspectRatio,
+				responsiveImage.crop,
+				responsiveImage.hotspot,
+				customRatioMobile
+			) ?? '50% 50%';
+		const positionsMobile = fill !== 'contain';
+
 		content = (
-			<picture className={cn(fillClass, className)}>
+			<picture
+				className={cn(
+					fillClass,
+					positionsMobile &&
+						'[@media(max-width:768px)]:[--hotspot-override:var(--hotspot-mobile)] [&_img]:[@media(max-width:768px)]:object-(--hotspot-override)',
+					className
+				)}
+				style={
+					positionsMobile
+						? ({ '--hotspot-mobile': mobilePosition } as CSSProperties)
+						: undefined
+				}
+			>
 				<source
-					media={`(min-width: ${breakpoint + 1}px)`}
+					media={`(min-width: ${MOBILE_MAX_WIDTH + 1}px)`}
 					srcSet={buildSrcSet(image, width, quality, customRatio || undefined)}
 					sizes={sizes}
 					width={width}
 					height={height}
 				/>
 				<source
-					media={`(max-width: ${breakpoint}px)`}
+					media={`(max-width: ${MOBILE_MAX_WIDTH}px)`}
 					srcSet={buildSrcSet(
 						responsiveImage,
 						rWidth,

@@ -1,5 +1,6 @@
 import { MODULE_PREVIEWS } from '@/app/module-preview/_presets';
 import { describe, expect, it } from 'vitest';
+import { editorialBlockIsRenderable } from '@/lib/editorial-block';
 import { heroBlockIsRenderable } from '@/lib/hero-block';
 import { LOCALES } from '@/lib/i18n';
 import {
@@ -217,13 +218,15 @@ describe('every page-module Rule.custom goes through moduleRule', () => {
 	it('gives every preset data its module actually renders', () => {
 		// A module bails to null on empty data, and a preset that trips that bail
 		// passes the key check above while its card shows an empty frame. Each
-		// line mirrors its component's own bail: heroBlockIsRenderable, FaqBlock's
-		// question-and-answer filter, and the non-empty arrays Freeform and
-		// ProductsBlock render. eventsBlock is absent: its rows are live data.
+		// line mirrors its component's own bail: heroBlockIsRenderable,
+		// editorialBlockIsRenderable, FaqBlock's question-and-answer filter, and
+		// the non-empty arrays Freeform and ProductsBlock render. eventsBlock is
+		// absent: its rows are live data.
 		for (const locale of LOCALES) {
-			const { heroBlock, faqBlock, freeform, productsBlock } =
+			const { heroBlock, editorialBlock, faqBlock, freeform, productsBlock } =
 				MODULE_PREVIEWS[locale];
 			expect(heroBlockIsRenderable(heroBlock)).toBe(true);
+			expect(editorialBlockIsRenderable(editorialBlock)).toBe(true);
 			expect(faqBlock.items.length).toBeGreaterThan(0);
 			for (const item of faqBlock.items) {
 				expect(item.question && item.answer.length > 0).toBeTruthy();
@@ -329,7 +332,13 @@ describe('the h1 contract', () => {
 		);
 
 		expect(new Set(receivers)).toEqual(
-			new Set(['HeroBlock', 'FaqBlock', 'EventsBlock', 'ProductsBlock'])
+			new Set([
+				'HeroBlock',
+				'FaqBlock',
+				'EventsBlock',
+				'ProductsBlock',
+				'EditorialBlock',
+			])
 		);
 	});
 

@@ -3,6 +3,7 @@ import {
 	SANITY_IMAGE_QUALITY,
 	buildSanityImageUrl,
 	ensureAccessibleTextColor,
+	hotspotObjectPosition,
 	resolveRenderedRatio,
 } from './image-utils';
 import { readFile } from 'node:fs/promises';
@@ -168,6 +169,21 @@ describe('buildSanityImageUrl', () => {
 // <source> would quietly advertise different width sets. Importing the private
 // path HERE rather than in the client component is the point: a breaking upgrade
 // fails this test instead of shipping a silent divergence.
+// The mobile hotspot override is a literal class (Tailwind emits only what it
+// finds verbatim), so nothing but this ties its media query to the width the
+// <source> elements switch at.
+describe('ImageBlock MOBILE_MAX_WIDTH', () => {
+	it('matches the media query in the mobile hotspot override', async () => {
+		const source = await readFile(
+			new URL('../components/ImageBlock.tsx', import.meta.url),
+			'utf8'
+		);
+		const width = source.match(/const MOBILE_MAX_WIDTH = (\d+);/)?.[1];
+		expect(width).toBeDefined();
+		expect(source).toContain(`[@media(max-width:${width}px)]:`);
+	});
+});
+
 describe('ImageBlock CANDIDATE_WIDTHS', () => {
 	it("matches next/image's own default width lists", async () => {
 		const { imageConfigDefault } =
@@ -227,5 +243,111 @@ describe('resolveRenderedRatio', () => {
 		expect(
 			resolveRenderedRatio(1.5, { top: 0.5, bottom: 0.5, left: 0, right: 0 })
 		).toBe(1.5);
+	});
+});
+
+// `object-position` has to describe the hotspot inside the image the CDN
+// DELIVERS, which is the authored crop -- and, with a customRatio, the
+// hotspot-centred cut @sanity/image-url makes inside that crop.
+describe('hotspotObjectPosition', () => {
+	const NO_CROP = { top: 0, bottom: 0, left: 0, right: 0 };
+	const spot = (x: number, y: number) => ({ x, y });
+
+	it('has no answer without a hotspot', () => {
+		expect(hotspotObjectPosition(1.5, NO_CROP, null)).toBeUndefined();
+		expect(hotspotObjectPosition(1.5, NO_CROP, undefined)).toBeUndefined();
+	});
+
+	it('leaves a centred hotspot to the default', () => {
+		expect(hotspotObjectPosition(1.5, NO_CROP, spot(0.5, 0.5))).toBeUndefined();
+	});
+
+	it('reads an uncropped hotspot as-is', () => {
+		expect(hotspotObjectPosition(1.5, null, spot(0.2, 0.3))).toBe('20% 30%');
+	});
+
+	it('measures the hotspot inside the authored crop', () => {
+		// The crop keeps x 0.2..1 and y 0..0.5: x 0.4 is a quarter of the way
+		// across it and y 0.1 a fifth of the way down.
+		expect(
+			hotspotObjectPosition(
+				1,
+				{ top: 0, bottom: 0.5, left: 0.2, right: 0 },
+				spot(0.4, 0.1)
+			)
+		).toBe('25% 20%');
+	});
+
+	it('follows the side cut a wide customRatio makes on a square asset', () => {
+		// A 1:2 cut from a square keeps half the width, centred on x 0.3:
+		// 0.05..0.55, so the hotspot lands in the middle of what is delivered.
+		expect(hotspotObjectPosition(1, NO_CROP, spot(0.3, 0.8), 0.5)).toBe(
+			'50% 80%'
+		);
+	});
+
+	it('follows the top-and-bottom cut a wide customRatio makes', () => {
+		// A 2:1 cut from a square keeps y 0.2..0.7 around a hotspot at y 0.45.
+		expect(hotspotObjectPosition(1, NO_CROP, spot(0.1, 0.45), 2)).toBe(
+			'10% 50%'
+		);
+	});
+
+	it('keeps the cut inside the image when the hotspot hugs an edge', () => {
+		// Centring a half-height cut on y 0.1 would start above the image, so the
+		// builder pins it to y 0..0.5 and the hotspot sits a fifth of the way down.
+		expect(hotspotObjectPosition(1, NO_CROP, spot(0.5, 0.1), 2)).toBe(
+			'50% 20%'
+		);
+	});
+
+	// The maths above repeats @sanity/image-url's private fit(). This holds it to
+	// the real thing: the `rect=` the builder emits is the delivered bitmap, and
+	// the hotspot measured inside that rect is what object-position must say. A
+	// library upgrade that moves the window fails here rather than drifting.
+	it('agrees with the rect the real builder cuts', () => {
+		// Landscape and portrait, so both the side cut and the top-and-bottom cut
+		// meet a crop that is itself wider or taller than the target ratio.
+		const assets = [
+			[2400, 1600],
+			[1600, 2400],
+		];
+		const crops = [NO_CROP, { top: 0.1, bottom: 0, left: 0.2, right: 0.05 }];
+		const ratios = [undefined, 1, 16 / 9, 0.7142857143, 0.6666666667];
+		const spots = [spot(0.1, 0.1), spot(0.5, 0.9), spot(0.85, 0.3)];
+
+		for (const [W, H] of assets) {
+			for (const crop of crops) {
+				for (const ratio of ratios) {
+					for (const hotspot of spots) {
+						const url = buildSanityImageUrl(
+							{
+								...asset(W, H),
+								crop,
+								hotspot: { ...hotspot, width: 0.2, height: 0.2 },
+							},
+							{ width: W, cropRatio: ratio }
+						);
+						const [left, top, width, height] = (
+							params(url).get('rect') ?? `0,0,${W},${H}`
+						)
+							.split(',')
+							.map(Number);
+						const expected = [
+							((hotspot.x * W - left) / width) * 100,
+							((hotspot.y * H - top) / height) * 100,
+						].map((v) => Math.min(100, Math.max(0, v)));
+						const actual = (
+							hotspotObjectPosition(W / H, crop, hotspot, ratio) ?? '50% 50%'
+						)
+							.split(' ')
+							.map(parseFloat);
+
+						expect(actual[0]).toBeCloseTo(expected[0], 0);
+						expect(actual[1]).toBeCloseTo(expected[1], 0);
+					}
+				}
+			}
+		}
 	});
 });

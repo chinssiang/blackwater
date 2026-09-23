@@ -1,4 +1,9 @@
-import { type ValidationContext, defineField, isKeySegment } from 'sanity';
+import {
+	type CustomValidatorResult,
+	type ValidationContext,
+	defineField,
+	isKeySegment,
+} from 'sanity';
 
 // The schema half of the page-module visibility toggle. The Studio control that
 // writes the flag is components/PageModuleItem.tsx; this file is everything the
@@ -56,14 +61,13 @@ export function hostModuleHidden(context: ValidationContext): boolean {
 	);
 }
 
-// `true | string`, not `boolean | string`: Sanity's CustomValidatorResult has no
-// meaning for `false`, and the rule bodies already infer exactly this -- in
-// `!link || !!value || 'msg'` the `||` chain drops the falsy half of each
-// boolean, so the expression is `true | string` on its own.
+// Sanity's own synchronous result type: a pass is `true`, never a bare
+// boolean, and any error shape -- a string, or a ValidationError pinned to a
+// child field through `path` -- is one moduleRule can clear.
 type ModuleCheck = (
 	value: unknown,
 	context: ValidationContext
-) => true | string;
+) => CustomValidatorResult;
 
 /**
  * Wraps a page-module `Rule.custom` check so a module switched off with the eye
@@ -109,9 +113,8 @@ export const moduleRule =
 		// `result === true` rather than `typeof result !== 'string'`. The old test
 		// treated anything non-string as a pass and handed it straight back, so a
 		// Promise, a ValidationError or a localized-message object would skip the
-		// exemption entirely -- and `ModuleCheck`'s `true | string` was the only
-		// thing keeping those out. It is also exactly the type someone widens to
-		// add an async check. Written this way the invariant holds whatever the
+		// exemption entirely -- and a narrow `ModuleCheck` was the only thing
+		// keeping those out. Written this way the invariant holds whatever the
 		// check returns: anything that is not a plain pass is treated as reporting,
 		// and a switched-off module clears it.
 		if (result === true) return true;

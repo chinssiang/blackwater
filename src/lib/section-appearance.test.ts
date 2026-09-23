@@ -1,6 +1,10 @@
 import { vercelStegaCombine } from '@vercel/stega';
 import { describe, expect, it } from 'vitest';
-import { MAX_WIDTH_PX, resolveSectionAppearance } from './section-appearance';
+import {
+	MAX_WIDTH_PX,
+	resolveCopyColumnClass,
+	resolveSectionAppearance,
+} from './section-appearance';
 
 const color = (r: number, g: number, b: number, a = 1) => ({
 	hex: '#000000',
@@ -155,5 +159,24 @@ describe('resolveSectionAppearance', () => {
 		expect(r.spacing.pb).toBe(9);
 		expect(r.spacing.ptSm).toBe(12);
 		expect(r.spacing.pbSm).toBe(12);
+	});
+});
+
+describe('resolveCopyColumnClass', () => {
+	const column = (appearance: Parameters<typeof resolveCopyColumnClass>[0]) =>
+		resolveCopyColumnClass(appearance, 'max-w-xl');
+
+	it("uses the module's reading measure when Max Width is Full", () => {
+		expect(column({ maxWidth: 'none' })).toBe('w-full mr-auto max-w-xl');
+	});
+
+	it('uses the authored width otherwise', () => {
+		expect(column({ maxWidth: 'm' })).toBe('w-full mr-auto max-w-3xl');
+	});
+
+	it('places the column where its Text Alignment says', () => {
+		expect(column({ textAlign: 'text-center' })).toContain('mx-auto');
+		expect(column({ textAlign: 'text-right' })).toContain('ml-auto');
+		expect(column({ textAlign: 'text-justify' })).toContain('mr-auto');
 	});
 });

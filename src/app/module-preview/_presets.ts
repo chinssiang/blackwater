@@ -6,8 +6,9 @@
  * product labels) follow the document's language, and English sample copy
  * beside them would misrepresent a zh_tw page.
  *
- * Pure data, no Sanity asset refs: the hero has no background and the product
- * cards carry no image, so every preview renders on any dataset. The hero is
+ * Pure data, no Sanity asset refs: the hero has no background, the editorial
+ * block and the product cards carry no image, so every preview renders on any
+ * dataset. The hero is
  * deliberately NOT the wave: HeroWave is a per-pixel CPU shader, the iframe's
  * viewport never scrolls it out of view to pause it, and a same-origin frame
  * shares the Studio's main thread — so it would run at 60fps behind the dialog
@@ -53,6 +54,11 @@ const COPY = {
 		heroParagraph:
 			'Weekly group runs, long runs on the weekend, and a crew to share the road with.',
 		heroCta: 'See upcoming runs',
+		editorialEyebrow: 'The crew',
+		editorialHeading: 'Built around the long run',
+		editorialParagraph:
+			'An image beside copy, or copy over a full-bleed image. Its button can follow a link or open a video.',
+		editorialCta: 'Watch the film',
 		freeformHeading: 'About the club',
 		freeformParagraphs: [
 			'Freeform is rich text: headings, paragraphs, lists, links and images, laid out in the order you write them.',
@@ -73,6 +79,11 @@ const COPY = {
 		heroHeading: '在夜色中跑遍城市',
 		heroParagraph: '每週團跑、週末長距離，還有一群一起上路的夥伴。',
 		heroCta: '查看近期活動',
+		editorialEyebrow: '跑團夥伴',
+		editorialHeading: '為長距離而生',
+		editorialParagraph:
+			'圖片搭配文字，或文字疊在滿版圖片上。按鈕可以連到頁面，也可以開啟影片。',
+		editorialCta: '觀看影片',
 		freeformHeading: '關於跑團',
 		freeformParagraphs: [
 			'自由內容是富文本：標題、段落、清單、連結與圖片，依你撰寫的順序排列。',
@@ -101,6 +112,20 @@ const presetsFor = (locale: Locale) => {
 			callToAction: {
 				label: c.heroCta,
 				link: { href: localizePath('/events', locale), isNewTab: false },
+			},
+		},
+		editorialBlock: {
+			sectionAppearance,
+			eyebrow: c.editorialEyebrow,
+			heading: c.editorialHeading,
+			paragraph: [block('editorial-p', c.editorialParagraph)],
+			// A video CTA, so the card shows the play button that sets this module
+			// apart from the hero's; with no image, the copy alone would read as a
+			// second hero card. The player never mounts: it lives in a dialog, and
+			// the frame's body is inert.
+			callToAction: {
+				label: c.editorialCta,
+				vimeoUrl: 'https://vimeo.com/76979871',
 			},
 		},
 		freeform: {
