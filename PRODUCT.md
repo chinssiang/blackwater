@@ -18,14 +18,17 @@ Blackwater RC (台北跑團) is a Taipei-based running club. This site is its
 bilingual community hub, not a store:
 
 - an events calendar (weekly group runs, races, socials, and gamified trail "quests"),
-- a curated running-gear guide (club-vetted picks with affiliate "Buy it" links, no cart),
-- newsletter / email capture, and
+- a curated running-gear guide (club-vetted picks, bought through a cart and
+  Shopify's hosted checkout),
+- newsletter / email capture,
+- a free membership: runners sign in to see their own club history — runs
+  attended, orders placed — and
 - internal crew rostering for event operations.
 
 Success is people finding the club and showing up: strong discoverability (the
 project invests heavily in SEO/AEO and structured data so answer engines can cite
-it) and a growing, returning community. There is no membership paywall, login, or
-checkout.
+it) and a growing, returning community. Membership is free and there is no
+paywall: signing in shows a runner their own history, it never gates the club.
 
 ## Brand Personality
 
@@ -40,7 +43,11 @@ black-and-white frame is the brand.
 
 - **Strava-style data/stats app.** No metrics-forward dashboards, charts, big
   number tiles, or counter-heavy chrome. Blackwater is a community and a
-  curatorial voice, not a performance-tracking tool.
+  curatorial voice, not a performance-tracking tool. Membership does not
+  relax this: a member's history is told in sentences and marks ("14 club
+  runs · member since March 2024"), and points surface as quests and badges,
+  never as a dashboard of counters. A leaderboard, if there is one, is
+  opt-in, seasonal, and typographic — a list, not a chart.
 
 ## Design Principles
 
