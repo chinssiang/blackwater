@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/pglite';
 import { migrate } from 'drizzle-orm/pglite/migrator';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { PRIVACY_NOTICE_VERSION, createAuth } from './auth';
+import { CODE_LIMITS, type CodeLimits } from './code-limits';
 import * as schema from './schema';
 import { getMemberSession } from './session';
 import { LOCALE_HEADER, SIGN_IN_ERRORS } from './shared';
@@ -25,9 +26,17 @@ beforeAll(async () => {
 	await migrate(db, { migrationsFolder: 'drizzle' });
 });
 
-async function setup({ rateLimit = false } = {}) {
+async function setup({
+	rateLimit = false,
+	mailConfigured = true,
+	codeLimits = CODE_LIMITS,
+}: {
+	rateLimit?: boolean;
+	mailConfigured?: boolean;
+	codeLimits?: CodeLimits;
+} = {}) {
 	await pg.exec(
-		'truncate member, member_session, member_account, member_verification, auth_rate_limit cascade'
+		'truncate member, member_session, member_account, member_verification, auth_rate_limit, sign_in_code_limit cascade'
 	);
 	const sent: Sent[] = [];
 	const auth = createAuth({
@@ -35,7 +44,9 @@ async function setup({ rateLimit = false } = {}) {
 		secret: 'test-secret-that-is-long-enough-for-better-auth',
 		baseURL: ORIGIN,
 		deliverCode: (m) => sent.push(m),
+		canDeliverCode: () => mailConfigured,
 		rateLimitEnabled: rateLimit,
+		codeLimits,
 	});
 
 	const post = (
@@ -309,5 +320,66 @@ describe('staying signed in', () => {
 		);
 		const res = await ctx.getSession(cookie);
 		expect(await res.json()).toBeNull();
+	});
+});
+
+// Better Auth limits code requests per IP only. These cover an attacker who
+// rotates IPs: at one inbox, or at the SMTP account's daily cap.
+describe('code request limits', () => {
+	it('refuses a sixth code for one address in an hour, without replacing the fifth', async () => {
+		const ctx = await setup();
+		const statuses = [];
+		for (let i = 0; i < 6; i++) {
+			statuses.push((await ctx.requestCode('runner@example.com')).status);
+		}
+		expect(statuses).toEqual([200, 200, 200, 200, 200, 429]);
+		expect(ctx.sent).toHaveLength(5);
+		// Refused before the endpoint ran, so the code in the member's inbox
+		// still works -- a flood cannot keep invalidating it.
+		const res = await ctx.signIn('runner@example.com', ctx.sent[4].code);
+		expect(res.status).toBe(200);
+	});
+
+	it('counts an address however it is cased', async () => {
+		const ctx = await setup({
+			codeLimits: { ...CODE_LIMITS, perEmail: { max: 1, windowSeconds: 3600 } },
+		});
+		expect((await ctx.requestCode('runner@example.com')).status).toBe(200);
+		expect((await ctx.requestCode(' RUNNER@Example.com ')).status).toBe(429);
+	});
+
+	it('stops every code once the site-wide cap is spent', async () => {
+		const ctx = await setup({
+			codeLimits: { ...CODE_LIMITS, total: { max: 2, windowSeconds: 86400 } },
+		});
+		const statuses = [];
+		for (const email of ['a@example.com', 'b@example.com', 'c@example.com']) {
+			statuses.push((await ctx.requestCode(email)).status);
+		}
+		expect(statuses).toEqual([200, 200, 429]);
+	});
+
+	it('refuses to issue a code at all when mail cannot be sent', async () => {
+		// Better Auth swallows errors thrown by the sender, so without this the
+		// form would say "check your email" for a code that never comes.
+		const ctx = await setup({ mailConfigured: false });
+		const res = await ctx.requestCode('runner@example.com');
+		expect(res.status).toBe(503);
+		expect(ctx.sent).toHaveLength(0);
+		const { rows } = await ctx.pg.query('select id from member_verification');
+		expect(rows).toHaveLength(0);
+	});
+
+	it('gives each visitor their own IP bucket behind a proxy that appends to x-forwarded-for', async () => {
+		const ctx = await setup({ rateLimit: true });
+		const from = (ip: string, email: string) =>
+			ctx.requestCode(email, {
+				'x-forwarded-for': `${ip}, 198.51.100.1`,
+				'x-vercel-forwarded-for': ip,
+			});
+		for (let i = 0; i < 3; i++) await from('203.0.113.10', `a${i}@example.com`);
+		expect((await from('203.0.113.10', 'a3@example.com')).status).toBe(429);
+		// A different visitor is not caught in the first one's bucket.
+		expect((await from('203.0.113.20', 'b@example.com')).status).toBe(200);
 	});
 });

@@ -111,3 +111,15 @@ export const authRateLimit = pgTable('auth_rate_limit', {
 	count: integer('count').notNull(),
 	lastRequest: bigint('last_request', { mode: 'number' }).notNull(),
 });
+
+/**
+ * Sign-in code requests counted per email address and in total, on top of
+ * Better Auth's per-IP limit. Its own table rather than authRateLimit's rows:
+ * Better Auth prunes those after its own (short) window, which would reset
+ * these hour- and day-long counts early. See ./code-limits.ts.
+ */
+export const signInCodeLimit = pgTable('sign_in_code_limit', {
+	key: text('key').primaryKey(),
+	count: integer('count').notNull(),
+	windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
+});

@@ -2,12 +2,14 @@ import 'server-only';
 import { after } from 'next/server';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { emailOTP } from 'better-auth/plugins';
 import { DEFAULT_LOCALE, type Locale, isLocale } from '@/lib/i18n';
+import { type CodeLimits, type MemberDb, mayRequestCode } from './code-limits';
 import { getDb } from './db';
 import * as schema from './schema';
 import { CODE_LENGTH, LOCALE_HEADER } from './shared';
-import { sendSignInCode } from './sign-in-email';
+import { isMailConfigured, sendSignInCode } from './sign-in-email';
 
 /**
  * Stamped on each member when the account is created, as the record of which
@@ -25,16 +27,23 @@ export function createAuth({
 	baseURL,
 	trustedOrigins,
 	deliverCode,
+	canDeliverCode,
 	rateLimitEnabled,
+	codeLimits,
 }: {
-	db: Parameters<typeof drizzleAdapter>[0];
+	db: MemberDb;
 	secret: string | undefined;
 	baseURL: string | undefined;
 	trustedOrigins?: string[];
 	/** Must not block: awaiting delivery makes response time depend on SMTP. */
 	deliverCode: (message: CodeMessage) => void;
+	/** Whether mail can go out at all. Checked BEFORE a code is issued: Better
+	 *  Auth swallows anything the sender throws, so a missing credential there
+	 *  would tell the member "check your email" for a code that never comes. */
+	canDeliverCode: () => boolean;
 	/** Unset follows Better Auth: on in production only. */
 	rateLimitEnabled?: boolean;
+	codeLimits?: CodeLimits;
 }) {
 	return betterAuth({
 		secret,
@@ -42,7 +51,7 @@ export function createAuth({
 		trustedOrigins,
 		database: drizzleAdapter(db, {
 			provider: 'pg',
-			// schema.ts exports exactly the five tables, keyed by model name.
+			// Keyed by model name; signInCodeLimit is ours and the adapter ignores it.
 			schema,
 		}),
 		user: {
@@ -66,8 +75,36 @@ export function createAuth({
 			storage: 'database',
 			modelName: 'authRateLimit',
 		},
+		hooks: {
+			// Before the endpoint runs, so a refused request neither issues a code
+			// nor replaces the one the member is about to type.
+			before: createAuthMiddleware(async (ctx) => {
+				if (ctx.path !== '/email-otp/send-verification-otp') return;
+				if (ctx.body?.type !== 'sign-in') return;
+				if (!canDeliverCode()) {
+					console.error('[member] sign-in email is not configured');
+					throw new APIError('SERVICE_UNAVAILABLE');
+				}
+				const email = ctx.body?.email;
+				if (typeof email !== 'string') return; // the endpoint rejects it
+				if (!(await mayRequestCode(db, email, codeLimits))) {
+					throw new APIError('TOO_MANY_REQUESTS');
+				}
+			}),
+		},
 		advanced: {
 			cookiePrefix: 'bw',
+			// Vercel sets these two to the client's address as a single value.
+			// Better Auth trusts a forwarded header only when it holds ONE value,
+			// so a proxy that appends to x-forwarded-for (a CDN in front of
+			// Vercel) would otherwise put every visitor in one shared bucket.
+			ipAddress: {
+				ipAddressHeaders: [
+					'x-vercel-forwarded-for',
+					'x-real-ip',
+					'x-forwarded-for',
+				],
+			},
 			// Already false in production. Stated because Better Auth defaults it
 			// to TRUE when NODE_ENV is 'test', which silently switches off its
 			// CSRF check too -- so without this the test suite would be proving
@@ -120,6 +157,7 @@ export function getAuth() {
 		trustedOrigins: [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
 			.filter(Boolean)
 			.map((host) => `https://${host}`),
+		canDeliverCode: isMailConfigured,
 		deliverCode: (message) =>
 			after(() =>
 				sendSignInCode(message).catch((err) =>
