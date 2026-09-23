@@ -1,10 +1,7 @@
 import { stegaClean } from '@sanity/client/stega';
-import { revealStagger } from '@/lib/animate';
+import { revealEntrance } from '@/lib/animate';
 import type { SanityColor } from '@/lib/image-utils';
-import {
-	type TextAlignClass,
-	resolveSectionAppearance,
-} from '@/lib/section-appearance';
+import { resolveCopyColumnClass } from '@/lib/section-appearance';
 import { cn, hasArrayValue } from '@/lib/utils';
 import CustomLink from '@/components/CustomLink';
 import CustomPortableText from '@/components/CustomPortableText';
@@ -29,20 +26,6 @@ const WAVE_PAPER: SanityColor = {
 // measure instead -- deliberately off the MAX_WIDTH_PX ladder, since this is a
 // default, not a rung. hero-block.ts's field description tells the editor.
 const DEFAULT_COPY_MEASURE = 'max-w-2xl';
-
-// Which auto margin puts a capped copy column where its Text Alignment says it
-// belongs. Total over TextAlignClass, so adding a fifth alignment to
-// section-appearance.ts fails the build here instead of silently centring.
-//
-// Hero-only: every other module is centred by the shell's own `mx-auto` on the
-// <section>, because there the section IS the capped box. Only the hero has a
-// narrow column inside a full-width one.
-const COPY_MARGIN_CLASSES: Record<TextAlignClass, string> = {
-	'text-left': 'mr-auto',
-	'text-justify': 'mr-auto',
-	'text-center': 'mx-auto',
-	'text-right': 'ml-auto',
-};
 
 type HeroBlockProps = {
 	data: {
@@ -165,10 +148,12 @@ export default function HeroBlock({
 	// appearance across two elements: the SECTION takes everything but the width,
 	// and the COPY COLUMN takes the width. The background image and <HeroWave>
 	// are `absolute inset-0` children of the section, so a cap on the section is
-	// a cap on the ARTWORK. DESIGN.md (section Sections) has the full rule and
-	// why no other module needs it.
-	const { alignClass, maxWidthClass, isFullWidth } =
-		resolveSectionAppearance(appearance);
+	// a cap on the ARTWORK. DESIGN.md (section Sections) has the full rule, which
+	// editorialBlock shares through resolveCopyColumnClass.
+	const copyColumnClass = resolveCopyColumnClass(
+		appearance,
+		DEFAULT_COPY_MEASURE
+	);
 
 	// `headingLevel === 'h1'`, NOT `isPageOpener`: this needs "first thing in
 	// <main>", and only PageHome's slot 0 is that -- PageGeneral renders its own
@@ -178,24 +163,11 @@ export default function HeroBlock({
 	// the heading below for the mirror-image case, where position is what counts.
 	const underlapsHeader = !!waveBackground && headingLevel === 'h1';
 
-	// The entrance, for all four of eyebrow/heading/paragraph/CTA at once. A hero
-	// that OPENS the page has none: `reveal` holds an element at `opacity: 0`
-	// through the whole delay window, and the heading is the LCP element, which
-	// Chrome will not measure while it is fully transparent (the long note at the
-	// heading has the rest, including why this keys on position and not on
+	// The entrance, for all four of eyebrow/heading/paragraph/CTA at once, and
+	// none on a hero that OPENS the page (revealEntrance says why all four; the
+	// long note at the heading says why this keys on position and not on
 	// `headingLevel`).
-	//
-	// ALL FOUR, not just the heading. `revealStagger` is one cadence across
-	// indices 0..3, so exempting the heading alone left a hole in the middle of
-	// it -- eyebrow fading in at 0s, the heading already solid, paragraph
-	// arriving 0.12s later. A cascade with its second beat missing reads as a
-	// glitch, and dropping the whole thing is also strictly better for the LCP,
-	// since a fading eyebrow above the heading is itself paint the measurement
-	// waits on.
-	const entrance = (index: number) =>
-		isPageOpener
-			? { className: undefined, style: undefined }
-			: { className: 'reveal', style: revealStagger(index) };
+	const entrance = (index: number) => revealEntrance(index, isPageOpener);
 
 	// Same bail as the other modules: an empty hero would still reserve a full
 	// viewport of blank page, which is worse than not rendering.
@@ -252,22 +224,7 @@ export default function HeroBlock({
 
 			{/* The copy column -- the only thing Max Width caps here. */}
 			<div
-				className={cn(
-					// Load-bearing, not tidying. The section is `flex flex-col`, so this
-					// is a flex item on the column's CROSS axis, and an auto cross-axis
-					// margin disables `align-self: stretch` (Flexbox 9.4) -- leaving the
-					// box shrink-to-fit, where a max-width binds only once the content
-					// already exceeds it. Measured on a heading-only hero: 168px without
-					// this, the authored 768px with it, so m/l/xl would have stayed inert
-					// even after the cap moved here.
-					'w-full',
-					COPY_MARGIN_CLASSES[alignClass],
-					// A ternary rather than `cn(DEFAULT_COPY_MEASURE, maxWidthClass)`,
-					// which resolves correctly only through tailwind-merge's group
-					// classification and leaves a stray class behind.
-					isFullWidth ? DEFAULT_COPY_MEASURE : maxWidthClass,
-					underlapsHeader && 'mt-header-space-0'
-				)}
+				className={cn(copyColumnClass, underlapsHeader && 'mt-header-space-0')}
 			>
 				{eyebrow && (
 					<p

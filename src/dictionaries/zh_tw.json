@@ -353,5 +353,8 @@
 		"marketingTitle": "行銷",
 		"marketingDescription": "用於個人化內容與行銷成效評估（Klaviyo）。",
 		"manageCookiesLabel": "Cookie 設定"
+	},
+	"video": {
+		"close": "關閉影片"
 	}
 }

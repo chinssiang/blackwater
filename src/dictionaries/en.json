@@ -353,5 +353,8 @@
 		"marketingTitle": "Marketing",
 		"marketingDescription": "Used for personalized content and marketing measurement (Klaviyo).",
 		"manageCookiesLabel": "Cookie settings"
+	},
+	"video": {
+		"close": "Close video"
 	}
 }

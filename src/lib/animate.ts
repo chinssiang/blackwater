@@ -36,6 +36,27 @@ export function revealStagger(index: number): CSSProperties {
 }
 
 /**
+ * The `reveal` entrance for one beat of a module's copy stack -- or none at all
+ * when `skip`, which a module passes when it opens the page. Its heading is then
+ * the LCP element, and Chrome will not measure it while `reveal` holds it at
+ * `opacity: 0` through the delay window.
+ *
+ * The WHOLE stack goes, not just the heading. `revealStagger` is one cadence
+ * across the beats, so exempting the heading alone left a hole in the middle of
+ * it -- eyebrow fading in at 0s, the heading already solid, paragraph arriving
+ * 0.12s later. A cascade with its second beat missing reads as a glitch, and a
+ * fading eyebrow above the heading is itself paint the LCP measurement waits on.
+ *
+ * Shared by HeroBlock and EditorialBlock so that rule has one definition.
+ */
+export function revealEntrance(
+	index: number,
+	skip: boolean
+): { className?: string; style?: CSSProperties } {
+	return skip ? {} : { className: 'reveal', style: revealStagger(index) };
+}
+
+/**
  * Confident expo ease-out. Shared because two entrances are meant to decelerate
  * alike — the /events row cascade and the calendar's month slide — and each
  * carried its own copy of the tuple with a comment asserting they matched,

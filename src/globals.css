@@ -814,6 +814,11 @@
 
 @utility img-object-contain {
 	--offset: 1px;
+	/* A contained image is letterboxed, not cropped, so a hotspot has nothing
+	   to keep in view -- SanityImage's inline position would only slide the
+	   whole picture inside its frame. It defers to this property, which the
+	   <img> inherits (see the `.object-contain` rule for the class form). */
+	--hotspot-override: 50% 50%;
 	position: absolute;
 	display: block;
 	width: 100%;
@@ -840,6 +845,15 @@
 		display: block;
 		width: 100%;
 		height: 100%;
+	}
+}
+
+/* The class form of the rule above, for a SanityImage given `object-contain`
+   directly rather than through ImageBlock's `fill="contain"`. On the <img>
+   itself, so it beats any `--hotspot-override` a <picture> ancestor sets. */
+@layer base {
+	img.object-contain {
+		--hotspot-override: 50% 50%;
 	}
 }
 

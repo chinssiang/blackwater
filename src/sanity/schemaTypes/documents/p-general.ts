@@ -24,6 +24,7 @@ export const pGeneral = defineType({
 				'Optional sections rendered below the main content, in this order.',
 			of: [
 				{ type: 'heroBlock' },
+				{ type: 'editorialBlock' },
 				{ type: 'freeform' },
 				{ type: 'faqBlock' },
 				{ type: 'eventsBlock' },

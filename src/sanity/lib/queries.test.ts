@@ -3,7 +3,18 @@ import {
 	pageGeneralQuery,
 	pageHomeQuery,
 } from '@/sanity/lib/queries';
-import { describe, expect, it } from 'vitest';
+import { portableTextSimple } from '@/sanity/schemaTypes/objects/portable-text-simple';
+import { describe, expect, it, vi } from 'vitest';
+import { readFile } from 'node:fs/promises';
+
+// The two Studio inputs the schema module imports; the guard below needs only
+// the definition's shape, and a stub keeps @sanity/ui out of the node run.
+vi.mock('@/sanity/schemaTypes/components/PortableTextNormalizer', () => ({
+	PortableTextNormalizer: () => null,
+}));
+vi.mock('@/sanity/schemaTypes/components/LinkObject', () => ({
+	LinkObject: () => null,
+}));
 
 // The visibility predicate is invisible to every other check in the repo.
 // Dropping it from a query changes no generated type, breaks no build and
@@ -39,6 +50,49 @@ describe('page-module visibility predicate', () => {
 		expect(filters).toHaveLength(count);
 		for (const filter of filters) {
 			expect(filter).toContain(MODULE_VISIBLE);
+		}
+	});
+});
+
+// `portableTextSimpleFields` projects only the arms the `portableTextSimple`
+// schema type can produce. Nothing else ties the two: add an annotation (say a
+// callToAction, copied from `portableText`) or a member such as `customImage()`
+// to the schema, and the hero and editorial paragraphs would receive it
+// unprojected -- a raw language array, an unresolved reference -- while typegen
+// stays green. It reads the real definition, not the file's text, so a member
+// written as a factory call or inline cannot slip past.
+describe('portableTextSimpleFields', () => {
+	it('has an arm for every annotation and member type of portableTextSimple', async () => {
+		const queries = await readFile(
+			new URL('./queries.ts', import.meta.url),
+			'utf8'
+		);
+		const fragment = queries.match(
+			/const portableTextSimpleFields = `([\s\S]*?)` as const;/
+		)?.[1];
+		expect(fragment).toBeDefined();
+
+		type Member = {
+			name?: string;
+			type: string;
+			marks?: { annotations?: { name?: string; type?: string }[] };
+		};
+		const members = portableTextSimple.of as Member[];
+		// An array member's `_type` is its name when it has one (every factory
+		// sets one), its type otherwise. `block` is the member every fragment
+		// already spreads.
+		const memberTypes = members
+			.map((member) => member.name ?? member.type)
+			.filter((type) => type !== 'block');
+		const annotationTypes = members.flatMap((member) =>
+			(member.marks?.annotations ?? []).map(
+				(annotation) => annotation.name ?? annotation.type
+			)
+		);
+
+		expect(annotationTypes).toContain('link');
+		for (const type of [...annotationTypes, ...memberTypes]) {
+			expect(fragment).toContain(`_type == "${type}"`);
 		}
 	});
 });

@@ -310,6 +310,22 @@ const portableTextContentFields = `
 	}
 ` as const;
 
+// For a `portableTextSimple` field, which allows blocks with a `link`
+// annotation and nothing else: the image arm and the callToAction markDef arm
+// above can never match there, and carried ~4KB of dead text into every page
+// query that interpolates them. One level shallower than the fragment above.
+// `queries.test.ts` fails when that schema type gains an annotation
+// or block type this has no arm for.
+const portableTextSimpleFields = `
+	...,
+	markDefs[]{
+		...,
+		_type == "link" => {
+			${linkFields}
+		}
+	}
+` as const;
+
 // The `sectionAppearance { ..., backgroundColor->color, textColor->color }`
 // projection below is repeated verbatim in all five page-module fragments, and
 // it has to stay that way. Hoisting it into its own const — the obvious dedup —
@@ -712,7 +728,7 @@ const heroBlockField = `
 	eyebrow,
 	heading,
 	paragraph[]{
-		${portableTextContentFields}
+		${portableTextSimpleFields}
 	},
 	"waveBackground": backgroundEffect == 'wave',
 	// Narrower than imageBlockMetaFields, which the other image projections use.
@@ -744,6 +760,56 @@ const heroBlockField = `
 		label,
 		link {
 			${linkFields}
+		}
+	},
+	sectionAppearance {
+		...,
+		"backgroundColor": backgroundColor->color,
+		"textColor": textColor->color
+	}
+` as const;
+
+// The editorial module. Same interpolation depth as heroBlockField, and its
+// sectionAppearance and callToAction blocks are spelled out verbatim for the
+// same reason. Every radio is resolved inside GROQ so no stega-encoded string
+// is compared in JS: the layout and image side become booleans, and the CTA's
+// `action` decides which target is projected at all -- `link` for a link CTA,
+// `vimeoUrl` or `videoFile` for a video one -- so EditorialBlock branches on
+// presence alone. `video.file.asset->` is an asset, not a document, so it needs
+// no cache tag.
+const editorialBlockField = `
+	_type,
+	_key,
+	"backgroundLayout": layout == 'background',
+	"imageRight": imagePosition == 'right',
+	eyebrow,
+	heading,
+	paragraph[]{
+		${portableTextSimpleFields}
+	},
+	image{
+		image{
+			${imageMetaFields}
+		},
+		customRatio,
+		imageMobile{
+			${imageMetaFields}
+		},
+		customRatioMobile
+	},
+	callToAction{
+		label,
+		action != 'video' => {
+			link {
+				${linkFields}
+			}
+		},
+		action == 'video' => {
+			"vimeoUrl": select(video.source != 'file' => video.vimeoUrl),
+			"videoFile": select(video.source == 'file' => video.file.asset->{
+				url,
+				mimeType
+			})
 		}
 	},
 	sectionAppearance {
@@ -795,6 +861,9 @@ const pageModuleFields = `
 	},
 	_type == 'heroBlock' => {
 		${heroBlockField}
+	},
+	_type == 'editorialBlock' => {
+		${editorialBlockField}
 	},
 	_type == 'productsBlock' => {
 		${productsBlockField}

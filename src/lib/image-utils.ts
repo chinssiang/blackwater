@@ -164,22 +164,85 @@ export function asSanityColor(value: MaybeSanityColor): SanityColor | null {
  */
 export function resolveRenderedRatio(
 	aspectRatio: number | null | undefined,
-	crop?: {
-		top?: number;
-		bottom?: number;
-		left?: number;
-		right?: number;
-	} | null,
+	crop?: CropFractions | null,
 	customRatio?: number | null
 ): number | undefined {
 	if (customRatio) return customRatio;
 	if (!aspectRatio) return undefined;
 
-	const horizontal = 1 - (crop?.left ?? 0) - (crop?.right ?? 0);
-	const vertical = 1 - (crop?.top ?? 0) - (crop?.bottom ?? 0);
-	if (horizontal <= 0 || vertical <= 0) return aspectRatio;
+	const { width, height } = cropRect(crop);
+	return (aspectRatio * width) / height;
+}
 
-	return (aspectRatio * horizontal) / vertical;
+/** An authored crop, as the insets Sanity stores: fractions of the asset. */
+type CropFractions = {
+	top?: number;
+	bottom?: number;
+	left?: number;
+	right?: number;
+};
+
+/**
+ * The part of the asset an authored crop keeps, in fractions of the asset --
+ * the whole asset when there is no crop, or when the crop would keep nothing.
+ * The one definition both helpers here start from, so the box a `height`
+ * attribute declares and the box `object-position` is measured in cannot drift.
+ */
+function cropRect(crop: CropFractions | null | undefined) {
+	const left = crop?.left ?? 0;
+	const top = crop?.top ?? 0;
+	const width = 1 - left - (crop?.right ?? 0);
+	const height = 1 - top - (crop?.bottom ?? 0);
+	return width > 0 && height > 0
+		? { left, top, width, height }
+		: { left: 0, top: 0, width: 1, height: 1 };
+}
+
+/**
+ * The `object-position` that keeps an image's hotspot in view when CSS crops it
+ * (`object-cover`), or undefined when there is nothing to say.
+ *
+ * The hotspot is stored in fractions of the UNCROPPED asset, but the bitmap the
+ * browser gets is already cut: to the authored crop, and -- with a customRatio
+ * -- to the window `@sanity/image-url`'s private `fit()` centres on the hotspot
+ * inside that crop, clamped to the crop's edges. Using the raw x/y would point
+ * at the wrong spot on every cropped image, so this repeats that window and
+ * measures the hotspot inside it. `image-utils.test.ts` checks it against the
+ * `rect=` the real builder emits, so a library change that moves the window
+ * fails a test instead of drifting.
+ *
+ * A centred result returns undefined: it is the browser default, so the style
+ * would only be noise on every image an editor never touched.
+ */
+export function hotspotObjectPosition(
+	aspectRatio: number | null | undefined,
+	crop: CropFractions | null | undefined,
+	hotspot: { x?: number; y?: number } | null | undefined,
+	customRatio?: number | null
+): string | undefined {
+	const { x, y } = hotspot ?? {};
+	if (typeof x !== 'number' || typeof y !== 'number') return undefined;
+
+	const rect = cropRect(crop);
+	// How the customRatio cut compares with the crop: below 1 it trims the
+	// sides, above 1 the top and bottom, and without one nothing is trimmed.
+	const croppedRatio = aspectRatio
+		? (aspectRatio * rect.width) / rect.height
+		: undefined;
+	const scale = customRatio && croppedRatio ? customRatio / croppedRatio : 1;
+
+	// Where `point` falls across a window of `cut` centred on it and kept inside
+	// `start..start + size`. With no trim (`cut === size`) that is simply its
+	// place across the crop.
+	const along = (point: number, start: number, size: number, cut: number) => {
+		const from = Math.min(Math.max(point - cut / 2, start), start + size - cut);
+		return (point - from) / cut;
+	};
+	const percent = (value: number) =>
+		`${Math.round(Math.min(1, Math.max(0, value)) * 1000) / 10}%`;
+
+	const position = `${percent(along(x, rect.left, rect.width, rect.width * Math.min(1, scale)))} ${percent(along(y, rect.top, rect.height, rect.height * Math.min(1, 1 / scale)))}`;
+	return position === '50% 50%' ? undefined : position;
 }
 
 export function buildSanityImageUrl(

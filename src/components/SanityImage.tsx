@@ -5,6 +5,7 @@ import Image, { type ImageLoader } from 'next/image';
 import {
 	SANITY_IMAGE_QUALITY,
 	buildSanityImageUrl,
+	hotspotObjectPosition,
 	resolveRenderedRatio,
 } from '@/lib/image-utils';
 import { cn } from '@/lib/utils';
@@ -59,7 +60,7 @@ function SanityImage({
 
 	const { metadata, altText } = image;
 	const { dimensions, lqip, isOpaque, mimeType } = metadata || {};
-	const { crop } = image;
+	const { crop, hotspot } = image;
 	const { width: rawWidth, aspectRatio } = dimensions || {};
 	const width = rawWidth ?? undefined;
 	// Two ratios, and they are not the same thing. `cropRatio` is the deliberate
@@ -71,6 +72,23 @@ function SanityImage({
 	const ratio = resolveRenderedRatio(aspectRatio, crop, customRatio);
 	const height = width && ratio ? Math.round(width / ratio) : undefined;
 	const imageAlt = alt || altText || '';
+	// Where a CSS crop (`object-cover`) should keep its focus. Inert on an image
+	// that is not cropped (`object-fit: fill` has no slack to position).
+	//
+	// Inline, because next/image positions its blur placeholder from the inline
+	// `objectPosition` alone -- a class left the blur centred, and the picture
+	// jumped to the hotspot as it loaded. Written as `var(--hotspot-override,
+	// …)` so the two cases that must NOT use this image's hotspot can still win
+	// over an inline style: a contained image (globals.css sets the override to
+	// centre on `object-contain` and `img-object-contain`), and ImageBlock's
+	// <picture> branch, which sets it to the mobile image's own hotspot below
+	// its breakpoint.
+	const objectPosition = hotspotObjectPosition(
+		aspectRatio,
+		crop,
+		hotspot,
+		customRatio
+	);
 
 	// Every srcset candidate is built here, so the Sanity CDN is the only encoder
 	// in the path. Before this, `src` was a fully-transformed Sanity URL at the
@@ -145,6 +163,11 @@ function SanityImage({
 			priority={priority}
 			fetchPriority={priority ? 'high' : undefined}
 			alt={imageAlt}
+			style={
+				objectPosition
+					? { objectPosition: `var(--hotspot-override, ${objectPosition})` }
+					: undefined
+			}
 			blurDataURL={canBlur ? lqip! : undefined}
 			placeholder={canBlur ? 'blur' : undefined}
 			onError={() => {

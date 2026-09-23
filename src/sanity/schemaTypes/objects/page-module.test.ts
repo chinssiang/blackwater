@@ -294,7 +294,13 @@ describe('the h1 contract', () => {
 		);
 
 		expect(new Set(receivers)).toEqual(
-			new Set(['HeroBlock', 'FaqBlock', 'EventsBlock', 'ProductsBlock'])
+			new Set([
+				'HeroBlock',
+				'FaqBlock',
+				'EventsBlock',
+				'ProductsBlock',
+				'EditorialBlock',
+			])
 		);
 	});
 

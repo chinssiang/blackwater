@@ -45,10 +45,9 @@ export default function PageHome({ data, locale }: PageHomeProps) {
 	//    locale-matching document ahead of the `en` fallback, so publishing a new
 	//    locale homepage with just a title took the whole build down. The
 	//    unmigrated signature is a non-blank `landingTitle` AND no modules
-	//    AUTHORED (see `moduleCount`), which self-expires: the script unsets
-	//    `landingTitle`, so once prod is migrated this can never fire again and
-	//    both it and the schema field can go. The field is also readOnly in the
-	//    Studio now, so an editor cannot re-arm it.
+	//    AUTHORED (see `moduleCount`), which self-expired: the migration unset
+	//    `landingTitle` in both datasets, so this can no longer fire. The field
+	//    is also readOnly in the Studio, so an editor cannot re-arm it.
 	//  - It threw unconditionally. There is no error.tsx anywhere under src/app,
 	//    so at runtime that replaced the entire document -- and in draft mode the
 	//    Presentation iframe showed Next's error page, which means the app never
@@ -62,8 +61,8 @@ export default function PageHome({ data, locale }: PageHomeProps) {
 	if (strayTitle && noModulesAuthored) {
 		const message =
 			'pHome still has `landingTitle` and no page modules, so the homepage ' +
-			'would render blank. Run `node scripts/migrate-home-hero.mjs --execute` ' +
-			'against this dataset (or add a Hero module to the homepage).';
+			'would render blank. Add a Hero module to the homepage. (The one-shot ' +
+			'migrate-home-hero script that did this is in git history before 0db5fb7.)';
 
 		if (process.env.NEXT_PHASE === 'phase-production-build') {
 			throw new Error(message);

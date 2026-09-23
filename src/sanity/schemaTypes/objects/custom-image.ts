@@ -57,6 +57,10 @@ export default function customImage({
 				title: `Image${hasMobileOption ? ' (Desktop)' : ''}`,
 				name: 'image',
 				type: 'image',
+				// The crop tool plus a focal point. The CDN centres a Crop-ratio cut on
+				// the hotspot, and SanityImage turns it into `object-position` for the
+				// crops CSS makes (`object-cover`), so both kinds follow it.
+				options: { hotspot: true },
 			}),
 			...(hasCropOption
 				? [
@@ -76,7 +80,7 @@ export default function customImage({
 							title: 'Image (Mobile)',
 							name: 'imageMobile',
 							type: 'image',
-							options: { collapsible: true, collapsed: true },
+							options: { collapsible: true, collapsed: true, hotspot: true },
 						}),
 					]
 				: []),
