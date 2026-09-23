@@ -24,20 +24,32 @@ export function getMemberSession(
 }
 
 /**
- * The signed-in member, for a Server Component. Reads the request's cookies,
- * so it makes the calling route dynamic -- call it from a page, never from a
- * layout, where it would take every page beneath out of static generation.
+ * The signed-in member, for a Server Component: the member, `null` when signed
+ * out, or `'unavailable'` when membership cannot be served right now -- no
+ * database on this deployment (every preview), or it failed. There is no
+ * error.tsx under src/app, so throwing here would replace the whole document.
  *
- * Returns only what a page may show, rather than the session and user rows.
+ * Reads the request's cookies, so it makes the calling route dynamic -- call it
+ * from a page, never from a layout, where it would take every page beneath out
+ * of static generation. Returns only what a page may show.
  */
-export async function getCurrentMember() {
-	// headers() FIRST, as its own statement. `next build` still prerenders this
-	// route once, and it is headers() that tells Next to stop and render per
-	// request instead. Written inline as `getAuth().api.getSession({ headers:
-	// await headers() })`, getAuth() is evaluated before its argument, so the
-	// database is opened during the build -- which has no DATABASE_URL.
+export async function getCurrentMember(): Promise<
+	{ email: string; memberSince: Date } | null | 'unavailable'
+> {
+	// headers() FIRST, as its own statement, and OUTSIDE the try below.
+	// `next build` still prerenders this route once, and headers() is what tells
+	// Next to stop and render per request -- by throwing a signal Next must
+	// receive, which a catch here would swallow. Written inline as
+	// `getAuth().api.getSession({ headers: await headers() })`, getAuth() is
+	// evaluated first and the build opens the database, which it has not got.
 	const requestHeaders = await headers();
-	const session = await getMemberSession(getAuth(), requestHeaders);
-	if (!session) return null;
-	return { email: session.user.email, memberSince: session.user.createdAt };
+	if (!process.env.DATABASE_URL) return 'unavailable';
+	try {
+		const session = await getMemberSession(getAuth(), requestHeaders);
+		if (!session) return null;
+		return { email: session.user.email, memberSince: session.user.createdAt };
+	} catch (err) {
+		console.error('[member] session read failed', err);
+		return 'unavailable';
+	}
 }

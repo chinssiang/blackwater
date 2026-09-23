@@ -387,6 +387,7 @@
 			"memberSince": "自 {date} 起成為會員",
 			"signOut": "登出",
 			"signingOut": "登出中…"
-		}
+		},
+		"unavailable": "會員登入暫時無法使用，請稍後再試。"
 	}
 }

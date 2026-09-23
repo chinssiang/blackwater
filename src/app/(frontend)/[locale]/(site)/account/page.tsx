@@ -35,7 +35,14 @@ export default async function Page(props: Props) {
 	return (
 		<div className="p-x-max min-h-main flex items-center justify-center py-10 lg:py-17.5">
 			<div className="w-full max-w-sm">
-				{member ? (
+				{member === 'unavailable' ? (
+					<>
+						<h1 className="t-h-1 mb-3 font-medium text-balance">
+							{t.details.heading}
+						</h1>
+						<p className="t-b-1 text-pretty">{t.unavailable}</p>
+					</>
+				) : member ? (
 					<>
 						<h1 className="t-h-1 mb-3 font-medium text-balance">
 							{t.details.heading}

@@ -77,6 +77,7 @@ export function SignInForm() {
 
 	const onSubmitEmail = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (submitting) return;
 		if (!validateEmail(email)) return setError(t.invalidEmail);
 		setMessage(null);
 		setSubmitting(true);
@@ -105,6 +106,7 @@ export function SignInForm() {
 
 	const onSubmitCode = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (submitting) return;
 		if (code.length !== CODE_LENGTH) return setError(t.invalidCode);
 		setMessage(null);
 		setSubmitting(true);
@@ -129,12 +131,13 @@ export function SignInForm() {
 		setSubmitting(false);
 	};
 
-	// The props both steps' inputs share: typing clears the error, and the
-	// error is what describes the field.
+	// The props both steps' inputs share. `readOnly`, never `disabled`, while a
+	// request is in flight: disabling the field the member just pressed Enter in
+	// throws focus to <body>, and nothing brings it back when the code is wrong.
 	const inputProps = {
 		'aria-invalid': !!error,
 		'aria-describedby': error ? ERROR_ID : undefined,
-		disabled: submitting,
+		readOnly: submitting,
 	};
 
 	if (step === 'email') {
@@ -251,12 +254,14 @@ function InlineField({
 				<FieldLabel htmlFor={id}>{label}</FieldLabel>
 				<div className="flex gap-3">
 					{children}
+					{/* aria-disabled for the same focus reason as the inputs; the
+					    handlers ignore a submit while busy. */}
 					<Button
 						type="submit"
 						variant="outline"
 						size="lg"
-						disabled={submitting}
-						className="min-w-22 bg-black text-white"
+						aria-disabled={submitting || undefined}
+						className="min-w-22 bg-black text-white aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
 					>
 						{submitLabel}
 					</Button>

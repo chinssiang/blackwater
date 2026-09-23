@@ -387,6 +387,7 @@
 			"memberSince": "Member since {date}",
 			"signOut": "Sign out",
 			"signingOut": "Signing out…"
-		}
+		},
+		"unavailable": "Member sign-in isn't available right now. Please try again later."
 	}
 }
