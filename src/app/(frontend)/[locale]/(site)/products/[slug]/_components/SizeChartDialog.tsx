@@ -53,16 +53,17 @@ export default function SizeChartDialog({
 			<DialogTrigger className={SIZE_GUIDE_LINK_CLASS}>
 				{productText.sizeGuide}
 			</DialogTrigger>
-			{/* Widths: this theme rescales Tailwind's container tokens (--container-md
-			    is 900px, not 448px), which comfortably clears a 7-column chart's 792px
-			    table. The min() keeps the base gutter — DialogContent's own
-			    max-w-[calc(100%-2rem)] stops applying at sm, so a bare token would go
-			    edge-to-edge between 640px and 900px.
+			{/* Widths: --container-4xl (56rem/896px), because a 7-column chart's table
+			    is 792px and DialogContent's own sm:max-w-lg (512px) would scroll it
+			    horizontally. 896 less this element's p-4 leaves 864px of content.
+			    The min() is what stops a bare `sm:max-w-4xl` working — DialogContent's
+			    max-w-[calc(100%-2rem)] stops applying at sm, so the token alone would
+			    go edge-to-edge between 640px and 896px.
 			    Scrolling is on the table wrapper, not here: the close button is
 			    positioned against this element, so if this element scrolled the X
 			    would slide off the top. */}
 			<DialogContent
-				className="flex max-h-[85svh] flex-col gap-3 rounded-xl p-4 sm:max-w-[min(var(--container-md),calc(100%-2rem))]"
+				className="flex max-h-[85svh] flex-col gap-3 rounded-xl p-4 sm:max-w-[min(var(--container-4xl),calc(100%-2rem))]"
 				// By default the dialog focuses its first tabbable node, which here is
 				// the checked unit radio — and radio groups select on arrow keys, so a
 				// reader pressing ArrowDown to scroll would silently convert every

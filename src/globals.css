@@ -59,11 +59,6 @@
 	--color-card: var(--card);
 	--color-foreground: var(--foreground);
 	--color-background: var(--background);
-	--color-subtle: color-mix(in oklab, var(--color-gray) 20%, transparent);
-	--color-placeholder: color-mix(in oklab, var(--color-gray) 80%, transparent);
-	--color-positive: var(--positive);
-	--color-negative: var(--negative);
-	--color-neutral: var(--neutral);
 
 	--color-error: var(--color-red-600);
 	--color-success: var(--color-green-600);
@@ -75,25 +70,33 @@
 	--height-newsletter: var(--h-newsletter);
 	--height-g-toolbar: 60px;
 
+	/* Tailwind's `--container-*` scale is deliberately LEFT AT STOCK. It used to be
+	   rescaled here (`md` 900px instead of 448px, `lg` 1024 instead of 512, `3xl`
+	   1800 instead of 768) to serve as this site's layout ladder -- but Tailwind
+	   v4 resolves `w-*`, `min-w-*`, `max-w-*`, `basis-*` and `columns-*` from that
+	   one namespace, so every named width in the repo silently meant something
+	   other than its name. A shadcn `sm:max-w-lg` dialog rendered at 1024px, a
+	   `max-w-md` prose column at 900px, and three separate files had grown
+	   hand-written workarounds saying so. The section ladder had it worse: `m` and
+	   `s` came out WIDER than `l` and `xl`.
+
+	   Left at stock, the named rungs mean what they say, so REACH FOR THEM:
+	   `max-w-md` is 448px, `max-w-3xl` 768px, `max-w-7xl` 1280px. An arbitrary
+	   value is for a width no rung expresses, not for restating one. The site's
+	   own ceiling is `--s-container-max` below, outside this namespace, because
+	   it is not a rung. Do not reintroduce a `--container-*` override here; add a
+	   `--s-*` token instead.
+
+	   `3xs`/`2xs` stay disabled -- there is no rung below `xs`. */
 	--container-3xs: initial;
 	--container-2xs: initial;
-	--container-xs: 300px;
-	--container-sm: 600px;
-	--container-md: 900px;
-	--container-lg: 1024px;
-	--container-xl: 1200px;
-	--container-2xl: 1600px;
-	--container-3xl: 1800px;
-	--container-max: 2000px;
 
 	--spacing-contain: var(--s-contain);
-	--spacing-contain-dynamic: var(--s-contain-dynamic);
 	--spacing-section: var(--s-section);
 	--spacing-section-half: calc(var(--spacing-section) / 2);
 	--spacing-header: var(--height-header);
 	--spacing-g-toolbar: var(--height-g-toolbar);
 
-	--shadow-default: 0px 12px 64px rgba(0, 0, 0, 0.12);
 	--z-index-header: 90;
 	--z-index-popover: calc(var(--z-index-overlay) - 1);
 	--z-index-overlay: 100;
@@ -183,7 +186,6 @@
 		--chart-3: oklch(0.439 0 0);
 		--chart-4: oklch(0.371 0 0);
 		--chart-5: oklch(0.269 0 0);
-		--radius: 0.625rem;
 		--sidebar: oklch(0.985 0 0);
 		--sidebar-foreground: oklch(0.145 0 0);
 		--sidebar-primary: oklch(0.205 0 0);
@@ -193,15 +195,11 @@
 		--sidebar-border: oklch(0.922 0 0);
 		--sidebar-ring: oklch(0.708 0 0);
 
-		--positive: oklch(0.68 0.15 145);
-		--negative: oklch(0.58 0.18 25);
-		--neutral: oklch(0.85 0.03 260);
-
 		--s-contain: max(3vw, 15px);
-		--s-contain-dynamic: max(
-			var(--s-contain),
-			calc((100vw - var(--s-max)) / 2)
-		);
+		/* The site's content ceiling, and deliberately NOT `--container-max`: that
+		   name is Tailwind's, and putting a value there renames `max-w-max` &c.
+		   See the note on the `--container-*` block above. */
+		--s-container-max: 2000px;
 		--h-header: 42px;
 		--s-section: 80px;
 
@@ -248,20 +246,16 @@
 		--t-size-h3: clamp(1.125rem, 1.0821rem + 0.1861vw, 1.25rem);
 		--t-size-b1: clamp(0.875rem, 0.8536rem + 0.093vw, 0.9375rem);
 
-		--width-sm: min(100vw - calc(var(--s-contain) * 2), var(--container-sm));
-		--width-md: min(100vw - calc(var(--s-contain) * 2), var(--container-md));
-		--width-lg: min(100vw - calc(var(--s-contain) * 2), var(--container-lg));
-		--width-xl: min(100vw - calc(var(--s-contain) * 2), var(--container-xl));
-		--width-2xl: min(100vw - calc(var(--s-contain) * 2), var(--container-2xl));
-		--width-3xl: min(100vw - calc(var(--s-contain) * 2), var(--container-3xl));
-		--width-max: min(100vw - calc(var(--s-contain) * 2), var(--container-max));
-
-		--padding-sm: calc((100vw - var(--width-sm)) / 2);
-		--padding-md: calc((100vw - var(--width-md)) / 2);
-		--padding-lg: calc((100vw - var(--width-lg)) / 2);
-		--padding-xl: calc((100vw - var(--width-xl)) / 2);
-		--padding-2xl: calc((100vw - var(--width-2xl)) / 2);
-		--padding-3xl: calc((100vw - var(--width-3xl)) / 2);
+		/* One rung, not seven. `--width-sm`…`--width-3xl` and their `--padding-*`
+		   twins existed only to feed `p-x-sm`…`p-x-3xl`, and every one of those
+		   utilities had reached zero call sites; they were also the only reason the
+		   `--container-*` scale above had to be rescaled. `--width-max` is read
+		   directly by WeatherWidget (`w-(--width-max)`), `--padding-max` by
+		   `p-x-max`/`m-x-max`, ProductGallery's arrow insets and SECTION_INSET_START. */
+		--width-max: min(
+			100vw - calc(var(--s-contain) * 2),
+			var(--s-container-max)
+		);
 		--padding-max: calc((100vw - var(--width-max)) / 2);
 
 		--s-vp-height: 100vh;
@@ -716,36 +710,34 @@
 	top: calc(var(--height-header) + var(--height-announcement) + --value([*]));
 }
 
-@utility p-x-sm {
-	padding-inline: var(--padding-sm);
-}
-
-@utility p-x-md {
-	padding-inline: var(--padding-md);
-}
-
-@utility p-x-lg {
-	padding-inline: var(--padding-lg);
-}
-
-@utility p-x-xl {
-	padding-inline: var(--padding-xl);
-}
-
-@utility p-x-2xl {
-	padding-inline: var(--padding-2xl);
-}
-
-@utility p-x-3xl {
-	padding-inline: var(--padding-3xl);
-}
-
 @utility p-x-max {
 	padding-inline: var(--padding-max);
 }
 
 @utility m-x-max {
 	margin-inline: var(--padding-max);
+}
+
+/* The inset for anything that has to line up with a <SectionShell>'s content
+   edge. The LENGTH comes from `--section-inset`, which the shell writes inline
+   on every <section>: `var(--padding-max)` when the section spans its container,
+   `var(--s-contain)` when the editor capped it with a `max-w-*` (the centring
+   form compounds with a cap -- see DESIGN.md §Sections).
+
+   Utilities rather than `px-[var(--section-inset,…)]` at each call site: an
+   arbitrary value only reaches the stylesheet if Tailwind finds that exact class
+   name as a literal string in the source, so composing one from a shared const
+   emits no CSS at all and the inset silently collapses to zero.
+
+   The fallback covers a consumer rendered outside a shell; inside one the
+   inline property always wins. Two of them because the carousel TRACK insets
+   only its leading edge -- its trailing space is the last slide's own margin. */
+@utility p-x-section {
+	padding-inline: var(--section-inset, var(--padding-max));
+}
+
+@utility p-l-section {
+	padding-left: var(--section-inset, var(--padding-max));
 }
 
 /* Vertical spacing for page-module sections. The values come from Sanity as

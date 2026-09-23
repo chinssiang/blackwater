@@ -305,11 +305,43 @@ export const INLINE_LINK_FOCUS =
 export const CONTROL_FOCUS =
 	'focus-visible:ring-accent-foreground focus-visible:ring-2';
 
+// The site's standard inset for a PAGE ROOT -- a full-width box that centres its
+// content against `--s-container-max`. A <SectionShell> does NOT use this; it
+// resolves `--section-inset` instead, because the length it wants depends on
+// whether the editor capped the section (see below).
 export const SECTION_INSET = 'p-x-max';
-// A padding on the carousel TRACK, deliberately not on the viewport: the
-// viewport stays full-bleed so slides run off both screen edges. That means
-// this inset scrolls away with the track, and its consumer has to add it back
-// to every snap through embla's `align` -- see EventsCarousel, which reads
-// this padding back off the track rather than restating `--padding-max`.
-export const SECTION_INSET_START = 'pl-(--padding-max)';
+
+// --- The section inset, and its three readers ---
+//
+// <SectionShell> writes `--section-inset` inline on every <section>: the
+// centring `var(--padding-max)` when the section spans its container, and the
+// flat gutter `var(--s-contain)` when the editor capped it with a `max-w-*`.
+// The centring form is `(100vw - min(100vw - 2*contain, --s-container-max)) / 2`,
+// so on a box `mx-auto` already centres the two compound -- at 2560px that is
+// 280px a side, which on a 320px section leaves nothing. Below the container cap
+// the two lengths are identical, which is why it only shows on wide viewports.
+//
+// A property rather than a class because THREE elements have to agree and only
+// one is the shell's own markup: a `bleed` section puts no inset on itself, so
+// EventsCarousel's track and nav row carry theirs -- and a child cannot read a
+// class on its ancestor. The carousel pair used to name `--padding-max`
+// outright and so stopped agreeing with the heading the moment an editor capped
+// a `bleed` module.
+//
+// Both are named utilities declared in globals.css, NOT `px-[var(--section-inset)]`
+// spelled out here: Tailwind only emits an arbitrary value whose exact class name
+// it finds as a literal string in the source, so one composed from a shared const
+// produces no CSS and the inset silently collapses to zero.
+//
+// Used by the shell's <section> and its `bleed` heading row, and by the
+// carousel's nav row -- everything that must sit at the section's content edge.
+export const SECTION_CONTENT_INSET = 'p-x-section';
+
+// The leading-edge-only form, for the carousel TRACK -- deliberately not on the
+// viewport, so slides keep running off both screen edges as they scroll rather
+// than being clipped at the inset. The cost is that this inset travels with the
+// track, so its consumer has to add it back to every snap through embla's
+// `align` -- see EventsCarousel, which reads the padding back off the track
+// rather than restating the length.
+export const SECTION_INSET_START = 'p-l-section';
 export const SECTION_INSET_TRAILING_SLIDE = 'last:mr-contain';

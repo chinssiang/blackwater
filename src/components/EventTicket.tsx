@@ -147,7 +147,7 @@ export function EventTicket({
 					// of text, leaving most of the visible words outside their own tap
 					// target and painting past the card. The category <p> above already
 					// wraps this way for the same class of name.
-					<p className="t-spec flex items-start gap-1.5 uppercase wrap-anywhere">
+					<p className="t-spec flex items-start gap-1.5 wrap-anywhere uppercase">
 						<MapPin className="mt-px size-3 shrink-0" aria-hidden />
 						{displayLocationLink ? (
 							<a

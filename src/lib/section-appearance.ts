@@ -25,6 +25,26 @@ export const MAX_WIDTH_PX: Record<Exclude<MaxWidth, 'none'>, number> = {
 	xs: 320,
 };
 
+// Tailwind's own rungs, and each one lands exactly on its MAX_WIDTH_PX entry
+// above: `7xl` is 80rem, `5xl` 64rem, `3xl` 48rem, `xl` 36rem, `xs` 20rem --
+// 1280/1024/768/576/320px at a 16px root.
+//
+// That agreement is only true because globals.css leaves the `--container-*`
+// scale at STOCK. It used to rescale it, which is where `max-w-*` reads its
+// rungs from, so `3xl` meant 1800px and `xl` 1200px -- `m` and `s` rendered
+// WIDER than `xl` and `l`, and a `faqBlock` asking for a 768px reading measure
+// got 1800px. Do not reintroduce that override (the note at the top of
+// globals.css says why); these five names are the whole reason it must not
+// come back.
+//
+// The two maps are kept in step BY HAND. There is no type that ties `max-w-3xl`
+// to 768, so adding a rung means editing both -- `section-appearance.test.ts`
+// pins each class and asserts the ladder ascends, which is what caught the
+// inversion above.
+//
+// One consequence of naming them: the rungs are rem-based, so at a root font
+// other than 16px the rendered cap scales while MAX_WIDTH_PX does not. That
+// skews `ProductsBlock`'s image `sizes` hint slightly, never the layout.
 const MAX_WIDTH_CLASSES: Record<MaxWidth, string> = {
 	none: 'w-full',
 	xl: 'max-w-7xl',
@@ -76,6 +96,14 @@ export type SectionAppearance = {
 export type ResolvedSectionAppearance = {
 	alignClass: string;
 	maxWidthClass: string;
+	/**
+	 * Whether the section spans its container rather than being capped. Two
+	 * decisions read it -- which horizontal inset <SectionShell> publishes
+	 * (the centring `--padding-max` or the flat gutter) and whether a wave hero may
+	 * underlap the header -- and both were previously comparing the class string
+	 * by hand, so a rename of the `none` class would have silently flipped one.
+	 */
+	isFullWidth: boolean;
 	/** The section's own text colour, or a legible default over an authored background. */
 	inkCss: string | undefined;
 	paperCss: string | undefined;
@@ -123,12 +151,15 @@ export function resolveSectionAppearance(
 			? ensureAccessibleTextColor(null, backgroundColor) || undefined
 			: undefined);
 
+	// `||`, not `??`: a cleared field can arrive as '' , which `??` passes
+	// through as a class name of nothing.
+	const maxWidthClass =
+		MAX_WIDTH_CLASSES[width as MaxWidth] || MAX_WIDTH_CLASSES.none;
+
 	return {
 		alignClass: TEXT_ALIGN_CLASSES.has(align) ? align : DEFAULT_ALIGN,
-		// `||`, not `??`: a cleared field can arrive as '' , which `??` passes
-		// through as a class name of nothing.
-		maxWidthClass:
-			MAX_WIDTH_CLASSES[width as MaxWidth] || MAX_WIDTH_CLASSES.none,
+		maxWidthClass,
+		isFullWidth: maxWidthClass === MAX_WIDTH_CLASSES.none,
 		inkCss,
 		paperCss,
 		spacing: {

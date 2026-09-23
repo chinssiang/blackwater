@@ -47,7 +47,7 @@ export default async function PageGeneral({ data, locale }: PageGeneralProps) {
 				</div>
 
 				<div className="flex-1">
-					<div className="wysiwyg-page max-w-md">
+					<div className="wysiwyg-page max-w-2xl">
 						<CustomPortableText blocks={content} />
 					</div>
 				</div>

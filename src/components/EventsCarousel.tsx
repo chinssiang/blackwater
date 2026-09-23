@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useRef } from 'react';
-import { SECTION_INSET, SECTION_INSET_START, cn } from '@/lib/utils';
+import { SECTION_CONTENT_INSET, SECTION_INSET_START, cn } from '@/lib/utils';
 import {
 	Carousel,
 	CarouselContent,
@@ -107,7 +107,7 @@ export default function EventsCarousel({
 			>
 				{children}
 			</CarouselContent>
-			<div className={cn('mt-4 flex justify-end gap-2', SECTION_INSET)}>
+			<div className={cn('mt-4 flex justify-end gap-2', SECTION_CONTENT_INSET)}>
 				<CarouselPrevious label={previousLabel} className={NAV_BUTTON} />
 				<CarouselNext label={nextLabel} className={NAV_BUTTON} />
 			</div>

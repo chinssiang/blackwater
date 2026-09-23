@@ -3,7 +3,7 @@ import {
 	type SectionAppearance,
 	resolveSectionAppearance,
 } from '@/lib/section-appearance';
-import { SECTION_INSET, cn } from '@/lib/utils';
+import { SECTION_CONTENT_INSET, cn } from '@/lib/utils';
 
 // The <section> wrapper every page module renders, and the one place the
 // `sectionAppearance` object reaches the DOM.
@@ -48,15 +48,31 @@ export default function SectionShell({
 	children: React.ReactNode;
 	bleed?: boolean;
 }) {
-	const { alignClass, maxWidthClass, inkCss, paperCss, spacing } =
+	const { alignClass, maxWidthClass, isFullWidth, inkCss, paperCss, spacing } =
 		resolveSectionAppearance(appearance);
 	const Heading = headingLevel;
+
+	// The horizontal inset, decided once as a LENGTH rather than as a class.
+	//
+	// `--padding-max` is a centring device -- `(100vw - min(100vw - 2*contain,
+	// --s-container-max)) / 2` -- so it belongs only on a section that spans its
+	// container. A capped section is already centred by `mx-auto`, and the two
+	// compound: at 2560px that padding is 280px a side, which on a 320px section
+	// leaves nothing. Below the container cap the two lengths are identical, which
+	// is why this only shows on very wide viewports.
+	//
+	// A length, not a class, because three elements have to agree on it and only
+	// one of them is this component's own markup: a `bleed` section puts no inset
+	// on itself, so EventsCarousel's track and nav row carry their own -- and a
+	// child cannot read a class on its ancestor. It goes out as `--section-inset`
+	// below, and every reader, here included, resolves that one property.
+	const insetLength = isFullWidth ? 'var(--padding-max)' : 'var(--s-contain)';
 
 	return (
 		<section
 			className={cn(
 				'section-spacing mx-auto',
-				!bleed && SECTION_INSET,
+				!bleed && SECTION_CONTENT_INSET,
 				inkCss && 'section-ink',
 				paperCss && 'section-paper',
 				alignClass,
@@ -74,6 +90,10 @@ export default function SectionShell({
 					'--section-pb-sm': spacing.pbSm,
 					'--section-fg': inkCss,
 					'--section-bg': paperCss,
+					// The inset every reader resolves -- this section, its bleed heading
+					// row, and the carousel's track and nav row inside a bleed module.
+					// Written on every section, capped or not, so there is one writer.
+					'--section-inset': insetLength,
 					// The paint itself. The classes above only redefine tokens for
 					// descendants; this section still has to draw its own colours.
 					color: inkCss,
@@ -99,7 +119,7 @@ export default function SectionShell({
 					className={cn(
 						'mb-6',
 						headingAction && 'flex items-baseline justify-between gap-4',
-						bleed && SECTION_INSET
+						bleed && SECTION_CONTENT_INSET
 					)}
 				>
 					{/* Gated separately from the wrapper: `heading` is optional on every

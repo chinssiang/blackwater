@@ -1,6 +1,6 @@
 import { vercelStegaCombine } from '@vercel/stega';
 import { describe, expect, it } from 'vitest';
-import { resolveSectionAppearance } from './section-appearance';
+import { MAX_WIDTH_PX, resolveSectionAppearance } from './section-appearance';
 
 const color = (r: number, g: number, b: number, a = 1) => ({
 	hex: '#000000',
@@ -43,6 +43,36 @@ describe('resolveSectionAppearance', () => {
 				expected
 			);
 		}
+	});
+
+	// The invariant that broke silently while globals.css rescaled Tailwind's
+	// `--container-*` scale: `max-w-3xl` meant 1800px and `max-w-xl` 1200px, so
+	// `m` and `s` were WIDER than `l` (1024px) and `m` wider than `xl` (1280px),
+	// and an editor picking a smaller option got a bigger section. The scale is
+	// stock again, which is what makes the rungs in the test above land on these
+	// numbers -- nothing in the type system ties the two maps together, so this
+	// and the class table above are the whole guard.
+	it('ascends -- xs < s < m < l < xl', () => {
+		const widths = (['xs', 's', 'm', 'l', 'xl'] as const).map(
+			(key) => MAX_WIDTH_PX[key]
+		);
+		expect(widths).toEqual([...widths].sort((a, b) => a - b));
+		expect(new Set(widths).size, 'no two rungs share a width').toBe(
+			widths.length
+		);
+	});
+
+	// `isFullWidth` is what SectionShell reads to pick the length it publishes as
+	// `--section-inset`: the centring `--padding-max` or the flat gutter, and what
+	// HeroBlock reads to decide whether a wave hero may underlap the header.
+	// Only the two cases the `maxWidthClass` tests above do not already imply:
+	// an unrecognised key must land on `true` (a reimplementation reading
+	// `width === 'none'` would return false and inset a full-bleed section), and
+	// a real rung must land on `false`.
+	it('follows the resolved class, including on the fallback path', () => {
+		// FaqBlock's retired 'md'/'lg' vocabulary, still in older documents.
+		expect(resolveSectionAppearance({ maxWidth: 'md' }).isFullWidth).toBe(true);
+		expect(resolveSectionAppearance({ maxWidth: 'm' }).isFullWidth).toBe(false);
 	});
 
 	it('falls back on a cleared max-width rather than emitting no class', () => {

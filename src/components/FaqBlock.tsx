@@ -1,4 +1,3 @@
-import { cn } from '@/lib/utils';
 import CustomPortableText from '@/components/CustomPortableText';
 import SectionShell, {
 	type SectionAppearance,
@@ -24,14 +23,9 @@ type FaqBlockProps = {
 		sectionAppearance?: any;
 	};
 	headingLevel?: 'h1' | 'h2';
-	className?: string;
 };
 
-export default function FaqBlock({
-	data,
-	headingLevel = 'h2',
-	className,
-}: FaqBlockProps) {
+export default function FaqBlock({ data, headingLevel = 'h2' }: FaqBlockProps) {
 	const { heading, items, sectionAppearance } = data || {};
 	// Not SectionShell's `heading` prop (see the note at the render below), so
 	// this module switches the tag itself rather than inheriting the shell's.
@@ -52,7 +46,7 @@ export default function FaqBlock({
 				...sectionAppearance,
 				maxWidth: sectionAppearance?.maxWidth ?? 'm',
 			}}
-			className={cn('wysiwyg', className)}
+			className="wysiwyg"
 		>
 			{/* Rendered here rather than through SectionShell's `heading` prop: inside
 			    `wysiwyg` the h2 picks up this module's prose styling, which is what it
