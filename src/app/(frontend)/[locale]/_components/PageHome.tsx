@@ -1,6 +1,6 @@
 import type { PageHomeQueryResult } from '@/../sanity.types';
+import { heroBlockIsRenderable } from '@/lib/hero-block';
 import type { Locale } from '@/lib/i18n';
-import { heroBlockIsRenderable } from '@/components/HeroBlock';
 import PageModules from '@/components/PageModules';
 import { WeatherWidget } from '@/components/WeatherWidgetLazy';
 

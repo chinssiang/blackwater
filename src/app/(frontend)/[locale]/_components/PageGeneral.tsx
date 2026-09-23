@@ -2,9 +2,9 @@ import type { PageGeneralQueryResult } from '@/../sanity.types';
 import { format } from 'date-fns';
 import { DATE_FNS_LOCALES } from '@/lib/dateFnsLocale';
 import { getDictionary } from '@/lib/dictionary.server';
+import { heroBlockIsRenderable } from '@/lib/hero-block';
 import type { Locale } from '@/lib/i18n';
 import CustomPortableText from '@/components/CustomPortableText';
-import { heroBlockIsRenderable } from '@/components/HeroBlock';
 import PageModules from '@/components/PageModules';
 
 // Picked from the generated query result rather than restated, so a projection

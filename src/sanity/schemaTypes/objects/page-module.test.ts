@@ -1,4 +1,7 @@
+import { MODULE_PREVIEWS } from '@/app/module-preview/_presets';
 import { describe, expect, it } from 'vitest';
+import { heroBlockIsRenderable } from '@/lib/hero-block';
+import { LOCALES } from '@/lib/i18n';
 import {
 	PAGE_MODULES_FIELD,
 	hostModuleHidden,
@@ -197,6 +200,38 @@ describe('every page-module Rule.custom goes through moduleRule', () => {
 		// Guards the guard, and now cannot pass vacuously: the list comes from
 		// p-home.ts, so it is empty only if the array itself is gone.
 		expect(moduleTypeNames().length).toBeGreaterThanOrEqual(5);
+	});
+
+	it('has a Studio picker preset for every module type', () => {
+		// The Add-item picker (PageModulesInput.tsx) iframes
+		// /module-preview/{type} for every member of these arrays. Nothing types
+		// the two lists together, so a member with no preset would otherwise ship
+		// a card showing a 404 with lint, types and the build all green.
+		for (const locale of LOCALES) {
+			expect([...moduleTypeNames()].sort()).toEqual(
+				Object.keys(MODULE_PREVIEWS[locale]).sort()
+			);
+		}
+	});
+
+	it('gives every preset data its module actually renders', () => {
+		// A module bails to null on empty data, and a preset that trips that bail
+		// passes the key check above while its card shows an empty frame. Each
+		// line mirrors its component's own bail: heroBlockIsRenderable, FaqBlock's
+		// question-and-answer filter, and the non-empty arrays Freeform and
+		// ProductsBlock render. eventsBlock is absent: its rows are live data.
+		for (const locale of LOCALES) {
+			const { heroBlock, faqBlock, freeform, productsBlock } =
+				MODULE_PREVIEWS[locale];
+			expect(heroBlockIsRenderable(heroBlock)).toBe(true);
+			expect(faqBlock.items.length).toBeGreaterThan(0);
+			for (const item of faqBlock.items) {
+				expect(item.question && item.answer.length > 0).toBeTruthy();
+			}
+			expect(freeform.content.length).toBeGreaterThan(0);
+			expect(productsBlock.products.length).toBeGreaterThan(0);
+			expect(productsBlock.limit).toBeGreaterThan(0);
+		}
 	});
 
 	it('registers both Studio halves on every module type', () => {
