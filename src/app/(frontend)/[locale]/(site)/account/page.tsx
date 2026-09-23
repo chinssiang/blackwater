@@ -4,6 +4,7 @@ import { getDictionary } from '@/lib/dictionary.server';
 import { FALLBACK_TIMEZONE } from '@/lib/event-date';
 import { DEFAULT_LOCALE, htmlLangFor, isLocale } from '@/lib/i18n';
 import { getCurrentMember } from '@/lib/member/session';
+import { SessionRefresh } from './_components/SessionRefresh';
 import { SignInForm } from './_components/SignInForm';
 import { SignOutButton } from './_components/SignOutButton';
 
@@ -55,6 +56,7 @@ export default async function Page(props: Props) {
 							})}
 						</p>
 						<SignOutButton className="mt-6" />
+						<SessionRefresh />
 					</>
 				) : (
 					<SignInForm />

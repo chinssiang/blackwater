@@ -234,3 +234,66 @@ describe('member sign-in rate limit', () => {
 		expect(rows.length).toBeGreaterThan(0);
 	});
 });
+
+// A member stays signed in while they keep coming back: each visit more than a
+// day after the last refresh pushes the session out to a fresh 30 days. That
+// refresh has to go through the API route -- a Server Component cannot set a
+// cookie, so the /account page's own session read can extend the database row
+// but never the cookie. SessionRefresh on that page exists for this.
+describe('staying signed in', () => {
+	const getSession = (ctx: Awaited<ReturnType<typeof setup>>, cookie: string) =>
+		ctx.auth.handler(
+			new Request(`${ORIGIN}/api/auth/get-session`, { headers: { cookie } })
+		);
+
+	const daysLeft = async (ctx: Awaited<ReturnType<typeof setup>>) => {
+		const { rows } = await ctx.pg.query<{ days: number }>(
+			'select extract(epoch from expires_at - now()) / 86400 as days from member_session'
+		);
+		return Number(rows[0].days);
+	};
+
+	it('extends a day-old session and re-issues its cookie for another 30 days', async () => {
+		const ctx = await setup();
+		await ctx.requestCode('runner@example.com');
+		const cookie = sessionCookie(
+			await ctx.signIn('runner@example.com', ctx.sent[0].code)
+		)!;
+		// Two days since the last refresh (updateAge is one day).
+		await ctx.pg.exec(
+			"update member_session set expires_at = now() + interval '28 days'"
+		);
+
+		const res = await getSession(ctx, cookie);
+		expect(res.status).toBe(200);
+		const reissued = res.headers
+			.getSetCookie()
+			.find((c) => c.startsWith('bw.session_token='));
+		expect(reissued).toMatch(/Max-Age=2592000/);
+		expect(await daysLeft(ctx)).toBeGreaterThan(29.9);
+	});
+
+	it('leaves a fresh session alone, so a visit costs no write', async () => {
+		const ctx = await setup();
+		await ctx.requestCode('runner@example.com');
+		const cookie = sessionCookie(
+			await ctx.signIn('runner@example.com', ctx.sent[0].code)
+		)!;
+		const res = await getSession(ctx, cookie);
+		expect(res.status).toBe(200);
+		expect(sessionCookie(res)).toBeUndefined();
+	});
+
+	it('signs out a member who has not been back for 30 days', async () => {
+		const ctx = await setup();
+		await ctx.requestCode('runner@example.com');
+		const cookie = sessionCookie(
+			await ctx.signIn('runner@example.com', ctx.sent[0].code)
+		)!;
+		await ctx.pg.exec(
+			"update member_session set expires_at = now() - interval '1 second'"
+		);
+		const res = await getSession(ctx, cookie);
+		expect(await res.json()).toBeNull();
+	});
+});
