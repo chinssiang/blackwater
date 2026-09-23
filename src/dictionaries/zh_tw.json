@@ -353,5 +353,46 @@
 		"marketingTitle": "行銷",
 		"marketingDescription": "用於個人化內容與行銷成效評估（Klaviyo）。",
 		"manageCookiesLabel": "Cookie 設定"
+	},
+	"account": {
+		"metaTitle": "我的帳號",
+		"signIn": {
+			"heading": "登入",
+			"intro": "會員可以在這裡查看自己的跑團紀錄：參加過的團跑，以及您的訂單。我們會寄驗證碼到您的信箱，不需要記任何密碼。",
+			"emailLabel": "電子郵件地址",
+			"emailPlaceholder": "您的電子郵件",
+			"sendCode": "寄驗證碼給我",
+			"sending": "寄送中…",
+			"codeHeading": "請查看您的信箱",
+			"codeSentTo": "我們已將 6 位數驗證碼寄到 {email}，10 分鐘內有效。",
+			"codeLabel": "登入驗證碼",
+			"verify": "登入",
+			"verifying": "登入中…",
+			"resend": "重新寄送驗證碼",
+			"resent": "新的驗證碼已寄出。",
+			"changeEmail": "改用其他電子郵件",
+			"invalidEmail": "請輸入有效的電子郵件地址。",
+			"invalidCode": "驗證碼不正確，請確認後再試一次。",
+			"expiredCode": "驗證碼已過期，請重新寄送。",
+			"tooManyAttempts": "這組驗證碼嘗試次數過多，請重新寄送。",
+			"rateLimitedHeading": "嘗試次數過多",
+			"rateLimitedBody": "請稍候一分鐘後再試。",
+			"errorHeading": "發生錯誤",
+			"errorBody": "請再試一次。",
+			"privacy": "我們使用您的電子郵件地址讓您登入，並顯示您自己的跑團紀錄；為了保護帳號安全，我們也會記錄每次登入的裝置與網路資訊。加入會員免費，您可以隨時要求我們刪除帳號。"
+		},
+		"details": {
+			"heading": "我的帳號",
+			"signedInAs": "目前登入：{email}",
+			"memberSince": "自 {date} 起成為會員",
+			"signOut": "登出",
+			"signingOut": "登出中…"
+		},
+		"email": {
+			"subject": "您的 Blackwater RC 登入驗證碼：{code}",
+			"intro": "這是您登入 Blackwater RC 的驗證碼：",
+			"expiry": "10 分鐘內有效。",
+			"ignore": "如果您沒有要求登入，可以忽略這封信。沒有驗證碼，任何人都無法登入。"
+		}
 	}
 }

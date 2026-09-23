@@ -394,13 +394,17 @@ not by the rule they break, because the failure is what you can check for.
 
 Which composition a new page takes is decided by its type, not per call site.
 
-| Archetype     | Routes                                           | Composition                                                                           |
-| ------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| Modular page  | `/`, `/[slug]`                                   | Sanity `pageModules`, every one through `<SectionShell>`; slot 0 owns the `<h1>`      |
-| Listing       | `/products`, `/products/all`, `/events`          | a grid or list of cards, page-owned heading, own filters/toggle chrome                |
-| Detail        | `/products/[slug]`, `/events/[slug]`             | page-owned `<h1>`, one LCP image owned by the page (a module never passes `priority`) |
-| Fixed-content | `/faq`, `/size-guide`, `/contact`, `/newsletter` | page component, `.wysiwyg` prose where content is Portable Text                       |
-| Locale-less   | `/events-crew`, `/email-signature`               | outside `[locale]`; no `$locale` to resolve against, own layout                       |
+| Archetype     | Routes                                                       | Composition                                                                           |
+| ------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| Modular page  | `/`, `/[slug]`                                               | Sanity `pageModules`, every one through `<SectionShell>`; slot 0 owns the `<h1>`      |
+| Listing       | `/products`, `/products/all`, `/events`                      | a grid or list of cards, page-owned heading, own filters/toggle chrome                |
+| Detail        | `/products/[slug]`, `/events/[slug]`                         | page-owned `<h1>`, one LCP image owned by the page (a module never passes `priority`) |
+| Fixed-content | `/faq`, `/size-guide`, `/contact`, `/newsletter`, `/account` | page component, `.wysiwyg` prose where content is Portable Text                       |
+| Locale-less   | `/events-crew`, `/email-signature`                           | outside `[locale]`; no `$locale` to resolve against, own layout                       |
+
+`/account` is the one Fixed-content page with no Sanity document: its copy is
+the `account` dictionary block, and it renders per request because it reads the
+session cookie.
 
 `/products` and `/size-guide` and their descendants render **light**; everything
 else renders dark. The two locale-less routes are internal tools and are not held to

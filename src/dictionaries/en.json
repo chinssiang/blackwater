@@ -353,5 +353,46 @@
 		"marketingTitle": "Marketing",
 		"marketingDescription": "Used for personalized content and marketing measurement (Klaviyo).",
 		"manageCookiesLabel": "Cookie settings"
+	},
+	"account": {
+		"metaTitle": "Your account",
+		"signIn": {
+			"heading": "Sign in",
+			"intro": "Members see their own club history here: the runs you've made it to, and your orders. We'll email you a code, so there's no password to remember.",
+			"emailLabel": "Email address",
+			"emailPlaceholder": "Your email",
+			"sendCode": "Email me a code",
+			"sending": "Sending…",
+			"codeHeading": "Check your email",
+			"codeSentTo": "We sent a 6-digit code to {email}. It works for 10 minutes.",
+			"codeLabel": "Sign-in code",
+			"verify": "Sign in",
+			"verifying": "Signing in…",
+			"resend": "Send a new code",
+			"resent": "A new code is on its way.",
+			"changeEmail": "Use a different email",
+			"invalidEmail": "Please enter a valid email address.",
+			"invalidCode": "That code isn't right. Check it and try again.",
+			"expiredCode": "That code has expired. Send yourself a new one.",
+			"tooManyAttempts": "Too many tries with that code. Send yourself a new one.",
+			"rateLimitedHeading": "Too many attempts",
+			"rateLimitedBody": "Please wait a minute and try again.",
+			"errorHeading": "Something went wrong",
+			"errorBody": "Please try again.",
+			"privacy": "We use your email address to sign you in and to show you your own club history, and we record the device and network of each sign-in to keep your account secure. Membership is free, and you can ask us to delete your account at any time."
+		},
+		"details": {
+			"heading": "Your account",
+			"signedInAs": "Signed in as {email}",
+			"memberSince": "Member since {date}",
+			"signOut": "Sign out",
+			"signingOut": "Signing out…"
+		},
+		"email": {
+			"subject": "Your Blackwater RC sign-in code: {code}",
+			"intro": "Here is your code to sign in to Blackwater RC:",
+			"expiry": "It works for 10 minutes.",
+			"ignore": "If you didn't ask to sign in, you can ignore this email. No one can sign in without the code."
+		}
 	}
 }
