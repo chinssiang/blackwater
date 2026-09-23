@@ -93,6 +93,11 @@ export default function PageHome({ data, locale }: PageHomeProps) {
 					// filtered out in GROQ (`moduleVisible`), so slot 0 is what a visitor
 					// actually sees.
 					headingLevel={index === 0 ? 'h1' : undefined}
+					// Same slot, separate fact: this one drops the entrance fade from
+					// the element Chrome is about to measure as the LCP. It was missing
+					// here while PageGeneral passed it, so the homepage -- the page that
+					// fix was written for -- kept starting its <h1> at opacity: 0.
+					isPageOpener={index === 0}
 					ownsWeatherWidget={!!widgetHeroKey && module._key === widgetHeroKey}
 				/>
 			))}

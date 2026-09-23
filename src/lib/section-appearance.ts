@@ -57,14 +57,24 @@ const MAX_WIDTH_CLASSES: Record<MaxWidth, string> = {
 // An allowlist rather than a passthrough: `textAlign` arrives as a class name
 // straight from a document, so anything unrecognised must fall back rather than
 // reach the class attribute.
-const TEXT_ALIGN_CLASSES = new Set([
+// Exported as a tuple, and `alignClass` is narrowed to it below, so a consumer
+// mapping these to something else (HeroBlock turns them into an auto margin)
+// gets a COMPILE error when a fifth alignment is added rather than a silent
+// fallback. Same reason MAX_WIDTH_CLASSES and MAX_WIDTH_PX are pinned by a test:
+// two hand-kept maps of the same vocabulary are how this drifts.
+export const TEXT_ALIGN_CLASSES = [
 	'text-left',
 	'text-center',
 	'text-right',
 	'text-justify',
-]);
+] as const;
 
-const DEFAULT_ALIGN = 'text-left';
+export type TextAlignClass = (typeof TEXT_ALIGN_CLASSES)[number];
+
+// A Set for the lookup, because `align` arrives as an unnarrowed string.
+const TEXT_ALIGN_CLASS_SET: ReadonlySet<string> = new Set(TEXT_ALIGN_CLASSES);
+
+const DEFAULT_ALIGN: TextAlignClass = 'text-left';
 
 // Mirrors the `initialValue`s on section-appearance.js. Declared here as well
 // because `initialValue` only fires when an editor creates a new array item in
@@ -94,14 +104,14 @@ export type SectionAppearance = {
 } | null;
 
 export type ResolvedSectionAppearance = {
-	alignClass: string;
+	alignClass: TextAlignClass;
 	maxWidthClass: string;
 	/**
-	 * Whether the section spans its container rather than being capped. Two
-	 * decisions read it -- which horizontal inset <SectionShell> publishes
-	 * (the centring `--padding-max` or the flat gutter) and whether a wave hero may
-	 * underlap the header -- and both were previously comparing the class string
-	 * by hand, so a rename of the `none` class would have silently flipped one.
+	 * Whether the section spans its container rather than being capped. It is
+	 * what <SectionShell> reads to pick the inset it publishes as
+	 * `--section-inset` -- the centring `--padding-max` or the flat gutter --
+	 * and it was previously comparing the class string by hand, so a rename of
+	 * the `none` class would have silently flipped it.
 	 */
 	isFullWidth: boolean;
 	/** The section's own text colour, or a legible default over an authored background. */
@@ -157,7 +167,9 @@ export function resolveSectionAppearance(
 		MAX_WIDTH_CLASSES[width as MaxWidth] || MAX_WIDTH_CLASSES.none;
 
 	return {
-		alignClass: TEXT_ALIGN_CLASSES.has(align) ? align : DEFAULT_ALIGN,
+		alignClass: TEXT_ALIGN_CLASS_SET.has(align)
+			? (align as TextAlignClass)
+			: DEFAULT_ALIGN,
 		maxWidthClass,
 		isFullWidth: maxWidthClass === MAX_WIDTH_CLASSES.none,
 		inkCss,

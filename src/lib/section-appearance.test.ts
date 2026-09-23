@@ -63,8 +63,7 @@ describe('resolveSectionAppearance', () => {
 	});
 
 	// `isFullWidth` is what SectionShell reads to pick the length it publishes as
-	// `--section-inset`: the centring `--padding-max` or the flat gutter, and what
-	// HeroBlock reads to decide whether a wave hero may underlap the header.
+	// `--section-inset`: the centring `--padding-max` or the flat gutter.
 	// Only the two cases the `maxWidthClass` tests above do not already imply:
 	// an unrecognised key must land on `true` (a reimplementation reading
 	// `width === 'none'` would return false and inset a full-bleed section), and
