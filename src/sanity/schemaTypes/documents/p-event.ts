@@ -13,7 +13,7 @@ import {
 	pickLocalizedValue,
 	requireSomeValue,
 } from '@/lib/i18n';
-import { isLumaEventUrl } from '@/lib/luma';
+import { normalizeLumaEventUrl } from '@/lib/luma';
 import { defineField, defineType } from 'sanity';
 
 export const pEvent = defineType({
@@ -228,9 +228,9 @@ export const pEvent = defineType({
 				'The Luma page for this event, e.g. https://lu.ma/midweek-reset. Not shown on the site — it matches Luma guest lists to this event for member attendance. Registration buttons still come from the status list above.',
 			validation: (Rule) =>
 				Rule.custom((value?: string) =>
-					!value || isLumaEventUrl(value)
+					!value || normalizeLumaEventUrl(value)
 						? true
-						: 'Must be a Luma event link (https://lu.ma/… or https://luma.com/…).'
+						: "Must be the event's public Luma link (https://lu.ma/… or https://luma.com/…), not the host manage page."
 				),
 		}),
 		defineField({
