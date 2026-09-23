@@ -1531,6 +1531,7 @@ export type PEvent = {
 		_type: 'statusItem';
 		_key: string;
 	}>;
+	lumaUrl?: string;
 	highlights?: Array<{
 		label?: InternationalizedArrayString;
 		value?: InternationalizedArrayString;

@@ -4,8 +4,8 @@ import { urlForImage } from '@/sanity/lib/image';
 import { productSubmissionConfigQuery } from '@/sanity/lib/queries';
 import * as z from 'zod';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
+import { createMailTransport } from '@/lib/mail';
 import { buildConfirmationEmail, escapeHtml } from './confirmation-email';
-import nodemailer from 'nodemailer';
 
 // The recipient, subject, and all template content are resolved server-side
 // (from Sanity + built-in defaults) so this endpoint can't be used to relay
@@ -106,14 +106,9 @@ export async function POST(req: NextRequest) {
 		);
 	}
 
-	const transporter = nodemailer.createTransport({
-		host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
-		port: Number(process.env.EMAIL_SERVER_PORT) || 465,
-		secure: true, // true for 465, false for other ports
-		auth: {
-			user: authUser,
-			pass: authPassword,
-		},
+	const transporter = await createMailTransport({
+		user: authUser,
+		pass: authPassword,
 	});
 
 	// Owner notification is the submission itself — if it fails, the whole

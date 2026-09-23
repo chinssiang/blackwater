@@ -22,15 +22,17 @@ bilingual community hub, and its shop:
   Shopify's hosted checkout, presented curatorially rather than as a catalogue.
   Some entries are still club-vetted picks carrying an affiliate "Buy it" link
   instead of a cart button; both shapes coexist,
-- newsletter / email capture, and
+- newsletter / email capture,
+- a free membership: runners sign in to see their own club history — runs
+  attended, orders placed — and
 - internal crew rostering for event operations.
 
 Success is people finding the club and showing up: strong discoverability (the
 project invests heavily in SEO/AEO and structured data so answer engines can cite
 it) and a growing, returning community. Commerce serves that, not the reverse —
-the shop is how you wear the club, not the reason the site exists. There is no
-membership paywall and no login; the shopper leaves only at Shopify's hosted
-checkout.
+the shop is how you wear the club, not the reason the site exists. Membership is
+free and there is no paywall: signing in shows a runner their own history, it
+never gates the club. The shopper leaves only at Shopify's hosted checkout.
 
 ## Brand Personality
 
@@ -45,7 +47,11 @@ black-and-white frame is the brand.
 
 - **Strava-style data/stats app.** No metrics-forward dashboards, charts, big
   number tiles, or counter-heavy chrome. Blackwater is a community and a
-  curatorial voice, not a performance-tracking tool.
+  curatorial voice, not a performance-tracking tool. Membership does not
+  relax this: a member's history is told in sentences and marks ("14 club
+  runs · member since March 2024"), and points surface as quests and badges,
+  never as a dashboard of counters. A leaderboard, if there is one, is
+  opt-in, seasonal, and typographic — a list, not a chart.
 
 ## Design Principles
 

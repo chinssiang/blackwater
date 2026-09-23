@@ -12,6 +12,12 @@ import tseslint from 'typescript-eslint';
 // rather than extending the preset wholesale — so each rule set is visible and
 // tunable here. Source is TypeScript-only (`allowJs` is false); the js/mjs globs
 // remain for config files and the scripts/ folder.
+// The member-data fence below. `db` is the client and `auth` the Better Auth
+// instance; the optional extension catches `./member/db.ts` from a script.
+const MEMBER_INTERNALS = '(^|/)member/(db|auth)(\\.[cm]?[jt]s)?$';
+const DB_DRIVERS =
+	'^(drizzle-orm|@neondatabase/serverless|@electric-sql/pglite)(/|$)';
+
 const eslintConfig = defineConfig([
 	globalIgnores([
 		// Default ignores of eslint-config-next:
@@ -98,6 +104,49 @@ const eslintConfig = defineConfig([
 			'@typescript-eslint/no-empty-object-type': [
 				'error',
 				{ allowInterfaces: 'with-single-extends' },
+			],
+		},
+	},
+
+	// Member data has no row-level security: the database will serve any
+	// member's rows to any query. So the client, the auth instance (whose
+	// internal adapter reads any row) and the drivers are importable only
+	// inside src/lib/member/, where every read is written to scope itself, and
+	// one directory is what a review has to check.
+	//
+	// Matched by regex rather than path globs, because a glob such as
+	// `**/lib/member/db` misses `./member/db` from src/lib; the specifier is
+	// what is checked, however the file is reached. And `no-restricted-imports`
+	// never looks at `import()`, hence the syntax rule beside it.
+	{
+		files: ['**/*.{js,mjs,cjs,ts,mts,tsx}'],
+		ignores: ['src/lib/member/**'],
+		rules: {
+			'no-restricted-imports': [
+				'error',
+				{
+					patterns: [
+						{
+							regex: MEMBER_INTERNALS,
+							message:
+								'Read member data through a function in src/lib/member/ that scopes the query, not through the client or the auth instance.',
+						},
+						{
+							regex: DB_DRIVERS,
+							message:
+								'Database drivers belong in src/lib/member/ only; see the note on its db.ts.',
+						},
+					],
+				},
+			],
+			'no-restricted-syntax': [
+				'error',
+				{
+					// esquery reads a regex literal, in which `/` must be escaped.
+					selector: `ImportExpression[source.value=/${`${MEMBER_INTERNALS}|${DB_DRIVERS}`.replaceAll('/', '\\/')}/]`,
+					message:
+						'Member internals and database drivers are fenced to src/lib/member/, dynamic import() included.',
+				},
 			],
 		},
 	},
