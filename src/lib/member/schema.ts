@@ -57,7 +57,11 @@ export const memberSession = pgTable(
 	(t) => [index('member_session_member_id_idx').on(t.userId)]
 );
 
-/** One row per way a member signs in. Empty until LINE Login is added. */
+/**
+ * One row per external sign-in method. Email-code sign-in writes nothing here,
+ * so it stays empty -- but Better Auth's sign-out and account routes read it,
+ * so the table cannot be dropped.
+ */
 export const memberAccount = pgTable(
 	'member_account',
 	{
