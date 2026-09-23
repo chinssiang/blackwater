@@ -323,8 +323,8 @@ describe('staying signed in', () => {
 	});
 });
 
-// Better Auth limits code requests per IP only. These cover an attacker who
-// rotates IPs: at one inbox, or at the SMTP account's daily cap.
+// Better Auth limits code requests per IP per minute only. These cover an
+// attacker aiming at one inbox, or at the SMTP account's daily cap.
 describe('code request limits', () => {
 	it('refuses a sixth code for one address in an hour, without replacing the fifth', async () => {
 		const ctx = await setup();
@@ -345,7 +345,51 @@ describe('code request limits', () => {
 			codeLimits: { ...CODE_LIMITS, perEmail: { max: 1, windowSeconds: 3600 } },
 		});
 		expect((await ctx.requestCode('runner@example.com')).status).toBe(200);
-		expect((await ctx.requestCode(' RUNNER@Example.com ')).status).toBe(429);
+		expect((await ctx.requestCode('RUNNER@Example.com')).status).toBe(429);
+	});
+
+	it('does not count a malformed address against any limit', async () => {
+		const ctx = await setup({
+			codeLimits: { ...CODE_LIMITS, total: { max: 1, windowSeconds: 86400 } },
+		});
+		expect((await ctx.requestCode('not-an-email')).status).toBe(400);
+		expect((await ctx.requestCode(' runner@example.com ')).status).toBe(400);
+		expect((await ctx.requestCode('runner@example.com')).status).toBe(200);
+	});
+
+	it('stops one IP at its daily limit before it reaches the site-wide cap', async () => {
+		const ctx = await setup({
+			codeLimits: {
+				...CODE_LIMITS,
+				perIp: { max: 2, windowSeconds: 86400 },
+				total: { max: 3, windowSeconds: 86400 },
+			},
+		});
+		const statuses = [];
+		for (const email of ['a@example.com', 'b@example.com', 'c@example.com']) {
+			statuses.push((await ctx.requestCode(email)).status);
+		}
+		expect(statuses).toEqual([200, 200, 429]);
+		// The refused third request never counted against the total, so a
+		// different visitor still gets the last slot.
+		const other = { 'x-forwarded-for': '203.0.113.20' };
+		expect((await ctx.requestCode('d@example.com', other)).status).toBe(200);
+	});
+
+	it('forgets windows that have passed', async () => {
+		const ctx = await setup();
+		await ctx.pg.exec(
+			"insert into sign_in_code_limit values ('email:old@example.com', 5, now() - interval '2 days')"
+		);
+		await ctx.requestCode('runner@example.com');
+		const { rows } = await ctx.pg.query<{ key: string }>(
+			'select key from sign_in_code_limit order by key'
+		);
+		expect(rows.map((r) => r.key)).toEqual([
+			'email:runner@example.com',
+			'ip:203.0.113.7',
+			'total',
+		]);
 	});
 
 	it('stops every code once the site-wide cap is spent', async () => {

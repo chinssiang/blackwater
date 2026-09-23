@@ -70,7 +70,9 @@ export function SignInForm() {
 			body: JSON.stringify({ email, type: 'sign-in' }),
 		}).catch(() => undefined);
 		if (res?.ok) return true;
-		if (res?.status === 400) setError(t.invalidEmail);
+		// Only the email step has an email field to attach that message to; on
+		// the code step (a resend) it would sit under the code.
+		if (res?.status === 400 && step === 'email') setError(t.invalidEmail);
 		else failed(res);
 		return false;
 	};

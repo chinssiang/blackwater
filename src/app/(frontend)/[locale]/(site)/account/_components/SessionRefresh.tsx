@@ -12,7 +12,14 @@ import { useEffect } from 'react';
  */
 export function SessionRefresh() {
 	useEffect(() => {
-		fetch('/api/auth/get-session').catch(() => {});
+		// Logged, not surfaced: nothing on the page depends on it, but a quiet
+		// failure here signs every member out at day 30 with no trace of why.
+		fetch('/api/auth/get-session')
+			.then((res) => {
+				if (!res.ok)
+					console.error('[member] session refresh failed', res.status);
+			})
+			.catch((err) => console.error('[member] session refresh failed', err));
 	}, []);
 	return null;
 }

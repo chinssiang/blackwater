@@ -1,10 +1,11 @@
 /**
  * Luma publishes an event under the short `lu.ma` it hands out for sharing and
- * under `luma.com`, which `lu.ma` links redirect to with the same path.
+ * under `luma.com`, which `lu.ma` links redirect to with the same path --
+ * either with or without `www`.
  * Matched exactly -- a suffix or substring test would accept
  * `lu.ma.example.com` and `notluma.com`.
  */
-const LUMA_HOSTS = new Set(['lu.ma', 'luma.com', 'www.luma.com']);
+const LUMA_HOSTS = new Set(['lu.ma', 'www.lu.ma', 'luma.com', 'www.luma.com']);
 
 /**
  * `pEvent.lumaUrl` in its one canonical spelling, or `null` when it cannot

@@ -11,6 +11,7 @@ describe('normalizeLumaEventUrl', () => {
 			'https://lu.ma/midweek-reset',
 			'https://luma.com/midweek-reset',
 			'https://www.luma.com/midweek-reset',
+			'https://www.lu.ma/midweek-reset',
 			'https://lu.ma/midweek-reset/',
 			'https://lu.ma/midweek-reset?utm_source=instagram',
 			'https://luma.com/midweek-reset#details',

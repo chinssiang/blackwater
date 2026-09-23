@@ -8,7 +8,8 @@ import 'server-only';
  *
  * `secure` follows the port: implicit TLS on 465, STARTTLS elsewhere (587).
  * It was hard-coded `true` in each copy this replaced, which fails outright on
- * a STARTTLS port.
+ * a STARTTLS port. `requireTLS` makes STARTTLS mandatory: without it a server
+ * reply stripped of STARTTLS sends the password and the mail in cleartext.
  *
  * nodemailer is imported on call, not at the top, so a route that only
  * sometimes sends mail does not load it on every cold start.
@@ -23,6 +24,7 @@ export async function createMailTransport(auth: {
 		host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
 		port,
 		secure: port === 465,
+		requireTLS: port !== 465,
 		auth,
 	});
 }

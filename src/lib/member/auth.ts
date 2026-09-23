@@ -2,8 +2,9 @@ import 'server-only';
 import { after } from 'next/server';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
-import { APIError, createAuthMiddleware } from 'better-auth/api';
+import { APIError, createAuthMiddleware, getIP } from 'better-auth/api';
 import { emailOTP } from 'better-auth/plugins';
+import * as z from 'zod';
 import { DEFAULT_LOCALE, type Locale, isLocale } from '@/lib/i18n';
 import { type CodeLimits, type MemberDb, mayRequestCode } from './code-limits';
 import { getDb } from './db';
@@ -86,8 +87,13 @@ export function createAuth({
 					throw new APIError('SERVICE_UNAVAILABLE');
 				}
 				const email = ctx.body?.email;
-				if (typeof email !== 'string') return; // the endpoint rejects it
-				if (!(await mayRequestCode(db, email, codeLimits))) {
+				// The endpoint rejects these, so they must not count against any
+				// limit -- the same check it makes, on the same lowercased value.
+				if (typeof email !== 'string') return;
+				if (!z.email().safeParse(email.toLowerCase()).success) return;
+				// Resolved the way Better Auth's own per-IP limit resolves it.
+				const ip = ctx.headers ? getIP(ctx.headers, ctx.context.options) : null;
+				if (!(await mayRequestCode(db, email, ip, codeLimits))) {
 					throw new APIError('TOO_MANY_REQUESTS');
 				}
 			}),
