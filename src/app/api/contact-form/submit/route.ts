@@ -3,8 +3,8 @@ import { client } from '@/sanity/lib/client';
 import { contactFormConfigQuery } from '@/sanity/lib/queries';
 import * as z from 'zod';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
+import { createMailTransport } from '@/lib/mail';
 import { formatObjectToHtml } from '@/lib/utils';
-import nodemailer from 'nodemailer';
 
 // The recipient and subject are resolved server-side (from pContact) so this
 // endpoint can't be used to relay arbitrary mail — the client only supplies the
@@ -106,14 +106,9 @@ export async function POST(req: NextRequest) {
 	const emailFrom = process.env.EMAIL_DISPLAY_NAME;
 
 	try {
-		const transporter = nodemailer.createTransport({
-			host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
-			port: Number(process.env.EMAIL_SERVER_PORT) || 465,
-			secure: true, // true for 465, false for other ports
-			auth: {
-				user: authUser,
-				pass: authPassword,
-			},
+		const transporter = await createMailTransport({
+			user: authUser,
+			pass: authPassword,
 		});
 		// Reply-To is the one place a submitted value reaches a mail header, and
 		// only after it parses as an address — so it cannot carry a header break.

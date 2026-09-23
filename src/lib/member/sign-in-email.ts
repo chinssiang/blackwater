@@ -1,6 +1,7 @@
 import 'server-only';
 import { interpolate } from '@/lib/dictionary';
 import type { Locale } from '@/lib/i18n';
+import { createMailTransport } from '@/lib/mail';
 import { escapeHtml } from '@/lib/utils';
 
 // Copy lives here, not in src/dictionaries/, because the dictionaries are
@@ -42,12 +43,13 @@ export function buildSignInCodeEmail(code: string, locale: Locale) {
 	};
 }
 
-/**
- * Sends over the same SMTP account as the contact and product-submission forms
- * (Gmail by default), so all three share its daily cap -- about 500 for a
- * personal Gmail, 2,000 for Workspace. The transport settings are repeated in
- * those two routes as well, so changing provider means changing all three.
- */
+/** Whether sign-in codes can be sent at all. The limit on what the SMTP
+ *  account itself accepts in a day is not knowable here. */
+export function isMailConfigured() {
+	return !!process.env.EMAIL_SERVER_USER && !!process.env.EMAIL_SERVER_PASSWORD;
+}
+
+/** Sends over the site's shared SMTP account -- see src/lib/mail.ts. */
 export async function sendSignInCode({
 	email,
 	code,
@@ -64,15 +66,7 @@ export async function sendSignInCode({
 			'Missing environment variable: EMAIL_SERVER_USER / EMAIL_SERVER_PASSWORD'
 		);
 	}
-	// Loaded here rather than at the top: /account imports this module through
-	// the auth config, and that page never sends mail.
-	const { default: nodemailer } = await import('nodemailer');
-	const transporter = nodemailer.createTransport({
-		host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
-		port: Number(process.env.EMAIL_SERVER_PORT) || 465,
-		secure: true,
-		auth: { user, pass },
-	});
+	const transporter = await createMailTransport({ user, pass });
 	await transporter.sendMail({
 		from: `"${process.env.EMAIL_DISPLAY_NAME || 'Blackwater RC'}" <${user}>`,
 		to: email,
