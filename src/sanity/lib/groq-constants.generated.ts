@@ -32,5 +32,7 @@ export const RESOLVED_HREF_GROQ = `select(
 				)
 			)
 		}.url,
+		linkType == "external" && href == "/" => select($locale == "zh_tw" => "/zh_tw", "/"),
+		linkType == "external" && string::startsWith(href, "/") && !string::startsWith(href, "//") && !(string::startsWith(href, "/zh_tw/") || href == "/zh_tw") => select($locale == "zh_tw" => "/zh_tw", "") + href,
 		href
 	)` as const;

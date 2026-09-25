@@ -11,7 +11,11 @@ import {
 } from '@sanity/icons';
 import { Autocomplete, Card, Flex, Stack, Switch, Text } from '@sanity/ui';
 import { LOCALE_SHORT_LABELS, type Locale, isLocale } from '@/lib/i18n';
-import { resolveHref } from '@/lib/routes';
+import {
+	DOCUMENT_ROUTES,
+	type RouteDefinition,
+	resolveHref,
+} from '@/lib/routes';
 import { isValidUrl, validateEmail } from '@/lib/utils';
 import { type ObjectInputProps, set, unset } from 'sanity';
 
@@ -45,12 +49,35 @@ type LinkOption = {
 	isNew?: boolean;
 };
 
+// A hash or a site-relative path stays in this tab; anything else is another
+// site and opens a new one.
 export const externalLinkDefaults = (
 	href: string
 ): { linkType: LinkType; isNewTab: boolean } => ({
 	linkType: 'external',
-	isNewTab: !href.startsWith('#'),
+	isNewTab: !(href.startsWith('#') || isSitePath(href)),
 });
+
+const isSitePath = (href: string) =>
+	href.startsWith('/') && !href.startsWith('//');
+
+// Routes with no backing document (DOCUMENT_ROUTES marks them `synthetic`)
+// cannot be referenced, so the picker offers them as a site-relative href;
+// resolvedHrefGroq then adds the locale prefix at query time, the same way it
+// does for an internal link.
+const syntheticRouteOptions = (): LinkOption[] =>
+	(DOCUMENT_ROUTES as readonly RouteDefinition[])
+		.filter((route) => route.synthetic)
+		.map((route) => ({
+			value: route.path,
+			payload: {
+				pageTitle: route.title ?? route.path,
+				_type: route.type,
+				route: route.path,
+				isInternal: false,
+				isFile: false,
+			},
+		}));
 
 // Must stay in step with `internalLink.to[]` in objects/link.ts: a type listed
 // here but not there is offered in the picker and then rejected by reference
@@ -158,7 +185,7 @@ const fetchOptions = async (): Promise<LinkOption[]> => {
 			return langRankA - langRankB;
 		});
 
-	return [...pageOptions, ...fileOptions];
+	return [...pageOptions, ...syntheticRouteOptions(), ...fileOptions];
 };
 
 const optionIconStyle = { fontSize: 36 };
@@ -283,7 +310,11 @@ export const LinkObject = (props: ObjectInputProps<LinkValue>) => {
 
 			const result: LinkOption[] = filteredOptions.length
 				? filteredOptions
-				: isValidUrl(q) || isSpecialLink || isHashLink || isEmail
+				: isValidUrl(q) ||
+					  isSpecialLink ||
+					  isHashLink ||
+					  isEmail ||
+					  isSitePath(q)
 					? [
 							{
 								value: processedQuery,

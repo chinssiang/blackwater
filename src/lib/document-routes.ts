@@ -17,6 +17,8 @@ export type RouteDefinition = {
 	slug: boolean;
 	/** Backs no document — see the note in the table. */
 	synthetic?: boolean;
+	/** A synthetic route's name in the Studio link picker. */
+	title?: string;
 };
 
 export const DOCUMENT_ROUTES = [
@@ -30,6 +32,7 @@ export const DOCUMENT_ROUTES = [
 		path: '/products/all',
 		slug: false,
 		synthetic: true,
+		title: 'All products',
 	},
 	{ type: 'pProduct', path: '/products/', slug: true },
 	// Synthetic route (no backing document) — lets the categories index page
@@ -37,6 +40,7 @@ export const DOCUMENT_ROUTES = [
 	{
 		type: 'pProductCategoriesIndex',
 		synthetic: true,
+		title: 'Product categories',
 		path: '/products/categories',
 		slug: false,
 	},
@@ -46,6 +50,7 @@ export const DOCUMENT_ROUTES = [
 	{
 		type: 'pProductCollectionsIndex',
 		synthetic: true,
+		title: 'Product collections',
 		path: '/products/collections',
 		slug: false,
 	},
@@ -56,6 +61,15 @@ export const DOCUMENT_ROUTES = [
 	{ type: 'pFaq', path: '/faq', slug: false },
 	{ type: 'pSizeGuide', path: '/size-guide', slug: false },
 	{ type: 'pNewsletter', path: '/newsletter', slug: false },
+	// Synthetic route (no backing document) — Run Lab is code and dictionary
+	// copy only, and this entry lets it reuse resolveHref/defineMetadata.
+	{
+		type: 'pPlayground',
+		path: '/playground',
+		slug: false,
+		synthetic: true,
+		title: 'Run Lab',
+	},
 	// { type: 'pBlogIndex', path: '/blog', slug: false },
 	// { type: 'pBlog', path: '/blog/', slug: true },
 ] satisfies readonly RouteDefinition[];
@@ -105,17 +119,30 @@ export function buildResolvedHrefGroq(
 	//
 	// `$locale` is a closed set, so the trailing default arm is unreachable in
 	// practice; it exists because GROQ's select() needs a fallback.
-	const prefixArms = locales
-		.filter((locale) => locale !== defaultLocale)
-		.map((locale) => `$locale == "${locale}" => "/${locale}"`);
+	const others = locales.filter((locale) => locale !== defaultLocale);
+	const prefixArms = others.map(
+		(locale) => `$locale == "${locale}" => "/${locale}"`
+	);
 
 	const localePrefix = `select(${[...prefixArms, '""'].join(', ')})`;
-	const homeArm = `_type == "pHome" => select(${[
-		...locales
-			.filter((locale) => locale !== defaultLocale)
-			.map((locale) => `$locale == "${locale}" => "/${locale}"`),
-		'"/"',
-	].join(', ')})`;
+	const homeHref = `select(${[...prefixArms, '"/"'].join(', ')})`;
+	const homeArm = `_type == "pHome" => ${homeHref}`;
+
+	// A stored site-relative href ("/playground") is localised like an internal
+	// link. Synthetic routes back no document, so an editor can only reach them
+	// as an href, and menus are global rather than per-locale: without this, a
+	// menu entry pointing at /products/all or /playground sent the Chinese site
+	// to the English page. An href that already carries a locale is left alone.
+	const hasLocale = others
+		.map(
+			(locale) =>
+				`string::startsWith(href, "/${locale}/") || href == "/${locale}"`
+		)
+		.join(' || ');
+	const relativeHrefArms = [
+		`linkType == "external" && href == "/" => ${homeHref}`,
+		`linkType == "external" && string::startsWith(href, "/") && !string::startsWith(href, "//") && !(${hasLocale || 'false'}) => ${localePrefix} + href`,
+	].join(',\n\t\t');
 
 	return `select(
 		linkType == "internal" => internalLink-> {
@@ -126,6 +153,7 @@ export function buildResolvedHrefGroq(
 				)
 			)
 		}.url,
+		${relativeHrefArms},
 		href
 	)`;
 }

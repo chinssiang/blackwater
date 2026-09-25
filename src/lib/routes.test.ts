@@ -70,7 +70,15 @@ describe('isLightThemePath', () => {
 	});
 
 	it('leaves every other route dark', () => {
-		for (const p of ['/', '/en', '/en/events', '/events', '/en/contact']) {
+		for (const p of [
+			'/',
+			'/en',
+			'/en/events',
+			'/events',
+			'/en/contact',
+			'/playground',
+			'/zh_tw/playground',
+		]) {
 			expect(isLightThemePath(p)).toBe(false);
 		}
 	});
@@ -179,6 +187,10 @@ describe('resolveHref', () => {
 	it('resolves a non-slug route to its static path', () => {
 		expect(resolveHref({ documentType: 'pHome' })).toBe('/');
 		expect(resolveHref({ documentType: 'pContact' })).toBe('/contact');
+		expect(resolveHref({ documentType: 'pPlayground' })).toBe('/playground');
+		expect(resolveHref({ documentType: 'pPlayground', locale: 'zh_tw' })).toBe(
+			'/zh_tw/playground'
+		);
 	});
 
 	it('appends the slug for slug-based routes', () => {

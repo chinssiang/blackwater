@@ -102,6 +102,17 @@ export const SYNTHETIC_ROUTES: ReadonlyArray<{
 	},
 ];
 
+// Code-only pages: no document backs them and nothing they render comes from
+// Sanity, so their content changes only on deploy. They emit NO lastmod — the
+// only value available would be "now", which is the lastmod Google learns to
+// ignore (the same reason the sitemap index carries none). Kept apart from
+// SYNTHETIC_ROUTES because that list's `lists` contract is real: every entry
+// there renders documents and must say which.
+export const STATIC_ROUTES: ReadonlyArray<{
+	documentType: string;
+	sitemap: SitemapId;
+}> = [{ documentType: 'pPlayground', sitemap: 'pages' }];
+
 export type SitemapDoc = {
 	_type: string;
 	slug: string | null;

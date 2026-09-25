@@ -102,6 +102,22 @@ const eslintConfig = defineConfig([
 		},
 	},
 
+	// Run Lab's three.js scene (reached only through RunLabSceneLazy).
+	// react-three-fiber's JSX is three.js constructor props (`args`,
+	// `position`, `object`), which react/no-unknown-property reads as unknown
+	// DOM attributes. And a scene graph is mutable by design: useFrame
+	// rewrites bones, materials and the camera sixty times a second, which is
+	// R3F's documented pattern and exactly what react-hooks/immutability
+	// forbids. The components that do it carry 'use no memo', so the compiler
+	// is told to leave them alone rather than bailing out silently.
+	{
+		files: ['src/app/**/playground/_components/scene/**/*.{ts,tsx}'],
+		rules: {
+			'react/no-unknown-property': 'off',
+			'react-hooks/immutability': 'off',
+		},
+	},
+
 	eslintConfigPrettier, // must stay LAST — turns off rules that conflict with Prettier
 ]);
 

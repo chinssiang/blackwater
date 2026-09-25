@@ -5,6 +5,7 @@ import {
 	QUERIES,
 	SITEMAP_IDS,
 	SITEMAP_TAGS,
+	STATIC_ROUTES,
 	SYNTHETIC_ROUTES,
 	type SitemapDoc,
 	docLocales,
@@ -84,8 +85,16 @@ export default async function sitemap({
 			);
 		}
 
-		for (const route of SYNTHETIC_ROUTES) {
+		// Synthetic routes date themselves from what they list; static ones carry
+		// no lastmod (see STATIC_ROUTES).
+		const routes: ReadonlyArray<{
+			documentType: string;
+			sitemap: string;
+			lists?: readonly string[];
+		}> = [...SYNTHETIC_ROUTES, ...STATIC_ROUTES];
+		for (const route of routes) {
 			if (route.sitemap !== resolvedId) continue;
+			const { lists } = route;
 			entries.push(
 				...localizedEntries({
 					documentType: route.documentType,
@@ -94,7 +103,8 @@ export default async function sitemap({
 					// pages hand to defineMetadata — the sitemap and the page's own
 					// hreflang must not disagree about where it exists.
 					locales: [...LOCALES],
-					lastModified: (locale) => newestOf(docs, route.lists, locale, dateOf),
+					lastModified: (locale) =>
+						lists ? newestOf(docs, lists, locale, dateOf) : undefined,
 				})
 			);
 		}

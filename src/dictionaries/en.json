@@ -8,7 +8,8 @@
 		"home": "Home",
 		"events": "Events",
 		"products": "Products",
-		"faq": "FAQ"
+		"faq": "FAQ",
+		"playground": "Run Lab"
 	},
 	"locationCurrentTime": {
 		"dateFormat": "iii, p"
@@ -356,5 +357,319 @@
 	},
 	"video": {
 		"close": "Close video"
+	},
+	"playground": {
+		"meta": {
+			"title": "Run Lab",
+			"description": "Play with running form and breathing: pace, posture, terrain, and how the club runs them."
+		},
+		"title": "Run Lab",
+		"intro": "Move a dial, watch the runner, read the note. The see-through one is the Pacer.",
+		"status": {
+			"fixing": "Fixing: {preset}",
+			"clubForm": "Club form"
+		},
+		"loading": {
+			"lacingUp": "Lacing up…",
+			"still": "Still loading — the runner is about half a megabyte.",
+			"sr": "Loading the runner"
+		},
+		"fallback": {
+			"noWebgl": "Your browser can't draw the runner, but the notes still work — every dial explains itself.",
+			"reducedMotion": "Motion is reduced in your settings — scrub through the stride instead."
+		},
+		"tabsAria": "Run Lab controls",
+		"tabs": {
+			"runner": "Runner",
+			"ground": "Ground",
+			"breath": "Breath",
+			"kit": "Kit",
+			"fix": "Fix"
+		},
+		"dock": {
+			"collapse": "Collapse",
+			"expand": "Open {tab}"
+		},
+		"pacer": {
+			"label": "Pacer",
+			"tooltip": "A see-through clubmate running the ideal form for this ground."
+		},
+		"pace": {
+			"label": "Pace",
+			"description": "From easy to fast",
+			"zones": {
+				"easy": "Easy",
+				"steady": "Steady",
+				"tempo": "Tempo",
+				"fast": "Fast"
+			},
+			"notes": {
+				"easy": "Conversational — you could chat the whole way. Most of the club's weekly runs live here.",
+				"steady": "Comfortable, but you'd keep your sentences short. A good place to feel your form settle.",
+				"tempo": "Controlled hard. Breathing gets loud; cadence climbs before stride does.",
+				"fast": "Race pace and above. Everything gets bigger — stride, arm swing, breath. Form holds if the basics do."
+			},
+			"aside": "about {spm} steps a minute"
+		},
+		"dials": {
+			"lean": {
+				"label": "Forward lean",
+				"zones": {
+					"low": "Sitting back",
+					"ideal": "Slight lean",
+					"high": "Folded forward"
+				},
+				"notes": {
+					"low": "Standing tall is fine; sitting back behind your feet makes every step a small brake. Try tipping from the ankles, not the hips.",
+					"ideal": "A slight lean from the ankles, like you're about to fall forward and keep catching it. Gravity does a little of the work.",
+					"high": "Folding at the waist puts the lean in your back, not your ankles. Most people find it tires the lower back and shortens the breath."
+				},
+				"description": "From sitting back to folded forward"
+			},
+			"footstrike": {
+				"label": "Footstrike",
+				"zones": {
+					"low": "Reaching out",
+					"ideal": "Under the hips",
+					"high": "On the toes"
+				},
+				"notes": {
+					"low": "Landing out in front, heel first, means the ground pushes back before you're over it. Try shorter, quicker steps and let the foot land closer to under you.",
+					"ideal": "The foot lands roughly under your hips, flat-ish, and rolls through. Quiet landing, less braking.",
+					"high": "Up on the toes with tiny steps works for a sprint, less for a Wednesday 10K. Most people's calves let them know."
+				},
+				"description": "From reaching out to on the toes"
+			},
+			"arms": {
+				"label": "Arm swing",
+				"zones": {
+					"low": "Crossing over",
+					"ideal": "Front to back",
+					"high": "Locked straight"
+				},
+				"notes": {
+					"low": "Hands crossing the centre line twist your torso a little every step, and your legs follow. Try thinking 'elbows back' instead of 'hands forward'.",
+					"ideal": "Elbows around ninety degrees, hands relaxed, swinging front to back past your hips. The swing balances the legs; it doesn't drive them.",
+					"high": "Perfectly parallel, locked arms are a lot of effort for very little. A little natural drift is fine — you're not a piston."
+				},
+				"description": "From crossing over to locked straight"
+			},
+			"shoulders": {
+				"label": "Shoulders",
+				"zones": {
+					"low": "Shrugged",
+					"ideal": "Loose",
+					"high": "Slumped"
+				},
+				"notes": {
+					"low": "Shoulders creeping toward your ears is the classic tired-runner tell. Shake your hands out, drop the shoulders, carry an imaginary crisp in each fist.",
+					"ideal": "Shoulders low and loose, chest open, hands soft. Check them every kilometre or so — they drift when you stop thinking about them.",
+					"high": "Letting the shoulders slump forward closes the chest, and a closed chest takes a shallower breath. Loose is not the same as collapsed."
+				},
+				"description": "From shrugged to slumped"
+			},
+			"gaze": {
+				"label": "Gaze",
+				"zones": {
+					"low": "At your feet",
+					"ideal": "Down the path",
+					"high": "At the sky"
+				},
+				"notes": {
+					"low": "Looking at your feet tips the head forward and the whole spine follows. Your feet know where the ground is.",
+					"ideal": "Eyes about twenty to thirty metres down the path. The head sits over the shoulders and the neck stays long.",
+					"high": "Chin up at the horizon arches the back and strains the neck. Look ahead, not up — the sky isn't going anywhere."
+				},
+				"description": "From at your feet to at the sky"
+			},
+			"bounce": {
+				"label": "Bounce",
+				"zones": {
+					"low": "Bouncing",
+					"ideal": "Level",
+					"high": "Shuffling"
+				},
+				"notes": {
+					"low": "Energy spent going up is energy not going forward. Bouncing usually comes with a slow cadence — try quicker, lighter steps and let the head stay level.",
+					"ideal": "The head stays almost level; the horizon barely moves. A little spring is right — you're running, not gliding.",
+					"high": "Shuffling with no spring at all keeps you low but makes every step a scuff. Let the ankle do a little bouncing for you."
+				},
+				"description": "From bouncing to shuffling"
+			}
+		},
+		"terrain": {
+			"label": "Ground",
+			"pacerMoved": "Pacer moved: {dials}",
+			"options": {
+				"track": {
+					"label": "Track",
+					"note": "Flat, soft, measured. The place to feel what your form does with nothing else going on.",
+					"caption": "Lane 3. Anticlockwise, like everyone."
+				},
+				"riverside": {
+					"label": "Riverside",
+					"note": "The club's home ground. Flat and long — it rewards a relaxed rhythm more than anything clever.",
+					"caption": "Home turf. Headwind on the way back."
+				},
+				"trail": {
+					"label": "Trail",
+					"note": "Every step is a small decision. Shorter steps, eyes a little closer, arms out a touch for balance — it's a quest, not a time trial.",
+					"caption": "Mind the roots."
+				},
+				"uphill": {
+					"label": "Uphill",
+					"note": "Shorten the step, lift the knees a little, lean into it from the ankles. Effort up, pace down — that's the deal.",
+					"caption": "It ends. Eventually."
+				},
+				"downhill": {
+					"label": "Downhill",
+					"note": "The instinct is to lean back and brake with your heels. Try the opposite: quick light steps, hips over the feet, let the hill carry you.",
+					"caption": "Quiet feet."
+				}
+			}
+		},
+		"breath": {
+			"label": "Breath",
+			"suggested": "Suggested for {pace}",
+			"patterns": {
+				"3-2": {
+					"label": "3 : 2",
+					"sub": "three in, two out",
+					"note": "Five steps a cycle, so the exhale — the moment you're least braced — lands on the left foot one cycle and the right the next. Neither side takes all of it."
+				},
+				"2-2": {
+					"label": "2 : 2",
+					"sub": "two in, two out",
+					"note": "Four steps a cycle, easy to hold when the effort climbs. The exhale always lands on the same foot; some people switch feet every few minutes."
+				},
+				"2-1": {
+					"label": "2 : 1",
+					"sub": "two in, one out",
+					"note": "Three steps a cycle for when you need air fast. Still odd, so the exhale keeps alternating."
+				}
+			},
+			"trace": {
+				"in": "In",
+				"out": "Out",
+				"left": "L",
+				"right": "R",
+				"label": "Breath trace, two cycles"
+			}
+		},
+		"presets": {
+			"label": "Fix the runner",
+			"goToDials": "Go to the dials",
+			"items": {
+				"club": {
+					"name": "Club form",
+					"intro": "How we'd run a Wednesday. Everything relaxed, nothing forced."
+				},
+				"heel": {
+					"name": "Heel Striker",
+					"intro": "Reaches out and lands heel-first, well ahead of the hips. You can hear it on the riverside."
+				},
+				"bouncer": {
+					"name": "Bouncer",
+					"intro": "Spends a lot of the run going up. Great for photos, slow for running."
+				},
+				"shoulders": {
+					"name": "Tense Shoulders",
+					"intro": "Shoulders up by the ears, fists clenched. Usually turns up around kilometre eight."
+				},
+				"arms": {
+					"name": "Cross-body Arms",
+					"intro": "Hands swing across the chest and the torso twists to keep up."
+				},
+				"sitter": {
+					"name": "Sitter",
+					"intro": "Hips behind the feet, like running toward a chair. Every step brakes a little."
+				},
+				"gazer": {
+					"name": "Gazer",
+					"intro": "Eyes on the shoes. The head drops, the back rounds, the breath gets short."
+				}
+			},
+			"fixed": {
+				"lines": [
+					"That's the club's stride. See you Wednesday.",
+					"Loose hands, long neck. That's the one.",
+					"Head level, eyes down the path. See you at the river."
+				]
+			}
+		},
+		"scrub": {
+			"label": "Stride",
+			"play": "Play",
+			"pause": "Pause",
+			"phaseValue": "{phase}, {side}",
+			"side": {
+				"left": "left",
+				"right": "right"
+			},
+			"phases": {
+				"contact": {
+					"label": "Contact",
+					"note": "The foot meets the ground — ideally under you, not out in front."
+				},
+				"midstance": {
+					"label": "Midstance",
+					"note": "Full weight over one leg. Hip, knee and ankle stack; this is where a lean shows."
+				},
+				"toeOff": {
+					"label": "Toe-off",
+					"note": "The ankle springs and the leg leaves the ground behind you. Push back, not up."
+				},
+				"flight": {
+					"label": "Flight",
+					"note": "Both feet off the ground. Arms and legs swap; the head barely moves."
+				}
+			}
+		},
+		"camera": {
+			"label": "View",
+			"views": {
+				"side": "Side",
+				"front": "Front",
+				"behind": "Behind",
+				"quarter": "Three-quarter"
+			},
+			"hint": "Drag to orbit"
+		},
+		"a11y": {
+			"stageLabel": "The runner",
+			"live": "{pace} pace, {terrain}, breathing {breath}. {dials}.",
+			"dialItem": "{label}: {zone}",
+			"dialJoin": ", ",
+			"livePreset": "Preset: {preset}."
+		},
+		"glossary": {
+			"title": "The notes, in one place",
+			"dials": "Form",
+			"terrain": "Ground",
+			"breath": "Breath",
+			"ideal": "Ideal: {zone}",
+			"show": "All the notes",
+			"hide": "Hide the notes"
+		},
+		"kit": {
+			"label": "Top",
+			"wearing": "Also on",
+			"view": "View",
+			"viewAria": "View {product}",
+			"products": {
+				"component": "Component SS T",
+				"coda": "2502 Coda Performance Tank",
+				"hoole": "Hoole Cut-Off",
+				"communion": "Communion T (New Balance Redux)",
+				"tight": "Sleek Pocket Half Tight 9\"",
+				"shoes": "FuelCell Rebel v5 (Grey Days Edition)"
+			},
+			"notes": {
+				"component": "Our everyday training tee: technical fabric, a close cut, nothing to think about on a recovery run.",
+				"coda": "Seventy-five grams of singlet for hot days and hard efforts. The deep armhole leaves the shoulders free to swing.",
+				"hoole": "Washed cotton in a boxy cut, from our collaboration with Furies. More community than kit, and it moves like it.",
+				"communion": "The Communion T rebuilt with New Balance in performance fabric, in a slightly relaxed cut."
+			}
+		}
 	}
 }

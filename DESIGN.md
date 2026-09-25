@@ -259,6 +259,15 @@ drift to be tidied:
 - **Invalid is uniform**: `aria-invalid:border-destructive` +
   `aria-invalid:ring-destructive/20` + `dark:aria-invalid:ring-destructive/40` +
   `aria-invalid:ring-3`.
+- **Slider and Switch** (`src/components/ui/Slider.tsx`, `src/components/ui/Switch.tsx`)
+  follow the Checkbox/Radio idiom. Switch is a `<span role="switch">` beside a hidden
+  input, so `data-disabled:` again. A slider thumb wraps a hidden
+  `<input type="range">` and focus lands on that input, so its ring is
+  `has-focus-visible:`, not `focus-visible:`. The slider's `ideal` prop draws a
+  **zone** rather than a target: a heavier segment plus a hollow mark that fills while
+  the value is inside. Positions along the track are inline styles, never interpolated
+  class names. Give the thumb `getAriaValueText` with a word, not a number: Run Lab's
+  dials announce "Slight lean", never "60".
 
 **Focus is a family of four, and picking the wrong one is visible.** The three
 constants live in `src/lib/utils.ts`; each is ring utilities **only**, so the
@@ -394,13 +403,14 @@ not by the rule they break, because the failure is what you can check for.
 
 Which composition a new page takes is decided by its type, not per call site.
 
-| Archetype     | Routes                                           | Composition                                                                           |
-| ------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| Modular page  | `/`, `/[slug]`                                   | Sanity `pageModules`, every one through `<SectionShell>`; slot 0 owns the `<h1>`      |
-| Listing       | `/products`, `/products/all`, `/events`          | a grid or list of cards, page-owned heading, own filters/toggle chrome                |
-| Detail        | `/products/[slug]`, `/events/[slug]`             | page-owned `<h1>`, one LCP image owned by the page (a module never passes `priority`) |
-| Fixed-content | `/faq`, `/size-guide`, `/contact`, `/newsletter` | page component, `.wysiwyg` prose where content is Portable Text                       |
-| Locale-less   | `/events-crew`, `/email-signature`               | outside `[locale]`; no `$locale` to resolve against, own layout                       |
+| Archetype     | Routes                                           | Composition                                                                                                                                |
+| ------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Modular page  | `/`, `/[slug]`                                   | Sanity `pageModules`, every one through `<SectionShell>`; slot 0 owns the `<h1>`                                                           |
+| Listing       | `/products`, `/products/all`, `/events`          | a grid or list of cards, page-owned heading, own filters/toggle chrome                                                                     |
+| Detail        | `/products/[slug]`, `/events/[slug]`             | page-owned `<h1>`, one LCP image owned by the page (a module never passes `priority`)                                                      |
+| Fixed-content | `/faq`, `/size-guide`, `/contact`, `/newsletter` | page component, `.wysiwyg` prose where content is Portable Text                                                                            |
+| Locale-less   | `/events-crew`, `/email-signature`               | outside `[locale]`; no `$locale` to resolve against, own layout                                                                            |
+| Stage         | `/playground`                                    | one full-height client canvas with page-owned chrome in its corners; a static glossary below carries every note, so no WebGL still teaches |
 
 `/products` and `/size-guide` and their descendants render **light**; everything
 else renders dark. The two locale-less routes are internal tools and are not held to

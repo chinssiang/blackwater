@@ -16,4 +16,5 @@ The site is published in English (unprefixed paths) and Traditional Chinese (`/z
 
 - [FAQ](https://www.blackwaterrc.com/faq): common questions about the club, its sessions and its orders.
 - [Size guide](https://www.blackwaterrc.com/size-guide): garment measurements for the apparel, in cm and inches.
+- [Run Lab](https://www.blackwaterrc.com/playground): an interactive 3D runner for exploring running form, breathing rhythm and terrain, with notes on what the club aims for.
 - [Sitemap index](https://www.blackwaterrc.com/sitemap_index.xml): the canonical sitemap, listing the pages, events and products sitemaps.

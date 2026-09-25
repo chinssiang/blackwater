@@ -488,7 +488,10 @@ function DayDetail({
 	events: EventListItem[];
 	isToday: boolean;
 	currentDate: Date;
-	heading?: ElementType;
+	// `ElementType<Props>`, not bare `ElementType`: react-three-fiber augments
+	// the global JSX namespace, and the bare union spans three.js elements whose
+	// children are `never`. The props parameter filters those out.
+	heading?: ElementType<{ className?: string; children?: ReactNode }>;
 	action?: ReactNode;
 }) {
 	const locale = useLocale();

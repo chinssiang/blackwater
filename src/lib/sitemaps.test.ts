@@ -11,6 +11,7 @@ import {
 	QUERIES,
 	SITEMAP_IDS,
 	SITEMAP_TAGS,
+	STATIC_ROUTES,
 	SYNTHETIC_ROUTES,
 	type SitemapDoc,
 	type SitemapId,
@@ -201,7 +202,7 @@ describe('sitemap route coverage', () => {
 		)
 	);
 	const synthetic = new Set<string>(
-		SYNTHETIC_ROUTES.map((r) => r.documentType)
+		[...SYNTHETIC_ROUTES, ...STATIC_ROUTES].map((r) => r.documentType)
 	);
 
 	it.each(DOCUMENT_ROUTES.map((r) => r.type))(
@@ -302,6 +303,31 @@ describe('synthetic route entries', () => {
 			expect(SITEMAP_IDS).toContain(route.sitemap);
 			expect(route.lists.length).toBeGreaterThan(0);
 		}
+	});
+});
+
+describe('static route entries', () => {
+	it.each(STATIC_ROUTES)('$documentType is a synthetic route', (route) => {
+		const def = DOCUMENT_ROUTES.find((r) => r.type === route.documentType);
+		expect(def && 'synthetic' in def && def.synthetic).toBe(true);
+		expect(SITEMAP_IDS).toContain(route.sitemap);
+		expect(
+			SYNTHETIC_ROUTES.some((r) => r.documentType === route.documentType)
+		).toBe(false);
+	});
+
+	it('emits every locale with no lastmod', () => {
+		const entries = localizedEntries({
+			documentType: 'pPlayground',
+			slug: null,
+			locales: [...LOCALES],
+			lastModified: () => undefined,
+		});
+		expect(entries.map((e) => new URL(e.url).pathname)).toEqual([
+			'/playground',
+			'/zh_tw/playground',
+		]);
+		for (const entry of entries) expect('lastModified' in entry).toBe(false);
 	});
 });
 
