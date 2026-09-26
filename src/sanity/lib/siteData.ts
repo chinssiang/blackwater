@@ -26,6 +26,9 @@ export const SITE_DATA_TAGS = [
 	'pProduct',
 	'pProductCategory',
 	'pBrand',
+	// Announcement message links resolve internalLink-> too; collections are
+	// the one slugged link target not already listed.
+	'pProductCollection',
 ] as const;
 
 // Deliberately Sanity-only. This runs for every page that renders the site
@@ -89,8 +92,7 @@ export type LayoutData = {
  * also passed separately but read raw, so it deduped by reference and only ever
  * shipped once.)
  *
- * Note this only stops `announcement` reaching the client; `siteDataQuery`
- * still fetches it, and nothing renders it. That is a query-level cleanup.
+ * (`announcement` reaches `<Layout>` as its own prop — see (site)/layout.tsx.)
  *
  * This builds one new object holding the *same* sub-object references, so RSC
  * reference-deduplication still applies to header/footer/menus.

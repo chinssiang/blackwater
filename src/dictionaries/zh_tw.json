@@ -4,6 +4,10 @@
 		"next": "下一頁",
 		"lastUpdated": "最後更新"
 	},
+	"announcement": {
+		"label": "公告",
+		"showMessage": "顯示第 {count} 則公告（共 {total} 則）"
+	},
 	"breadcrumb": {
 		"home": "首頁",
 		"events": "活動",
