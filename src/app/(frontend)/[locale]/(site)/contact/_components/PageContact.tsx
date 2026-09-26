@@ -50,7 +50,7 @@ export function PageContact({ data }: PageContactProps) {
 				{description && <p>{description}</p>}
 			</div>
 
-			<div className="max-w-md flex-1">
+			<div className="max-w-3xl flex-1">
 				<CustomForm
 					id="page-contact-form"
 					data={contactForm}
