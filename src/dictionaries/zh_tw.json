@@ -298,7 +298,8 @@
 		"menu": "選單",
 		"close": "關閉",
 		"openMenu": "開啟選單",
-		"closeMenu": "關閉選單"
+		"closeMenu": "關閉選單",
+		"account": "帳號"
 	},
 	"cart": {
 		"title": "購物車",

@@ -2,6 +2,33 @@ import * as React from 'react';
 import { cn } from '@/lib/utils';
 
 /**
+ * The class string itself, exported for the one chrome control that is a link
+ * rather than a button (the header's account link), so it cannot drift from
+ * the triggers beside it.
+ */
+export const chromeButtonClass =
+	// Deliberately NO `focus:outline-none` here. The call sites this was
+	// extracted from all carried it, and the compiled CSS shows why that
+	// painted nothing at all:
+	//
+	//   .focus\:outline-none:focus       { --tw-outline-style: none;
+	//                                     outline-style: none }
+	//   .focus-visible\:outline-2:...    { outline-style:
+	//                                     var(--tw-outline-style);
+	//                                     outline-width: 2px }
+	//
+	// `:focus-visible` is a subset of `:focus`, so both rules applied and
+	// `outline-style` resolved to `none`: 2px of nothing. The cart and
+	// menu triggers had no visible keyboard focus (WCAG 2.4.7). Modern
+	// engines only paint the UA ring on `:focus-visible` anyway, so
+	// dropping it loses nothing and restores the outline.
+	//
+	// `outline-current` rather than a fixed colour: this control renders
+	// on the dark header and on the light cart panel, and currentColor is
+	// the readable ink in both.
+	't-b-2 h-header flex cursor-pointer items-center gap-1 uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current';
+
+/**
  * A label-as-button in the site chrome: the cart and menu triggers in the
  * header, and the close controls in the overlays they open.
  *
@@ -34,29 +61,7 @@ export default function ChromeButton({
 		<button
 			type={type}
 			data-slot="chrome-button"
-			className={cn(
-				// Deliberately NO `focus:outline-none` here. The call sites this was
-				// extracted from all carried it, and the compiled CSS shows why that
-				// painted nothing at all:
-				//
-				//   .focus\:outline-none:focus       { --tw-outline-style: none;
-				//                                     outline-style: none }
-				//   .focus-visible\:outline-2:...    { outline-style:
-				//                                     var(--tw-outline-style);
-				//                                     outline-width: 2px }
-				//
-				// `:focus-visible` is a subset of `:focus`, so both rules applied and
-				// `outline-style` resolved to `none`: 2px of nothing. The cart and
-				// menu triggers had no visible keyboard focus (WCAG 2.4.7). Modern
-				// engines only paint the UA ring on `:focus-visible` anyway, so
-				// dropping it loses nothing and restores the outline.
-				//
-				// `outline-current` rather than a fixed colour: this control renders
-				// on the dark header and on the light cart panel, and currentColor is
-				// the readable ink in both.
-				't-b-2 h-header flex cursor-pointer items-center gap-1 uppercase focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current',
-				className
-			)}
+			className={cn(chromeButtonClass, className)}
 			{...props}
 		/>
 	);

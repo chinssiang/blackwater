@@ -298,7 +298,8 @@
 		"menu": "Menu",
 		"close": "Close",
 		"openMenu": "Open menu",
-		"closeMenu": "Close menu"
+		"closeMenu": "Close menu",
+		"account": "Account"
 	},
 	"cart": {
 		"title": "Cart",

@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { localizePath } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import { chromeButtonClass } from '@/components/ChromeButton';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { useLocale } from '@/components/LocaleProvider';
+import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import Menu from '@/components/Menu';
 import MobileMenu from '@/components/MobileMenu';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
@@ -20,6 +22,7 @@ type HeaderProps = GHeader & {
 export function Header({ data }: { data: HeaderProps }) {
 	const { siteTitle, menu, mobileMenu } = data || {};
 	const locale = useLocale();
+	const t = useTranslations('nav');
 	// No scroll logic here. Over a full-bleed hero the header's background is a
 	// function of `--header-progress` (the `[data-site-header]` rules in
 	// globals.css), and the hero's own wrapper, HeroUnderlay, writes that
@@ -56,6 +59,16 @@ export function Header({ data }: { data: HeaderProps }) {
 			<div className="text-foreground ml-auto flex gap-3">
 				<LanguageSwitcher className="max-lg:hidden" />
 
+				{/* One neutral label for both states: the chrome never knows whether
+				    you are signed in (reading the session here would take every
+				    page out of static generation), and /account itself decides
+				    between the sign-in form and the member's details. */}
+				<Link
+					href={localizePath('/account', locale)}
+					className={chromeButtonClass}
+				>
+					{t.account}
+				</Link>
 				<CartButton />
 				<MobileMenu data={mobileMenu} siteTitle={siteTitle} />
 			</div>
