@@ -28,3 +28,9 @@ export async function createMailTransport(auth: {
 		auth,
 	});
 }
+
+/** Whether the account's credentials are set at all. The limit on what it
+ *  accepts in a day is not knowable here. */
+export function isMailConfigured() {
+	return !!process.env.EMAIL_SERVER_USER && !!process.env.EMAIL_SERVER_PASSWORD;
+}

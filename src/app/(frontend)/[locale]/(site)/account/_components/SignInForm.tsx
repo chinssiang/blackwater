@@ -8,10 +8,10 @@ import {
 	LOCALE_HEADER,
 	SIGN_IN_ERRORS,
 } from '@/lib/member/shared';
-import { validateEmail } from '@/lib/utils';
+import { cn, validateEmail } from '@/lib/utils';
 import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui/Button';
-import { Field, FieldLabel } from '@/components/ui/Field';
+import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import { Input } from '@/components/ui/Input';
 import { toast } from 'sonner';
 
@@ -150,7 +150,8 @@ export function SignInForm() {
 				<InlineField
 					id="sign-in-email"
 					label={t.emailLabel}
-					submitLabel={submitting ? t.sending : t.sendCode}
+					submitLabel={t.sendCode}
+					submittingLabel={t.sending}
 					onSubmit={onSubmitEmail}
 					submitting={submitting}
 					error={error}
@@ -176,13 +177,14 @@ export function SignInForm() {
 	return (
 		<>
 			<h1 className="t-h-1 mb-3 font-medium text-balance">{t.codeHeading}</h1>
-			<p className="t-b-1 mb-6 break-words">
+			<p className="t-b-1 mb-6 wrap-break-word">
 				{interpolate(t.codeSentTo, { email })}
 			</p>
 			<InlineField
 				id="sign-in-code"
 				label={t.codeLabel}
-				submitLabel={submitting ? t.verifying : t.verify}
+				submitLabel={t.verify}
+				submittingLabel={t.verifying}
 				onSubmit={onSubmitCode}
 				submitting={submitting}
 				error={error}
@@ -232,11 +234,15 @@ export function SignInForm() {
 	);
 }
 
-/** A labelled input with its submit button beside it and the error beneath. */
+/** A labelled input with its submit button beside it. The error shows as the
+ *  contact forms' icon-and-tooltip (FieldStatus) inside the input; the text
+ *  also stays in the DOM, visually hidden, because the tooltip only mounts
+ *  while open and the input's aria-describedby needs a target. */
 function InlineField({
 	id,
 	label,
 	submitLabel,
+	submittingLabel,
 	onSubmit,
 	submitting,
 	error,
@@ -245,17 +251,32 @@ function InlineField({
 	id: string;
 	label: string;
 	submitLabel: string;
+	submittingLabel: string;
 	onSubmit: (e: React.FormEvent) => void;
 	submitting: boolean;
 	error: string;
 	children: React.ReactNode;
 }) {
+	// Focus events bubble in React, so the wrapper sees the input's without
+	// either step's <Input> having to report it.
+	const [isFocused, setIsFocused] = useState(false);
+
 	return (
 		<form onSubmit={onSubmit} noValidate>
 			<Field data-invalid={!!error || undefined}>
 				<FieldLabel htmlFor={id}>{label}</FieldLabel>
 				<div className="flex gap-3">
-					{children}
+					<div
+						className={cn('relative grid flex-1', error && '[&_input]:pr-8')}
+						onFocus={() => setIsFocused(true)}
+						onBlur={() => setIsFocused(false)}
+					>
+						{children}
+						<FieldStatus
+							fieldState={{ invalid: !!error, error: { message: error } }}
+							isFocused={isFocused}
+						/>
+					</div>
 					{/* aria-disabled for the same focus reason as the inputs; the
 					    handlers ignore a submit while busy. */}
 					<Button
@@ -265,11 +286,32 @@ function InlineField({
 						aria-disabled={submitting || undefined}
 						className="min-w-22 bg-black text-white aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
 					>
-						{submitLabel}
+						{/* Both labels share one grid cell, so the button is always as
+						    wide as the longer one and the input beside it never
+						    shifts. `invisible` also drops the idle one from the
+						    accessible name. */}
+						<span className="grid text-center">
+							<span
+								className={cn(
+									'col-start-1 row-start-1',
+									submitting && 'invisible'
+								)}
+							>
+								{submitLabel}
+							</span>
+							<span
+								className={cn(
+									'col-start-1 row-start-1',
+									!submitting && 'invisible'
+								)}
+							>
+								{submittingLabel}
+							</span>
+						</span>
 					</Button>
 				</div>
 				{error && (
-					<p id={ERROR_ID} role="alert" className="t-b-2 text-destructive">
+					<p id={ERROR_ID} role="alert" className="sr-only">
 						{error}
 					</p>
 				)}

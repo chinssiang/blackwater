@@ -299,7 +299,8 @@
 		"close": "Close",
 		"openMenu": "Open menu",
 		"closeMenu": "Close menu",
-		"account": "Account"
+		"account": "Account",
+		"accountSignedIn": "Member"
 	},
 	"cart": {
 		"title": "Cart",

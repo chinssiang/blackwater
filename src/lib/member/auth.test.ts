@@ -6,7 +6,7 @@ import { PRIVACY_NOTICE_VERSION, createAuth } from './auth';
 import { CODE_LIMITS, type CodeLimits } from './code-limits';
 import * as schema from './schema';
 import { getMemberSession } from './session';
-import { LOCALE_HEADER, SIGN_IN_ERRORS } from './shared';
+import { LOCALE_HEADER, SIGNED_IN_HINT_COOKIE, SIGN_IN_ERRORS } from './shared';
 
 // The whole sign-in flow, end to end: the committed migration applied to a real
 // Postgres engine (PGlite, in-process, so CI needs no database service), driven
@@ -320,6 +320,67 @@ describe('staying signed in', () => {
 		);
 		const res = await ctx.getSession(cookie);
 		expect(await res.json()).toBeNull();
+	});
+});
+
+// The header cannot read the httpOnly session cookie, so every write of it is
+// mirrored onto a readable hint (see the hooks.after in auth.ts).
+describe('signed-in hint cookie', () => {
+	let ctx: Ctx;
+	beforeEach(async () => {
+		ctx = await setup();
+	});
+
+	const hintSetCookie = (res: Response) =>
+		res.headers
+			.getSetCookie()
+			.find((c) => c.startsWith(`${SIGNED_IN_HINT_COOKIE}=`));
+
+	it('is set, readable by scripts, when a member signs in', async () => {
+		await ctx.requestCode('runner@example.com');
+		const res = await ctx.signIn('runner@example.com', ctx.sent[0].code);
+		const hint = hintSetCookie(res);
+		expect(hint).toMatch(/^bw_member=1;.*Max-Age=2592000/);
+		expect(hint).not.toMatch(/HttpOnly/i);
+	});
+
+	it('is not set by a failed sign-in', async () => {
+		await ctx.requestCode('runner@example.com');
+		const res = await ctx.signIn(
+			'runner@example.com',
+			wrongCodeFor(ctx.sent[0].code)
+		);
+		expect(hintSetCookie(res)).toBeUndefined();
+	});
+
+	it('is cleared on sign-out', async () => {
+		const cookie = await ctx.signedIn();
+		const res = await ctx.post('/sign-out', {}, { cookie });
+		expect(hintSetCookie(res)).toMatch(/Max-Age=0/);
+	});
+
+	it('is cleared when the session behind the cookie is gone', async () => {
+		const cookie = await ctx.signedIn();
+		await ctx.pg.exec('delete from member_session');
+		expect(hintSetCookie(await ctx.getSession(cookie))).toMatch(/Max-Age=0/);
+	});
+
+	it('is cleared when it arrives without a session cookie', async () => {
+		const res = await ctx.getSession(`${SIGNED_IN_HINT_COOKIE}=1`);
+		expect(hintSetCookie(res)).toMatch(/Max-Age=0/);
+	});
+
+	it('costs a signed-out visitor no cookie at all', async () => {
+		expect(hintSetCookie(await ctx.getSession(''))).toBeUndefined();
+	});
+
+	it('is re-armed with the session cookie when that is re-issued', async () => {
+		const cookie = await ctx.signedIn();
+		await ctx.pg.exec(
+			"update member_session set expires_at = now() + interval '28 days'"
+		);
+		const hint = hintSetCookie(await ctx.getSession(cookie));
+		expect(hint).toMatch(/^bw_member=1;.*Max-Age=2592000/);
 	});
 });
 

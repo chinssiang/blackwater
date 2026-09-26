@@ -299,7 +299,8 @@
 		"close": "關閉",
 		"openMenu": "開啟選單",
 		"closeMenu": "關閉選單",
-		"account": "帳號"
+		"account": "帳號",
+		"accountSignedIn": "會員"
 	},
 	"cart": {
 		"title": "購物車",

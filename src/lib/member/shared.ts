@@ -11,6 +11,15 @@ export const LOCALE_HEADER = 'x-bw-locale';
 export const CODE_LENGTH = 6;
 
 /**
+ * A readable copy of "is there a session cookie", for the header -- which
+ * cannot read the httpOnly session cookie, and must not ask the server (that
+ * would take every page out of static generation). auth.ts writes it whenever
+ * Better Auth writes the session cookie. A UI hint only: it holds no token,
+ * anyone can set it, and nothing may be gated on it.
+ */
+export const SIGNED_IN_HINT_COOKIE = 'bw_member';
+
+/**
  * The `code` field of Better Auth's JSON error body for a failed sign-in, which
  * the form chooses its message from. Checked against the library's own list at
  * compile time -- a type-only import, so none of its plugin barrel reaches the

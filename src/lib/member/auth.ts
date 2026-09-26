@@ -6,11 +6,11 @@ import { APIError, createAuthMiddleware, getIP } from 'better-auth/api';
 import { emailOTP } from 'better-auth/plugins';
 import * as z from 'zod';
 import { DEFAULT_LOCALE, type Locale, isLocale } from '@/lib/i18n';
+import { isMailConfigured } from '@/lib/mail';
 import { type CodeLimits, type MemberDb, mayRequestCode } from './code-limits';
 import { getDb } from './db';
 import * as schema from './schema';
-import { CODE_LENGTH, LOCALE_HEADER } from './shared';
-import { isMailConfigured, sendSignInCode } from './sign-in-email';
+import { CODE_LENGTH, LOCALE_HEADER, SIGNED_IN_HINT_COOKIE } from './shared';
 
 /**
  * Stamped on each member when the account is created, as the record of which
@@ -97,6 +97,36 @@ export function createAuth({
 					throw new APIError('TOO_MANY_REQUESTS');
 				}
 			}),
+			// Mirrors every write of the session cookie -- sign-in, the daily
+			// refresh, sign-out, and the cleanup of a cookie whose session is gone
+			// -- onto the header's readable hint, with the same attributes and
+			// lifetime. Keyed on the cookie rather than on endpoint paths, so no
+			// future way of signing in or out can forget it.
+			after: createAuthMiddleware(async (ctx) => {
+				const session = ctx.context.authCookies.sessionToken;
+				const written = ctx.context.responseHeaders
+					?.getSetCookie()
+					.findLast((c) => c.startsWith(`${session.name}=`));
+				let signedIn: boolean;
+				if (written) {
+					signedIn = !/;\s*Max-Age=0(;|$)/i.test(written);
+				} else if (
+					// Nothing written, but a hint arrived with no session cookie
+					// beside it: the two lapse together, so it was set by hand or
+					// outlived a session cookie cleared on its own.
+					ctx.getCookie(SIGNED_IN_HINT_COOKIE) &&
+					!ctx.getCookie(session.name)
+				) {
+					signedIn = false;
+				} else {
+					return;
+				}
+				ctx.setCookie(SIGNED_IN_HINT_COOKIE, signedIn ? '1' : '', {
+					...session.attributes,
+					httpOnly: false,
+					maxAge: signedIn ? ctx.context.sessionConfig.expiresIn : 0,
+				});
+			}),
 		},
 		advanced: {
 			cookiePrefix: 'bw',
@@ -166,9 +196,14 @@ export function getAuth() {
 		canDeliverCode: isMailConfigured,
 		deliverCode: (message) =>
 			after(() =>
-				sendSignInCode(message).catch((err) =>
-					console.error('[member] sign-in code email failed', err)
-				)
+				// Imported on send, like nodemailer in mail.ts: React Email's
+				// renderer loads prettier and html-to-text at import, which every
+				// cold start of /account and /api/auth would otherwise pay for.
+				import('./sign-in-email')
+					.then(({ sendSignInCode }) => sendSignInCode(message))
+					.catch((err) =>
+						console.error('[member] sign-in code email failed', err)
+					)
 			),
 	}));
 }

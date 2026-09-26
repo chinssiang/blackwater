@@ -63,10 +63,12 @@ export default async function Page(props: Props) {
 							})}
 						</p>
 						<SignOutButton className="mt-6" />
-						<SessionRefresh />
 					</>
 				) : (
 					<SignInForm />
+				)}
+				{member !== 'unavailable' && (
+					<SessionRefresh key={member ? 'member' : 'visitor'} />
 				)}
 			</div>
 		</div>

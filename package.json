@@ -34,11 +34,12 @@
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.7.0",
-		"@neondatabase/serverless": "^1.1.0",
 		"@hookform/resolvers": "^5.9.1",
+		"@neondatabase/serverless": "^1.1.0",
 		"@next/third-parties": "^16.3.5",
 		"@portabletext/react": "^3.2.1",
 		"@portabletext/types": "^4.0.0",
+		"@react-email/components": "^1.0.12",
 		"@sanity/client": "^7.26.2",
 		"@sanity/color-input": "^4.0.3",
 		"@sanity/document-internationalization": "^6.1.1",
