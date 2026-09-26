@@ -34,13 +34,14 @@ export function Header({ data }: { data: HeaderProps }) {
 				// `fixed`, not `sticky`: out of flow, so a full-bleed hero can start at
 				// the top of the viewport and this floats over it. `inset-x-0` rather
 				// than `w-full` — out of flow there is no parent to be 100% of.
-				'p-x-max h-header z-header fixed inset-x-0 top-0 grid grid-cols-2 items-center leading-none lg:grid-cols-3'
+				// `top` is the announcement bar's height (0 when there is none).
+				'p-x-max h-header z-header fixed inset-x-0 top-(--height-announcement) grid grid-cols-2 items-center leading-none lg:grid-cols-3'
 			)}
 		>
 			{menu && (
 				<Menu
 					data={menu}
-					className="item-center t-b-2 [&_a]:leading-header [&_a]:h-header hidden gap-2.5 uppercase select-none lg:flex"
+					className="t-b-2 [&_a]:leading-header [&_a]:h-header hidden items-center gap-2.5 uppercase select-none lg:flex"
 				/>
 			)}
 

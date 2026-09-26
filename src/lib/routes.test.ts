@@ -3,6 +3,7 @@ import { stripLocaleFromHref, stripLocaleFromPathname } from '@/lib/i18n';
 import {
 	DOCUMENT_ROUTES,
 	checkIfLinkIsActive,
+	isHomePath,
 	isLightThemePath,
 	resolveHref,
 	shouldHideGlobalNewsletter,
@@ -52,6 +53,20 @@ describe('stripLocaleFromHref', () => {
 	it('still strips a non-default locale prefix', () => {
 		expect(stripLocaleFromHref('/zh_tw/products/x').path).toBe('/products/x');
 		expect(stripLocaleFromHref('/zh_tw').path).toBe('/');
+	});
+});
+
+describe('isHomePath', () => {
+	it('agrees across the prerender and browser forms of the homepage', () => {
+		for (const p of ['/', '/en', '/en/', '/zh_tw', '/zh_tw/']) {
+			expect(isHomePath(p)).toBe(true);
+		}
+	});
+
+	it('rejects every other route', () => {
+		for (const p of ['/events', '/en/events', '/zh_tw/faq', '/english']) {
+			expect(isHomePath(p)).toBe(false);
+		}
 	});
 });
 

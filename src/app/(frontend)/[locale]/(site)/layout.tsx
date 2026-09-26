@@ -20,5 +20,12 @@ export default async function SiteLayout({
 	const { data } = await getCachedSiteData(
 		isLocale(locale) ? locale : DEFAULT_LOCALE
 	);
-	return <Layout siteData={pickLayoutData(data)}>{children}</Layout>;
+	// Passed beside pickLayoutData's slice rather than inside it, and only when
+	// shown, so a hidden announcement serializes nothing.
+	const announcement = data?.announcement?.visible ? data.announcement : null;
+	return (
+		<Layout siteData={pickLayoutData(data)} announcement={announcement}>
+			{children}
+		</Layout>
+	);
 }

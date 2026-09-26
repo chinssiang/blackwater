@@ -94,7 +94,13 @@
 	--spacing-contain: var(--s-contain);
 	--spacing-section: var(--s-section);
 	--spacing-section-half: calc(var(--spacing-section) / 2);
-	--spacing-header: var(--height-header);
+	/* `top-header` for sticky bars: the whole fixed chrome, header plus the
+	   announcement bar (0 when there is none). */
+	--spacing-header: calc(var(--height-header) + var(--height-announcement));
+	/* Its own token: `leading-*` falls back to `--spacing-*`, so without this
+	   `leading-header` picked up the announcement height above and pushed the
+	   header's links off centre. */
+	--leading-header: var(--height-header);
 	--spacing-g-toolbar: var(--height-g-toolbar);
 
 	--z-index-header: 90;
@@ -1003,6 +1009,14 @@ main {
 
 body:has([data-hero-underlay]) main {
 	padding-top: 0;
+}
+
+/* The announcement bar's one-line height (`min-h-8`), so a prerendered page
+   already clears it with no JS. The bar's ResizeObserver overrides this inline
+   with the measured height once it runs, which differs only when a message
+   wraps. In px, not rem: readRootPxVar() parses the raw value. */
+:root:has([data-announcement]) {
+	--h-announcement: 32px;
 }
 
 /* Entrance reveal for page content, staggered via --reveal-delay.

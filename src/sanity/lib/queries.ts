@@ -873,14 +873,19 @@ const pageModuleFields = `
 
 export const siteDataQuery = defineQuery(`{
 		"announcement": ${byLocale('gAnnouncement')}[0]{
-			display,
-			messages,
+			"visible": display in ["all", "homepage"] && count(messages[defined(content)]) > 0,
+			"homepageOnly": display == "homepage",
+			"messages": messages[defined(content)]{
+				_key,
+				content[]{
+					${portableTextSimpleFields}
+				}
+			},
 			autoplay,
 			autoplayInterval,
-			backgroundColor,
-			textColor,
-			emphasizeColor,
-			"link": ${linkFields}
+			"backgroundColor": backgroundColor{ rgb },
+			"textColor": textColor{ rgb },
+			"emphasizeColor": emphasizeColor{ rgb }
 		},
 		"header": ${byLocale('gHeader')}[0]{
 			menu->{
