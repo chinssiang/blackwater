@@ -10,7 +10,12 @@ import { isMailConfigured } from '@/lib/mail';
 import { type CodeLimits, type MemberDb, mayRequestCode } from './code-limits';
 import { getDb } from './db';
 import * as schema from './schema';
-import { CODE_LENGTH, LOCALE_HEADER, SIGNED_IN_HINT_COOKIE } from './shared';
+import {
+	CODE_LENGTH,
+	LOCALE_HEADER,
+	NAME_MAX_LENGTH,
+	SIGNED_IN_HINT_COOKIE,
+} from './shared';
 
 /**
  * Stamped on each member when the account is created, as the record of which
@@ -18,9 +23,19 @@ import { CODE_LENGTH, LOCALE_HEADER, SIGNED_IN_HINT_COOKIE } from './shared';
  * in EITHER dictionary -- otherwise existing records claim consent to wording
  * the member never read.
  */
-export const PRIVACY_NOTICE_VERSION = '2026-09-23';
+export const PRIVACY_NOTICE_VERSION = '2026-09-27';
 
 type CodeMessage = { email: string; code: string; locale: Locale };
+
+// '' until the member saves one, so "no name" has one spelling. `required`
+// only types the field `string`: creation fills the default, and updates are
+// never held to it.
+const nameField = {
+	type: 'string',
+	required: true,
+	defaultValue: '',
+	validator: { input: z.string().trim().max(NAME_MAX_LENGTH) },
+} as const;
 
 export function createAuth({
 	db,
@@ -60,6 +75,10 @@ export function createAuth({
 			additionalFields: {
 				// `input: false` -- set by the hook below, never by the client.
 				consentVersion: { type: 'string', required: false, input: false },
+				// Set by the member on /account, through Better Auth's update-user
+				// route -- which is what checks the session and the origin.
+				firstName: nameField,
+				lastName: nameField,
 			},
 		},
 		session: {
@@ -147,12 +166,30 @@ export function createAuth({
 			// the protection works while running with it disabled.
 			disableOriginCheck: false,
 		},
+		// Better Auth's built-in `name` and `image` reach the database straight
+		// from the request body -- on a first sign-in and through update-user --
+		// with no validation. Nothing here sets or reads them (a member's name is
+		// firstName/lastName), so any write carrying one is refused. Checked on
+		// the write rather than per endpoint, so no path is missed. Thrown, not
+		// `return false`: update-user answers 200 to an update a hook cancels.
 		databaseHooks: {
 			user: {
 				create: {
-					before: async (user) => ({
-						data: { ...user, consentVersion: PRIVACY_NOTICE_VERSION },
-					}),
+					before: async (user) => {
+						if (user.name || user.image != null) {
+							throw new APIError('BAD_REQUEST');
+						}
+						return {
+							data: { ...user, consentVersion: PRIVACY_NOTICE_VERSION },
+						};
+					},
+				},
+				update: {
+					before: async (data) => {
+						if (data.name !== undefined || data.image !== undefined) {
+							throw new APIError('BAD_REQUEST');
+						}
+					},
 				},
 			},
 		},

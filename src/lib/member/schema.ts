@@ -35,6 +35,10 @@ export const member = pgTable('member', {
 	email: text('email').notNull().unique(),
 	emailVerified: boolean('email_verified').notNull().default(false),
 	image: text('image'),
+	// Split the way Luma and Shopify split them, so a member's name can be
+	// matched against, or prefilled from, their guest and customer records.
+	firstName: text('first_name').notNull().default(''),
+	lastName: text('last_name').notNull().default(''),
 	// Which privacy notice the member saw when the account was created. Its
 	// date is `createdAt`; a re-consent flow would need its own timestamp.
 	consentVersion: text('consent_version'),

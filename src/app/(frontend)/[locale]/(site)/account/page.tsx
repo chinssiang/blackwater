@@ -4,6 +4,7 @@ import { getDictionary } from '@/lib/dictionary.server';
 import { FALLBACK_TIMEZONE } from '@/lib/event-date';
 import { DEFAULT_LOCALE, htmlLangFor, isLocale } from '@/lib/i18n';
 import { getCurrentMember } from '@/lib/member/session';
+import { MemberProfile } from './_components/MemberProfile';
 import { SessionRefresh } from './_components/SessionRefresh';
 import { SignInForm } from './_components/SignInForm';
 import { SignOutButton } from './_components/SignOutButton';
@@ -44,25 +45,27 @@ export default async function Page(props: Props) {
 					</>
 				) : member ? (
 					<>
-						<h1 className="t-h-1 mb-3 font-medium text-balance">
-							{t.details.heading}
-						</h1>
-						<p className="t-b-1 break-words">
-							{interpolate(t.details.signedInAs, { email: member.email })}
-						</p>
-						<p className="t-b-1 text-foreground/60 mt-1">
-							{interpolate(t.details.memberSince, {
-								// In the club's timezone: the server runs in UTC, and a
-								// member who joined late on the last of a month in Taipei
-								// would otherwise see the following month.
-								date: new Intl.DateTimeFormat(htmlLangFor(locale), {
-									year: 'numeric',
-									month: 'long',
-									timeZone: FALLBACK_TIMEZONE,
-								}).format(member.memberSince),
-							})}
-						</p>
-						<SignOutButton className="mt-6" />
+						<MemberProfile
+							firstName={member.firstName}
+							lastName={member.lastName}
+						>
+							<p className="t-b-1 break-words">
+								{interpolate(t.details.signedInAs, { email: member.email })}
+							</p>
+							<p className="t-b-1 text-foreground/60 mt-1">
+								{interpolate(t.details.memberSince, {
+									// In the club's timezone: the server runs in UTC, and a
+									// member who joined late on the last of a month in Taipei
+									// would otherwise see the following month.
+									date: new Intl.DateTimeFormat(htmlLangFor(locale), {
+										year: 'numeric',
+										month: 'long',
+										timeZone: FALLBACK_TIMEZONE,
+									}).format(member.memberSince),
+								})}
+							</p>
+						</MemberProfile>
+						<SignOutButton className="mt-10" />
 					</>
 				) : (
 					<SignInForm />

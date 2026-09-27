@@ -6,7 +6,12 @@ import { PRIVACY_NOTICE_VERSION, createAuth } from './auth';
 import { CODE_LIMITS, type CodeLimits } from './code-limits';
 import * as schema from './schema';
 import { getMemberSession } from './session';
-import { LOCALE_HEADER, SIGNED_IN_HINT_COOKIE, SIGN_IN_ERRORS } from './shared';
+import {
+	LOCALE_HEADER,
+	NAME_MAX_LENGTH,
+	SIGNED_IN_HINT_COOKIE,
+	SIGN_IN_ERRORS,
+} from './shared';
 
 // The whole sign-in flow, end to end: the committed migration applied to a real
 // Postgres engine (PGlite, in-process, so CI needs no database service), driven
@@ -381,6 +386,83 @@ describe('signed-in hint cookie', () => {
 		);
 		const hint = hintSetCookie(await ctx.getSession(cookie));
 		expect(hint).toMatch(/^bw_member=1;.*Max-Age=2592000/);
+	});
+});
+
+// Pins what update-user accepts for the two name fields.
+describe('member name', () => {
+	let ctx: Ctx;
+	beforeEach(async () => {
+		ctx = await setup();
+	});
+
+	it('saves a first and last name, trimmed, and returns them with the session', async () => {
+		const cookie = await ctx.signedIn();
+		const res = await ctx.post(
+			'/update-user',
+			{ firstName: '  Hsiang ', lastName: 'Chin  ' },
+			{ cookie }
+		);
+		expect(res.status).toBe(200);
+		const session = await getMemberSession(ctx.auth, new Headers({ cookie }));
+		expect(session?.user.firstName).toBe('Hsiang');
+		expect(session?.user.lastName).toBe('Chin');
+	});
+
+	it(`refuses a name longer than ${NAME_MAX_LENGTH} characters`, async () => {
+		const cookie = await ctx.signedIn();
+		const res = await ctx.post(
+			'/update-user',
+			{ firstName: 'a'.repeat(NAME_MAX_LENGTH + 1) },
+			{ cookie }
+		);
+		expect(res.status).toBe(400);
+		// Not the 400 an unknown field also gets ("No fields to update").
+		expect(await res.json()).toMatchObject({ code: 'VALIDATION_ERROR' });
+	});
+
+	it("refuses Better Auth's unvalidated built-in name and image on a first sign-in", async () => {
+		for (const extra of [{ name: 'x'.repeat(10_000) }, { image: 'x' }]) {
+			await ctx.requestCode('runner@example.com');
+			const res = await ctx.post('/sign-in/email-otp', {
+				email: 'runner@example.com',
+				otp: ctx.sent.at(-1)!.code,
+				...extra,
+			});
+			expect(res.status).toBe(400);
+		}
+		const { rows } = await ctx.pg.query('select id from member');
+		expect(rows).toHaveLength(0);
+	});
+
+	it("refuses Better Auth's unvalidated built-in name and image on update", async () => {
+		const cookie = await ctx.signedIn();
+		for (const body of [{ name: 'x'.repeat(10_000) }, { image: 'x' }]) {
+			const res = await ctx.post('/update-user', body, { cookie });
+			expect(res.status).toBe(400);
+		}
+		const { rows } = await ctx.pg.query('select name, image from member');
+		expect(rows).toEqual([{ name: '', image: null }]);
+	});
+
+	it('refuses a request with no session', async () => {
+		await ctx.signedIn();
+		const res = await ctx.post('/update-user', { firstName: 'Someone' });
+		expect(res.status).toBe(401);
+		const { rows } = await ctx.pg.query('select first_name from member');
+		expect(rows).toEqual([{ first_name: '' }]);
+	});
+
+	it('refuses a signed-in request from another origin', async () => {
+		const cookie = await ctx.signedIn();
+		const res = await ctx.post(
+			'/update-user',
+			{ firstName: 'Someone' },
+			{ cookie, origin: 'https://evil.example' }
+		);
+		expect(res.status).toBe(403);
+		const { rows } = await ctx.pg.query('select first_name from member');
+		expect(rows).toEqual([{ first_name: '' }]);
 	});
 });
 

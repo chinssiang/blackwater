@@ -13,6 +13,7 @@ import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { Button } from '@/components/ui/Button';
 import { Field, FieldLabel, FieldStatus } from '@/components/ui/Field';
 import { Input } from '@/components/ui/Input';
+import { SubmitButton } from './SubmitButton';
 import { toast } from 'sonner';
 
 type Step = 'email' | 'code';
@@ -277,38 +278,11 @@ function InlineField({
 							isFocused={isFocused}
 						/>
 					</div>
-					{/* aria-disabled for the same focus reason as the inputs; the
-					    handlers ignore a submit while busy. */}
-					<Button
-						type="submit"
-						variant="outline"
-						size="lg"
-						aria-disabled={submitting || undefined}
-						className="min-w-22 bg-black text-white aria-disabled:cursor-not-allowed aria-disabled:opacity-50"
-					>
-						{/* Both labels share one grid cell, so the button is always as
-						    wide as the longer one and the input beside it never
-						    shifts. `invisible` also drops the idle one from the
-						    accessible name. */}
-						<span className="grid text-center">
-							<span
-								className={cn(
-									'col-start-1 row-start-1',
-									submitting && 'invisible'
-								)}
-							>
-								{submitLabel}
-							</span>
-							<span
-								className={cn(
-									'col-start-1 row-start-1',
-									!submitting && 'invisible'
-								)}
-							>
-								{submittingLabel}
-							</span>
-						</span>
-					</Button>
+					<SubmitButton
+						label={submitLabel}
+						pendingLabel={submittingLabel}
+						pending={submitting}
+					/>
 				</div>
 				{error && (
 					<p id={ERROR_ID} role="alert" className="sr-only">

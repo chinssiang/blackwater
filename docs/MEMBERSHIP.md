@@ -8,7 +8,7 @@ Membership is free, and members sign in with a 6-digit code sent to their email.
 
 - **Where members use it:** the `/account` page, in English and Chinese.
 - **Where the data lives:** a Postgres database hosted by Neon. It is **not** in Sanity, so the Studio can't show or edit members.
-- **What is stored:** email address, sign-up date, active sign-ins (sessions), pending codes, and rate-limit counters. No names, passwords or payment details.
+- **What is stored:** email address, sign-up date, the first and last name a member chooses to add on `/account` (optional, never shown to other members), active sign-ins (sessions), pending codes, and rate-limit counters. No passwords or payment details.
 - **Join key:** email is what links a member to Luma, Klaviyo and Shopify records.
 
 This guide has two halves. Operators (non-technical crew) need only the next two sections. Developers should read everything.
@@ -44,6 +44,7 @@ All member admin happens in the Neon Console at console.neon.tech. Every change 
 
 ### Rules
 
+- `first_name` / `last_name` are the member's own; edit them only at the member's request. Empty means they haven't added one.
 - Never edit `id`, `created_at` or `consent_version` — they are the record of when and under which privacy notice the person joined.
 - Never export member emails to a spreadsheet or tool that isn't already approved to hold them.
 - If you are unsure, ask a developer before saving.
@@ -83,10 +84,13 @@ Everything runs inside the Next.js app: **Better Auth** (email-OTP plugin) handl
 | `session.ts`        | `getCurrentMember()` for Server Components.                                                                  |
 | `code-limits.ts`    | Per-email / per-IP / site-wide code limits.                                                                  |
 | `handler.ts`        | GET/POST re-exported by `src/app/api/auth/[...all]/route.ts`.                                                |
+| `name.ts`           | `formatMemberName()`: first + last as one string, in the order the name's own script writes it.              |
 | `shared.ts`         | Constants the client form shares with the server (code length, locale header, error codes).                  |
 | `sign-in-email.tsx` | The code email: copy (kept out of the dictionaries, which ship to the browser) and its React Email template. |
 
-UI lives in `src/app/(frontend)/[locale]/(site)/account/`: `page.tsx`, `SignInForm`, `SignOutButton`, `SessionRefresh`.
+UI lives in `src/app/(frontend)/[locale]/(site)/account/`: `page.tsx`, `SignInForm`, `MemberProfile` (both submit through `SubmitButton`), `SignOutButton`, `SessionRefresh`.
+
+`MemberProfile` renders the signed-in heading and the name form, and saves the name through Better Auth's own `POST /api/auth/update-user`, so the session and origin checks are the library's. A save updates the heading from the saved values, with no route refresh. The two fields are `additionalFields` in `auth.ts`, validated there (trimmed, at most `NAME_MAX_LENGTH` from `shared.ts`); `name.ts` formats them for the page heading, family name first for a CJK name. Better Auth would also write its built-in `name` and `image` unvalidated, on a first sign-in and through update-user, so the `databaseHooks` in `auth.ts` refuse any member write that carries either.
 
 ### Lazy initialisation
 
@@ -204,7 +208,7 @@ Codes share the site's single SMTP account (~500/day on personal Gmail, 2,000 on
 
 1. Edit `src/lib/member/schema.ts`. JS field names stay Better Auth's camelCase; only SQL columns are snake_case.
 2. `npm run db:generate` writes a SQL migration into `drizzle/`. Commit it (its `meta/` snapshots are Prettier-ignored).
-3. `npm run db:migrate` applies it to whatever `DATABASE_URL` points at. Run it **by hand** — the build never migrates.
+3. `npm run db:migrate` applies it to whatever `DATABASE_URL` points at. Run it **by hand** — the build never migrates — and against production **before** deploying code that reads a new column: Drizzle names every schema column in its queries, so an unmigrated database fails every member read, sign-in included.
 
 drizzle-kit only reads `.env`, so `drizzle.config.ts` loads `.env.local` itself and fails with a clear message if the URL is missing. `schema.ts` deliberately has no `server-only` import, because drizzle-kit loads it in plain Node.
 

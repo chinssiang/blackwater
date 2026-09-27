@@ -34,7 +34,9 @@ export function getMemberSession(
  * of static generation. Returns only what a page may show.
  */
 export async function getCurrentMember(): Promise<
-	{ email: string; memberSince: Date } | null | 'unavailable'
+	| { email: string; memberSince: Date; firstName: string; lastName: string }
+	| null
+	| 'unavailable'
 > {
 	// headers() FIRST, as its own statement, and OUTSIDE the try below.
 	// `next build` still prerenders this route once, and headers() is what tells
@@ -47,7 +49,12 @@ export async function getCurrentMember(): Promise<
 	try {
 		const session = await getMemberSession(getAuth(), requestHeaders);
 		if (!session) return null;
-		return { email: session.user.email, memberSince: session.user.createdAt };
+		return {
+			email: session.user.email,
+			memberSince: session.user.createdAt,
+			firstName: session.user.firstName,
+			lastName: session.user.lastName,
+		};
 	} catch (err) {
 		console.error('[member] session read failed', err);
 		return 'unavailable';

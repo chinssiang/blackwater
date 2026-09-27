@@ -15,6 +15,20 @@
       "when": 1790176069904,
       "tag": "0001_sign_in_code_limit",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790425782721,
+      "tag": "0002_member_name",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790480169466,
+      "tag": "0003_member_name_not_null",
+      "breakpoints": true
     }
   ]
 }

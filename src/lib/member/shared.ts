@@ -10,6 +10,9 @@ export const LOCALE_HEADER = 'x-bw-locale';
 
 export const CODE_LENGTH = 6;
 
+/** The longest first or last name the account form accepts and auth.ts saves. */
+export const NAME_MAX_LENGTH = 50;
+
 /**
  * A readable copy of "is there a session cookie", for the header -- which
  * cannot read the httpOnly session cookie, and must not ask the server (that

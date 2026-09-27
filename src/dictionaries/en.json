@@ -385,7 +385,7 @@
 			"rateLimitedBody": "Please wait a minute and try again.",
 			"errorHeading": "Something went wrong",
 			"errorBody": "Please try again.",
-			"privacy": "We use your email address to sign you in and to show you your own club history, and we record the device and network of each sign-in to keep your account secure. Membership is free, and you can ask us to delete your account at any time."
+			"privacy": "We use your email address to sign you in and to show you your own club history, and the name you add, if any, to address you on your account page. We also record the device and network of each sign-in to keep your account secure. Membership is free, and you can ask us to delete your account at any time."
 		},
 		"details": {
 			"heading": "Your account",
@@ -393,6 +393,14 @@
 			"memberSince": "Member since {date}",
 			"signOut": "Sign out",
 			"signingOut": "Signing out…"
+		},
+		"profile": {
+			"firstName": "First name",
+			"lastName": "Last name",
+			"note": "Optional. It isn't shown to other members.",
+			"save": "Save",
+			"saving": "Saving…",
+			"saved": "Saved"
 		},
 		"unavailable": "Member sign-in isn't available right now. Please try again later."
 	},
