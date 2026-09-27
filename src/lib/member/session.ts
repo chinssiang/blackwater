@@ -33,10 +33,25 @@ export function getMemberSession(
  * from a page, never from a layout, where it would take every page beneath out
  * of static generation. Returns only what a page may show.
  */
+/** What a page may show of the signed-in member. `id` and `sessionId` are for
+ *  handing to the scoped reads beside this file, never for rendering. */
+export type CurrentMember = {
+	id: string;
+	sessionId: string;
+	email: string;
+	memberSince: Date;
+	firstName: string;
+	lastName: string;
+	phone: string;
+	country: string;
+	birthday: string;
+	emergencyContactName: string;
+	emergencyContactPhone: string;
+	preferredLocale: string;
+};
+
 export async function getCurrentMember(): Promise<
-	| { email: string; memberSince: Date; firstName: string; lastName: string }
-	| null
-	| 'unavailable'
+	CurrentMember | null | 'unavailable'
 > {
 	// headers() FIRST, as its own statement, and OUTSIDE the try below.
 	// `next build` still prerenders this route once, and headers() is what tells
@@ -49,11 +64,20 @@ export async function getCurrentMember(): Promise<
 	try {
 		const session = await getMemberSession(getAuth(), requestHeaders);
 		if (!session) return null;
+		const { user } = session;
 		return {
-			email: session.user.email,
-			memberSince: session.user.createdAt,
-			firstName: session.user.firstName,
-			lastName: session.user.lastName,
+			id: user.id,
+			sessionId: session.session.id,
+			email: user.email,
+			memberSince: user.createdAt,
+			firstName: user.firstName,
+			lastName: user.lastName,
+			phone: user.phone,
+			country: user.country,
+			birthday: user.birthday,
+			emergencyContactName: user.emergencyContactName,
+			emergencyContactPhone: user.emergencyContactPhone,
+			preferredLocale: user.preferredLocale,
 		};
 	} catch (err) {
 		console.error('[member] session read failed', err);

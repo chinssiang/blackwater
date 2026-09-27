@@ -7,8 +7,10 @@ import { CODE_LIMITS, type CodeLimits } from './code-limits';
 import * as schema from './schema';
 import { getMemberSession } from './session';
 import {
+	DELETE_NEEDS_FRESH_SIGN_IN,
 	LOCALE_HEADER,
 	NAME_MAX_LENGTH,
+	PHONE_MAX_LENGTH,
 	SIGNED_IN_HINT_COOKIE,
 	SIGN_IN_ERRORS,
 } from './shared';
@@ -41,7 +43,7 @@ async function setup({
 	codeLimits?: CodeLimits;
 } = {}) {
 	await pg.exec(
-		'truncate member, member_session, member_account, member_verification, auth_rate_limit, sign_in_code_limit cascade'
+		'truncate member, member_session, member_account, member_verification, auth_rate_limit, sign_in_code_limit, event_attendance cascade'
 	);
 	const sent: Sent[] = [];
 	const auth = createAuth({
@@ -463,6 +465,120 @@ describe('member name', () => {
 		expect(res.status).toBe(403);
 		const { rows } = await ctx.pg.query('select first_name from member');
 		expect(rows).toEqual([{ first_name: '' }]);
+	});
+});
+
+// Pins what update-user accepts for the rest of the profile.
+describe('member profile', () => {
+	let ctx: Ctx;
+	beforeEach(async () => {
+		ctx = await setup();
+	});
+
+	const update = async (body: Record<string, string>) =>
+		ctx.post('/update-user', body, { cookie: await ctx.signedIn() });
+
+	it('saves every field and returns them with the session', async () => {
+		const profile = {
+			phone: ' +886 912-345-678 ',
+			country: 'TW',
+			birthday: '1990-02-28',
+			emergencyContactName: ' 陳大明 ',
+			emergencyContactPhone: '(02) 2345 6789',
+			preferredLocale: 'zh_tw',
+		};
+		const cookie = await ctx.signedIn();
+		const res = await ctx.post('/update-user', profile, { cookie });
+		expect(res.status).toBe(200);
+		const session = await getMemberSession(ctx.auth, new Headers({ cookie }));
+		expect(session?.user).toMatchObject({
+			...profile,
+			phone: '+886 912-345-678',
+			emergencyContactName: '陳大明',
+		});
+	});
+
+	it('lets a member clear a field they filled in', async () => {
+		const cookie = await ctx.signedIn();
+		await ctx.post('/update-user', { country: 'JP' }, { cookie });
+		await ctx.post('/update-user', { country: '' }, { cookie });
+		const { rows } = await ctx.pg.query('select country from member');
+		expect(rows).toEqual([{ country: '' }]);
+	});
+
+	it.each([
+		['phone', 'call me maybe'],
+		['phone', '1'.repeat(PHONE_MAX_LENGTH + 1)],
+		['emergencyContactPhone', '+'],
+		['country', 'tw'],
+		['country', 'XX'],
+		['birthday', '1990-02-30'],
+		['birthday', '28/02/1990'],
+		['birthday', '1899-12-31'],
+		['birthday', '2999-01-01'],
+		['preferredLocale', 'fr'],
+	])('refuses %s %j', async (field, value) => {
+		const res = await update({ [field]: value });
+		expect(res.status).toBe(400);
+		expect(await res.json()).toMatchObject({ code: 'VALIDATION_ERROR' });
+	});
+
+	it('emails the sign-in code in the language the member saved', async () => {
+		await update({ preferredLocale: 'zh_tw' });
+		await ctx.requestCode('runner@example.com', { [LOCALE_HEADER]: 'en' });
+		expect(ctx.sent.at(-1)?.locale).toBe('zh_tw');
+	});
+});
+
+describe('deleting an account', () => {
+	let ctx: Ctx;
+	beforeEach(async () => {
+		ctx = await setup();
+	});
+
+	it('deletes the member, their sessions and their event history', async () => {
+		const cookie = await ctx.signedIn();
+		await ctx.pg.exec(`
+			insert into event_attendance (email, luma_event_url) values
+				('runner@example.com', 'https://luma.com/a'),
+				('someone@example.com', 'https://luma.com/a')
+		`);
+		const res = await ctx.post('/delete-user', {}, { cookie });
+		expect(res.status).toBe(200);
+		expect(sessionSetCookie(res)).toMatch(/Max-Age=0/);
+
+		for (const table of ['member', 'member_session']) {
+			const { rows } = await ctx.pg.query(`select 1 from ${table}`);
+			expect(rows).toHaveLength(0);
+		}
+		const { rows } = await ctx.pg.query('select email from event_attendance');
+		expect(rows).toEqual([{ email: 'someone@example.com' }]);
+	});
+
+	it('asks for a fresh sign-in once the session is a day old', async () => {
+		const cookie = await ctx.signedIn();
+		await ctx.pg.exec(
+			"update member_session set created_at = now() - interval '25 hours'"
+		);
+		const res = await ctx.post('/delete-user', {}, { cookie });
+		expect(res.status).toBe(400);
+		expect(await res.json()).toMatchObject({
+			code: DELETE_NEEDS_FRESH_SIGN_IN,
+		});
+		const { rows } = await ctx.pg.query('select 1 from member');
+		expect(rows).toHaveLength(1);
+	});
+
+	it('refuses a signed-in request from another origin', async () => {
+		const cookie = await ctx.signedIn();
+		const res = await ctx.post(
+			'/delete-user',
+			{},
+			{ cookie, origin: 'https://evil.example' }
+		);
+		expect(res.status).toBe(403);
+		const { rows } = await ctx.pg.query('select 1 from member');
+		expect(rows).toHaveLength(1);
 	});
 });
 

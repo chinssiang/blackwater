@@ -4,16 +4,20 @@ import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
 import { APIError, createAuthMiddleware, getIP } from 'better-auth/api';
 import { emailOTP } from 'better-auth/plugins';
+import { eq } from 'drizzle-orm';
 import * as z from 'zod';
-import { DEFAULT_LOCALE, type Locale, isLocale } from '@/lib/i18n';
+import { DEFAULT_LOCALE, LOCALES, type Locale, isLocale } from '@/lib/i18n';
 import { isMailConfigured } from '@/lib/mail';
 import { type CodeLimits, type MemberDb, mayRequestCode } from './code-limits';
+import { COUNTRY_CODES } from './countries';
 import { getDb } from './db';
 import * as schema from './schema';
 import {
 	CODE_LENGTH,
+	CONTACT_NAME_MAX_LENGTH,
 	LOCALE_HEADER,
 	NAME_MAX_LENGTH,
+	PHONE_MAX_LENGTH,
 	SIGNED_IN_HINT_COOKIE,
 } from './shared';
 
@@ -23,19 +27,49 @@ import {
  * in EITHER dictionary -- otherwise existing records claim consent to wording
  * the member never read.
  */
-export const PRIVACY_NOTICE_VERSION = '2026-09-27';
+export const PRIVACY_NOTICE_VERSION = '2026-09-27.2';
 
 type CodeMessage = { email: string; code: string; locale: Locale };
 
-// '' until the member saves one, so "no name" has one spelling. `required`
-// only types the field `string`: creation fills the default, and updates are
-// never held to it.
-const nameField = {
-	type: 'string',
-	required: true,
-	defaultValue: '',
-	validator: { input: z.string().trim().max(NAME_MAX_LENGTH) },
-} as const;
+// Every profile field is '' until the member saves one, so "not given" has one
+// spelling, and each can be cleared. `required` only types the field `string`:
+// creation fills the default, and updates are never held to it.
+const profileField = (input: z.ZodType<string>) =>
+	({
+		type: 'string',
+		required: true,
+		defaultValue: '',
+		validator: { input },
+	}) as const;
+
+const oneOf = (values: Iterable<string>) => {
+	const allowed = new Set(values);
+	return z.string().refine((v) => v === '' || allowed.has(v));
+};
+
+// At least one digit, with the punctuation people type around them -- `(02)`
+// included -- and an optional leading +. Deliberately not a per-country format: a Taiwanese mobile, a
+// Japanese landline and a number written the way Luma exported it all pass.
+const phone = z
+	.string()
+	.trim()
+	.max(PHONE_MAX_LENGTH)
+	.regex(/^(\+?[\d ().-]*\d[\d ().-]*)?$/);
+
+/** A real calendar date, `yyyy-MM-dd`, from 1900 to today (UTC, plus a day
+ *  for a member already past midnight east of Greenwich). */
+function isBirthday(value: string) {
+	if (value === '') return true;
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
+	if (!match) return false;
+	const [year, month, day] = match.slice(1).map(Number);
+	const date = new Date(Date.UTC(year, month - 1, day));
+	// Date.UTC rolls 02-31 over into March; a real date survives the trip.
+	if (date.getUTCMonth() !== month - 1 || date.getUTCDate() !== day) {
+		return false;
+	}
+	return year >= 1900 && date.getTime() <= Date.now() + 864e5;
+}
 
 export function createAuth({
 	db,
@@ -77,8 +111,30 @@ export function createAuth({
 				consentVersion: { type: 'string', required: false, input: false },
 				// Set by the member on /account, through Better Auth's update-user
 				// route -- which is what checks the session and the origin.
-				firstName: nameField,
-				lastName: nameField,
+				firstName: profileField(z.string().trim().max(NAME_MAX_LENGTH)),
+				lastName: profileField(z.string().trim().max(NAME_MAX_LENGTH)),
+				phone: profileField(phone),
+				country: profileField(oneOf(COUNTRY_CODES)),
+				birthday: profileField(z.string().refine(isBirthday)),
+				emergencyContactName: profileField(
+					z.string().trim().max(CONTACT_NAME_MAX_LENGTH)
+				),
+				emergencyContactPhone: profileField(phone),
+				preferredLocale: profileField(oneOf(LOCALES)),
+			},
+			// Settings -> Delete account, through Better Auth's delete-user route.
+			// With no password to confirm, the route asks for a session under a
+			// day old (its `freshAge`), so a borrowed, long-open tab cannot do it.
+			deleteUser: {
+				enabled: true,
+				// Before, so a failure here leaves the member intact to try again.
+				// The attendance rows are keyed by email and hold no foreign key,
+				// so the cascade that removes their sessions does not reach them.
+				beforeDelete: async (user) => {
+					await db
+						.delete(schema.eventAttendance)
+						.where(eq(schema.eventAttendance.email, user.email));
+				},
 			},
 		},
 		session: {
@@ -205,16 +261,38 @@ export function createAuth({
 					// Sign-in is the only flow this site offers. The endpoint still
 					// accepts other types, which must not send mail.
 					if (type !== 'sign-in') return;
+					// A member's saved language wins over the page they asked from:
+					// Settings promises it is the language the club emails them in.
+					const preferred = await preferredLocaleOf(db, email);
 					const header = ctx?.headers?.get(LOCALE_HEADER);
 					deliverCode({
 						email,
 						code: otp,
-						locale: header && isLocale(header) ? header : DEFAULT_LOCALE,
+						locale:
+							preferred ??
+							(header && isLocale(header) ? header : DEFAULT_LOCALE),
 					});
 				},
 			}),
 		],
 	});
+}
+
+/** The member's saved language, or null for none (or no member yet). A failed
+ *  read falls back rather than throwing: Better Auth swallows what the sender
+ *  throws, so a throw here would silently send no code at all. */
+async function preferredLocaleOf(db: MemberDb, email: string) {
+	try {
+		const [row] = await db
+			.select({ locale: schema.member.preferredLocale })
+			.from(schema.member)
+			.where(eq(schema.member.email, email.toLowerCase()))
+			.limit(1);
+		return row && isLocale(row.locale) ? row.locale : null;
+	} catch (err) {
+		console.error('[member] preferred language read failed', err);
+		return null;
+	}
 }
 
 let auth: ReturnType<typeof createAuth> | undefined;

@@ -3,6 +3,7 @@ import { client } from '@/sanity/lib/client';
 import { newsletterConfigQuery } from '@/sanity/lib/queries';
 import * as z from 'zod';
 import { DEFAULT_LOCALE, isLocale } from '@/lib/i18n';
+import { subscribeToList } from '@/lib/klaviyo';
 
 // The Klaviyo list is resolved server-side (from the locale's gNewsletter doc)
 // so this endpoint can't be used to push signups onto an arbitrary list. The
@@ -40,8 +41,6 @@ function isRateLimited(ip: string): boolean {
 	submissionTimes.set(ip, recent);
 	return false;
 }
-
-const KLAVIYO_REVISION = '2024-10-15';
 
 export async function POST(req: NextRequest) {
 	const ip =
@@ -116,42 +115,12 @@ export async function POST(req: NextRequest) {
 	}
 
 	try {
-		const res = await fetch(
-			'https://a.klaviyo.com/api/profile-subscription-bulk-create-jobs/',
-			{
-				method: 'POST',
-				headers: {
-					Authorization: `Klaviyo-API-Key ${apiKey}`,
-					revision: KLAVIYO_REVISION,
-					'Content-Type': 'application/json',
-					accept: 'application/json',
-				},
-				body: JSON.stringify({
-					data: {
-						type: 'profile-subscription-bulk-create-job',
-						attributes: {
-							custom_source: CUSTOM_SOURCE[placement ?? 'footer'],
-							profiles: {
-								data: [
-									{
-										type: 'profile',
-										attributes: {
-											email,
-											subscriptions: {
-												email: { marketing: { consent: 'SUBSCRIBED' } },
-											},
-										},
-									},
-								],
-							},
-						},
-						relationships: {
-							list: { data: { type: 'list', id: listId } },
-						},
-					},
-				}),
-			}
-		);
+		const res = await subscribeToList({
+			apiKey,
+			email,
+			listId,
+			customSource: CUSTOM_SOURCE[placement ?? 'footer'],
+		});
 
 		if (!res.ok) {
 			const body = await res.text();

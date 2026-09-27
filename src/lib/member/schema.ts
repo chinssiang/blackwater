@@ -4,6 +4,7 @@ import {
 	index,
 	integer,
 	pgTable,
+	primaryKey,
 	text,
 	timestamp,
 } from 'drizzle-orm/pg-core';
@@ -39,6 +40,21 @@ export const member = pgTable('member', {
 	// matched against, or prefilled from, their guest and customer records.
 	firstName: text('first_name').notNull().default(''),
 	lastName: text('last_name').notNull().default(''),
+	// The rest of the profile, each '' until the member fills it in. Named for
+	// the fields Luma, Shopify and Klaviyo already hold, so a value found there
+	// can be written straight in. Validated in auth.ts, which is the only writer.
+	phone: text('phone').notNull().default(''),
+	// ISO 3166-1 alpha-2, upper case -- the code Shopify and Klaviyo store.
+	country: text('country').notNull().default(''),
+	// A civil date, `yyyy-MM-dd`, the shape <input type="date"> reads and
+	// writes. Text rather than `date` so "not given" is '' like every other
+	// field here, and no driver turns it into a midnight in some timezone.
+	birthday: text('birthday').notNull().default(''),
+	emergencyContactName: text('emergency_contact_name').notNull().default(''),
+	emergencyContactPhone: text('emergency_contact_phone').notNull().default(''),
+	// The language the club emails the member in. '' follows the page they
+	// signed in from.
+	preferredLocale: text('preferred_locale').notNull().default(''),
 	// Which privacy notice the member saw when the account was created. Its
 	// date is `createdAt`; a re-consent flow would need its own timestamp.
 	consentVersion: text('consent_version'),
@@ -127,3 +143,32 @@ export const signInCodeLimit = pgTable('sign_in_code_limit', {
 	count: integer('count').notNull(),
 	windowStart: timestamp('window_start', { withTimezone: true }).notNull(),
 });
+
+/**
+ * Which events a person registered for or turned up to, one row per person per
+ * event. Nothing writes it yet: it is the landing place for a Luma webhook or
+ * backfill, and /account's club history reads it.
+ *
+ * Keyed by EMAIL, not by member id, and with no foreign key to `member`, on
+ * purpose: Luma's history predates membership, so a backfill must be able to
+ * hold rows for someone who signs up next year, and the history appears the
+ * moment they do. Emails are stored lowercased, as Better Auth stores them.
+ *
+ * `lumaEventUrl` is the join key to `pEvent.lumaUrl` and is written only in
+ * the spelling `normalizeLumaEventUrl()` returns (src/lib/luma.ts). The name
+ * and start time are Luma's own, for an event the site has no page for.
+ */
+export const eventAttendance = pgTable(
+	'event_attendance',
+	{
+		email: text('email').notNull(),
+		lumaEventUrl: text('luma_event_url').notNull(),
+		eventName: text('event_name').notNull().default(''),
+		eventStartsAt: timestamp('event_starts_at', { withTimezone: true }),
+		registeredAt: timestamp('registered_at', { withTimezone: true }),
+		// Set once the crew checks the runner in at the event.
+		checkedInAt: timestamp('checked_in_at', { withTimezone: true }),
+		...timestamps,
+	},
+	(t) => [primaryKey({ columns: [t.email, t.lumaEventUrl] })]
+);

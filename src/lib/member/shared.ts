@@ -13,6 +13,19 @@ export const CODE_LENGTH = 6;
 /** The longest first or last name the account form accepts and auth.ts saves. */
 export const NAME_MAX_LENGTH = 50;
 
+/** The rest of the profile's limits, shared the same way. A phone number is
+ *  at most 15 digits (E.164), so 30 leaves room for spaces and punctuation. */
+export const PHONE_MAX_LENGTH = 30;
+export const CONTACT_NAME_MAX_LENGTH = 100;
+
+/**
+ * The `code` Better Auth's delete-user route answers with when the session is
+ * older than a day (its `freshAge`). A member signed in with a code has no
+ * password to confirm with, so the page asks them to sign in again. Pinned
+ * against the real response by auth.test.ts.
+ */
+export const DELETE_NEEDS_FRESH_SIGN_IN = 'SESSION_EXPIRED';
+
 /**
  * A readable copy of "is there a session cookie", for the header -- which
  * cannot read the httpOnly session cookie, and must not ask the server (that

@@ -402,9 +402,17 @@ Which composition a new page takes is decided by its type, not per call site.
 | Fixed-content | `/faq`, `/size-guide`, `/contact`, `/newsletter`, `/account` | page component, `.wysiwyg` prose where content is Portable Text                       |
 | Locale-less   | `/events-crew`, `/email-signature`                           | outside `[locale]`; no `$locale` to resolve against, own layout                       |
 
-`/account` is the one Fixed-content page with no Sanity document: its copy is
-the `account` dictionary block, and it renders per request because it reads the
-session cookie.
+`/account` and its three siblings are the Fixed-content pages with no Sanity
+document: their copy is the `account` dictionary block, and they render per
+request because they read the session cookie. Signed in, they share one frame
+(`AccountFrame.tsx`): who is signed in and a section nav in a `13rem` column
+beside a `36rem` content column from `lg`, and below it the same nav as a row
+that scrolls sideways, the active item marked by a 2px rule — on the left edge
+in the column, underneath in the row — and `aria-current="page"`. Within a page,
+groups are `AccountSectionBlock`s: a `t-l-2 uppercase` muted heading under a
+top border. Club history is a list of date, event and a `t-spec` "checked in"
+mark, with a one-sentence summary as its intro — never a count in a tile (see
+`PRODUCT.md`'s anti-reference).
 
 `/products` and `/size-guide` and their descendants render **light**; everything
 else renders dark. The two locale-less routes are internal tools and are not held to

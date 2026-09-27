@@ -1,14 +1,14 @@
 # Membership System Guide
 
-Last updated: 2026-09-26
+Last updated: 2026-09-27
 
 ## Overview
 
 Membership is free, and members sign in with a 6-digit code sent to their email. There are no passwords. Visitors sign up and sign in the same way: the first code a person enters creates their account.
 
-- **Where members use it:** the `/account` page, in English and Chinese.
+- **Where members use it:** the account pages, in English and Chinese: `/account` (profile), `/account/history` (club history), `/account/orders` and `/account/settings`, behind one sidebar.
 - **Where the data lives:** a Postgres database hosted by Neon. It is **not** in Sanity, so the Studio can't show or edit members.
-- **What is stored:** email address, sign-up date, the first and last name a member chooses to add on `/account` (optional, never shown to other members), active sign-ins (sessions), pending codes, and rate-limit counters. No passwords or payment details.
+- **What is stored:** email address, sign-up date, the optional profile a member fills in on `/account` (first and last name, phone, country, birthday, an emergency contact — never shown to other members), the language they want email in, active sign-ins (sessions), pending codes, rate-limit counters, and which club events each email registered for or attended. No passwords or payment details.
 - **Join key:** email is what links a member to Luma, Klaviyo and Shopify records.
 
 This guide has two halves. Operators (non-technical crew) need only the next two sections. Developers should read everything.
@@ -33,6 +33,7 @@ All member admin happens in the Neon Console at console.neon.tech. Every change 
 | `member_account`      | external login (always empty)          | Leave alone                               |
 | `auth_rate_limit`     | per-IP counter                         | Leave alone                               |
 | `sign_in_code_limit`  | per-email / per-IP / site-wide counter | Delete a row to lift a lock (see support) |
+| `event_attendance`    | email × event (Luma link)              | Yes — this is where history is loaded     |
 
 ### Common tasks
 
@@ -44,23 +45,24 @@ All member admin happens in the Neon Console at console.neon.tech. Every change 
 
 ### Rules
 
-- `first_name` / `last_name` are the member's own; edit them only at the member's request. Empty means they haven't added one.
+- The profile columns (`first_name`, `last_name`, `phone`, `country`, `birthday`, `emergency_contact_name`, `emergency_contact_phone`, `preferred_locale`) are the member's own; edit them only at the member's request. Empty means they haven't added one. `country` is a two-letter code (`TW`), `birthday` is `yyyy-MM-dd`, `preferred_locale` is `en`, `zh_tw` or empty.
+- The emergency contact is for the crew to use when someone is hurt at a club event, and for nothing else.
 - Never edit `id`, `created_at` or `consent_version` — they are the record of when and under which privacy notice the person joined.
 - Never export member emails to a spreadsheet or tool that isn't already approved to hold them.
 - If you are unsure, ask a developer before saving.
 
 ## Common support situations
 
-| Member says                    | Likely cause                                                                         | What to do                                                                                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| "I never got the code"         | Spam folder, typo in email, or the site's mail account hit its daily cap             | Ask them to check spam and retype the address. If several people report it the same day, tell a developer — the shared mail account may be over its limit. |
-| "It says my code is wrong"     | Typo, or they requested a second code (only the newest works)                        | Ask them to use the latest email only.                                                                                                                     |
-| "It says the code expired"     | Codes last 10 minutes                                                                | Request a new code.                                                                                                                                        |
-| "Too many attempts"            | 3 wrong tries burn a code                                                            | Request a new code.                                                                                                                                        |
-| "Too many requests, try later" | More than 5 codes for one email in an hour, or 20 from one network in a day          | Wait an hour. If urgent, delete the row in `sign_in_code_limit` whose `key` is `email:their@address`.                                                      |
-| "Nobody can sign in"           | Site-wide cap of 300 codes/day reached, mail not configured, or the database is down | Tell a developer. The `/account` page shows an "unavailable" message when the database can't be reached.                                                   |
-| "Delete my data"               | Privacy request                                                                      | Delete their `member` row (sessions go with it). Also remove them from Klaviyo/Luma if the request covers those.                                           |
-| "I got signed out"             | 30 days without visiting `/account`, or someone deleted their session                | Normal — they sign in again with a new code.                                                                                                               |
+| Member says                    | Likely cause                                                                         | What to do                                                                                                                                                                                                         |
+| ------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| "I never got the code"         | Spam folder, typo in email, or the site's mail account hit its daily cap             | Ask them to check spam and retype the address. If several people report it the same day, tell a developer — the shared mail account may be over its limit.                                                         |
+| "It says my code is wrong"     | Typo, or they requested a second code (only the newest works)                        | Ask them to use the latest email only.                                                                                                                                                                             |
+| "It says the code expired"     | Codes last 10 minutes                                                                | Request a new code.                                                                                                                                                                                                |
+| "Too many attempts"            | 3 wrong tries burn a code                                                            | Request a new code.                                                                                                                                                                                                |
+| "Too many requests, try later" | More than 5 codes for one email in an hour, or 20 from one network in a day          | Wait an hour. If urgent, delete the row in `sign_in_code_limit` whose `key` is `email:their@address`.                                                                                                              |
+| "Nobody can sign in"           | Site-wide cap of 300 codes/day reached, mail not configured, or the database is down | Tell a developer. The `/account` page shows an "unavailable" message when the database can't be reached.                                                                                                           |
+| "Delete my data"               | Privacy request                                                                      | They can do it themselves: Settings → Delete account. Otherwise delete their `member` row (sessions go with it) and their `event_attendance` rows. Also remove them from Klaviyo/Luma if the request covers those. |
+| "I got signed out"             | 30 days without visiting `/account`, or someone deleted their session                | Normal — they sign in again with a new code.                                                                                                                                                                       |
 
 ## Architecture (developers)
 
@@ -78,7 +80,11 @@ Everything runs inside the Next.js app: **Better Auth** (email-OTP plugin) handl
 
 | File                | Holds                                                                                                        |
 | ------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `schema.ts`         | The six tables. Better Auth models renamed to club vocabulary (`member`, `member_session`…).                 |
+| `schema.ts`         | The seven tables. Better Auth models renamed to club vocabulary (`member`, `member_session`…).               |
+| `countries.ts`      | ISO 3166-1 alpha-2 codes the profile's country must be one of.                                               |
+| `attendance.ts`     | `getMemberAttendance(email)`: the member's `event_attendance` rows.                                          |
+| `devices.ts`        | `listMemberDevices(id, sessionId)`: live sessions for Settings, without their tokens.                        |
+| `device-name.ts`    | `describeDevice(userAgent)`: "Safari · iPhone".                                                              |
 | `db.ts`             | The only place a DB client is created.                                                                       |
 | `auth.ts`           | `createAuth()` config + `getAuth()` singleton; `PRIVACY_NOTICE_VERSION`.                                     |
 | `session.ts`        | `getCurrentMember()` for Server Components.                                                                  |
@@ -88,9 +94,16 @@ Everything runs inside the Next.js app: **Better Auth** (email-OTP plugin) handl
 | `shared.ts`         | Constants the client form shares with the server (code length, locale header, error codes).                  |
 | `sign-in-email.tsx` | The code email: copy (kept out of the dictionaries, which ship to the browser) and its React Email template. |
 
-UI lives in `src/app/(frontend)/[locale]/(site)/account/`: `page.tsx`, `SignInForm`, `MemberProfile` (both submit through `SubmitButton`), `SignOutButton`, `SessionRefresh`.
+UI lives in `src/app/(frontend)/[locale]/(site)/account/`: one `page.tsx` per section (`/`, `history/`, `orders/`, `settings/`) plus `actions.ts` (the newsletter Server Action). In `_components/`: `AccountPage` (reads the session; sign-in form, unavailable note, or the frame), `AccountFrame` (sidebar markup), `AccountSections` (page heading and section block), `ProfileForm`, `HistoryList`, `LanguagePreference`, `NewsletterPreference`, `SignOutOthersButton`, `DeleteAccount`, and the original `SignInForm`, `SubmitButton`, `SignOutButton`, `SessionRefresh`. There is no `layout.tsx` on purpose: the session read would move into it, and a layout does not re-render between its pages.
 
-`MemberProfile` renders the signed-in heading and the name form, and saves the name through Better Auth's own `POST /api/auth/update-user`, so the session and origin checks are the library's. A save updates the heading from the saved values, with no route refresh. The two fields are `additionalFields` in `auth.ts`, validated there (trimmed, at most `NAME_MAX_LENGTH` from `shared.ts`); `name.ts` formats them for the page heading, family name first for a CJK name. Better Auth would also write its built-in `name` and `image` unvalidated, on a first sign-in and through update-user, so the `databaseHooks` in `auth.ts` refuse any member write that carries either.
+`ProfileForm` saves the whole profile through Better Auth's own `POST /api/auth/update-user`, so the session and origin checks are the library's, then refreshes the route so the sidebar shows the new name. Every field is an `additionalFields` entry in `auth.ts` with its validator there: names and the emergency contact's name are trimmed and length-capped, phones are digits with the usual punctuation, `country` must be in `countries.ts`, `birthday` a real date from 1900 to today, `preferredLocale` a site locale. `name.ts` formats the name for the sidebar, family name first for a CJK name. Better Auth would also write its built-in `name` and `image` unvalidated, on a first sign-in and through update-user, so the `databaseHooks` in `auth.ts` refuse any member write that carries either.
+
+Settings:
+
+- **Language** saves `preferredLocale` through update-user. `sendVerificationOTP` reads it, so a saved language beats the page the member signs in from.
+- **Emails** reads Klaviyo's `can_receive_email_marketing` for the member's address on the server, and the checkbox calls the `setNewsletterSubscription` Server Action (Next checks its origin). Subscribing adds them to the list for their language; unsubscribing is global, because Klaviyo consent is per profile. Without `KLAVIYO_PRIVATE_API_KEY` the section says it is unavailable.
+- **Signed-in devices** is read by `devices.ts`, not Better Auth's `list-sessions`, which would hand every session token to the browser. "Sign out everywhere else" is Better Auth's `revoke-other-sessions`.
+- **Delete account** is Better Auth's `delete-user`. With no password to confirm, it needs a session created in the last day, and answers `SESSION_EXPIRED` otherwise; the dialog then offers to sign in again. `deleteUser.beforeDelete` removes the member's `event_attendance` rows first, since no cascade reaches them.
 
 ### Lazy initialisation
 
@@ -232,4 +245,31 @@ drizzle-kit only reads `.env`, so `drizzle.config.ts` loads `.env.local` itself 
 - Never remove `SessionRefresh` or `disableOriginCheck: false`.
 - Never move limit or mail checks into `sendVerificationOTP`.
 - Bump `PRIVACY_NOTICE_VERSION` when the privacy wording changes.
+- Write `event_attendance.email` lowercased and `luma_event_url` through `normalizeLumaEventUrl()`, or rows never match.
 - The site chrome never reads the session — keep it that way to protect static generation. The header's "Member" label comes from `bw_member`, a readable hint cookie that the `hooks.after` in `auth.ts` writes alongside every write of the session cookie, with the same attributes and lifetime (`src/hooks/useSignedInHint.ts` reads it). It holds no token and can be stale, so it must never gate anything; visiting `/account` corrects it, because `SessionRefresh` runs there signed in or not.
+
+## Filling in the data (roadmap)
+
+The account pages are built to be filled from the club's other systems. Each source joins on the member's email, which the sign-in code has already proved belongs to them.
+
+### Club history — Luma first
+
+`event_attendance` is where it lands; `/account/history` already reads it and joins it to the site's events by `pEvent.lumaUrl`. What is missing is a writer. Recommended order:
+
+1. **Luma webhooks** (`guest.registered`, `guest.updated`) into a new `/api/luma/webhook` route that verifies Luma's signature and upserts one row per guest: `email` lowercased, `luma_event_url` from `normalizeLumaEventUrl()` of the event's public URL, `event_name` and `event_starts_at` from the event, `registered_at`, and `checked_in_at` once the crew checks them in at the door. Needs Luma Plus for the API key.
+2. **A one-shot backfill** in `scripts/` that walks past events with Luma's get-guests API and writes the same rows, then is deleted (see `CLAUDE.md` on one-shot scripts).
+
+**Strava** is a poor source for attendance: its club activity feed does not identify athletes reliably, and matching someone's run to an event means asking each member to connect Strava (OAuth) and guessing from time and place. If it is ever wanted, it belongs as an opt-in "Connect Strava" in Settings that writes rows with the matching Luma event, not as a second history.
+
+### Orders — Shopify
+
+The Storefront token the site uses cannot read orders, and Shopify removed admin-created custom apps on 2026-01-01. Two ways in:
+
+- **Customer Account API.** The member presses "Connect your orders" once and signs in with Shopify's own emailed code (OAuth with PKCE); we store their tokens in a new table and list orders live. The Shopify-sanctioned route for a headless store, but it is a second sign-in.
+- **A Dev Dashboard app** with `read_orders` and protected-customer-data approval, queried server-side by the member's verified email. No second sign-in; more setup and review on the Shopify side.
+
+Either way the page shell is ready: `account/orders/page.tsx` swaps its empty state for the list.
+
+### Profile — prefill, never overwrite
+
+The profile columns are named after the fields Luma (name, phone), Shopify (first/last name, phone, default address country) and Klaviyo (first/last name, phone, location, birthday) already hold. A sync should fill **empty** columns only: whatever the member typed on `/account` wins.

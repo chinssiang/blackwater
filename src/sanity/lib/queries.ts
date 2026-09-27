@@ -1204,6 +1204,23 @@ export const upcomingEventsQuery = defineQuery(`
 	}
 `);
 
+// /account's club history: every event carrying a Luma link, joined in JS to
+// the member's event_attendance rows. Not narrowed to the member's own events
+// in GROQ, because `lumaUrl` is stored as typed and only
+// normalizeLumaEventUrl() can match two spellings of one event. The title
+// falls back to any language, since history must name an event the member
+// went to even when it was never translated into this page's; the slug is
+// null then, because that page 404s here.
+export const memberHistoryEventsQuery = defineQuery(`
+	*[_type == "pEvent" && defined(lumaUrl)]{
+		_id,
+		"title": coalesce(${locString('title')}, title[0].value),
+		"slug": select(${titleVisible} => slug.current),
+		eventDatetime,
+		lumaUrl,
+	}
+`);
+
 // Same deref set as upcomingEventsQuery -- the shared fragment plus a category
 // projection -- but its own const, so the two queries stay free to diverge.
 export const RELATED_EVENTS_TAGS = [

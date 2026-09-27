@@ -29,6 +29,13 @@
       "when": 1790480169466,
       "tag": "0003_member_name_not_null",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790482166408,
+      "tag": "0004_member_profile",
+      "breakpoints": true
     }
   ]
 }
