@@ -412,7 +412,7 @@
 			"emailNote": "這是您登入用的地址。如需更改，請與我們聯繫。",
 			"phone": "電話",
 			"country": "國家或地區",
-			"countryPlaceholder": "請選擇",
+			"countryNoMatch": "找不到符合的項目",
 			"emergencyHeading": "緊急聯絡人",
 			"emergencyNote": "若您在跑團活動中發生狀況，工作人員會聯絡這位。",
 			"emergencyName": "姓名",

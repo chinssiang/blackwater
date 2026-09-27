@@ -10,7 +10,10 @@ export type MemberDb = PgDatabase<PgQueryResultHKT, typeof schema>;
  * sit in front of it, because an attacker can otherwise:
  *
  * - bomb one inbox, replacing the member's code faster than they can type it
- *   -- hence PER EMAIL;
+ *   -- hence PER EMAIL, counted per sender IP so a stranger who spends
+ *   an address's allowance cannot lock its owner out of signing in, under a
+ *   looser PER ADDRESS cap over every sender, so spreading the flood across
+ *   many IPs does not multiply it;
  * - spend the SMTP account's daily cap on random addresses, which also stops
  *   the contact and product-submission forms from sending -- hence TOTAL,
  *   kept below a personal Gmail's ~500/day so those forms keep headroom; and
@@ -20,6 +23,7 @@ export type MemberDb = PgDatabase<PgQueryResultHKT, typeof schema>;
  */
 export const CODE_LIMITS = {
 	perEmail: { max: 5, windowSeconds: 60 * 60 },
+	perAddress: { max: 15, windowSeconds: 60 * 60 },
 	perIp: { max: 20, windowSeconds: 60 * 60 * 24 },
 	total: { max: 300, windowSeconds: 60 * 60 * 24 },
 };
@@ -85,8 +89,12 @@ export async function mayRequestCode(
 	await prune(db, limits);
 	// Lowercased exactly as the endpoint does, so the key is its address.
 	const address = email.toLowerCase();
+	// Per IP as well as per address: keyed on the address alone, anyone could
+	// spend it and lock its owner out for the window.
+	const emailKey = ip === null ? `email:${address}` : `email:${address}|${ip}`;
 	return (
-		(await consume(db, `email:${address}`, limits.perEmail)) &&
+		(await consume(db, emailKey, limits.perEmail)) &&
+		(await consume(db, `address:${address}`, limits.perAddress)) &&
 		(ip === null || (await consume(db, `ip:${ip}`, limits.perIp))) &&
 		(await consume(db, 'total', limits.total))
 	);

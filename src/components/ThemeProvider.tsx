@@ -14,35 +14,22 @@ import { isLightThemePath } from '@/lib/routes';
 // See https://github.com/shadcn-ui/ui/issues/10104. Drop only this exact message
 // (dev only — the warning is stripped from production builds) and let every other
 // console.error through.
-function useSilenceNextThemesScriptWarning() {
-	// The React Compiler does not merely skip this hook — it trips an internal
-	// INVARIANT on the `console.error` reassignment below ("Expected temporaries
-	// to be promoted to named identifiers in an earlier pass"), which is a
-	// compiler bug rather than a rule violation. It is invisible today only
-	// because Next leaves `panicThreshold` at its 'none' default; setting that
-	// option, or moving to the Rust port, turns it into a hard build failure in
-	// a file nobody touched. Opting out explicitly keeps that from happening.
-	//
-	// Note `react-hooks/globals` is at `error` and does NOT flag the assignment,
-	// so lint being green is not evidence the compiler is happy with this file.
-	'use no memo';
-
-	React.useEffect(() => {
-		if (process.env.NODE_ENV === 'production') return;
-		const original = console.error;
-		console.error = (...args: unknown[]) => {
-			if (
-				typeof args[0] === 'string' &&
-				args[0].includes('Encountered a script tag while rendering')
-			) {
-				return;
-			}
-			original(...args);
-		};
-		return () => {
-			console.error = original;
-		};
-	}, []);
+//
+// Patched once at module scope, not in an effect: an effect installs after the
+// first client render and its cleanup restores the original whenever this
+// provider remounts (a locale switch replaces the [locale] layout), so the very
+// render that re-creates the script ran unpatched and the warning got through.
+if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
+	const original = console.error;
+	console.error = (...args: unknown[]) => {
+		if (
+			typeof args[0] === 'string' &&
+			args[0].includes('Encountered a script tag while rendering')
+		) {
+			return;
+		}
+		original(...args);
+	};
 }
 
 function ThemeProvider({
@@ -51,8 +38,6 @@ function ThemeProvider({
 }: React.ComponentProps<typeof NextThemesProvider>) {
 	const pathname = usePathname();
 	const isLight = isLightThemePath(pathname);
-
-	useSilenceNextThemesScriptWarning();
 
 	// `forcedTheme` is a ternary, so it is ALWAYS set: dark everywhere except the
 	// forced-light routes, and no user-facing theme switch by design (DESIGN.md,

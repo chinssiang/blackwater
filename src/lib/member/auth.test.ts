@@ -599,6 +599,37 @@ describe('code request limits', () => {
 		expect(res.status).toBe(200);
 	});
 
+	it("does not let one sender spend another's allowance for an address", async () => {
+		const ctx = await setup({
+			codeLimits: { ...CODE_LIMITS, perEmail: { max: 1, windowSeconds: 3600 } },
+		});
+		expect((await ctx.requestCode('runner@example.com')).status).toBe(200);
+		expect((await ctx.requestCode('runner@example.com')).status).toBe(429);
+		const owner = { 'x-forwarded-for': '203.0.113.20' };
+		expect((await ctx.requestCode('runner@example.com', owner)).status).toBe(
+			200
+		);
+	});
+
+	it('caps an address across every sender', async () => {
+		const ctx = await setup({
+			codeLimits: {
+				...CODE_LIMITS,
+				perAddress: { max: 2, windowSeconds: 3600 },
+			},
+		});
+		for (const ip of ['203.0.113.21', '203.0.113.22']) {
+			const res = await ctx.requestCode('runner@example.com', {
+				'x-forwarded-for': ip,
+			});
+			expect(res.status).toBe(200);
+		}
+		const third = { 'x-forwarded-for': '203.0.113.23' };
+		expect((await ctx.requestCode('runner@example.com', third)).status).toBe(
+			429
+		);
+	});
+
 	it('counts an address however it is cased', async () => {
 		const ctx = await setup({
 			codeLimits: { ...CODE_LIMITS, perEmail: { max: 1, windowSeconds: 3600 } },
@@ -645,7 +676,8 @@ describe('code request limits', () => {
 			'select key from sign_in_code_limit order by key'
 		);
 		expect(rows.map((r) => r.key)).toEqual([
-			'email:runner@example.com',
+			'address:runner@example.com',
+			'email:runner@example.com|203.0.113.7',
 			'ip:203.0.113.7',
 			'total',
 		]);

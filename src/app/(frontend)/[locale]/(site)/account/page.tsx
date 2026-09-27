@@ -1,3 +1,4 @@
+import { getCountryCallingCode, isSupportedCountry } from 'libphonenumber-js';
 import { type Locale, htmlLangFor } from '@/lib/i18n';
 import { COUNTRY_CODES } from '@/lib/member/countries';
 import {
@@ -11,18 +12,24 @@ import { ProfileForm } from './_components/ProfileForm';
 export const generateMetadata = (props: AccountPageProps) =>
 	accountMetadata(props, 'profile');
 
-/** Every country named in the page's language, in its alphabetical order.
- *  Named here, on the server, and handed down: Node's and the browser's ICU
- *  data word a few regions differently, which would be a hydration mismatch
- *  in 249 places. */
+/** Every country that has a calling code, named in the page's language and in
+ *  its alphabetical order. Named here, on the server, and handed down: Node's
+ *  and the browser's ICU data word a few regions differently, which would be
+ *  a hydration mismatch in hundreds of places. The calling code comes from
+ *  libphonenumber-js, read here so its metadata never reaches the browser.
+ *  The seven uninhabited territories it has no code for (AQ, BV, GS, HM, PN,
+ *  TF, UM) are left out: the picker sits in front of the phone number. */
 function countryOptions(locale: Locale) {
 	const lang = htmlLangFor(locale);
 	const names = new Intl.DisplayNames([lang], { type: 'region' });
 	const collator = new Intl.Collator(lang);
-	return COUNTRY_CODES.map((code) => ({
-		code,
-		name: names.of(code) ?? code,
-	})).sort((a, b) => collator.compare(a.name, b.name));
+	return COUNTRY_CODES.filter((code) => isSupportedCountry(code))
+		.map((code) => ({
+			code,
+			name: names.of(code) ?? code,
+			dialCode: `+${getCountryCallingCode(code)}`,
+		}))
+		.sort((a, b) => collator.compare(a.name, b.name));
 }
 
 // The one dynamic page tree under [locale]: AccountPage reads the request's
