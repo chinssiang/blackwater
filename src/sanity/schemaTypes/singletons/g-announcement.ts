@@ -62,9 +62,6 @@ export const gAnnouncement = defineType({
 		{
 			name: 'backgroundColor',
 			type: 'color',
-			options: {
-				disableAlpha: true,
-			},
 		},
 		{
 			name: 'textColor',

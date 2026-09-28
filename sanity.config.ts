@@ -26,6 +26,7 @@ import { settingsConsent } from '@/sanity/schemaTypes/singletons/settings-consen
 import { settingsGeneral } from '@/sanity/schemaTypes/singletons/settings-general';
 import { settingsIntegration } from '@/sanity/schemaTypes/singletons/settings-integrations';
 import { structure } from '@/sanity/structure';
+import { eventImportTool } from '@/sanity/tools/EventImportTool';
 import { colorInput } from '@sanity/color-input';
 import { documentInternationalization } from '@sanity/document-internationalization';
 import { richDate } from '@sanity/rich-date-input';
@@ -97,6 +98,7 @@ const commonPlugins = [
 	}),
 	visionTool({ defaultApiVersion: apiVersion }),
 	richDate(),
+	eventImportTool(),
 ];
 const singletonDocuments = [
 	gFooter.name,

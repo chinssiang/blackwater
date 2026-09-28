@@ -64,6 +64,11 @@ export function shouldHideGlobalNewsletter(pathname: string): boolean {
 	return HIDE_GLOBAL_NEWSLETTER_PATHS.includes(normalized);
 }
 
+// The homepage in every locale: "/", "/en" and "/zh_tw" all normalize to "/".
+export function isHomePath(pathname: string): boolean {
+	return normalizeRoutePath(pathname) === '/';
+}
+
 // Routes that render on the light theme; everything else is dark. Each entry
 // matches itself and its descendants, so listing "/products" covers the whole
 // product subtree. Read by both ThemeProvider (which sets the html class) and

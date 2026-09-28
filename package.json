@@ -32,6 +32,7 @@
 	},
 	"dependencies": {
 		"@base-ui/react": "^1.7.0",
+		"@hookform/resolvers": "^5.9.1",
 		"@next/third-parties": "^16.3.5",
 		"@portabletext/react": "^3.2.1",
 		"@portabletext/types": "^4.0.0",
@@ -83,7 +84,8 @@
 		"styled-components": "^6.1.19",
 		"tailwind-merge": "^3.3.1",
 		"tailwind-scrollbar": "^4.0.1",
-		"three": "^0.186.0"
+		"three": "^0.186.0",
+		"zod": "^4.6.5"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

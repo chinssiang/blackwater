@@ -4,6 +4,10 @@
 		"next": "Next",
 		"lastUpdated": "Last updated"
 	},
+	"announcement": {
+		"label": "Announcement",
+		"showMessage": "Show message {count} of {total}"
+	},
 	"breadcrumb": {
 		"home": "Home",
 		"events": "Events",

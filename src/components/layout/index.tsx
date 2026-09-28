@@ -9,6 +9,7 @@ import { CartProvider } from '@/components/cart/CartProvider';
 import GlobalProgressBar from '@/components/progress/GlobalProgressBar';
 import { ProgressProvider } from '@/components/progress/ProgressProvider';
 import AdaSkip from './AdaSkip';
+import Announcement, { type AnnouncementData } from './Announcement';
 import { Footer } from './Footer';
 import { Header } from './Header';
 import { Main } from './Main';
@@ -21,8 +22,10 @@ type LayoutProps = {
 	/** Narrowed by `pickLayoutData` — see the note there on why not the whole
 	 *  siteData blob. */
 	siteData: LayoutData;
+	/** Null when hidden. */
+	announcement?: AnnouncementData | null;
 };
-export function Layout({ children, siteData }: LayoutProps) {
+export function Layout({ children, siteData, announcement }: LayoutProps) {
 	const { header, footer, newsletter, siteTitle, mobileMenu, toolbar } =
 		siteData || {};
 	const pathname = usePathname();
@@ -89,6 +92,7 @@ export function Layout({ children, siteData }: LayoutProps) {
 				<LazyMotion features={domAnimation}>
 					<AdaSkip />
 					<GlobalProgressBar />
+					{announcement && <Announcement data={announcement} />}
 					<Header data={headerData} />
 					<Main
 						key={pathname}

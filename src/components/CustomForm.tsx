@@ -150,36 +150,34 @@ export function createDynamicResolver(fieldsArray: FormField[]) {
 		const { fieldName, required, inputType, minLength } = field;
 		if (!fieldName) return;
 
-		// No initializer: the if/else below assigns on every path, so a starting
-		// value is dead and hides which branch actually set the schema.
-		let schema: z.ZodTypeAny;
+		// The format checks chain onto one string schema rather than replacing it,
+		// so a required email still says "required" when empty and an optional one
+		// still accepts being left blank. `required` goes first because the
+		// resolver reports only the first issue per field.
+		let schema = z.string();
 
 		if (required) {
-			schema = z.string().min(1, { message: 'This field is required' });
-		} else {
-			schema = z.string().optional().or(z.literal(''));
+			schema = schema.min(1, { message: 'This field is required' });
 		}
 
 		if (inputType === 'email') {
-			schema = z.string().email('Invalid email format');
+			schema = schema.email('Invalid email format');
 		}
 
 		if (inputType === 'tel') {
-			schema = z
-				.string()
-				.regex(
-					VALIDATION_PATTERNS.phone.value,
-					VALIDATION_PATTERNS.phone.message
-				);
+			schema = schema.regex(
+				VALIDATION_PATTERNS.phone.value,
+				VALIDATION_PATTERNS.phone.message
+			);
 		}
 
 		if (minLength) {
-			schema = z.string().min(minLength, {
+			schema = schema.min(minLength, {
 				message: `Must be at least ${minLength} characters`,
 			});
 		}
 
-		shape[fieldName] = schema;
+		shape[fieldName] = required ? schema : schema.optional().or(z.literal(''));
 	});
 	return zodResolver(z.object(shape));
 }

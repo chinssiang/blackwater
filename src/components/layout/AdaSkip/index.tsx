@@ -8,7 +8,9 @@ export default function AdaSkip() {
 			href="#main"
 			className={cn(
 				buttonVariants(),
-				'top-[calc(var(--h-announcement, 0px)+10px)] left-contain z-overlay fixed -translate-y-full focus:translate-y-0'
+				// Parked above the viewport from `top-0`; the offset lives only on the
+				// focus translate, since a `top` offset would leave it on screen.
+				'left-contain z-overlay fixed top-0 -translate-y-full focus:translate-y-[calc(var(--height-announcement)+10px)] motion-reduce:transition-none'
 			)}
 		>
 			Skip to content
