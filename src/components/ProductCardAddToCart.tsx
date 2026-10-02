@@ -126,6 +126,10 @@ export default function ProductCardAddToCart({
 			<PopoverContent
 				side="top"
 				align="end"
+				// Below the fixed header and announcement bar (z-header), not above
+				// them like `z-popover`: a card scrolled under the chrome must not
+				// have its picker paint over it.
+				positionerClassName="z-[calc(var(--z-index-header)-1)]"
 				className="w-auto max-w-56 min-w-40 gap-2"
 			>
 				<PopoverTitle className="t-l-2 text-foreground/65 uppercase">
