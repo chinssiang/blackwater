@@ -23,8 +23,8 @@ import {
 
 /**
  * Stamped on each member when the account is created, as the record of which
- * privacy notice they saw. Bump it whenever `account.signIn.privacy` changes
- * in EITHER dictionary -- otherwise existing records claim consent to wording
+ * privacy notice they saw. Bump it whenever `pAccount.signInPrivacy` changes
+ * in Sanity, in EITHER language -- otherwise existing records claim consent to wording
  * the member never read.
  */
 export const PRIVACY_NOTICE_VERSION = '2026-09-27.2';

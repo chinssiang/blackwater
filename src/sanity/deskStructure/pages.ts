@@ -6,6 +6,7 @@ import {
 	HomeIcon,
 	ThLargeIcon,
 	UnknownIcon,
+	UserIcon,
 } from '@sanity/icons';
 import type { StructureBuilder } from 'sanity/structure';
 
@@ -87,6 +88,19 @@ const pageNewsletter = (S: StructureBuilder) => {
 		.icon(EnvelopeIcon);
 };
 
+const pageAccount = (S: StructureBuilder) => {
+	return S.listItem()
+		.title('Account Page')
+		.child(
+			S.editor()
+				.id('pAccount')
+				.title('Account Page')
+				.schemaType('pAccount')
+				.documentId('pAccount')
+		)
+		.icon(UserIcon);
+};
+
 export const pagesMenu = (S: StructureBuilder) => {
 	return S.listItem()
 		.title('Primary Pages')
@@ -102,6 +116,7 @@ export const pagesMenu = (S: StructureBuilder) => {
 					pageFaq(S),
 					pageSizeGuide(S),
 					pageNewsletter(S),
+					pageAccount(S),
 				])
 		);
 };

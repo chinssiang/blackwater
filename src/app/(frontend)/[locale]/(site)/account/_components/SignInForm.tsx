@@ -33,7 +33,15 @@ const ERROR_ID = 'sign-in-error';
  * than its client library: this page is the only caller, and the endpoints
  * and their error codes are pinned by src/lib/member/auth.test.ts.
  */
-export function SignInForm() {
+/** `intro` and `privacy` are the Sanity-managed copy (pAccount); each renders
+ *  nothing without a value. */
+export function SignInForm({
+	intro,
+	privacy,
+}: {
+	intro?: string | null;
+	privacy?: string | null;
+}) {
 	const t = useTranslations('account').signIn;
 	const locale = useLocale();
 	const router = useRouter();
@@ -146,8 +154,15 @@ export function SignInForm() {
 	if (step === 'email') {
 		return (
 			<>
-				<h1 className="t-h-1 mb-3 font-medium text-balance">{t.heading}</h1>
-				<p className="t-b-1 mb-6 text-pretty">{t.intro}</p>
+				<h1
+					className={cn(
+						't-h-1 font-medium text-balance',
+						intro ? 'mb-3' : 'mb-6'
+					)}
+				>
+					{t.heading}
+				</h1>
+				{intro && <p className="t-b-1 mb-6 text-pretty">{intro}</p>}
 				<InlineField
 					id="sign-in-email"
 					label={t.emailLabel}
@@ -170,7 +185,9 @@ export function SignInForm() {
 						}}
 					/>
 				</InlineField>
-				<p className="t-b-2 text-foreground/60 mt-4 text-pretty">{t.privacy}</p>
+				{privacy && (
+					<p className="t-b-2 text-foreground/60 mt-4 text-pretty">{privacy}</p>
+				)}
 			</>
 		);
 	}

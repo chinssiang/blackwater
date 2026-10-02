@@ -5,6 +5,7 @@ export const TRANSLATABLE_TYPES = [
 	'pSizeGuide',
 	'pNewsletter',
 	'p404',
+	'pAccount',
 	'pProductIndex',
 	'pGeneral',
 	'pBlog',

@@ -15,6 +15,7 @@ import { gMobileMenu } from '@/sanity/schemaTypes/singletons/g-mobile-menu';
 import { gNewsletter } from '@/sanity/schemaTypes/singletons/g-newsletter';
 import { gToolbar } from '@/sanity/schemaTypes/singletons/g-toolbar';
 import { p404 } from '@/sanity/schemaTypes/singletons/p-404';
+import { pAccount } from '@/sanity/schemaTypes/singletons/p-account';
 import { pContact } from '@/sanity/schemaTypes/singletons/p-contact';
 import { pFaq } from '@/sanity/schemaTypes/singletons/p-faq';
 import { pHome } from '@/sanity/schemaTypes/singletons/p-home';
@@ -111,6 +112,7 @@ const singletonDocuments = [
 	settingsGeneral.name,
 	settingsCart.name,
 	p404.name,
+	pAccount.name,
 	pContact.name,
 	pFaq.name,
 	pSizeGuide.name,

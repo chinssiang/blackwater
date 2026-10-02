@@ -1,4 +1,6 @@
 import type { Metadata } from 'next';
+import { sanityFetch } from '@/sanity/lib/live';
+import { pageAccountQuery } from '@/sanity/lib/queries';
 import { getDictionary } from '@/lib/dictionary.server';
 import { DEFAULT_LOCALE, type Locale, isLocale } from '@/lib/i18n';
 import { type CurrentMember, getCurrentMember } from '@/lib/member/session';
@@ -47,9 +49,14 @@ export async function AccountPage({
 		member: CurrentMember
 	) => React.ReactNode | Promise<React.ReactNode>;
 }) {
-	const [member, { account: t }] = await Promise.all([
+	const [member, { account: t }, { data: page }] = await Promise.all([
 		getCurrentMember(),
 		getDictionary(locale),
+		sanityFetch({
+			query: pageAccountQuery,
+			params: { locale },
+			tags: ['pAccount'],
+		}),
 	]);
 
 	if (member === 'unavailable' || !member) {
@@ -67,7 +74,10 @@ export async function AccountPage({
 						<>
 							{/* After signing in, the refresh re-renders THIS page, so a
 							    visitor sent to /account/orders ends up there. */}
-							<SignInForm />
+							<SignInForm
+								intro={page?.signInIntro}
+								privacy={page?.signInPrivacy}
+							/>
 							<SessionRefresh key="visitor" />
 						</>
 					)}

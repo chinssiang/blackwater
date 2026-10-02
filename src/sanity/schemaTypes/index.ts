@@ -42,6 +42,7 @@ import { gMobileMenu } from './singletons/g-mobile-menu';
 import { gNewsletter } from './singletons/g-newsletter';
 import { gToolbar } from './singletons/g-toolbar';
 import { p404 } from './singletons/p-404';
+import { pAccount } from './singletons/p-account';
 import { pContact } from './singletons/p-contact';
 import { pFaq } from './singletons/p-faq';
 import { pHome } from './singletons/p-home';
@@ -74,6 +75,7 @@ export const schemaTypes: SchemaTypeDefinition[] = [
 	gToolbar,
 	pGeneral,
 	p404,
+	pAccount,
 	pHome,
 	pBlogIndex,
 	pBlog,

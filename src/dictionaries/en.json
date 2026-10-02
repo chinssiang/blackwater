@@ -364,7 +364,6 @@
 		"metaTitle": "Your account",
 		"signIn": {
 			"heading": "Sign in",
-			"intro": "Members see their own club history here: the runs you've made it to, and your orders. We'll email you a code, so there's no password to remember.",
 			"emailLabel": "Email address",
 			"emailPlaceholder": "Your email",
 			"sendCode": "Email me a code",
@@ -384,8 +383,7 @@
 			"rateLimitedHeading": "Too many attempts",
 			"rateLimitedBody": "Please wait a minute and try again.",
 			"errorHeading": "Something went wrong",
-			"errorBody": "Please try again.",
-			"privacy": "We use your email address to sign you in and to show you your own club history. Anything you add to your profile — your name, phone, country, birthday or an emergency contact — is optional, used only to address you and to help the crew look after you at club events, and never shown to other members. We also record the device and network of each sign-in to keep your account secure. Membership is free, and you can delete your account at any time from its settings."
+			"errorBody": "Please try again."
 		},
 		"nav": {
 			"label": "Account",

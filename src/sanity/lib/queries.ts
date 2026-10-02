@@ -1033,6 +1033,13 @@ export const page404Query = defineQuery(`
 	}
 `);
 
+export const pageAccountQuery = defineQuery(`
+	${byLocale('pAccount')}[0]{
+		signInIntro,
+		signInPrivacy
+	}
+`);
+
 export const pageGeneralQuery = defineQuery(`
 	*[_type == "pGeneral" && slug.current == $slug && (language == $locale || language == "en" || !defined(language))] | order(select(language == $locale => 0, language == "en" => 1, 2) asc)[0]{
 		${baseFields},
