@@ -4,24 +4,17 @@
  * mechanism that gets admin edits (price, stock, variants) onto product pages
  * without a redeploy.
  *
- * Set up in Shopify admin → Settings → Notifications → Webhooks:
- * 1. Create webhooks (format JSON, latest API version), all pointing at
- *    https://YOUR_SITE_URL/api/shopify/revalidate — one per event:
- *    - "Product update"          → refreshes that product's tag
- *    - "Product deletion"        → broad refresh (payload carries no handle)
- *    - "Inventory level update"  → broad refresh (ditto; drop this webhook if
- *      sales volume makes it too chatty — product updates still cover most
+ * The subscriptions are declared in shopify/shopify.app.toml and deployed with
+ * `shopify app deploy --path shopify` (setup: docs/SHOPIFY-SETUP.md §2):
+ *    - products/update          → refreshes that product's tag
+ *    - products/delete          → broad refresh (payload carries no handle)
+ *    - inventory_levels/update  → broad refresh (ditto; drop it if sales
+ *      volume makes it too chatty — product updates still cover most
  *      availability flips)
- * 2. Copy the webhook signing secret shown at the bottom of that settings
- *    page into the SHOPIFY_WEBHOOK_SECRET env var (all admin-created webhooks
- *    on a shop share one signing secret).
- * 3. Add it to Vercel (`npx vercel env add SHOPIFY_WEBHOOK_SECRET`) and
- *    redeploy.
  *
- * Caveat: webhooks registered through an *app* instead (Dev Dashboard, or the
- * webhookSubscriptionCreate mutation) are signed with that app's client secret,
- * not the shop's shared webhook secret — SHOPIFY_WEBHOOK_SECRET would then have
- * to hold the client secret. Getting this wrong 401s every delivery silently.
+ * App webhooks are signed with the app's client secret, so that is what
+ * SHOPIFY_WEBHOOK_SECRET holds — not the shop's shared secret from
+ * Settings → Notifications. Getting this wrong 401s every delivery silently.
  *
  * "Product creation" isn't worth registering on its own — a new Shopify product
  * changes nothing here until an editor links it in Sanity — but it is handled
