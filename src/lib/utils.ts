@@ -241,7 +241,10 @@ export function slugify(str: string | null | undefined): string | undefined {
 export function isValidUrl(urlString: string): boolean {
 	const urlPattern = new RegExp(
 		'^(https?:\\/\\/)?' + // validate protocol
-			'((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // validate domain name
+			// One optional tail per label. The old `([a-z\\d-]*[a-z\\d])*` let a
+			// dot-less run split across iterations in exponentially many ways, so
+			// a ~30-char string with no dot froze the tab for seconds.
+			'(([a-z\\d](?:[a-z\\d-]*[a-z\\d])?\\.)+[a-z]{2,}|' + // validate domain name
 			'((\\d{1,3}\\.){3}\\d{1,3}))' + // validate OR ip (v4) address
 			'(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // validate port and path
 			'(\\?[;&a-z\\d%_.~+=-]*)?', // validate query string

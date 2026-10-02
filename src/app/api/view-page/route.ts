@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import type { NextRequest } from 'next/server';
 import { client } from '@/sanity/lib/client';
 import * as queries from '@/sanity/lib/queries';
-import { type Locale } from '@/lib/i18n';
+import { isLocale } from '@/lib/i18n';
 import { resolveHref } from '@/lib/routes';
 
 export async function GET(request: NextRequest) {
@@ -24,7 +24,11 @@ export async function GET(request: NextRequest) {
 	const url = resolveHref({
 		documentType: documentType,
 		slug,
-		locale: lang as Locale | null,
+		locale: lang && isLocale(lang) ? lang : null,
 	});
-	redirect(url || '/');
+	// Same-origin paths only. `slug` is an unauthenticated query param joined
+	// onto a route path, so `slug=/evil.com` would otherwise build the
+	// protocol-relative `//evil.com` (and a browser reads `/\evil.com` the same
+	// way) — an open redirect off the site's own domain.
+	redirect(url && /^\/(?![/\\])/.test(url) ? url : '/');
 }

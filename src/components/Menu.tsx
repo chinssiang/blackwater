@@ -20,6 +20,9 @@ export default function Menu({ data, className }: MenuProps) {
 	return (
 		<ul className={cn(className)}>
 			{items.map((item: any, index: number) => {
+				// `link` is null for a navDropdown -- and one published before any
+				// items were added has null `dropdownItems` too, so it falls through
+				// to the plain-link branch below -- hence the optional reads.
 				const { link, dropdownItems } = item || {};
 				const isDropdown = !!dropdownItems;
 
@@ -29,7 +32,7 @@ export default function Menu({ data, className }: MenuProps) {
 							const { link } = item || {};
 							return checkIfLinkIsActive({
 								pathName: pathName,
-								url: link.href,
+								url: link?.href,
 							});
 						}).length > 0;
 
@@ -42,7 +45,7 @@ export default function Menu({ data, className }: MenuProps) {
 
 				const isActive = checkIfLinkIsActive({
 					pathName: pathName,
-					url: link.href,
+					url: link?.href,
 				});
 
 				return (

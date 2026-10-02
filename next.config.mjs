@@ -23,7 +23,12 @@ const csp = [
 	// dialog: a Vimeo embed, or a file uploaded to Sanity. Without media-src the
 	// <video> falls back to default-src and cannot load from the CDN.
 	"media-src 'self' https://cdn.sanity.io",
-	"frame-src 'self' https://*.sanity.io https://player.vimeo.com",
+	// Any https origin, matching src/lib/sanitize-embed.ts: the portable-text
+	// `iframe` block exists to embed whatever an editor pastes (YouTube, a map
+	// provider, …), and listing only Vimeo + Sanity blocked every other embed on
+	// the live site while the CSP-exempt Studio preview showed it working. This
+	// governs what the page may frame, not who may frame it (X-Frame-Options).
+	"frame-src 'self' https:",
 	"object-src 'none'",
 	"base-uri 'self'",
 	"form-action 'self'",

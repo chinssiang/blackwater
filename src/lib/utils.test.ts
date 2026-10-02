@@ -102,6 +102,18 @@ describe('validators', () => {
 	it('isValidUrl rejects plain text', () => {
 		expect(isValidUrl('just text')).toBe(false);
 	});
+
+	it('isValidUrl rejects a long dot-less string without backtracking', () => {
+		const start = performance.now();
+		expect(isValidUrl('a'.repeat(60))).toBe(false);
+		expect(performance.now() - start).toBeLessThan(50);
+	});
+
+	it('isValidUrl still accepts hyphenated and multi-level domains', () => {
+		expect(isValidUrl('https://my-shop.example.co.uk/p?x=1')).toBe(true);
+		expect(isValidUrl('a.io')).toBe(true);
+		expect(isValidUrl('-bad.com')).toBe(false);
+	});
 });
 
 describe('hasArrayValue', () => {

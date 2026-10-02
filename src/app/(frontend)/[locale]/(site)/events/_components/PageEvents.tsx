@@ -76,9 +76,11 @@ type EventListItem = EventsData['eventList'][number];
 
 interface PageEventsProps {
 	data: WithoutPageMetadata<EventsData>;
+	/** Epoch ms of the server render that produced this page's HTML. */
+	renderedAt: number;
 }
 
-export function PageEvents({ data }: PageEventsProps) {
+export function PageEvents({ data, renderedAt }: PageEventsProps) {
 	// LOAD-BEARING, not redundant. This function reads `hasPainted.current` during
 	// render (see `rowDuration` below). Compiled, that read would be memoized on
 	// reactive inputs — and a ref mutation is not one, so the flag would freeze at
@@ -100,7 +102,14 @@ export function PageEvents({ data }: PageEventsProps) {
 	const dateFnsLocale = DATE_FNS_LOCALES[locale];
 	const prefersReducedMotion = useReducedMotion();
 
-	const [currentDate, setCurrentDate] = useState(() => new Date());
+	// Starts at the SERVER's render instant, not `new Date()`: the HTML is
+	// hourly ISR, so the visitor's clock can sit past an event's end or a Taipei
+	// midnight the prerender did not, and the ended pills, "in N days" text and
+	// landing month then differed between the HTML and the hydration render. The
+	// clock effect below catches up straight after mount: the next transition
+	// after a stale `currentDate` is already due, so it fires at once, and if none
+	// is due the stale instant renders exactly what "now" would.
+	const [currentDate, setCurrentDate] = useState(() => new Date(renderedAt));
 	const [view, setView] = useState<EventsView>('list');
 	const hasPainted = useRef(false);
 	useEffect(() => {

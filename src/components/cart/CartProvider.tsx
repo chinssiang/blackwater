@@ -260,6 +260,10 @@ export function CartProvider({ children }: { children: ReactNode }) {
 					}
 					const data = (await res.json()) as CartResponse;
 					applyCart(data.cart);
+					// A full snapshot just landed, so a failed first read no longer
+					// describes the cart: without this the drawer opened on the
+					// load-error panel right after a successful add.
+					if (mounted.current) setStatus('ready');
 					return true;
 				} catch {
 					toast.error(t.errorHeading, { description: t.errorBody });

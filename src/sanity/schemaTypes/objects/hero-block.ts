@@ -22,6 +22,14 @@ import { defineField, defineType } from 'sanity';
 // would ask an editor to fill a language array inside a document that is already
 // one language.
 
+type CtaLink = { href?: string; internalLink?: { _ref?: string } };
+
+// Whether the CTA link actually points somewhere. Presence of the object is not
+// enough: nested initialValues create `{ linkType: 'internal', isNewTab: false }`
+// the moment a hero is inserted, before an editor touches it (same check as
+// editorial-block.ts).
+const hasLink = (link?: CtaLink) => !!(link?.href || link?.internalLink?._ref);
+
 export const heroBlock = defineType({
 	name: 'heroBlock',
 	title: 'Hero',
@@ -96,9 +104,11 @@ export const heroBlock = defineType({
 					validation: (Rule) =>
 						Rule.custom(
 							moduleRule((value, context) => {
-								const link = (context.parent as { link?: unknown } | undefined)
+								const link = (context.parent as { link?: CtaLink } | undefined)
 									?.link;
-								return !link || !!value || 'Add a label, or clear the link.';
+								return (
+									!hasLink(link) || !!value || 'Add a label, or clear the link.'
+								);
 							})
 						),
 				}),
@@ -114,7 +124,11 @@ export const heroBlock = defineType({
 							moduleRule((value, context) => {
 								const label = (context.parent as { label?: string } | undefined)
 									?.label;
-								return !label || !!value || 'Add a link, or clear the label.';
+								return (
+									!label ||
+									hasLink(value as CtaLink | undefined) ||
+									'Add a link, or clear the label.'
+								);
 							})
 						),
 				}),

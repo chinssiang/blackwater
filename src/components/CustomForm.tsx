@@ -116,8 +116,6 @@ interface CustomFormData {
 	}> | null;
 	successMessage: string | null;
 	errorMessage: string | null;
-	sendToEmail: string | null;
-	emailSubject: string | null;
 }
 
 interface CustomFormProps {
