@@ -243,22 +243,27 @@ export type ClipTiming = {
 	offset: number;
 	/** Stance windows in MASTER phase (left footfall at 0). */
 	stances: Stances;
-	/** Metres the stance foot travels backwards, and the stance's share of a cycle. */
-	travel: number;
-	stanceShare: number;
+	/** Metres the ground moves in one stride, for the planted foot not to skate. */
+	stride: number;
 };
 
 const SAMPLES = 120;
+// The ball of the foot is the part planted longest, from a midfoot landing to
+// toe-off, so it marks the stance: within 5% of its swing height of the
+// ground. The ankle would not do: it lifts with the heel well before toe-off.
+const STANCE_THRESHOLD = 0.05;
 
 /**
- * Sample each clip once at load: foot heights give the stance windows (and so
- * footfalls), foot depth over the stance gives how far the ground must move
- * per step for the foot not to skate. Nothing about the gait is hand-entered,
- * so a different model with different clips still lines up.
+ * Sample each clip once at load: the height of the ball of each foot gives
+ * the stance windows (and so footfalls), and how fast the planted ball rolls
+ * back through midstance gives the ground's speed, so the foot does not
+ * skate. Nothing about the gait is hand-entered, so a different model with
+ * different clips still lines up.
  */
 export function measureClips(rig: Rig): Partial<Record<ClipName, ClipTiming>> {
 	const out: Partial<Record<ClipName, ClipTiming>> = {};
-	const { leftFoot, rightFoot } = rig.bones;
+	const leftFoot = rig.bones.leftToeBase ?? rig.bones.leftFoot;
+	const rightFoot = rig.bones.rightToeBase ?? rig.bones.rightFoot;
 	if (!leftFoot || !rightFoot) return out;
 	const world = new Vector3();
 
@@ -283,21 +288,25 @@ export function measureClips(rig: Rig): Partial<Record<ClipName, ClipTiming>> {
 			right[i] = world.y;
 		}
 
-		const leftStance = detectStance(left);
-		const rightStance = detectStance(right);
+		const leftStance = detectStance(left, STANCE_THRESHOLD);
+		const rightStance = detectStance(right, STANCE_THRESHOLD);
 		// Where the clip's playhead must start so master phase 0 is the left
 		// footfall: aligning every clip this way keeps one rhythm across
 		// jog/run/sprint crossfades.
 		const offset = mod(leftStance[0]);
 		const toMaster = ([s, e]: readonly [number, number]) =>
 			[mod(s - offset), mod(e - offset)] as const;
-		const at = (p: number) => leftZ[Math.round(p * SAMPLES) % SAMPLES];
+		// The middle of the stance only: its ends can catch the foot landing
+		// or lifting, but between them the ball is on the ground.
+		const length = intervalLength(leftStance);
+		const from = Math.round((leftStance[0] + 0.3 * length) * SAMPLES);
+		const to = Math.round((leftStance[0] + 0.7 * length) * SAMPLES);
+		const rolled = leftZ[from % SAMPLES] - leftZ[to % SAMPLES];
 
 		out[name] = {
 			offset,
 			stances: { left: toMaster(leftStance), right: toMaster(rightStance) },
-			travel: Math.max(0, at(leftStance[0]) - at(leftStance[1])),
-			stanceShare: intervalLength(leftStance),
+			stride: to > from ? Math.max(0, (rolled * SAMPLES) / (to - from)) : 0,
 		};
 	}
 	for (const action of Object.values(rig.actions))

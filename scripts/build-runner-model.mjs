@@ -1,7 +1,7 @@
 /**
- * Builds `public/models/runner-v1.glb`, Run Lab's runner: a faceless low-poly
- * mannequin on a Mixamo-named skeleton, wearing the club's kit, with three
- * procedurally authored run cycles (`jog`, `run`, `sprint`). Everything here is
+ * Builds `public/models/runner-v1.glb`, Run Lab's runner: a clay figure with a
+ * sculpted face and short hair on a Mixamo-named skeleton, wearing the club's
+ * kit, with three procedurally built run cycles (`jog`, `run`, `sprint`). Everything here is
  * original geometry, so the asset is ours to ship; `docs/RUN-LAB-MODEL.md`
  * explains how to replace it with a Quaternius export instead.
  *
@@ -13,7 +13,7 @@
  *   (spine: positive tips forward; limbs pointing down: positive swings back),
  *   local Y a twist and local Z a roll.
  * - Every clip is one full stride, left foot striking at t = 0, and runs in
- *   place: the hips move only vertically.
+ *   place: the hips bob and sway, but never travel forward.
  * - The body is split into regions (`Body_*`) so the runtime can hide what a
  *   garment covers. That is what keeps skin from poking through fabric: the
  *   covered body is not drawn, rather than drawn and hoped to stay inside.
@@ -32,6 +32,10 @@ const OUT = new URL('../public/models/runner-v1.glb', import.meta.url);
 const DEG = Math.PI / 180;
 const PREFIX = 'mixamorig:';
 const clamp01 = (v) => Math.min(1, Math.max(0, v));
+const smoothstep = (a, b, v) => {
+	const t = clamp01((v - a) / (b - a));
+	return t * t * (3 - 2 * t);
+};
 
 // ---------------------------------------------------------------- skeleton --
 
@@ -72,6 +76,7 @@ const boneNodeName = (name) => (name === 'ClothHem' ? name : PREFIX + name);
 // linear factors by THREE.Color.
 const MATERIALS = {
 	Clubmate: { color: '#a3a3a1', roughness: 0.62 },
+	Hair: { color: '#2b2a28', roughness: 0.95 },
 	Fabric_component: { color: '#1d1d1d', roughness: 0.9 },
 	Fabric_coda: { color: '#1b1b1b', roughness: 0.85 },
 	Fabric_hoole: { color: '#403f3d', roughness: 1 },
@@ -416,23 +421,11 @@ const ARM = [
 ];
 const ARM_TOP_END = 4; // y 1.345: a cap sleeve's reach
 const ARM_MID_END = 6; // y 1.25: a short sleeve's reach
-const HEAD_RINGS = [
-	[1.568, 0.03, 0.034, 0.036],
-	[1.582, 0.049, 0.058, 0.03],
-	[1.607, 0.063, 0.075, 0.02],
-	[1.637, 0.071, 0.088, 0.012],
-	[1.672, 0.077, 0.096, 0.005],
-	[1.707, 0.078, 0.098, -0.002],
-	[1.738, 0.073, 0.093, -0.006],
-	[1.763, 0.061, 0.08, -0.008],
-	[1.781, 0.04, 0.056, -0.008],
-	[1.79, 0.018, 0.026, -0.008],
-];
 const NECK = [
-	[1.44, 0.062, 0.058, 0.0],
-	[1.485, 0.054, 0.053, 0.006],
-	[1.53, 0.049, 0.05, 0.012],
-	[1.58, 0.046, 0.048, 0.018],
+	[1.44, 0.066, 0.06, 0.0],
+	[1.485, 0.059, 0.056, 0.006],
+	[1.53, 0.055, 0.054, 0.011],
+	[1.6, 0.05, 0.05, 0.012],
 ];
 
 const torsoRing = ([y, a, b, dz], ease = 0, grow = 1) => ({
@@ -473,16 +466,195 @@ add(
 	torsoWeights
 );
 
-// Head and neck: a sculpted, faceless head with a jaw and ears.
-add(
-	'Body_head',
-	'Clubmate',
-	loft(
-		HEAD_RINGS.map(([y, a, b, dz]) => ({ p: [0, y, dz], a, b })),
-		{ radial: 22, capStart: true, capEnd: true }
-	),
-	rigid('Head')
-);
+/**
+ * The head: a skull of stacked rings, each a superellipse that narrows toward
+ * the front (the jaw closes to a U at the chin), with the face pressed into
+ * it: brow, eye sockets and lids, nose, cheekbones, lips and chin. Clay, like
+ * the rest of the body, so the face is read from light and shadow alone; the
+ * forms are sized to carry at the camera's distance rather than up close.
+ */
+function headGeometry() {
+	// [y, centre z, front depth, back depth, half-width, front taper]
+	const RINGS = [
+		[1.566, 0.05, 0.016, 0.03, 0.02, 0.4],
+		[1.575, 0.04, 0.042, 0.045, 0.034, 0.55],
+		[1.588, 0.025, 0.066, 0.06, 0.048, 0.6],
+		[1.602, 0.012, 0.07, 0.062, 0.056, 0.5],
+		[1.618, 0.004, 0.083, 0.074, 0.061, 0.38],
+		[1.64, 0.0, 0.088, 0.088, 0.065, 0.28],
+		[1.665, -0.002, 0.088, 0.098, 0.069, 0.2],
+		[1.69, -0.004, 0.094, 0.104, 0.072, 0.16],
+		[1.712, -0.006, 0.098, 0.105, 0.074, 0.14],
+		[1.735, -0.008, 0.094, 0.1, 0.072, 0.12],
+		[1.758, -0.009, 0.082, 0.088, 0.066, 0.1],
+		[1.776, -0.009, 0.066, 0.07, 0.056, 0.08],
+		[1.788, -0.009, 0.046, 0.048, 0.04, 0.05],
+		[1.796, -0.009, 0.022, 0.022, 0.018, 0.02],
+		[1.799, -0.009, 0.006, 0.006, 0.005, 0],
+	];
+	const profile = RINGS.map((_, k) =>
+		spline(
+			RINGS.map((r) => [r[0], r[k]]),
+			(RINGS[1][k] - RINGS[0][k]) / (RINGS[1][0] - RINGS[0][0]),
+			0
+		)
+	);
+	const gauss = (dx, dy, sx, sy) =>
+		Math.exp(-((dx / sx) ** 2) - (dy / sy) ** 2);
+	const nose = spline(
+		[
+			[1.632, 0],
+			[1.6365, 0.006],
+			[1.641, 0.017],
+			[1.646, 0.0215],
+			[1.652, 0.02],
+			[1.662, 0.0145],
+			[1.674, 0.0085],
+			[1.686, 0.003],
+			[1.694, 0],
+		],
+		0,
+		0
+	);
+	const noseWidth = spline(
+		[
+			[1.632, 0.012],
+			[1.642, 0.012],
+			[1.652, 0.0095],
+			[1.67, 0.0075],
+			[1.694, 0.007],
+		],
+		0,
+		0
+	);
+	/** How far the face stands proud of the skull at (x, y), metres. */
+	const relief = (x, y) => {
+		const ax = Math.abs(x);
+		const inNose = y > 1.632 && y < 1.694;
+		return (
+			(inNose ? nose(y) * Math.exp(-((x / noseWidth(y)) ** 2)) : 0) +
+			0.0065 * gauss(ax - 0.0135, y - 1.6405, 0.0055, 0.0045) - // nostril wings
+			0.0095 * gauss(ax - 0.032, y - 1.6835, 0.016, 0.0105) + // eye sockets
+			0.0058 * gauss(ax - 0.031, y - 1.6825, 0.0095, 0.006) + // eyes and lids
+			0.0045 * gauss(ax - 0.028, y - 1.6985, 0.022, 0.0055) + // brow
+			0.002 * gauss(x, y - 1.696, 0.01, 0.006) +
+			0.0045 * gauss(ax - 0.047, y - 1.667, 0.013, 0.0095) - // cheekbones
+			0.003 * gauss(ax - 0.047, y - 1.638, 0.013, 0.012) + // under them
+			0.003 * gauss(x, y - 1.618, 0.028, 0.016) + // the mouth's mound
+			0.0022 * gauss(x, y - 1.6195, 0.016, 0.0035) + // upper lip
+			0.0022 * gauss(x, y - 1.6085, 0.014, 0.0035) - // lower lip
+			0.001 * gauss(x, y - 1.614, 0.019, 0.002) - // between them
+			0.0022 * gauss(x, y - 1.599, 0.017, 0.0035) + // above the chin
+			0.007 * gauss(x, y - 1.587, 0.016, 0.008) // chin
+		);
+	};
+
+	/** The skin at `theta` around the head (0: straight ahead) and height `y`. */
+	const surface = (theta, y) => {
+		const [, zc, front, back, a, taper] = profile.map((f) => f(y));
+		const [s, c] = superCS(theta, Math.cos(theta) > 0 ? 2.4 : 2.1);
+		const x = a * s * (1 - taper * Math.max(0, c) ** 2);
+		let z = zc + (c > 0 ? front : back) * c;
+		if (c > 0) z += relief(x, y) * smoothstep(0, 0.35, c);
+		return [x, y, z];
+	};
+	// Around a ring, samples crowd to the front, where the face is.
+	const around = (j, n) => {
+		const t = (j / n) * Math.PI * 2;
+		return t - 0.5 * Math.sin(t);
+	};
+	/** Rings of `radial` points, joined; capped at the top, and the bottom if asked. */
+	const sheet = (rows, radial, point, capBottom) => {
+		const pos = [];
+		for (const row of rows)
+			for (let j = 0; j < radial; j++) pos.push(...point(row, j));
+		const idx = [];
+		for (let i = 0; i < rows.length - 1; i++) {
+			for (let j = 0; j < radial; j++) {
+				const a = i * radial + j;
+				const b = i * radial + ((j + 1) % radial);
+				idx.push(a, b, a + radial, b, b + radial, a + radial);
+			}
+		}
+		const caps = [[rows.length - 1, false]];
+		if (capBottom) caps.push([0, true]);
+		for (const [ring, bottom] of caps) {
+			const k = pos.length / 3;
+			const y = pos[ring * radial * 3 + 1];
+			pos.push(0, y, profile[1](y));
+			for (let j = 0; j < radial; j++) {
+				const a = ring * radial + j;
+				const b = ring * radial + ((j + 1) % radial);
+				idx.push(...(bottom ? [k, b, a] : [k, a, b]));
+			}
+		}
+		const g = new THREE.BufferGeometry();
+		g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+		g.setIndex(idx);
+		g.computeVertexNormals();
+		return g;
+	};
+
+	// Rings close together over the face, sparse over the crown.
+	const ys = [];
+	for (let y = RINGS[0][0]; y < RINGS.at(-1)[0];) {
+		ys.push(y);
+		y += y > 1.592 && y < 1.71 ? 0.0028 : 0.005;
+	}
+	ys.push(RINGS.at(-1)[0]);
+	const head = sheet(ys, 48, (y, j) => surface(around(j, 48), y), true);
+
+	// Short hair: the skull from a hairline up, lifted off it along its
+	// normals by the hair's thickness, thin at the hairline and fuller on top.
+	// The hairline rises a little at the temples, drops to sideburns in front
+	// of the ears, arcs over them and runs down to the nape.
+	const hairline = spline(
+		[
+			[0, 1.737],
+			[0.35, 1.734],
+			[0.62, 1.724],
+			[0.95, 1.716],
+			[1.16, 1.69],
+			[1.27, 1.664],
+			[1.36, 1.666],
+			[1.46, 1.703],
+			[1.75, 1.712],
+			[2.05, 1.69],
+			[2.45, 1.635],
+			[Math.PI, 1.622],
+		],
+		0,
+		0
+	);
+	const crown = RINGS.at(-1)[0];
+	const HAIR_RADIAL = 96;
+	const rows = Array.from({ length: 21 }, (_, k) => (k / 20) ** 1.4);
+	const hairPoint = (v, j) => {
+		const theta = around(j, HAIR_RADIAL);
+		const line = hairline(theta > Math.PI ? 2 * Math.PI - theta : theta);
+		return surface(theta, line + (crown - line) * v);
+	};
+	const hair = sheet(rows, HAIR_RADIAL, hairPoint, false);
+	const p = hair.attributes.position;
+	const n = hair.attributes.normal;
+	for (let i = 0; i < p.count; i++) {
+		const v = rows[Math.min(rows.length - 1, Math.floor(i / HAIR_RADIAL))];
+		const lift = 0.0035 + 0.0055 * smoothstep(0, 0.35, v);
+		p.setXYZ(
+			i,
+			p.getX(i) + n.getX(i) * lift,
+			p.getY(i) + n.getY(i) * lift,
+			p.getZ(i) + n.getZ(i) * lift
+		);
+	}
+	hair.computeVertexNormals();
+	return { head, hair };
+}
+
+// Head and neck.
+const { head, hair } = headGeometry();
+add('Body_head', 'Clubmate', head, rigid('Head'));
+add('Hair', 'Hair', hair, rigid('Head'));
 add(
 	'Body_head',
 	'Clubmate',
@@ -495,9 +667,12 @@ add(
 
 for (const sx of [1, -1]) {
 	const s = side(sx);
-	const ear = new THREE.SphereGeometry(1, 10, 8);
-	ear.scale(0.011, 0.027, 0.017);
-	ear.translate(sx * 0.077, 1.65, -0.01);
+	// The ear tips back at the top and stands off the head at its back edge.
+	const ear = new THREE.SphereGeometry(1, 12, 10);
+	ear.scale(0.008, 0.029, 0.018);
+	ear.rotateX(-0.2);
+	ear.rotateY(-sx * 0.3);
+	ear.translate(sx * 0.071, 1.668, -0.012);
 	add('Body_head', 'Clubmate', ear, rigid('Head'));
 
 	// Arm, cut into bands so each sleeve length hides exactly what it covers.
@@ -907,94 +1082,487 @@ for (const sx of [1, -1]) {
 }
 
 // -------------------------------------------------------------- animation --
+//
+// The cycles are built from how a runner moves rather than keyed by eye:
+// - The hips ride the vertical path a half-sine ground force gives, the
+//   standard model of a running stride: lowest at midstance, a ballistic arc
+//   through flight, and no kink at footfall or toe-off, because the force
+//   (and so the acceleration) is continuous there.
+// - A stance foot is PLANTED. Its ball rolls back at one constant speed (the
+//   ground's), the heel settles after a midfoot landing and peels off the
+//   ball before toe-off, and two-bone IK finds the hip and knee that put the
+//   foot there. The runtime's ground speed matches it, so nothing skates.
+// - A swing foot follows one smooth path from toe-off through heel recovery
+//   and knee drive back to the next footfall, matching the planted foot's
+//   position AND velocity at both ends, and the same IK bends the leg to it.
+// - Everything else is a sinusoid or a C1 spline: no joint stops dead at a
+//   key (cosine easing between keys did, several times a stride).
+// - The pelvis turns, drops and sways over the stance leg; the chest turns
+//   against it with the arms; the head stays level and looks ahead.
 
-/** Periodic cosine-eased interpolation through [phase, value] keys. */
-function curve(keys) {
-	const k = [...keys].sort((a, b) => a[0] - b[0]);
-	return (p) => {
-		p = ((p % 1) + 1) % 1;
-		let i = k.length - 1;
-		while (i > 0 && k[i][0] > p) i--;
-		const [p0, v0] = k[i];
-		const [p1, v1] = i + 1 < k.length ? k[i + 1] : [k[0][0] + 1, k[0][1]];
-		const t = (p - p0) / (p1 - p0 || 1);
-		return v0 + (v1 - v0) * (0.5 - 0.5 * Math.cos(Math.PI * t));
+const G = 9.81;
+// Samples per stride. Clips play at 0.6-0.75 s a stride, so 60 is about one
+// key per rendered frame; LINEAR interpolation between them is then smooth.
+const SAMPLES = 60;
+const X_AXIS = new THREE.Vector3(1, 0, 0);
+const Y_AXIS = new THREE.Vector3(0, 1, 0);
+const mod1 = (v) => ((v % 1) + 1) % 1;
+const qAxis = (axis, angle) =>
+	new THREE.Quaternion().setFromAxisAngle(axis, angle);
+const qEuler = (x, y, z, order = 'XYZ') =>
+	new THREE.Quaternion().setFromEuler(new THREE.Euler(x, y, z, order));
+
+/**
+ * A C1 cubic through `points` ([t, value] with value a number or an array):
+ * the given end slopes, Catmull-Rom slopes between.
+ */
+function spline(points, startSlope, endSlope) {
+	const vec = (v) => (Array.isArray(v) ? v : [v]);
+	const ts = points.map(([t]) => t);
+	const vs = points.map(([, v]) => vec(v));
+	const n = points.length;
+	const slopes = vs.map((v, i) => {
+		if (i === 0) return vec(startSlope);
+		if (i === n - 1) return vec(endSlope);
+		return v.map(
+			(_, k) => (vs[i + 1][k] - vs[i - 1][k]) / (ts[i + 1] - ts[i - 1])
+		);
+	});
+	const scalar = !Array.isArray(points[0][1]);
+	return (t) => {
+		let i = 0;
+		while (i < n - 2 && t > ts[i + 1]) i++;
+		const h = ts[i + 1] - ts[i];
+		const u = (t - ts[i]) / h;
+		const u2 = u * u;
+		const u3 = u2 * u;
+		const out = vs[i].map(
+			(v0, k) =>
+				(2 * u3 - 3 * u2 + 1) * v0 +
+				(u3 - 2 * u2 + u) * h * slopes[i][k] +
+				(-2 * u3 + 3 * u2) * vs[i + 1][k] +
+				(u3 - u2) * h * slopes[i + 1][k]
+		);
+		return scalar ? out[0] : out;
 	};
 }
 
+/**
+ * The three cycles. Times are seconds, lengths metres, angles degrees.
+ * `contact` is how long a foot is down: what shortens most with speed, and
+ * what makes a fast runner look light. `reach` is how far ahead of the hip
+ * the ankle lands; the knee is already bent (`kneeContact`) and the shin
+ * close to vertical. `strike` is the forefoot-first tilt of a midfoot
+ * landing; `kneeOff` and `heelRise` shape the push. `recovery` is the heel
+ * tucked under the hips (thigh, knee) and `drive` the knee coming through,
+ * each at its share of the swing. Arms swing `arm` either side of `armBack`
+ * (elbows drive back more than forward). The pelvis tips forward by `tilt`,
+ * turns by `pelvisTurn`, drops by `drop` and sways by `sway`; the spine adds
+ * `lean` and turns the chest back by `chestTurn`.
+ */
 const CLIPS = {
 	jog: {
 		cadence: 164,
-		stance: 0.4,
-		fwd: 26,
-		back: 14,
-		knee: 82,
-		kneeStance: 36,
-		arm: 24,
+		contact: 0.25,
+		reach: 0.18,
+		kneeContact: 20,
+		kneeOff: 22,
+		strike: 3,
+		heelRise: 32,
+		bob: 0.72,
+		recovery: { at: 0.38, thigh: 6, knee: 100 },
+		drive: { at: 0.76, thigh: 32, knee: 78 },
+		arm: 22,
+		armBack: 6,
 		elbow: 92,
-		lean: 4,
-		lift: 0.018,
+		elbowSwing: 8,
+		tilt: 3,
+		lean: 3,
+		pelvisTurn: 5,
+		chestTurn: 4,
+		drop: 3.5,
+		sway: 0.012,
 	},
 	run: {
 		cadence: 176,
-		stance: 0.34,
-		fwd: 40,
-		back: 20,
-		knee: 104,
-		kneeStance: 40,
-		arm: 36,
+		contact: 0.205,
+		reach: 0.19,
+		kneeContact: 20,
+		kneeOff: 20,
+		strike: 4,
+		heelRise: 38,
+		bob: 0.72,
+		recovery: { at: 0.36, thigh: 8, knee: 114 },
+		drive: { at: 0.74, thigh: 42, knee: 86 },
+		arm: 32,
+		armBack: 7,
 		elbow: 86,
-		lean: 6,
-		lift: 0.035,
+		elbowSwing: 10,
+		tilt: 3,
+		lean: 4,
+		pelvisTurn: 6,
+		chestTurn: 6,
+		drop: 3.5,
+		sway: 0.01,
 	},
 	sprint: {
 		cadence: 188,
-		stance: 0.27,
-		fwd: 62,
-		back: 24,
-		knee: 126,
-		kneeStance: 44,
-		arm: 56,
+		contact: 0.165,
+		reach: 0.21,
+		kneeContact: 20,
+		kneeOff: 17,
+		strike: 6,
+		heelRise: 45,
+		bob: 0.72,
+		recovery: { at: 0.34, thigh: 14, knee: 132 },
+		drive: { at: 0.7, thigh: 58, knee: 96 },
+		arm: 50,
+		armBack: 8,
 		elbow: 80,
-		lean: 9,
-		lift: 0.055,
+		elbowSwing: 12,
+		tilt: 4,
+		lean: 6,
+		pelvisTurn: 8,
+		chestTurn: 9,
+		drop: 3,
+		sway: 0.008,
 	},
 };
-const SAMPLES = 40;
 
-function legCurves(c) {
-	const s = c.stance;
-	const swing = 1 - s;
+// Leg geometry, straight from the skeleton.
+const vecBetween = (a, b) => v3(HEAD[b]).sub(v3(HEAD[a]));
+const THIGH = vecBetween('LeftUpLeg', 'LeftLeg');
+const SHANK = vecBetween('LeftLeg', 'LeftFoot');
+const ANKLE_FROM_BALL = vecBetween('LeftToeBase', 'LeftFoot');
+const BALL_HEIGHT = HEAD.LeftToeBase[1];
+const L1 = THIGH.length();
+const L2 = SHANK.length();
+// The shin leans back a touch at rest, so the knee angle that straightens
+// the leg is a little below zero.
+const SHANK_SKEW = Math.atan2(-SHANK.z, -SHANK.y);
+const legSpan = (knee) =>
+	Math.sqrt(L1 * L1 + L2 * L2 + 2 * L1 * L2 * Math.cos(knee + SHANK_SKEW));
+const kneeFor = (span) =>
+	Math.max(
+		0,
+		Math.acos(
+			Math.min(1, Math.max(-1, (span ** 2 - L1 ** 2 - L2 ** 2) / (2 * L1 * L2)))
+		) - SHANK_SKEW
+	);
+const LONGEST = legSpan(0);
+
+/**
+ * Two-bone IK in the hips' frame: the thigh and knee rotations that put the
+ * ankle at `ankle` (world), the knee bending toward `pole` (world).
+ */
+function solveLeg(hip, ankle, pole, hipsQ) {
+	const inv = hipsQ.clone().invert();
+	const u = ankle.clone().sub(hip).applyQuaternion(inv);
+	const P = pole.clone().applyQuaternion(inv);
+	const knee = kneeFor(u.length());
+	const v = SHANK.clone().applyAxisAngle(X_AXIS, knee).add(THIGH);
+	const f1 = u.clone().normalize();
+	const f2 = P.cross(f1).normalize();
+	const f3 = f1.clone().cross(f2);
+	const e1 = v.clone().normalize();
+	const e3 = e1.clone().cross(X_AXIS);
+	const target = new THREE.Matrix4().makeBasis(f1, f2, f3);
+	const local = new THREE.Matrix4().makeBasis(e1, X_AXIS, e3);
 	return {
-		thigh: curve([
-			[0, c.fwd * 0.55],
-			[s, -c.back],
-			[s + swing * 0.62, c.fwd],
-		]),
-		knee: curve([
-			[0, 12],
-			[s * 0.45, c.kneeStance],
-			[s, 22],
-			[s + swing * 0.35, c.knee],
-			[0.93, 26],
-		]),
-		ankle: curve([
-			[0, -8],
-			[s * 0.45, -12],
-			[s, 28],
-			[s + swing * 0.2, 12],
-			[0.85, -6],
-		]),
-		toe: curve([
-			[0, 0],
-			[s * 0.7, 0],
-			[s, -30],
-			[s + swing * 0.2, 0],
-		]),
+		thigh: new THREE.Quaternion().setFromRotationMatrix(
+			target.multiply(local.transpose())
+		),
+		knee: qAxis(X_AXIS, knee),
+		span: u.length(),
 	};
 }
 
-// A three.js skeleton, only to run forward kinematics for the feet.
+/** Split a rotation into its twist about X (an angle) and what is left. */
+function splitX(q) {
+	const angle = 2 * Math.atan2(q.x, q.w);
+	return { angle, rest: q.clone().multiply(qAxis(X_AXIS, -angle)) };
+}
+
+const LANDING_SWEEP = 0.5;
+const TOE_OUT = 4 * DEG; // feet and knees point a little out, as they do
+const FOOT_LINE = 0.078; // ball of the foot from the midline: a narrow track
+const HIP_OFFSET = vecBetween('Hips', 'LeftUpLeg');
+
+/** One clip's motion: every bone's rotation and the hips' position at `p`. */
+function gait(c) {
+	const T = 120 / c.cadence;
+	const s = c.contact / T; // a foot's stance, as a share of the stride
+	const tc = c.contact;
+	const tf = T / 2 - tc;
+
+	// Vertical: ground force F = Fmax sin(pi t/tc) during stance, nothing in
+	// flight. Its impulse carries body weight over the whole step, which
+	// fixes Fmax; integrating gives height relative to footfall.
+	const A = (Math.PI * G * (tc + tf)) / (2 * tc);
+	const v0 = (-G * tf) / 2;
+	const rise = (time) => {
+		if (time < tc)
+			return (
+				v0 * time -
+				(G * time * time) / 2 +
+				((A * tc) / Math.PI) *
+					(time - (tc / Math.PI) * Math.sin((Math.PI * time) / tc))
+			);
+		const f = time - tc;
+		return -v0 * f - (G * f * f) / 2;
+	};
+	// `bob` < 1 is the one liberty: good runners keep the hips quieter than
+	// the textbook force curve, and a full-depth sink reads as sitting.
+	const vertical = (p) => c.bob * rise(((p * 2) % 1) * (T / 2));
+
+	// The pelvis turns the swinging hip forward, drops on the swing side just
+	// after footfall, and sways a centimetre over the stance foot.
+	const pelvisYaw = (p) =>
+		-c.pelvisTurn * DEG * Math.cos(2 * Math.PI * (p + 0.02));
+	const pelvisRoll = (p) =>
+		c.drop * DEG * Math.cos(2 * Math.PI * (p - 0.4 * s));
+	const sway = (p) => c.sway * Math.cos(2 * Math.PI * (p - s / 2));
+	const hipsQ = (p) => qEuler(c.tilt * DEG, pelvisYaw(p), pelvisRoll(p), 'YXZ');
+
+	// Hip height at footfall, from the leg's length there.
+	const footQ = (sx, heel) => qEuler(heel * DEG, sx * TOE_OUT, 0, 'YXZ');
+	const ankleFromBall = (sx, heel) =>
+		ANKLE_FROM_BALL.clone().applyQuaternion(footQ(sx, heel));
+	const strikeAnkle = ankleFromBall(1, c.strike);
+	const span0 = legSpan(c.kneeContact * DEG);
+	const hipJointY =
+		BALL_HEIGHT +
+		strikeAnkle.y +
+		Math.sqrt(
+			span0 ** 2 -
+				c.reach ** 2 -
+				(HIP_OFFSET.x - FOOT_LINE - strikeAnkle.x) ** 2
+		);
+	const hipsY = hipJointY - HIP_OFFSET.y;
+	const hipsPos = (p) => new THREE.Vector3(sway(p), hipsY + vertical(p), 0);
+	const hipJoint = (sx, p) =>
+		HIP_OFFSET.clone()
+			.multiply(new THREE.Vector3(sx, 1, 1))
+			.applyQuaternion(hipsQ(p))
+			.add(hipsPos(p));
+
+	// Heel pitch through stance (t = 0..1): settle from the strike, flat
+	// through midstance, then peel up off the ball, fastest at toe-off.
+	const HEEL_FLAT = 0.16;
+	const HEEL_LIFT = 0.45;
+	const heel = (t) =>
+		t < HEEL_FLAT
+			? c.strike * (1 - smoothstep(0, HEEL_FLAT, t))
+			: t < HEEL_LIFT
+				? 0
+				: c.heelRise * ((t - HEEL_LIFT) / (1 - HEEL_LIFT)) ** 1.6;
+
+	const legs = {};
+	for (const [name, sx, shift] of [
+		['Left', 1, 0],
+		['Right', -1, 0.5],
+	]) {
+		const pole = new THREE.Vector3(0, 0, 1).applyAxisAngle(
+			Y_AXIS,
+			sx * TOE_OUT
+		);
+		const at = (q) => mod1(q + shift); // leg phase -> master phase
+
+		// Footfall and toe-off fix where the ball is planted and how far it
+		// rolls back: that distance over the contact time is the ground speed.
+		const h0 = hipJoint(sx, at(0));
+		const ballStart = new THREE.Vector3(
+			sx * FOOT_LINE,
+			BALL_HEIGHT,
+			h0.z + c.reach - ankleFromBall(sx, c.strike).z
+		);
+		const h1 = hipJoint(sx, at(s));
+		const offAnkle = ankleFromBall(sx, c.heelRise);
+		const offY = BALL_HEIGHT + offAnkle.y;
+		const offX = sx * FOOT_LINE + offAnkle.x;
+		const span1 = legSpan(c.kneeOff * DEG);
+		const offZ =
+			h1.z - Math.sqrt(span1 ** 2 - (h1.y - offY) ** 2 - (h1.x - offX) ** 2);
+		const roll = ballStart.z - (offZ - offAnkle.z);
+
+		const stance = (t) => {
+			const ball = ballStart.clone();
+			ball.z -= roll * t;
+			const pitch = heel(t);
+			return {
+				pitch,
+				ankle: ball.add(ankleFromBall(sx, pitch)),
+				foot: footQ(sx, pitch),
+			};
+		};
+
+		// The swing path, in leg phase: toe-off -> heel tucked -> knee
+		// through -> footfall, with the stance's velocities at both ends.
+		const dq = 1e-4;
+		const slopeAt = (t0, t1) =>
+			stance(t1)
+				.ankle.sub(stance(t0).ankle)
+				.divideScalar((t1 - t0) * s)
+				.toArray();
+		const fk = (q, { thigh, knee }, x) => {
+			const h = hipJoint(sx, at(q));
+			const leg = SHANK.clone()
+				.applyAxisAngle(X_AXIS, knee * DEG)
+				.add(THIGH)
+				.applyAxisAngle(X_AXIS, -thigh * DEG);
+			return [x, h.y + leg.y, h.z + leg.z];
+		};
+		const qR = s + c.recovery.at * (1 - s);
+		const qD = s + c.drive.at * (1 - s);
+		const ankleX = sx * FOOT_LINE + offAnkle.x;
+		const swingPath = spline(
+			[
+				[s, stance(1).ankle.toArray()],
+				[qR, fk(qR, c.recovery, ankleX + sx * 0.012)],
+				[qD, fk(qD, c.drive, ankleX + sx * 0.006)],
+				[1, stance(0).ankle.toArray()],
+			],
+			slopeAt(1 - dq, 1),
+			// A foot sweeps back before it lands, but not at the full speed of
+			// the ground: the landing takes up the rest. Matching it exactly
+			// would swing the foot out past a straight knee to wind up.
+			slopeAt(0, dq).map((v) => v * LANDING_SWEEP)
+		);
+
+		// Solve one stance pose, for the foot's angle at both ends of the swing.
+		const solveStance = (t) => {
+			const st = stance(t);
+			const q = t * s;
+			const ik = solveLeg(hipJoint(sx, at(q)), st.ankle, pole, hipsQ(at(q)));
+			const shank = hipsQ(at(q)).multiply(ik.thigh).multiply(ik.knee);
+			return { ...st, ...ik, footLocal: shank.invert().multiply(st.foot) };
+		};
+		const off = splitX(solveStance(1).footLocal);
+		const on = splitX(solveStance(0).footLocal);
+		const ankleSlope = (t0, t1) =>
+			(splitX(solveStance(t1).footLocal).angle -
+				splitX(solveStance(t0).footLocal).angle) /
+			((t1 - t0) * s);
+		// After toe-off the foot relaxes toward neutral and flexes up a little
+		// before it lands, so the toe clears the ground.
+		const ankleAngle = spline(
+			[
+				[s, off.angle],
+				[s + 0.3 * (1 - s), 4 * DEG],
+				[s + 0.65 * (1 - s), -4 * DEG],
+				[1, on.angle],
+			],
+			ankleSlope(1 - dq, 1),
+			ankleSlope(0, dq)
+		);
+		// Coming in to land, the foot is aimed at the ground rather than set
+		// against the shin: toes up, then level with the strike as it lands.
+		const AIM = s + 0.8 * (1 - s);
+		const landingPitch = spline(
+			[
+				[AIM, -8],
+				[1, c.strike],
+			],
+			0,
+			0
+		);
+		const toeAngle = spline(
+			[
+				[s, -c.heelRise * DEG],
+				[s + 0.3 * (1 - s), 0],
+				[1, -c.strike * DEG],
+			],
+			// The toe is fully bent at toe-off and springs back from there.
+			0,
+			0
+		);
+
+		legs[name] = (q) => {
+			const p = at(q);
+			if (q < s) {
+				const st = solveStance(q / s);
+				return {
+					thigh: st.thigh,
+					knee: st.knee,
+					foot: st.footLocal,
+					toe: qAxis(X_AXIS, -st.pitch * DEG),
+					span: st.span,
+				};
+			}
+			const ik = solveLeg(hipJoint(sx, p), v3(swingPath(q)), pole, hipsQ(p));
+			const u = (q - s) / (1 - s);
+			const rest = off.rest.clone().slerp(on.rest, smoothstep(0, 1, u));
+			const relaxed = rest.multiply(qAxis(X_AXIS, ankleAngle(q)));
+			const aimed = hipsQ(p)
+				.multiply(ik.thigh)
+				.multiply(ik.knee)
+				.invert()
+				.multiply(footQ(sx, landingPitch(Math.max(q, AIM))));
+			return {
+				...ik,
+				foot: relaxed.slerp(aimed, smoothstep(0.55, 0.85, u)),
+				toe: qAxis(X_AXIS, toeAngle(q)),
+			};
+		};
+		legs[name].roll = roll;
+		legs[name].ballZ0 = ballStart.z;
+	}
+
+	// The left arm comes forward with the right knee, a beat behind it.
+	const armPhase = mod1(s + 0.8 * (1 - s) - 0.5 + 0.02);
+	const swing = (p, lag = 0) => Math.cos(2 * Math.PI * (p - armPhase - lag));
+	// The chest turns with the arms, against the pelvis.
+	const chestYaw = (p) => -c.chestTurn * DEG * swing(p);
+	const bounce = (p) => 1.2 * DEG * Math.cos(4 * Math.PI * (p - s / 2));
+
+	const pose = (p) => {
+		const rot = {};
+		for (const [name, sx, shift] of [
+			['Left', 1, 0],
+			['Right', -1, 0.5],
+		]) {
+			const leg = legs[name](mod1(p - shift));
+			rot[`${name}UpLeg`] = leg.thigh;
+			rot[`${name}Leg`] = leg.knee;
+			rot[`${name}Foot`] = leg.foot;
+			rot[`${name}ToeBase`] = leg.toe;
+
+			const a = swing(p + shift); // +1: this arm fully forward
+			rot[`${name}Shoulder`] = qEuler(0, -sx * 3 * DEG * a, 0);
+			rot[`${name}Arm`] = qEuler(
+				(c.armBack - c.arm * a) * DEG,
+				-sx * (12 + 5 * a) * DEG,
+				sx * (10 + 2 * Math.max(0, -a)) * DEG
+			);
+			rot[`${name}ForeArm`] = qEuler(
+				-(c.elbow + c.elbowSwing * swing(p + shift, 0.03)) * DEG,
+				0,
+				0
+			);
+			// Relaxed hands trail the forearm.
+			rot[`${name}Hand`] = qEuler(-5 * DEG * swing(p + shift, 0.08), 0, 0);
+		}
+		const yaw = pelvisYaw(p);
+		const roll = pelvisRoll(p);
+		const twist = chestYaw(p) - yaw;
+		rot.Hips = hipsQ(p);
+		rot.Spine = qEuler(c.lean * 0.5 * DEG, twist * 0.25, -roll * 0.6);
+		rot.Spine1 = qEuler(
+			c.lean * 0.5 * DEG + bounce(p),
+			twist * 0.35,
+			-roll * 0.4
+		);
+		rot.Spine2 = qEuler(0, twist * 0.4, 0);
+		// The head holds steady and looks a little down the road.
+		const level = 4 * DEG - (c.tilt + c.lean) * DEG - bounce(p);
+		rot.Neck = qEuler(level * 0.55, -chestYaw(p) * 0.5, 0);
+		rot.Head = qEuler(level * 0.45, -chestYaw(p) * 0.4, 0);
+		return { rot, hips: hipsPos(p) };
+	};
+	return { T, s, tc, tf, pose, legs };
+}
+
+// A three.js skeleton, to check the result with forward kinematics.
 const bones = {};
 for (const [name, parent, head] of BONES) {
 	const b = new THREE.Bone();
@@ -1004,89 +1572,83 @@ for (const [name, parent, head] of BONES) {
 	bones[name] = b;
 	if (parent) bones[parent].add(b);
 }
+// The heel and the toe tip, where the shoe meets the ground.
 const FOOT_POINTS = [
 	[new THREE.Vector3(0, -0.09, -0.045), 'Foot'],
-	// The shoe's toe springs up past here, so the last point on the ground
-	// is short of the tip.
 	[new THREE.Vector3(0, -0.02, 0.045), 'ToeBase'],
 ];
-
-function poseAt(c, p) {
-	const L = legCurves(c);
-	const legs = { Left: p, Right: (p + 0.5) % 1 };
-	const mid = (c.fwd - c.back) / 2;
-	const half = (c.fwd + c.back) / 2;
-	const rot = {};
-	for (const [side, q] of Object.entries(legs)) {
-		rot[`${side}UpLeg`] = [-L.thigh(q) * DEG, 0, 0];
-		rot[`${side}Leg`] = [L.knee(q) * DEG, 0, 0];
-		rot[`${side}Foot`] = [L.ankle(q) * DEG, 0, 0];
-		rot[`${side}ToeBase`] = [L.toe(q) * DEG, 0, 0];
-		// The arm swings with the OPPOSITE leg.
-		const opp = side === 'Left' ? legs.Right : legs.Left;
-		const swing = (L.thigh(opp) - mid) / half; // -1..1
-		const sx = side === 'Left' ? 1 : -1;
-		rot[`${side}Arm`] = [(-c.arm * swing + 6) * DEG, 0, sx * 9 * DEG];
-		rot[`${side}ForeArm`] = [-(c.elbow + 12 * swing) * DEG, 0, 0];
-	}
-	const leftSwing = (L.thigh(legs.Left) - mid) / half;
-	const hipYaw = -7 * leftSwing * DEG;
-	rot.Hips = [0, hipYaw, 0];
-	rot.Spine = [c.lean * 0.5 * DEG, -hipYaw * 0.5, 0];
-	rot.Spine1 = [c.lean * 0.5 * DEG, -hipYaw * 0.6, 0];
-	rot.Spine2 = [0, -hipYaw * 0.7, 0];
-	rot.Neck = [-c.lean * 0.6 * DEG, 0, 0];
-	rot.Head = [-c.lean * 0.3 * DEG, 0, 0];
-	return rot;
-}
-
-function footMinY(rot) {
-	for (const [name, b] of Object.entries(bones)) {
-		const r = rot[name] ?? [0, 0, 0];
-		b.quaternion.setFromEuler(new THREE.Euler(...r, 'XYZ'));
-	}
-	bones.Hips.position.set(0, HEAD.Hips[1], 0);
+function applyPose({ rot, hips }) {
+	for (const [name, b] of Object.entries(bones))
+		b.quaternion.copy(rot[name] ?? new THREE.Quaternion());
+	bones.Hips.position.copy(hips);
 	bones.Hips.updateMatrixWorld(true);
-	let min = Infinity;
-	for (const side of ['Left', 'Right']) {
-		for (const [local, part] of FOOT_POINTS) {
-			const w = local.clone().applyMatrix4(bones[`${side}${part}`].matrixWorld);
-			min = Math.min(min, w.y);
-		}
-	}
-	return min;
 }
+const worldOf = (name, local = new THREE.Vector3()) =>
+	local.clone().applyMatrix4(bones[name].matrixWorld);
 
 function buildClip(c) {
+	const g = gait(c);
 	const times = [];
 	const poses = [];
-	const hipsY = [];
 	for (let i = 0; i <= SAMPLES; i++) {
-		const p = (i % SAMPLES) / SAMPLES;
-		times.push((i / SAMPLES) * (120 / c.cadence));
-		const rot = poseAt(c, p);
-		poses.push(rot);
-		hipsY.push(HEAD.Hips[1] - footMinY(rot));
+		times.push((i / SAMPLES) * g.T);
+		poses.push(g.pose((i % SAMPLES) / SAMPLES));
 	}
-	// A foot glued to the ground all cycle would leave no flight. Between
-	// toe-off and the other foot's strike, float the hips from one stance
-	// height to the next with a lift in the middle.
-	for (const [start, end] of [
-		[c.stance, 0.5],
-		[0.5 + c.stance, 1],
-	]) {
-		const a = Math.round(start * SAMPLES);
-		const b = Math.round(end * SAMPLES);
-		for (let i = a + 1; i < b; i++) {
-			const t = (i - a) / (b - a);
-			hipsY[i] =
-				hipsY[a] +
-				(hipsY[b % SAMPLES] - hipsY[a]) * t +
-				c.lift * Math.sin(Math.PI * t);
+	return { ...g, times, poses };
+}
+
+/** Print what a coach would check, and fail on a foot that skates or digs in. */
+function checkClip(name, clip) {
+	const { s, T, tc, tf, legs } = clip;
+	const N = 240;
+	let slip = 0;
+	let dig = 0;
+	let reach = 0;
+	let lowest = Infinity;
+	let highest = -Infinity;
+	const knee = { stanceMax: 0, swingMax: 0 };
+	const roll = legs.Left.roll;
+	for (let i = 0; i < N; i++) {
+		const p = i / N;
+		applyPose(clip.pose(p));
+		const hips = bones.Hips.position.y;
+		lowest = Math.min(lowest, hips);
+		highest = Math.max(highest, hips);
+		const leg = legs.Left(p);
+		reach = Math.max(reach, leg.span / LONGEST);
+		const k = (2 * Math.atan2(leg.knee.x, leg.knee.w)) / DEG;
+		const ball = worldOf('LeftToeBase');
+		const ground = Math.min(
+			...FOOT_POINTS.map(([l, part]) => worldOf(`Left${part}`, l).y)
+		);
+		if (p < s) {
+			knee.stanceMax = Math.max(knee.stanceMax, k);
+			// The ball should sit at its height and roll back at one speed.
+			const expected = legs.Left.ballZ0 - roll * (p / s);
+			slip = Math.max(
+				slip,
+				Math.abs(ball.y - BALL_HEIGHT),
+				Math.abs(ball.z - expected)
+			);
+		} else {
+			knee.swingMax = Math.max(knee.swingMax, k);
+			dig = Math.min(dig, ground);
 		}
 	}
-	hipsY[SAMPLES] = hipsY[0];
-	return { times, poses, hipsY };
+	const speed = roll / tc;
+	console.log(
+		`${name}: ${(speed * 3.6).toFixed(1)} km/h, stride ${(speed * T).toFixed(2)} m, ` +
+			`contact ${(tc * 1000).toFixed(0)} ms / flight ${(tf * 1000).toFixed(0)} ms, ` +
+			`bob ${((highest - lowest) * 100).toFixed(1)} cm, ` +
+			`knee max ${knee.stanceMax.toFixed(0)}° stance / ${knee.swingMax.toFixed(0)}° swing, ` +
+			`reach ${(reach * 100).toFixed(0)}%, ball drift ${(slip * 1000).toFixed(1)} mm, ` +
+			`swing toe ${(dig * 1000).toFixed(1)} mm`
+	);
+	if (reach > 0.995)
+		throw new Error(`${name}: a leg is asked to reach past straight`);
+	if (slip > 0.002) throw new Error(`${name}: the planted foot drifts`);
+	if (dig < -0.004)
+		throw new Error(`${name}: the swinging foot digs into the ground`);
 }
 
 // ---------------------------------------------------------------- write --
@@ -1130,7 +1692,11 @@ const materials = Object.fromEntries(
 	})
 );
 
-/** The four strongest influences, normalised: glTF's JOINTS_0/WEIGHTS_0 limit. */
+/**
+ * The four strongest influences (glTF's JOINTS_0/WEIGHTS_0 limit), as bytes
+ * that sum to exactly 255: normalised UNSIGNED_BYTE weights are core glTF and
+ * a quarter the size of floats, which keeps the file inside its budget.
+ */
 function influences(list) {
 	const merged = new Map();
 	for (const [bone, w] of list)
@@ -1138,9 +1704,11 @@ function influences(list) {
 	const top = [...merged].sort((a, b) => b[1] - a[1]).slice(0, 4);
 	const sum = top.reduce((s, [, w]) => s + w, 0) || 1;
 	while (top.length < 4) top.push(['Hips', 0]);
-	return top.map(([bone, w]) => {
+	const bytes = top.map(([, w]) => Math.round((w / sum) * 255));
+	bytes[0] += 255 - bytes.reduce((s, b) => s + b, 0);
+	return top.map(([bone], k) => {
 		if (!(bone in boneIndex)) throw new Error(`unknown bone ${bone}`);
-		return [boneIndex[bone], w / sum];
+		return [boneIndex[bone], bytes[k]];
 	});
 }
 
@@ -1182,7 +1750,10 @@ for (const [name, { material, pieces }] of NODES) {
 		.setAttribute('POSITION', acc('VEC3', new Float32Array(pos)))
 		.setAttribute('NORMAL', acc('VEC3', new Float32Array(nor)))
 		.setAttribute('JOINTS_0', acc('VEC4', new Uint8Array(joints)))
-		.setAttribute('WEIGHTS_0', acc('VEC4', new Float32Array(weights)))
+		.setAttribute(
+			'WEIGHTS_0',
+			acc('VEC4', new Uint8Array(weights)).setNormalized(true)
+		)
 		.setIndices(acc('SCALAR', new Uint16Array(idx)))
 		.setMaterial(materials[material]);
 	if (withUv)
@@ -1192,7 +1763,9 @@ for (const [name, { material, pieces }] of NODES) {
 }
 
 for (const [clipName, c] of Object.entries(CLIPS)) {
-	const { times, poses, hipsY } = buildClip(c);
+	const clip = buildClip(c);
+	checkClip(clipName, clip);
+	const { times, poses } = clip;
 	const input = acc('SCALAR', new Float32Array(times));
 	const anim = doc.createAnimation(clipName);
 	const channel = (node, path, type, values) => {
@@ -1212,17 +1785,21 @@ for (const [clipName, c] of Object.entries(CLIPS)) {
 			);
 	};
 	for (const name of Object.keys(nodes)) {
-		if (!poses.some((r) => r[name])) continue;
-		const q = new THREE.Quaternion();
+		if (!poses[0].rot[name]) continue;
 		const out = [];
-		for (const r of poses) {
-			q.setFromEuler(new THREE.Euler(...(r[name] ?? [0, 0, 0]), 'XYZ'));
+		let prev = null;
+		for (const { rot } of poses) {
+			const q = rot[name].clone();
+			// Keep each key on the same hemisphere as the last, so blending
+			// and interpolation always take the short way round.
+			if (prev && prev.dot(q) < 0) q.set(-q.x, -q.y, -q.z, -q.w);
 			out.push(q.x, q.y, q.z, q.w);
+			prev = q;
 		}
 		channel(nodes[name], 'rotation', 'VEC4', new Float32Array(out));
 	}
 	const t = [];
-	for (const y of hipsY) t.push(0, y, 0);
+	for (const { hips } of poses) t.push(hips.x, hips.y, hips.z);
 	channel(nodes.Hips, 'translation', 'VEC3', new Float32Array(t));
 }
 

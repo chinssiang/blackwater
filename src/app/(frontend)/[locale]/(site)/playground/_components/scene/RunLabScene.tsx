@@ -12,6 +12,7 @@ import type { RunLabSceneProps } from '@/lib/run-lab/playhead';
 import { CLIP_NAMES, type ClipName, RUNNER_MODEL_URL } from '@/lib/run-lab/rig';
 import { TERRAIN_IDEALS, TERRAIN_SLOPE_DEG } from '@/lib/run-lab/terrain';
 import { DEFAULT_GAIT } from '../playground-shared';
+import { Backdrop } from './Backdrop';
 import { CameraRig } from './CameraRig';
 import { Ground } from './Ground';
 import {
@@ -56,7 +57,8 @@ export function RunLabScene(props: RunLabSceneProps) {
 			camera={{
 				fov: 30,
 				near: 0.1,
-				far: 60,
+				// Past the backdrop ring.
+				far: 200,
 				position: [...CAMERA_VIEWS.side.position],
 			}}
 			resize={{ scroll: false }}
@@ -72,6 +74,8 @@ export function RunLabScene(props: RunLabSceneProps) {
 			{/* A rim from the far side, so black fabric keeps its silhouette
 			    against the near-black page. */}
 			<directionalLight position={[5, 4, -2]} intensity={1.3} />
+			{/* Outside World's tilt: the far horizon stays level on a hill. */}
+			<Backdrop terrain={props.state.terrain} />
 			<Suspense fallback={null}>
 				<World {...props} />
 			</Suspense>
@@ -199,14 +203,12 @@ function World(props: RunLabSceneProps) {
 		const profile = paceProfile(p.state.pace);
 		const cycleSeconds = 120 / profile.cadenceSpm;
 
-		// Ground speed from the clips themselves: the stance foot's travel over
-		// the stance's duration, so the feet do not skate.
+		// Ground speed from the clips themselves: how far the planted foot rolls
+		// back in a stride, so the feet do not skate.
 		let speed = 0;
 		for (const name of CLIP_NAMES) {
 			const t = timing[name];
-			if (t && t.stanceShare > 0)
-				speed +=
-					profile.weights[name] * (t.travel / (t.stanceShare * cycleSeconds));
+			if (t) speed += profile.weights[name] * (t.stride / cycleSeconds);
 		}
 		if (p.hold) {
 			phase.current = p.state.scrub.phase;

@@ -45,7 +45,14 @@ const ALWAYS_COVERED: readonly BodyNode[] = [
 	'Body_feet',
 ];
 
-const KIT_PREFIXES = ['Top_', 'Bottom_', 'Shoes_'];
+/**
+ * The hair is no garment, but it is handled like one: it keeps the colour
+ * the model gives it rather than the body's clay, and the Pacer, which is
+ * the form alone, goes without.
+ */
+export const HAIR_NODE = 'Hair';
+
+const KIT_PREFIXES = ['Top_', 'Bottom_', 'Shoes_', HAIR_NODE];
 export const isKitNode = (name: string) =>
 	KIT_PREFIXES.some((p) => name.startsWith(p));
 

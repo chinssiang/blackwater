@@ -1,24 +1,52 @@
 'use client';
 
-import { type RefObject, memo, useEffect, useMemo, useRef } from 'react';
+import { type RefObject, memo, useEffect, useMemo } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { mod, seededRandom } from '@/lib/run-lab/math';
-import type { Terrain } from '@/lib/run-lab/types';
+import { seededRandom } from '@/lib/run-lab/math';
 import {
-	GROUND,
-	LINE,
-	LINE_FAINT,
+	MAX_PROPS_PER_KIND,
+	PROP_KINDS,
+	type PropKind,
 	TILE_COUNT,
 	TILE_LENGTH,
 	TILE_WIDTH,
-	WATER,
-} from './constants';
-import { BufferAttribute, type Group, PlaneGeometry } from 'three';
+	scenery,
+	tileSegment,
+	tileStart,
+	trailHeight,
+} from '@/lib/run-lab/scenery';
+import type { Terrain } from '@/lib/run-lab/types';
+import { GROUND } from './constants';
+import {
+	AdditiveBlending,
+	BoxGeometry,
+	type BufferAttribute,
+	type BufferGeometry,
+	CanvasTexture,
+	Color,
+	ConeGeometry,
+	CylinderGeometry,
+	DodecahedronGeometry,
+	Group,
+	IcosahedronGeometry,
+	InstancedBufferAttribute,
+	InstancedMesh,
+	type Material,
+	Mesh,
+	MeshBasicMaterial,
+	MeshStandardMaterial,
+	Object3D,
+	PlaneGeometry,
+	RepeatWrapping,
+	SRGBColorSpace,
+} from 'three';
 
 /**
  * The runner stays at the origin and the world scrolls under it: a few tiles
- * leapfrogging along -Z. Everything a terrain draws is a child of a tile, so
- * it scrolls for free. Hairlines only -- the monochrome frame, in 3D.
+ * leapfrogging along -Z (see `tileStart`). Each tile shows one numbered
+ * stretch of world and refills when it wraps to the front, so the scenery
+ * never comes round again. Props are instanced, one mesh per kind per tile,
+ * so a refill rewrites matrices rather than mounting anything.
  */
 // Memoised: its props (a terrain, a stable ref) hold still, so a slider tick
 // that re-renders the scene leaves the tiles alone.
@@ -29,193 +57,258 @@ export const Ground = memo(function Ground({
 	terrain: Terrain;
 	offsetRef: RefObject<number>;
 }) {
-	const tiles = useRef<(Group | null)[]>([]);
-	// One displaced trail surface shared by every tile, released when the
-	// terrain changes: a geometry passed as a prop is not one R3F disposes.
-	const trailGeometry = useMemo(
-		() => (terrain === 'trail' ? buildTrailGeometry() : null),
-		[terrain]
+	// Mutates three.js objects inside useFrame; see eslint.config.mjs.
+	'use no memo';
+	const kit = useMemo(createKit, []);
+	const tiles = useMemo(
+		() => Array.from({ length: TILE_COUNT }, () => createTile(kit)),
+		[kit]
 	);
-	useEffect(() => () => trailGeometry?.dispose(), [trailGeometry]);
+	useEffect(
+		() => () => {
+			for (const tile of tiles) tile.ground.geometry.dispose();
+			kit.dispose();
+		},
+		[kit, tiles]
+	);
 
 	useFrame(() => {
 		const offset = offsetRef.current ?? 0;
-		const span = TILE_LENGTH * TILE_COUNT;
-		tiles.current.forEach((tile, i) => {
-			if (!tile) return;
-			// Tiles run from one tile behind the runner to well ahead of it; one
-			// leaving the back re-enters at the front.
-			tile.position.z = mod(i * TILE_LENGTH - offset, span) - TILE_LENGTH;
+		tiles.forEach((tile, i) => {
+			tile.group.position.z = tileStart(i, offset);
+			const segment = tileSegment(i, offset);
+			if (segment !== tile.segment || terrain !== tile.terrain) {
+				fillTile(tile, kit, terrain, segment);
+			}
 		});
 	});
 
 	return (
 		<group>
-			{Array.from({ length: TILE_COUNT }, (_, i) => (
-				<group
-					key={i}
-					ref={(el) => {
-						tiles.current[i] = el;
-					}}
-				>
-					<Tile terrain={terrain} seed={i} trailGeometry={trailGeometry} />
-				</group>
+			{tiles.map((tile, i) => (
+				<primitive key={i} object={tile.group} />
 			))}
 		</group>
 	);
 });
 
-function Line({
-	x,
-	width = 0.03,
-	color = LINE,
-	length = TILE_LENGTH,
-	z = TILE_LENGTH / 2,
-}: {
-	x: number;
-	width?: number;
-	color?: string;
-	length?: number;
-	z?: number;
-}) {
-	return (
-		<mesh position={[x, 0.004, z]} rotation-x={-Math.PI / 2}>
-			<planeGeometry args={[width, length]} />
-			<meshBasicMaterial color={color} />
-		</mesh>
-	);
+type Kit = ReturnType<typeof createKit>;
+type Tile = ReturnType<typeof createTile>;
+
+/** Geometry and materials every tile shares. */
+function createKit() {
+	const plane = new PlaneGeometry(1, 1).rotateX(-Math.PI / 2);
+	const cube = new BoxGeometry(1, 1, 1).translate(0, 0.5, 0);
+	// The kinds' origins follow `Prop`: flat, standing on y, or centred on it.
+	const geometries: Record<PropKind, BufferGeometry> = {
+		mark: plane,
+		box: cube,
+		trunk: new CylinderGeometry(0.5, 0.5, 1, 6).translate(0, 0.5, 0),
+		cone: new ConeGeometry(0.5, 1, 6).translate(0, 0.5, 0),
+		blob: new IcosahedronGeometry(0.5, 0),
+		rock: new DodecahedronGeometry(0.5, 0),
+		glow: cube,
+		pool: plane,
+	};
+	// White, so each instance's tone is its colour.
+	const paint = new MeshBasicMaterial();
+	const solid = new MeshStandardMaterial({ roughness: 1, flatShading: true });
+	const materials: Record<PropKind, Material> = {
+		mark: paint,
+		box: solid,
+		trunk: solid,
+		cone: solid,
+		blob: solid,
+		rock: solid,
+		glow: new MeshBasicMaterial(),
+		pool: new MeshBasicMaterial({
+			map: poolTexture(),
+			transparent: true,
+			depthWrite: false,
+			blending: AdditiveBlending,
+		}),
+	};
+	const grain = grainTexture();
+	const ground = new MeshStandardMaterial({
+		color: GROUND,
+		roughness: 1,
+		map: grain,
+	});
+	const faceted = new MeshStandardMaterial({
+		color: GROUND,
+		roughness: 1,
+		map: grain,
+		flatShading: true,
+	});
+	return {
+		geometries,
+		materials,
+		ground,
+		faceted,
+		dispose() {
+			for (const g of new Set(Object.values(geometries))) g.dispose();
+			for (const m of new Set(Object.values(materials))) m.dispose();
+			(materials.pool as MeshBasicMaterial).map?.dispose();
+			grain.dispose();
+			ground.dispose();
+			faceted.dispose();
+		},
+	};
 }
 
-/** The trail's ground: low noise, kept nearly flat where the feet land. */
-function buildTrailGeometry() {
-	const g = new PlaneGeometry(TILE_WIDTH, TILE_LENGTH, 28, 24);
-	const pos = g.attributes.position as BufferAttribute;
-	for (let i = 0; i < pos.count; i++) {
-		const x = pos.getX(i);
-		const y = pos.getY(i);
-		// Keep the line the feet run on nearly flat so they never sink in.
-		const away = Math.min(1, Math.abs(x) / 1.2);
-		// Periodic in the tile's length, so tiles meet without a step.
-		const k = (2 * Math.PI) / TILE_LENGTH;
-		const h =
-			0.05 * Math.sin(x * 1.7 + Math.sin(y * k * 2) * 1.3) +
-			0.035 * Math.cos(y * k * 3 + x * 2.3);
-		pos.setZ(i, h * (0.15 + 0.85 * away));
+function createTile(kit: Kit) {
+	const group = new Group();
+	// Its own geometry, laid out in tile space (z 0..TILE_LENGTH): the trail
+	// reshapes it for every stretch of world it shows.
+	const ground = new Mesh(
+		new PlaneGeometry(TILE_WIDTH, TILE_LENGTH, TILE_WIDTH, TILE_LENGTH * 2)
+			.rotateX(-Math.PI / 2)
+			.translate(0, 0, TILE_LENGTH / 2),
+		kit.ground
+	);
+	group.add(ground);
+	const props = {} as Record<PropKind, InstancedMesh>;
+	for (const kind of PROP_KINDS) {
+		const mesh = new InstancedMesh(
+			kit.geometries[kind],
+			kit.materials[kind],
+			MAX_PROPS_PER_KIND
+		);
+		mesh.instanceColor = new InstancedBufferAttribute(
+			new Float32Array(MAX_PROPS_PER_KIND * 3),
+			3
+		);
+		mesh.count = 0;
+		group.add(mesh);
+		props[kind] = mesh;
 	}
-	g.computeVertexNormals();
-	return g;
+	return {
+		group,
+		ground,
+		props,
+		segment: NaN,
+		terrain: null as Terrain | null,
+	};
 }
 
-function Tile({
-	terrain,
-	seed,
-	trailGeometry,
-}: {
-	terrain: Terrain;
-	seed: number;
-	trailGeometry: PlaneGeometry | null;
-}) {
-	const scatter = useMemo(() => {
-		const r = seededRandom(seed + 1);
-		return Array.from({ length: 16 }, () => ({
-			x: (r() - 0.5) * 12,
-			z: r() * TILE_LENGTH,
-			rot: r() * Math.PI,
-			len: 0.2 + r() * 0.5,
-			rock: r() > 0.7,
-		})).filter((s) => Math.abs(s.x) > 0.7);
-	}, [seed]);
+const dummy = new Object3D();
+const color = new Color();
 
-	return (
-		<group>
-			<mesh
-				rotation-x={-Math.PI / 2}
-				position={[0, 0, TILE_LENGTH / 2]}
-				geometry={trailGeometry ?? undefined}
-			>
-				{!trailGeometry && <planeGeometry args={[TILE_WIDTH, TILE_LENGTH]} />}
-				<meshStandardMaterial
-					color={GROUND}
-					roughness={1}
-					flatShading={terrain === 'trail'}
-				/>
-			</mesh>
+function fillTile(tile: Tile, kit: Kit, terrain: Terrain, segment: number) {
+	tile.segment = segment;
+	tile.terrain = terrain;
 
-			{terrain === 'track' && (
-				<>
-					{[-1.83, -0.61, 0.61, 1.83].map((x) => (
-						<Line key={x} x={x} width={0.05} />
-					))}
-					<Line x={-3.05} width={0.08} color={LINE_FAINT} />
-					<Line x={3.05} width={0.08} color={LINE_FAINT} />
-				</>
-			)}
-
-			{terrain === 'riverside' && (
-				<>
-					<Line x={-1.2} />
-					<Line x={1.1} />
-					{/* The bikeway beside the path, its dashed centre line nearest the camera. */}
-					{[0, 3, 6, 9].map((z) => (
-						<Line
-							key={z}
-							x={-2.4}
-							length={1.2}
-							z={z + 0.6}
-							color={LINE_FAINT}
-						/>
-					))}
-					{/* The river on the far side, past a row of lamp posts. */}
-					<mesh
-						rotation-x={-Math.PI / 2}
-						position={[7, 0.003, TILE_LENGTH / 2]}
-					>
-						<planeGeometry args={[9, TILE_LENGTH]} />
-						<meshBasicMaterial color={WATER} />
-					</mesh>
-					<Line x={2.5} width={0.02} color={LINE} />
-					<mesh position={[2.1, 1.6, 2]}>
-						<boxGeometry args={[0.05, 3.2, 0.05]} />
-						<meshBasicMaterial color={LINE} />
-					</mesh>
-				</>
-			)}
-
-			{terrain === 'trail' &&
-				scatter.map((s, i) =>
-					s.rock ? (
-						<mesh key={i} position={[s.x, 0.04, s.z]} rotation-y={s.rot}>
-							<dodecahedronGeometry args={[0.06 + s.len * 0.1, 0]} />
-							<meshStandardMaterial color={LINE} roughness={1} flatShading />
-						</mesh>
-					) : (
-						<mesh
-							key={i}
-							position={[s.x, 0.012, s.z]}
-							rotation={[-Math.PI / 2, 0, s.rot]}
-						>
-							<planeGeometry args={[0.03, s.len]} />
-							<meshBasicMaterial color={LINE} />
-						</mesh>
+	const geometry = tile.ground.geometry;
+	const position = geometry.attributes.position as BufferAttribute;
+	for (let i = 0; i < position.count; i++) {
+		const y =
+			terrain === 'trail'
+				? trailHeight(
+						position.getX(i),
+						segment * TILE_LENGTH + position.getZ(i)
 					)
-				)}
+				: 0;
+		position.setY(i, y);
+	}
+	position.needsUpdate = true;
+	geometry.computeVertexNormals();
+	geometry.computeBoundingSphere();
+	tile.ground.material = terrain === 'trail' ? kit.faceted : kit.ground;
 
-			{(terrain === 'uphill' || terrain === 'downhill') && (
-				<>
-					<Line x={-1.1} />
-					<Line x={1.1} />
-					{[1.5, 4.5, 7.5, 10.5].map((z) => (
-						<Line
-							key={z}
-							x={0}
-							width={0.6}
-							length={0.03}
-							z={z}
-							color={LINE_FAINT}
-						/>
-					))}
-				</>
-			)}
-		</group>
-	);
+	const meshes = Object.values(tile.props);
+	for (const mesh of meshes) mesh.count = 0;
+	for (const p of scenery(terrain, segment)) {
+		const mesh = tile.props[p.kind];
+		dummy.position.set(p.x, p.y, p.z);
+		dummy.rotation.set(p.rx ?? 0, p.ry ?? 0, p.rz ?? 0);
+		dummy.scale.set(p.w, p.h, p.d);
+		dummy.updateMatrix();
+		mesh.setMatrixAt(mesh.count, dummy.matrix);
+		mesh.setColorAt(mesh.count, color.setHex(p.tone));
+		mesh.count++;
+	}
+	for (const mesh of meshes) {
+		mesh.visible = mesh.count > 0;
+		mesh.instanceMatrix.needsUpdate = true;
+		if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+		// Cached on first use, so stale once the instances move.
+		mesh.computeBoundingSphere();
+	}
+}
+
+/** Metres of ground one repeat of the grain covers. */
+const GRAIN_METRES = 3;
+
+/**
+ * Fine grain in the running surface, so the ground itself shows the speed.
+ * Tileable, and a whole number of repeats along a tile, so tiles meet
+ * without a seam.
+ */
+function grainTexture() {
+	const size = 256;
+	const canvas = document.createElement('canvas');
+	canvas.width = canvas.height = size;
+	const c = canvas.getContext('2d');
+	if (c) {
+		c.fillStyle = '#fff';
+		c.fillRect(0, 0, size, size);
+		const r = seededRandom(48271);
+		// Each mark is drawn again across every edge it overhangs, so the
+		// texture wraps.
+		const tiled = (draw: (x: number, y: number) => void) => {
+			const x = r() * size;
+			const y = r() * size;
+			for (const dx of [-size, 0, size]) {
+				for (const dy of [-size, 0, size]) draw(x + dx, y + dy);
+			}
+		};
+		// Worn patches, which still read at a distance once the specks blur.
+		for (let i = 0; i < 24; i++) {
+			const radius = 16 + r() * 40;
+			tiled((x, y) => {
+				const g = c.createRadialGradient(x, y, 0, x, y, radius);
+				g.addColorStop(0, 'rgba(0,0,0,0.1)');
+				g.addColorStop(1, 'rgba(0,0,0,0)');
+				c.fillStyle = g;
+				c.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+			});
+		}
+		for (let i = 0; i < 2200; i++) {
+			const v = Math.round(90 + r() * 120);
+			const s = 1.5 + r() * 2.5;
+			c.fillStyle = `rgb(${v},${v},${v})`;
+			tiled((x, y) => c.fillRect(x, y, s, s));
+		}
+	}
+	const texture = new CanvasTexture(canvas);
+	texture.colorSpace = SRGBColorSpace;
+	texture.wrapS = texture.wrapT = RepeatWrapping;
+	texture.repeat.set(TILE_WIDTH / GRAIN_METRES, TILE_LENGTH / GRAIN_METRES);
+	texture.anisotropy = 8;
+	return texture;
+}
+
+/** A lamp's light on the ground: bright in the middle, gone at the edge. */
+function poolTexture() {
+	const size = 64;
+	const canvas = document.createElement('canvas');
+	canvas.width = canvas.height = size;
+	const c = canvas.getContext('2d');
+	if (c) {
+		const g = c.createRadialGradient(
+			size / 2,
+			size / 2,
+			0,
+			size / 2,
+			size / 2,
+			size / 2
+		);
+		g.addColorStop(0, 'rgba(255,255,255,1)');
+		g.addColorStop(1, 'rgba(255,255,255,0)');
+		c.fillStyle = g;
+		c.fillRect(0, 0, size, size);
+	}
+	const texture = new CanvasTexture(canvas);
+	texture.colorSpace = SRGBColorSpace;
+	return texture;
 }

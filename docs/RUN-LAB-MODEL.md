@@ -6,15 +6,18 @@ code needs from it, and how to replace it.
 
 ## What ships today
 
-A **stand-in** built in code: `scripts/build-runner-model.mjs` generates a faceless
-low-poly mannequin, its Mixamo-named skeleton, and three run cycles. It is original
-work, so there is no licence to track.
+A **stand-in** built in code: `scripts/build-runner-model.mjs` generates a clay
+runner with a sculpted face and short hair, its Mixamo-named skeleton, and three run
+cycles. It is original work, so there is no licence to track.
 
 ```bash
 node scripts/build-runner-model.mjs
 ```
 
-Re-run it after changing the script, and commit the regenerated GLB with it.
+Re-run it after changing the script, and commit the regenerated GLB with it. It
+prints what a coach would check for each cycle (speed, contact and flight time,
+vertical bob, knee angles) and fails if a planted foot drifts, a swinging foot digs
+into the ground or a leg is asked to reach past straight.
 
 It exists because the planned source, the Quaternius CC0 "Universal" character and
 animation library, needs a manual download and a Blender pass, and neither could be
@@ -32,9 +35,40 @@ at a height along the bone line. The shapes are the landmarks a coach looks at:
   high and to the inside, the Achilles.
 
 Weights blend across every joint, so knees and elbows bend smoothly. Hands are loose
-running fists with curled fingers and a thumb. The head is sculpted but faceless, and
-the skin is clay grey, keeping the monochrome frame. To reshape a muscle, edit its
-ring and rebuild.
+running fists with curled fingers and a thumb. The skin is clay grey, keeping the
+monochrome frame. To reshape a muscle, edit its ring and rebuild.
+
+## The head
+
+`headGeometry()` stacks superellipse rings into a skull (`RINGS`: depth front and
+back, width, and a taper that closes the jaw to a U at the chin), then presses the face
+into it with `relief()`: brow, eye sockets and lids, nose and nostril wings,
+cheekbones, lips and chin. There is no texture, so the face is read from light and
+shadow alone, and its forms are sized to carry at the camera's distance rather than
+up close. The hair is the skull above a hairline curve (temples, sideburns, over the
+ears, down to the nape), lifted off it along its normals. It is the `Hair` node, which
+keeps its own dark colour the way the kit does (`HAIR_NODE` in `kit.ts`), so the Pacer
+goes without it.
+
+## The run cycles
+
+The cycles are built from how a runner moves, not keyed by eye (`gait()` in the build
+script; per-cycle numbers in `CLIPS`):
+
+- **Hips.** Vertical motion comes from a half-sine ground force: lowest at midstance,
+  a ballistic arc through flight, no kink at footfall or toe-off. `bob` scales it
+  down a little, because good runners keep the hips quieter than the textbook curve.
+  The pelvis also turns, drops on the swing side and sways over the stance foot.
+- **Stance.** The ball of the foot is planted and rolls back at one constant speed,
+  the heel settles after a midfoot landing and peels off before toe-off, and two-bone
+  IK finds the hip and knee. Contact time is what shortens most with speed.
+- **Swing.** The ankle follows one smooth path from toe-off through heel recovery and
+  knee drive to the next footfall, matching the stance's position and velocity at
+  toe-off. Coming in to land, the foot is aimed at the ground.
+- **Upper body.** The arms swing with the opposite leg, elbows driving back; the
+  chest counter-turns against the pelvis; the head holds level and looks ahead.
+
+Every curve is a sinusoid or a C1 spline, so no joint stops dead at a key.
 
 ## The kit
 
@@ -72,13 +106,15 @@ against the file on disk:
   as `Armature|jog` is fine.
 - **No decoder**: nothing in `extensionsRequired` except `KHR_mesh_quantization`.
   Draco and meshopt need WASM and blob workers, which the CSP blocks.
-- **Mesh names**: every `Body_*` region, `Top_<id>`, `Bottom_tight` and the
-  `Shoes_*` parts, plus the `ClothHem` bone (`kit.ts`).
-- **Size**: under 800 KB.
+- **Mesh names**: every `Body_*` region, `Top_<id>`, `Bottom_tight`, the `Shoes_*`
+  parts and `Hair`, plus the `ClothHem` bone (`kit.ts`).
+- **Size**: under 800 KB. Skin weights are stored as normalised bytes (core glTF, not
+  an extension) to stay inside it.
 
 The code measures everything else. At load, `measureClips` samples each clip and
-works out the footfalls, the stance windows and how far the planted foot travels.
-A new model with different timing still lines up and still does not skate.
+works out the footfalls and stance windows from the height of the ball of the foot,
+and the ground speed from how fast that ball rolls back through midstance. A new model
+with different timing still lines up and still does not skate.
 
 ## Replacing it with a Quaternius export
 

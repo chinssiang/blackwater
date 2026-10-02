@@ -4,6 +4,7 @@ import {
 	BODY_NODES,
 	BOTTOM_NODES,
 	CLOTH_HEM_BONE,
+	HAIR_NODE,
 	SHOE_NODES,
 	topNode,
 } from './kit';
@@ -40,12 +41,13 @@ describe('runner model', async () => {
 		expect(missing).toEqual([]);
 	});
 
-	it('carries every body region, garment and the cloth bone', () => {
+	it('carries every body region, garment, the hair and the cloth bone', () => {
 		const expected = [
 			...BODY_NODES,
 			...TOP_IDS.map(topNode),
 			...BOTTOM_NODES,
 			...SHOE_NODES,
+			HAIR_NODE,
 			CLOTH_HEM_BONE,
 		];
 		expect(expected.filter((name) => !nodeNames.has(name))).toEqual([]);

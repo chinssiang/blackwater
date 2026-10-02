@@ -24,14 +24,14 @@ export type Note =
 
 /**
  * Stance windows before the model has been sampled (and when it never will
- * be, with no WebGL), matching the stand-in rig's authored timing so the scrub
- * labels read right either way.
+ * be, with no WebGL), matching what `measureClips` finds in the stand-in rig
+ * so the scrub labels do not shift when it loads.
  */
 export const DEFAULT_GAIT: GaitInfo = {
 	stances: {
-		jog: { left: [0, 0.4], right: [0.5, 0.9] },
-		run: { left: [0, 0.34], right: [0.5, 0.84] },
-		sprint: { left: [0, 0.27], right: [0.5, 0.77] },
+		jog: { left: [0, 0.41], right: [0.5, 0.91] },
+		run: { left: [0, 0.37], right: [0.5, 0.88] },
+		sprint: { left: [0, 0.34], right: [0.5, 0.84] },
 	},
 };
 

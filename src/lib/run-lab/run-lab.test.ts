@@ -398,6 +398,11 @@ describe('kit', async () => {
 		expect(isNodeVisible('Shoes_upper', 'coda')).toBe(true);
 	});
 
+	it('keeps the hair in its own colour, whatever the top', () => {
+		expect(isKitNode('Hair')).toBe(true);
+		expect(isNodeVisible('Hair', 'coda')).toBe(true);
+	});
+
 	it('tells kit from body, and names decals', () => {
 		expect(isKitNode('Shoes_decal0')).toBe(true);
 		expect(BODY_NODES.some(isKitNode)).toBe(false);
