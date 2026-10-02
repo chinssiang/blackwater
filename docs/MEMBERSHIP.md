@@ -34,6 +34,7 @@ All member admin happens in the Neon Console at console.neon.tech. Every change 
 | `auth_rate_limit`     | per-IP counter                         | Leave alone                               |
 | `sign_in_code_limit`  | per-email / per-IP / site-wide counter | Delete a row to lift a lock (see support) |
 | `event_attendance`    | email × event (Luma link)              | Yes — this is where history is loaded     |
+| `attendance_erasure`  | person whose history was erased        | Never — it stops re-imports restoring it  |
 
 ### Common tasks
 
@@ -53,16 +54,16 @@ All member admin happens in the Neon Console at console.neon.tech. Every change 
 
 ## Common support situations
 
-| Member says                    | Likely cause                                                                         | What to do                                                                                                                                                                                                         |
-| ------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| "I never got the code"         | Spam folder, typo in email, or the site's mail account hit its daily cap             | Ask them to check spam and retype the address. If several people report it the same day, tell a developer — the shared mail account may be over its limit.                                                         |
-| "It says my code is wrong"     | Typo, or they requested a second code (only the newest works)                        | Ask them to use the latest email only.                                                                                                                                                                             |
-| "It says the code expired"     | Codes last 10 minutes                                                                | Request a new code.                                                                                                                                                                                                |
-| "Too many attempts"            | 3 wrong tries burn a code                                                            | Request a new code.                                                                                                                                                                                                |
-| "Too many requests, try later" | More than 5 codes for one email in an hour, or 20 from one network in a day          | Wait an hour. If urgent, delete the row in `sign_in_code_limit` whose `key` is `email:their@address`.                                                                                                              |
-| "Nobody can sign in"           | Site-wide cap of 300 codes/day reached, mail not configured, or the database is down | Tell a developer. The `/account` page shows an "unavailable" message when the database can't be reached.                                                                                                           |
-| "Delete my data"               | Privacy request                                                                      | They can do it themselves: Settings → Delete account. Otherwise delete their `member` row (sessions go with it) and their `event_attendance` rows. Also remove them from Klaviyo/Luma if the request covers those. |
-| "I got signed out"             | 30 days without visiting `/account`, or someone deleted their session                | Normal — they sign in again with a new code.                                                                                                                                                                       |
+| Member says                    | Likely cause                                                                         | What to do                                                                                                                                                                                                                                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "I never got the code"         | Spam folder, typo in email, or the site's mail account hit its daily cap             | Ask them to check spam and retype the address. If several people report it the same day, tell a developer — the shared mail account may be over its limit.                                                                                                                                                      |
+| "It says my code is wrong"     | Typo, or they requested a second code (only the newest works)                        | Ask them to use the latest email only.                                                                                                                                                                                                                                                                          |
+| "It says the code expired"     | Codes last 10 minutes                                                                | Request a new code.                                                                                                                                                                                                                                                                                             |
+| "Too many attempts"            | 3 wrong tries burn a code                                                            | Request a new code.                                                                                                                                                                                                                                                                                             |
+| "Too many requests, try later" | More than 5 codes for one email in an hour, or 20 from one network in a day          | Wait an hour. If urgent, delete the row in `sign_in_code_limit` whose `key` is `email:their@address`.                                                                                                                                                                                                           |
+| "Nobody can sign in"           | Site-wide cap of 300 codes/day reached, mail not configured, or the database is down | Tell a developer. The `/account` page shows an "unavailable" message when the database can't be reached.                                                                                                                                                                                                        |
+| "Delete my data"               | Privacy request                                                                      | They can do it themselves: Settings → Delete account. Otherwise ask a developer to run `scripts/import-luma-attendance.mjs --erase their@address --execute` (also for people with no account), then delete their `member` row if they have one. Also remove them from Klaviyo/Luma if the request covers those. |
+| "I got signed out"             | 30 days without visiting `/account`, or someone deleted their session                | Normal — they sign in again with a new code.                                                                                                                                                                                                                                                                    |
 
 ## Architecture (developers)
 
@@ -254,10 +255,27 @@ The account pages are built to be filled from the club's other systems. Each sou
 
 ### Club history — Luma first
 
-`event_attendance` is where it lands; `/account/history` already reads it and joins it to the site's events by `pEvent.lumaUrl`. What is missing is a writer. Recommended order:
+`event_attendance` is where it lands; `/account/history` reads it and joins it to the site's events by `pEvent.lumaUrl`. The club has no Luma Plus, so there is no API: a crew member exports each event's guest CSV and a developer loads it.
 
-1. **Luma webhooks** (`guest.registered`, `guest.updated`) into a new `/api/luma/webhook` route that verifies Luma's signature and upserts one row per guest: `email` lowercased, `luma_event_url` from `normalizeLumaEventUrl()` of the event's public URL, `event_name` and `event_starts_at` from the event, `registered_at`, and `checked_in_at` once the crew checks them in at the door. Needs Luma Plus for the API key.
-2. **A one-shot backfill** in `scripts/` that walks past events with Luma's get-guests API and writes the same rows, then is deleted (see `CLAUDE.md` on one-shot scripts).
+**After each event**, once check-in at the door is finished:
+
+1. In Luma, open the event → **Manage** → **Guests** → download the CSV.
+2. Dry run, then write:
+
+   ```bash
+   node --experimental-strip-types --no-warnings scripts/import-luma-attendance.mjs --url https://lu.ma/abc123 --name "Sunday Long Run" --starts 2026-09-20T07:00+08:00 guests.csv
+   ```
+
+   Add `--execute` once the counts look right. `--url` is the event's public link, the one in the event's **Luma URL** field in the Studio. `--name` and `--starts` only show for events the site has no page for.
+
+What it does, in `src/lib/member/luma-import.ts`:
+
+- Writes **every approved guest, member or not**, so a runner's past events are there the day they join.
+- Overwrites on a re-run, so exporting again after a late check-in is the fix for a missing `checked_in_at`.
+- Removes anyone on the list who is no longer `approved` (declined, waitlisted, cancelled).
+- Refuses registrations made before someone's erasure (`attendance_erasure`), so re-importing an old CSV never restores the history of someone who deleted their account or asked to be forgotten.
+
+It fails loudly if Luma renames a CSV column, naming the columns it found. If Luma Plus is ever bought, webhooks (`guest.registered`, `guest.updated`) into an `/api/luma/webhook` route can call the same `importLumaGuests()` and replace the manual step.
 
 **Strava** is a poor source for attendance: its club activity feed does not identify athletes reliably, and matching someone's run to an event means asking each member to connect Strava (OAuth) and guessing from time and place. If it is ever wanted, it belongs as an opt-in "Connect Strava" in Settings that writes rows with the matching Luma event, not as a second history.
 

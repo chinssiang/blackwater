@@ -11,6 +11,7 @@ import { isMailConfigured } from '@/lib/mail';
 import { type CodeLimits, type MemberDb, mayRequestCode } from './code-limits';
 import { COUNTRY_CODES } from './countries';
 import { getDb } from './db';
+import { hashEmail } from './luma-import';
 import * as schema from './schema';
 import {
 	CODE_LENGTH,
@@ -130,7 +131,16 @@ export function createAuth({
 				// Before, so a failure here leaves the member intact to try again.
 				// The attendance rows are keyed by email and hold no foreign key,
 				// so the cascade that removes their sessions does not reach them.
+				// The erasure is recorded first, so a later Luma import cannot write
+				// their history back (see eraseAttendance in ./luma-import.ts).
 				beforeDelete: async (user) => {
+					await db
+						.insert(schema.attendanceErasure)
+						.values({ emailHash: hashEmail(user.email) })
+						.onConflictDoUpdate({
+							target: schema.attendanceErasure.emailHash,
+							set: { erasedAt: new Date() },
+						});
 					await db
 						.delete(schema.eventAttendance)
 						.where(eq(schema.eventAttendance.email, user.email));

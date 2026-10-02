@@ -4,6 +4,7 @@ import { migrate } from 'drizzle-orm/pglite/migrator';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { PRIVACY_NOTICE_VERSION, createAuth } from './auth';
 import { CODE_LIMITS, type CodeLimits } from './code-limits';
+import { hashEmail } from './luma-import';
 import * as schema from './schema';
 import { getMemberSession } from './session';
 import {
@@ -43,7 +44,7 @@ async function setup({
 	codeLimits?: CodeLimits;
 } = {}) {
 	await pg.exec(
-		'truncate member, member_session, member_account, member_verification, auth_rate_limit, sign_in_code_limit, event_attendance cascade'
+		'truncate member, member_session, member_account, member_verification, auth_rate_limit, sign_in_code_limit, event_attendance, attendance_erasure cascade'
 	);
 	const sent: Sent[] = [];
 	const auth = createAuth({
@@ -553,6 +554,16 @@ describe('deleting an account', () => {
 		}
 		const { rows } = await ctx.pg.query('select email from event_attendance');
 		expect(rows).toEqual([{ email: 'someone@example.com' }]);
+	});
+
+	it('records the erasure, so an import cannot bring the history back', async () => {
+		const cookie = await ctx.signedIn();
+		await ctx.post('/delete-user', {}, { cookie });
+
+		const { rows } = await ctx.pg.query(
+			'select email_hash from attendance_erasure'
+		);
+		expect(rows).toEqual([{ email_hash: hashEmail('runner@example.com') }]);
 	});
 
 	it('asks for a fresh sign-in once the session is a day old', async () => {

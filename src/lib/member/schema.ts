@@ -146,8 +146,8 @@ export const signInCodeLimit = pgTable('sign_in_code_limit', {
 
 /**
  * Which events a person registered for or turned up to, one row per person per
- * event. Nothing writes it yet: it is the landing place for a Luma webhook or
- * backfill, and /account's club history reads it.
+ * event. Written by `scripts/import-luma-attendance.mjs` from Luma's guest CSV
+ * (see ./luma-import.ts), and /account's club history reads it.
  *
  * Keyed by EMAIL, not by member id, and with no foreign key to `member`, on
  * purpose: Luma's history predates membership, so a backfill must be able to
@@ -172,3 +172,19 @@ export const eventAttendance = pgTable(
 	},
 	(t) => [primaryKey({ columns: [t.email, t.lumaEventUrl] })]
 );
+
+/**
+ * People whose attendance was erased -- a member who deleted their account, or
+ * anyone else who asked -- so a later import of an old Luma CSV cannot write
+ * their history back. Holds a SHA-256 of the lowercased email rather than the
+ * email itself: it only ever has to answer "is this the address we erased?".
+ *
+ * Only registrations made BEFORE `erasedAt` are refused, so someone who erases
+ * their data and runs with the club again later gets that new history.
+ */
+export const attendanceErasure = pgTable('attendance_erasure', {
+	emailHash: text('email_hash').primaryKey(),
+	erasedAt: timestamp('erased_at', { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+});
