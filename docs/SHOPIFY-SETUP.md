@@ -130,6 +130,14 @@ The subscriptions are declared in `shopify/shopify.app.toml`, on the
 - **`products/update`** → refreshes that product's tag
 - **`products/delete`** → broad refresh (payload carries no handle)
 - **`inventory_levels/update`** → broad refresh (ditto)
+- **`inventory_levels/connect`** / **`inventory_levels/disconnect`** → broad
+  refresh — an item gaining or losing a stocking location changes what a market
+  can sell without any quantity changing
+
+Market settings (locations, catalogs, price lists) and Headless channel
+publishing send no webhook this app can receive. After changing either, nudge
+any product's stock (+1, then −1): the `inventory_levels/update` it sends
+refreshes every product.
 
 1. Put the app's **client secret** (Dev Dashboard → the app → Settings, or
    `shopify app env show --path shopify`) into `SHOPIFY_WEBHOOK_SECRET`: app

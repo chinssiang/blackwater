@@ -22,5 +22,11 @@ api_version = "2026-07"
 # and any vercel.app alias redirect (or will) to www.
 # Signed with this app's client secret, which SHOPIFY_WEBHOOK_SECRET must hold.
 [[webhooks.subscriptions]]
-topics = [ "products/update", "products/delete", "inventory_levels/update" ]
+topics = [
+  "products/update",
+  "products/delete",
+  "inventory_levels/update",
+  "inventory_levels/connect",
+  "inventory_levels/disconnect"
+]
 uri = "https://www.blackwaterrc.com/api/shopify/revalidate"

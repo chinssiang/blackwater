@@ -11,6 +11,9 @@
  *    - inventory_levels/update  → broad refresh (ditto; drop it if sales
  *      volume makes it too chatty — product updates still cover most
  *      availability flips)
+ *    - inventory_levels/connect, inventory_levels/disconnect → broad refresh
+ *      (a location starting or stopping to stock an item changes what a
+ *      market can sell without any quantity changing)
  *
  * App webhooks are signed with the app's client secret, so that is what
  * SHOPIFY_WEBHOOK_SECRET holds — not the shop's shared secret from
@@ -32,6 +35,8 @@ const HANDLED_TOPICS = new Set([
 	'products/create',
 	'products/delete',
 	'inventory_levels/update',
+	'inventory_levels/connect',
+	'inventory_levels/disconnect',
 ]);
 
 function isValidSignature(
