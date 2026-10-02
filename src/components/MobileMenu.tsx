@@ -6,6 +6,7 @@ import { Dialog } from '@base-ui/react/dialog';
 import { mobileMenuItem, mobileMenuList, mobileMenuPanel } from '@/lib/animate';
 import { resolveHref } from '@/lib/routes';
 import { cn } from '@/lib/utils';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { useScrollLock } from '@/hooks/useScrollLock';
 import ChromeButton from '@/components/ChromeButton';
 import CustomLink from '@/components/CustomLink';
@@ -14,7 +15,7 @@ import { useLocale, useTranslations } from '@/components/LocaleProvider';
 import { CloseIcon, MenuIcon } from '@/components/SvgIcons';
 import { WordmarkSvg } from '@/components/WordmarkSvg';
 import { buttonVariants } from '@/components/ui/Button';
-import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
+import { AnimatePresence, motion } from 'motion/react';
 import type { SiteDataQueryResult } from 'sanity.types';
 
 type MobileMenuProps = {
@@ -81,7 +82,12 @@ function AnimatedMenuIcon({
 }
 
 export default function MobileMenu({ data, siteTitle }: MobileMenuProps) {
-	const reduce = useReducedMotion() ?? false;
+	// Not Motion's useReducedMotion: it is null on the server but true on the
+	// client's first render for a reduced-motion visitor, and AnimatedMenuIcon
+	// renders a different SVG per answer, so the always-mounted trigger failed
+	// hydration on every page. This hook's server snapshot is false, and it
+	// follows an OS toggle mid-session.
+	const reduce = usePrefersReducedMotion();
 	const [open, setOpen] = useState(false);
 	const t = useTranslations('nav');
 	const locale = useLocale();

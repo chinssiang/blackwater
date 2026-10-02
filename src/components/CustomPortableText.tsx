@@ -22,9 +22,11 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 		number: ({ children }) => <ol>{children}</ol>,
 	},
 	types: {
-		image: (data) => {
+		// customImage()'s member type, with the asset under `image` -- not a bare
+		// Sanity `image`, whose asset sits at the root.
+		imageBlock: (data) => {
 			const { value } = data;
-			if (!value?.asset) return;
+			if (!value?.image?.asset) return;
 
 			const { link } = value || {};
 			// The prose column, not the generic `…, 33vw` default, which asked for
@@ -84,10 +86,11 @@ const portableTextComponents: Partial<PortableTextReactComponents> = {
 		link: ({ value, children }) => {
 			return <CustomLink link={value}>{children}</CustomLink>;
 		},
+		// The annotation is itself the link (a flat `link()` object), so it is
+		// passed whole rather than as a nested `value.link`.
 		callToAction: ({ value, children }) => {
-			const { link, isButton } = value || {};
 			return (
-				<CustomLink link={link} className={cn({ btn: isButton })}>
+				<CustomLink link={value} className={cn({ btn: value?.isButton })}>
 					{children}
 				</CustomLink>
 			);
@@ -102,7 +105,7 @@ export default function CustomPortableText({
 	// generated block, while @portabletext/types' PortableTextBlock requires it,
 	// so no query result satisfies that type. This is <PortableText>'s own
 	// default value type, which the generated shapes do satisfy - and it is what
-	// admits the custom `image` / `iframe` members handled below, which are
+	// admits the custom `imageBlock` / `iframe` members handled below, which are
 	// arbitrary typed objects rather than blocks.
 	//
 	// Nullable because most queries project portable text with a `[]{...}` that

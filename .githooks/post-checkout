@@ -1,0 +1,11 @@
+#!/bin/sh
+# `next dev` writes route types into .next/dev/types, which tsconfig includes.
+# They describe the branch the dev server last ran on, so after switching to a
+# branch without one of those routes, `npm run typecheck` (and so pre-commit)
+# fails on a module that no longer exists. They are regenerated on the next
+# `next dev`, so drop them whenever a branch switch actually moves HEAD.
+#
+# $3 is 1 for a branch checkout, 0 for a file checkout.
+if [ "$3" = "1" ] && [ "$1" != "$2" ]; then
+	rm -rf .next/dev/types
+fi

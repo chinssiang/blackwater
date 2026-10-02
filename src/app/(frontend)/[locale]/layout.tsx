@@ -13,22 +13,17 @@ export function generateStaticParams() {
 	return LOCALES.map((locale) => ({ locale }));
 }
 
-// A `locale` outside LOCALES is a 404 before anything renders, and this is the
-// only thing that makes that true. The `notFound()` in the layout below does
-// NOT stop the matching PAGE from rendering — React renders a layout and its
-// page concurrently — so a request like /foo.txt (which src/proxy.ts leaves
-// alone, because its matcher skips dotted paths) matched /[locale] with
-// locale="foo.txt" and rendered the HOMEPAGE with that string, where
-// EventsBlock's and ProductsBlock's `getDictionary(locale)` threw
-// "c[a] is not a function". The result was an opaque HTTP 500, not a 404, on
-// EVERY dotted URL in production — /llms.txt, /ads.txt, /security.txt,
-// /apple-touch-icon.png — which is also what Lighthouse's llms-txt audit
-// reported. /email-signature/bogus took the same path via [locale]/(site)/[slug].
-//
-// Note this option is unavailable under `cacheComponents` (see the note in
-// next.config.mjs on why that flag is still off); if it is ever enabled, the
-// locale check has to move into the pages themselves.
-export const dynamicParams = false;
+// A `locale` outside LOCALES must be a 404, and NOT via `dynamicParams = false`
+// here: Next applies that flag to the whole route, layouts included, so it made
+// every nested dynamic route ([slug], events/[slug], products/[slug], …)
+// fallback:false and a document published after a deploy 404'd until the next
+// build. The `notFound()` in the layout below is the check instead. It does not
+// stop the matching PAGE from rendering — React renders a layout and its page
+// concurrently — so a request like /foo.txt (which src/proxy.ts leaves alone,
+// because its matcher skips dotted paths) still renders the page with
+// locale="foo.txt". That page used to throw first ("c[a] is not a function" from
+// `getDictionary`), turning every dotted URL into a 500; getDictionary now
+// falls back to English for an unknown locale so the layout's 404 wins.
 
 export async function generateMetadata({
 	params,

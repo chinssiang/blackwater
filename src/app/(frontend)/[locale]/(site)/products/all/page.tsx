@@ -33,6 +33,19 @@ const MAX_PAGE = 1000;
 
 type SearchParams = { page?: string } & ProductFilterSearchParams;
 
+// What Next actually delivers: a repeated key (`?brand=a&brand=b`) arrives as
+// string[], which `parseProductFilters` would call `.split` on and throw (a 500,
+// with no error.tsx). Joined into the comma-separated form the filters already
+// use, so the cache() helpers below keep receiving plain strings.
+type RawSearchParams = Partial<Record<keyof SearchParams, string | string[]>>;
+const toSearchParams = (raw: RawSearchParams): SearchParams =>
+	Object.fromEntries(
+		Object.entries(raw).map(([key, value]) => [
+			key,
+			Array.isArray(value) ? value.join(',') : value,
+		])
+	);
+
 // Two fetches, not one, and the split is along what each half's cache key can
 // legitimately contain. The results depend on the filters AND on $sort and the
 // page window; the facets and the category grid depend on the filters and
@@ -138,9 +151,10 @@ export async function generateMetadata({
 	searchParams,
 }: {
 	params: Promise<{ locale: Locale }>;
-	searchParams: Promise<SearchParams>;
+	searchParams: Promise<RawSearchParams>;
 }): Promise<Metadata> {
-	const [{ locale }, sp] = await Promise.all([params, searchParams]);
+	const [{ locale }, raw] = await Promise.all([params, searchParams]);
+	const sp = toSearchParams(raw);
 	const dict = await getDictionary(locale);
 	const page = parsePage(sp.page);
 	if (page == null) return notFoundMetadata();
@@ -196,9 +210,10 @@ export default async function Page({
 	searchParams,
 }: {
 	params: Promise<{ locale: Locale }>;
-	searchParams: Promise<SearchParams>;
+	searchParams: Promise<RawSearchParams>;
 }) {
-	const [{ locale }, sp] = await Promise.all([params, searchParams]);
+	const [{ locale }, raw] = await Promise.all([params, searchParams]);
+	const sp = toSearchParams(raw);
 	const page = parsePage(sp.page);
 	// Checked before the fetch, so an absurd page number costs no round trip.
 	if (page == null) return <NotFoundContent locale={locale} />;

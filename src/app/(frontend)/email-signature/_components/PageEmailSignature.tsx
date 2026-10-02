@@ -30,32 +30,54 @@ type PageEmailSignature = {
 export function PageEmailSignature({ siteUrl }: PageEmailSignature) {
 	const COPY_TEXT_INITIAL = 'Click to copy';
 	const COPY_TEXT_CLICKED = 'Copied!';
-	const clipboardRef = useRef(null);
+	const clipboardRef = useRef<HTMLTableElement>(null);
 	const [buttonText, setButtonText] = useState(COPY_TEXT_INITIAL);
 
-	const [name, setName] = useState('');
+	const [name, setName] = useState('Blackwater RC');
 	const [position, setPosition] = useState('');
 	const [subtext, setSubtext] = useState(
 		'A running community exploring movement & meaning.'
 	);
 	const [iconColor, setIconColor] = useState('black');
 
-	const onHandleCopy = () => {
-		setButtonText(COPY_TEXT_CLICKED);
+	// Copy the signature's own markup rather than a DOM selection: a
+	// selection copy inlines the page's computed styles (Tailwind resets,
+	// fonts, custom properties) onto every element, so the pasted
+	// signature carries styles we never wrote and renders differently per
+	// mail client. Only the inline styles below reach the clipboard.
+	const onHandleCopy = async () => {
+		const table = clipboardRef.current;
+		if (!table) return;
+
+		const html = table.outerHTML;
+		const text = table.innerText;
+
+		let copied = true;
+		try {
+			await navigator.clipboard.write([
+				new ClipboardItem({
+					'text/html': new Blob([html], { type: 'text/html' }),
+					'text/plain': new Blob([text], { type: 'text/plain' }),
+				}),
+			]);
+		} catch {
+			// No async Clipboard API (insecure context, older Firefox) or
+			// permission denied: fall back to execCommand, still writing
+			// our own markup via the copy event rather than a selection.
+			const onCopy = (e: ClipboardEvent) => {
+				e.clipboardData?.setData('text/html', html);
+				e.clipboardData?.setData('text/plain', text);
+				e.preventDefault();
+			};
+			document.addEventListener('copy', onCopy);
+			copied = document.execCommand('copy');
+			document.removeEventListener('copy', onCopy);
+		}
+
+		setButtonText(copied ? COPY_TEXT_CLICKED : 'Copy failed');
 		setTimeout(() => {
 			setButtonText(COPY_TEXT_INITIAL);
 		}, 2000);
-
-		const range = document.createRange();
-
-		if (clipboardRef.current) {
-			range.setStart(clipboardRef.current, 0);
-			range.setEndAfter(clipboardRef.current);
-			window.getSelection()?.removeAllRanges();
-			window.getSelection()?.addRange(range);
-			document.execCommand('copy');
-			window.getSelection()?.removeAllRanges();
-		}
 	};
 
 	const onHandleInputName = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -146,67 +168,76 @@ export function PageEmailSignature({ siteUrl }: PageEmailSignature) {
 			<div className="rounded-xs bg-white p-3">
 				<table
 					ref={clipboardRef}
-					style={{ color: 'white', backgroundColor: 'transparent' }}
+					role="presentation"
 					border={0}
+					cellPadding={0}
+					cellSpacing={0}
+					style={{ borderCollapse: 'collapse' }}
 				>
 					<tbody>
 						<tr>
-							<td style={{ paddingRight: '15px' }}>
+							<td style={{ paddingRight: '15px', verticalAlign: 'middle' }}>
 								<a
 									href={`${siteUrl}/?ref=email-sig`}
 									target="_blank"
 									rel="noreferrer"
 								>
+									{/* display:block drops the inline descender gap under
+									    the image; border:0 stops older clients framing a
+									    linked image in link blue. */}
 									<img
 										width="50"
 										height="50"
 										alt="Blackwater RC Logo"
 										src={`${siteUrl}/blackwater_wordmark_white.jpg`}
+										style={{ display: 'block', border: 0 }}
 									/>
 								</a>
 							</td>
 							<td
 								style={{
 									verticalAlign: 'middle',
-									fontFamily: 'Helvetica, sans-serif',
+									fontFamily: 'Helvetica, Arial, sans-serif',
 									fontSize: '12px',
-									fontWeight: '400',
-									letterSpacing: '0px',
 									lineHeight: 1.25,
 									color: 'black',
 								}}
 							>
-								<p>
-									<strong style={{ fontWeight: '700' }}>{name}</strong>
-									{position ? ` ${position} ` : ' '}
-								</p>
-								{subtext && <p>{subtext}</p>}
-								<a
-									href={`${siteUrl}/?ref=email-sig`}
-									target="_blank"
-									rel="noreferrer"
-									style={{ color: 'black' }}
-								>
-									<u>Website</u>
-								</a>
-								&nbsp;|&nbsp;
-								<a
-									href="https://www.instagram.com/blackwater.rc"
-									target="_blank"
-									rel="noreferrer"
-									style={{ color: 'black' }}
-								>
-									<u>IG</u>
-								</a>
-								&nbsp;|&nbsp;
-								<a
-									href="https://linktr.ee/blackwater.rc"
-									target="_blank"
-									rel="noreferrer"
-									style={{ color: 'black' }}
-								>
-									<u>Events</u>
-								</a>
+								{/* <div>, not <p>: mail clients apply their own default
+								    <p> margins, which the page's CSS reset hides here. */}
+								<div>
+									<strong>{name}</strong>
+									{position ? ` ${position}` : ''}
+								</div>
+								{subtext && <div>{subtext}</div>}
+								<div>
+									<a
+										href={`${siteUrl}/?ref=email-sig`}
+										target="_blank"
+										rel="noreferrer"
+										style={{ color: 'black', textDecoration: 'underline' }}
+									>
+										Website
+									</a>
+									&nbsp;|&nbsp;
+									<a
+										href="https://www.instagram.com/blackwater.rc"
+										target="_blank"
+										rel="noreferrer"
+										style={{ color: 'black', textDecoration: 'underline' }}
+									>
+										IG
+									</a>
+									&nbsp;|&nbsp;
+									<a
+										href="https://linktr.ee/blackwater.rc"
+										target="_blank"
+										rel="noreferrer"
+										style={{ color: 'black', textDecoration: 'underline' }}
+									>
+										Events
+									</a>
+								</div>
 							</td>
 						</tr>
 					</tbody>

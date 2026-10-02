@@ -1,0 +1,32 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "e42fb02d78dcc969be30110859428c51"
+application_url = "https://blackwaterrc.com"
+embedded = false
+name = "Blackwater Studio"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products,read_inventory"
+optional_scopes = [ ]
+use_legacy_install_flow = false
+
+[auth]
+redirect_urls = [ ]
+
+[webhooks]
+api_version = "2026-07"
+
+# Cache invalidation for the storefront — see src/app/api/shopify/revalidate.
+# Must be the canonical host: Shopify follows no redirects, and both the apex
+# and any vercel.app alias redirect (or will) to www.
+# Signed with this app's client secret, which SHOPIFY_WEBHOOK_SECRET must hold.
+[[webhooks.subscriptions]]
+topics = [
+  "products/update",
+  "products/delete",
+  "inventory_levels/update",
+  "inventory_levels/connect",
+  "inventory_levels/disconnect"
+]
+uri = "https://www.blackwaterrc.com/api/shopify/revalidate"

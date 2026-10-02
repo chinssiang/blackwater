@@ -30,6 +30,7 @@ function PopoverContent({
 	side = 'bottom',
 	sideOffset = 4,
 	collisionPadding,
+	positionerClassName,
 	...props
 }: PopoverPrimitive.Popup.Props &
 	Pick<
@@ -43,6 +44,10 @@ function PopoverContent({
 		// only the type stood in the way. `initialFocus`/`finalFocus` take a ref,
 		// and pointing either at the popup itself needs one.
 		ref?: React.Ref<HTMLDivElement>;
+		// Lands on the Positioner, so it is where a z-index override goes. It
+		// replaces `z-popover` rather than merging: tailwind-merge does not know
+		// the custom z tokens, so both classes would survive and source order wins.
+		positionerClassName?: string;
 	}) {
 	return (
 		<PopoverPrimitive.Portal>
@@ -52,7 +57,7 @@ function PopoverContent({
 				side={side}
 				sideOffset={sideOffset}
 				collisionPadding={collisionPadding}
-				className="z-popover isolate"
+				className={cn('isolate', positionerClassName ?? 'z-popover')}
 			>
 				<PopoverPrimitive.Popup
 					data-slot="popover-content"

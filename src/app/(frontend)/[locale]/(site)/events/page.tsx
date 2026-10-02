@@ -132,10 +132,16 @@ export default async function Page(props: Props) {
 		locale as Locale
 	);
 
+	// The render's own clock, handed down so hydration replays the instant the
+	// HTML was built rather than the visitor's — see `renderedAt` in PageEvents.
+	// Impure by design: a Server Component renders once per (re)generation.
+	// eslint-disable-next-line react-hooks/purity
+	const renderedAt = Date.now();
+
 	return (
 		<>
 			{itemListJsonLd && <JsonLd data={itemListJsonLd} />}
-			<PageEvents data={omitPageMetadata(data)} />
+			<PageEvents data={omitPageMetadata(data)} renderedAt={renderedAt} />
 		</>
 	);
 }

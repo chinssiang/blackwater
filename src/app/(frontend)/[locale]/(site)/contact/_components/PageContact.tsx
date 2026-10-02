@@ -30,8 +30,6 @@ interface PageContactData {
 		}> | null;
 		successMessage: string | null;
 		errorMessage: string | null;
-		sendToEmail: string | null;
-		emailSubject: string | null;
 	} | null;
 	legalConsent?: any;
 }

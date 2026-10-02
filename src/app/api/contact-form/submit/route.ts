@@ -127,8 +127,10 @@ export async function POST(req: NextRequest) {
 			html: formatObjectToHtml(formData),
 		};
 
-		const info = await transporter.sendMail(mailOptions);
-		return Response.json(info);
+		// Not the SentMessageInfo: it carries the private recipient, the SMTP
+		// login and the server's response line, and the client reads only `ok`.
+		await transporter.sendMail(mailOptions);
+		return Response.json({ ok: true });
 	} catch (err) {
 		console.error('[contact-form]', err);
 		return NextResponse.json(

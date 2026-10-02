@@ -190,6 +190,11 @@ const linkFields = `
 	isNewTab
 ` as const;
 
+// The bare-title arm is wrapped in `string()` so it only answers for the
+// document-level types, whose `title` is a plain string. For a field-level
+// target (product, event, category, collection) it is an internationalizedArray,
+// which reached `{item.title}` as an object and crashed the chrome on any locale
+// the target has no title in; `string()` turns it into null instead.
 const menuFields = `
 	_id,
 	_type,
@@ -207,7 +212,7 @@ const menuFields = `
 				link.label[language == "en"][0].value,
 				link.internalLink->title[language == $locale][0].value,
 				link.internalLink->title[language == "en"][0].value,
-				link.internalLink->title,
+				string(link.internalLink->title),
 				link.href
 			)
 		),
@@ -223,7 +228,7 @@ const menuFields = `
 				link.label[language == "en"][0].value,
 				link.internalLink->title[language == $locale][0].value,
 				link.internalLink->title[language == "en"][0].value,
-				link.internalLink->title,
+				string(link.internalLink->title),
 				link.href
 			),
 			link {
@@ -243,7 +248,7 @@ const mobileMenuItemFields = `
 		link.label[language == "en"][0].value,
 		link.internalLink->title[language == $locale][0].value,
 		link.internalLink->title[language == "en"][0].value,
-		link.internalLink->title,
+		string(link.internalLink->title),
 		link.href
 	),
 	link {
@@ -291,6 +296,10 @@ const callToActionFields = `
 	"isButton": true
 ` as const;
 
+// The callToAction (Button) annotation is a flat `link()` object, href and
+// internalLink at its root, so it takes linkFields rather than the label +
+// nested-link shape of callToActionFields. The image member is customImage()'s
+// `imageBlock`, with the asset under `image`.
 const portableTextContentFields = `
 	...,
 	markDefs[]{
@@ -299,10 +308,11 @@ const portableTextContentFields = `
 			${linkFields}
 		},
 		_type == "callToAction" => {
-			${callToActionFields}
+			${linkFields},
+			"isButton": true
 		}
 	},
-	_type == "image" => {
+	_type == "imageBlock" => {
 		${imageBlockMetaFields},
 		link {
 			${linkFields}
@@ -1054,9 +1064,7 @@ export const pageContactQuery = defineQuery(`
 				${formField}
 			},
 			successMessage,
-			errorMessage,
-			sendToEmail,
-			emailSubject
+			errorMessage
 		},
 		legalConsent[]{
 			${portableTextContentFields}

@@ -37,13 +37,13 @@ anywhere, delete it.
 
 ## Environment variables
 
-| Variable                           | Where it comes from                                                                    | Required for                                                          |
-| ---------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `SHOPIFY_STORE_DOMAIN`             | `your-store.myshopify.com` — no `https://`, no trailing slash                          | everything                                                            |
-| `SHOPIFY_STOREFRONT_PRIVATE_TOKEN` | Headless channel → your storefront → **private** access token                          | live prices, availability, variants, and the Studio picker            |
-| `SHOPIFY_STOREFRONT_API_TOKEN`     | Headless channel → your storefront → **public** access token                           | fallback if you have no private token — see the throttling note below |
-| `SHOPIFY_WEBHOOK_SECRET`           | Admin → Settings → Notifications → Webhooks → signing secret at the bottom of the page | store edits reaching the site without a redeploy                      |
-| `SHOPIFY_API_VERSION`              | optional override; defaults to the version pinned in `src/lib/shopify/client.ts`       | pinning/bumping deliberately                                          |
+| Variable                           | Where it comes from                                                              | Required for                                                          |
+| ---------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `SHOPIFY_STORE_DOMAIN`             | `your-store.myshopify.com` — no `https://`, no trailing slash                    | everything                                                            |
+| `SHOPIFY_STOREFRONT_PRIVATE_TOKEN` | Headless channel → your storefront → **private** access token                    | live prices, availability, variants, and the Studio picker            |
+| `SHOPIFY_STOREFRONT_API_TOKEN`     | Headless channel → your storefront → **public** access token                     | fallback if you have no private token — see the throttling note below |
+| `SHOPIFY_WEBHOOK_SECRET`           | Dev Dashboard → "Blackwater Studio" app → client secret (see §2)                 | store edits reaching the site without a redeploy                      |
+| `SHOPIFY_API_VERSION`              | optional override; defaults to the version pinned in `src/lib/shopify/client.ts` | pinning/bumping deliberately                                          |
 
 `SHOPIFY_STORE_DOMAIN` plus **one** of the two tokens must be present or the
 integration stays off — `isShopifyConfigured()` checks for both. When both
@@ -124,20 +124,49 @@ Cached Storefront fetches are tagged `shopify` and `shopify:product:<handle>`,
 and are invalidated by webhook rather than by a timer. Without this, store edits
 do not reach the site until the next deploy.
 
-1. Admin → **Settings → Notifications → Webhooks**. Create these, format **JSON**,
-   all pointing at `https://YOUR_SITE_URL/api/shopify/revalidate`:
-   - **Product update** → refreshes that product's tag
-   - **Product deletion** → broad refresh (payload carries no handle)
-   - **Inventory level update** → broad refresh
-2. Copy the **signing secret** shown at the bottom of that settings page into
-   `SHOPIFY_WEBHOOK_SECRET`. All admin-created webhooks on a shop share one secret.
-3. `npx vercel env add SHOPIFY_WEBHOOK_SECRET` and redeploy.
+The subscriptions are declared in `shopify/shopify.app.toml`, on the
+"Blackwater Studio" app, and pushed with the Shopify CLI:
 
-> If webhooks are ever registered **through an app** instead (Dev Dashboard, or
-> the `webhookSubscriptionCreate` mutation), Shopify signs them with that **app's
-> client secret** rather than the shop's shared webhook secret. In that case
-> `SHOPIFY_WEBHOOK_SECRET` must hold the client secret. Mixing the two up makes
-> every delivery fail HMAC verification with a 401 and no other symptom.
+- **`products/update`** → refreshes that product's tag
+- **`products/delete`** → broad refresh (payload carries no handle)
+- **`inventory_levels/update`** → broad refresh (ditto)
+- **`inventory_levels/connect`** / **`inventory_levels/disconnect`** → broad
+  refresh — an item gaining or losing a stocking location changes what a market
+  can sell without any quantity changing
+
+Market settings (locations, catalogs, price lists) and Headless channel
+publishing send no webhook this app can receive. After changing either, nudge
+any product's stock (+1, then −1): the `inventory_levels/update` it sends
+refreshes every product.
+
+1. Put the app's **client secret** (Dev Dashboard → the app → Settings, or
+   `shopify app env show --path shopify`) into `SHOPIFY_WEBHOOK_SECRET`: app
+   webhooks are signed with it, not with the shop's shared secret from
+   Settings → Notifications. `vercel env add` will not overwrite an existing
+   variable, so remove it first, then redeploy:
+   `npx vercel env rm SHOPIFY_WEBHOOK_SECRET production`, then
+   `npx vercel env add SHOPIFY_WEBHOOK_SECRET production`.
+   Do this **before** step 2, or deliveries 401 until the redeploy lands.
+2. Edit `shopify/shopify.app.toml`, then `shopify app deploy --path shopify`.
+   Deploy replaces the app's whole configuration with the file, so pull the live
+   config first (`shopify app config link --path shopify`) if anyone may have
+   changed it in the Dev Dashboard.
+3. Confirm the app is **installed** on the store (Admin → Settings → Apps) and
+   has approved any new scopes. App webhooks are delivered only to shops the app
+   is installed on — otherwise the deploy succeeds and nothing ever arrives.
+
+Delivery counts and failures show in the Dev Dashboard (7-day window).
+
+> The address must answer without a redirect — Shopify follows none — so it is
+> `www.blackwaterrc.com`, not the apex (308 to www) or a `vercel.app` alias
+> (to be redirected to the domain). Shopify's admin **Settings → Notifications**
+> page refuses this host as "the store's own domain"; that refusal is the other
+> reason the subscriptions live in the app config.
+>
+> Do not also create webhooks under **Settings → Notifications → Webhooks**: those
+> are signed with the shop's shared secret, so with `SHOPIFY_WEBHOOK_SECRET`
+> holding the client secret every one of them fails with a 401 and no other
+> symptom.
 
 ---
 
@@ -180,8 +209,9 @@ Check the handle stored in Sanity matches exactly, then look for
 `[shopify] no product for handle "…"` in the server log.
 
 **Webhooks return 401.**
-`SHOPIFY_WEBHOOK_SECRET` doesn't match the secret Shopify signed with. Re-copy it
-from Settings → Notifications → Webhooks, and see the app-registered caveat above.
+`SHOPIFY_WEBHOOK_SECRET` doesn't match the secret Shopify signed with. Re-copy the
+app's client secret from the Dev Dashboard, and check nobody created webhooks
+under Settings → Notifications (see §2).
 
 **Webhooks return 500 "Not configured".**
 `SHOPIFY_WEBHOOK_SECRET` isn't set in that environment at all.

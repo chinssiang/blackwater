@@ -59,9 +59,15 @@ function getMonthDateRange(year: number, month: number) {
 export default async function Page({
 	searchParams,
 }: {
-	searchParams: Promise<{ month?: string; member?: string }>;
+	searchParams: Promise<{
+		month?: string | string[];
+		member?: string | string[];
+	}>;
 }) {
-	const { month: monthParam, member: memberSlug } = await searchParams;
+	// A repeated key (`?month=a&month=b`) arrives as string[]; the first wins.
+	const { month, member } = await searchParams;
+	const monthParam = Array.isArray(month) ? month[0] : month;
+	const memberSlug = Array.isArray(member) ? member[0] : member;
 
 	// Lightweight query: just dates for building month navigation
 	const { data: monthEntries } = await sanityFetch({

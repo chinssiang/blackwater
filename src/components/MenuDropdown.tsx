@@ -37,7 +37,7 @@ export default function MenuDropdown({ title, items }: MenuDropdownProps) {
 							const { link, title } = item || {};
 							const isActive = checkIfLinkIsActive({
 								pathName: pathName,
-								url: link.href,
+								url: link?.href ?? '',
 							});
 
 							return (
